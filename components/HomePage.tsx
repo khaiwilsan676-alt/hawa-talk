@@ -205,14 +205,6 @@ export default function HomePage() {
           <div className="font-bold text-yellow-800">Recharge Event</div>
         </div>
       </div>
-
-      {/* Blue Color Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-blue-600 shadow-lg flex items-center justify-around z-50 rounded-t-2xl">
-        <div className="text-white font-semibold text-sm cursor-pointer opacity-90 hover:opacity-100">🏠 Home</div>
-        <div className="text-white font-semibold text-sm cursor-pointer opacity-70 hover:opacity-100">🎮 Game</div>
-        <div className="text-white font-semibold text-sm cursor-pointer opacity-70 hover:opacity-100">👤 Profile</div>
-      </div>
-
     </div>
   )
 }
