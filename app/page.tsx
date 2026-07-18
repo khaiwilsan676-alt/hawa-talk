@@ -11,6 +11,12 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-yellow-100 to-yellow-50 pb-20">
+      {/* Header */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-2 z-10">
+        <img src="/logo.png" alt="Hawa" className="w-8 h-8 rounded-full" />
+        <h1 className="text-xl font-bold text-gray-800">Hawa</h1>
+      </div>
+      
       {/* Content */}
       <div className="w-full">
         {activeTab === 'home' && <HomePage />}
