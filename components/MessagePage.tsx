@@ -26,7 +26,7 @@ const messages: Message[] = [
     subtitle: '',
     date: '',
     icon: '👨‍👩‍👧‍👦',
-    color: 'bg-yellow-500'
+    color: 'bg-blue-500'
   },
   {
     id: '3',
@@ -40,9 +40,9 @@ const messages: Message[] = [
 
 export default function MessagePage() {
   return (
-    <div className="w-full bg-yellow-100 min-h-screen">
+    <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
       {/* Header */}
-      <div className="bg-yellow-100 px-4 pt-6 pb-4 flex items-center justify-between sticky top-0 z-10">
+      <div className="bg-gradient-to-b from-blue-400 to-blue-100 px-4 pt-6 pb-4 flex items-center justify-between sticky top-0 z-10">
         <h1 className="text-3xl font-bold text-gray-800">Message</h1>
         <CheckCircle size={28} className="text-green-500" />
       </div>

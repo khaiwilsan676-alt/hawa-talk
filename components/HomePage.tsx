@@ -53,7 +53,7 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState<Page>('home')
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-yellow-100 to-yellow-50 pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white pb-24">
       {/* Page Content */}
       <div className="w-full">
         {currentPage === 'home' && (
@@ -137,7 +137,7 @@ export default function HomePage() {
               </div>
 
               {/* Banner Carousel */}
-              <div className="mb-6 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl p-4 text-white font-bold text-center shadow-md">
+              <div className="mb-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md">
                 <div className="text-2xl mb-1">🎁 Magic Box King</div>
                 <div className="text-sm">18/07 - 19/07 23:59</div>
               </div>
@@ -147,7 +147,7 @@ export default function HomePage() {
             <div className="px-4 mt-6">
               {/* Category Cards */}
               <div className="grid grid-cols-3 gap-3 mb-6">
-                <div className="bg-yellow-300 rounded-2xl p-4 text-center">
+                <div className="bg-blue-200 rounded-2xl p-4 text-center">
                   <div className="text-xl mb-2">👥</div>
                   <div className="text-sm font-semibold">Ranking</div>
                 </div>
@@ -198,7 +198,7 @@ export default function HomePage() {
                         <div className="text-white font-semibold text-sm">{user.name}</div>
                       </div>
                     </div>
-                    <div className="absolute top-3 right-3 bg-yellow-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
+                    <div className="absolute top-3 right-3 bg-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
                       {user.score}
                     </div>
                   </div>
@@ -210,7 +210,7 @@ export default function HomePage() {
             <div className="px-4 pb-28 pt-6 flex justify-center">
               <div className="text-center">
                 <div className="text-4xl mb-2">🎁</div>
-                <div className="font-bold text-yellow-800">Recharge Event</div>
+                <div className="font-bold text-blue-800">Recharge Event</div>
               </div>
             </div>
           </div>
