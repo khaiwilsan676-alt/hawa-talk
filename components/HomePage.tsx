@@ -54,12 +54,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-yellow-100 to-yellow-50 pb-24">
-      {/* Header with Logo and App Name */}
-      <div className="sticky top-0 left-0 right-0 bg-white border-b-2 border-gray-300 px-4 py-4 flex items-center gap-3 z-40 shadow-md">
-        <img src="/logo.png" alt="Hawa Logo" className="w-10 h-10 object-cover" />
-        <h1 className="text-2xl font-bold text-gray-900">Hawa</h1>
-      </div>
-
       {/* Page Content */}
       <div className="w-full">
         {currentPage === 'home' && (
