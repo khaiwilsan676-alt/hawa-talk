@@ -221,13 +221,13 @@ export default function HomePage() {
       </div>
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-20 z-30">
+      <nav className="fixed bottom-0 left-0 right-0 bg-blue-500 border-t border-blue-600 flex justify-around items-center h-20 z-30">
         <button
           onClick={() => setCurrentPage('home')}
           className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
             currentPage === 'home'
-              ? 'text-yellow-500'
-              : 'text-gray-500 hover:text-yellow-400'
+              ? 'text-white'
+              : 'text-blue-100 hover:text-white'
           }`}
         >
           <Home size={24} />
@@ -237,8 +237,8 @@ export default function HomePage() {
           onClick={() => setCurrentPage('message')}
           className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
             currentPage === 'message'
-              ? 'text-yellow-500'
-              : 'text-gray-500 hover:text-yellow-400'
+              ? 'text-white'
+              : 'text-blue-100 hover:text-white'
           }`}
         >
           <MessageCircle size={24} />
@@ -248,8 +248,8 @@ export default function HomePage() {
           onClick={() => setCurrentPage('me')}
           className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
             currentPage === 'me'
-              ? 'text-yellow-500'
-              : 'text-gray-500 hover:text-yellow-400'
+              ? 'text-white'
+              : 'text-blue-100 hover:text-white'
           }`}
         >
           <User size={24} />
