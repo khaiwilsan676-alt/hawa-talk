@@ -6,7 +6,7 @@ import MessagePage from './MessagePage'
 import MePage from './MePage'
 
 interface UserCard {
-  id: string
+  id: string  
   name: string
   country: string
   score: number
@@ -297,6 +297,19 @@ export default function HomePage({ onLogout }) {
           100% { opacity: 1; }
         }
       `}</style>
+
+      {/* Bottom Right Corner Image */}
+      <div className="fixed bottom-24 right-4 z-40">
+        <img 
+          src="/IMG_20260719_203213.png" 
+          alt="Corner decoration"
+          className="rounded-2xl object-cover"
+          style={{ 
+            width: '70px', 
+            height: '70px',
+          }}
+        />
+      </div>
 
       <div className="w-full">
         {currentPage === 'home' && (
@@ -622,4 +635,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-      }
+  }
