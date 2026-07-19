@@ -87,6 +87,24 @@ const CATEGORY_CARDS = [
   },
 ];
 
+// Mine tab ke liye room cards data
+const MINE_ROOMS = [
+  {
+    id: '1',
+    roomName: 'Royal Lounge',
+    members: 12,
+    isLive: true,
+    image: '/1784466691241~2.jpg'
+  },
+  {
+    id: '2',
+    roomName: 'Fun Zone',
+    members: 8,
+    isLive: false,
+    image: '/1784466691241~2.jpg'
+  }
+]
+
 export default function HomePage({ onLogout }) {
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [currentPage, setCurrentPage] = useState<Page>('home')
@@ -313,6 +331,10 @@ export default function HomePage({ onLogout }) {
           0% { transform: translateY(0); }
           100% { transform: translateY(100%); }
         }
+        @keyframes fadeIn {
+          0% { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       {/* Bottom Right Corner Image - Hide when chat is open */}
@@ -532,41 +554,142 @@ export default function HomePage({ onLogout }) {
               </div>
             </div>
 
-            {/* User Cards Grid */}
-            <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
-              {userCards.map((user) => (
-                <div
-                  key={user.id}
-                  className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                  style={{ height: '180px' }}
+            {/* Mine Tab Content - Shown when activeTab is 'mine' */}
+            {activeTab === 'mine' && (
+              <div className="px-4" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                {/* Create Room Card */}
+                <div 
+                  className="rounded-2xl p-4 mb-4 cursor-pointer hover:shadow-md transition-shadow"
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  }}
                 >
-                  <img
-                    src={user.image}
-                    alt={user.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base">{user.country}</span>
-                      <div className="flex-1">
-                        <div className="text-white font-semibold text-xs">{user.name}</div>
-                      </div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                      </svg>
                     </div>
-                    <div className="absolute top-2 right-2 bg-blue-400 rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
-                      {user.score}
+                    <div>
+                      <div className="text-white font-bold text-lg">Create your Room</div>
+                      <div className="text-white/80 text-sm">Embark Your Hawa journey!</div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Recharge Event */}
-            <div className="px-4 pb-24 pt-3 flex justify-center">
-              <div className="text-center">
-                <div className="text-3xl mb-1"></div>
-                <div className="font-bold text-blue-800 text-sm"></div>
+                {/* Your Rooms Section */}
+                <div className="mb-4">
+                  <h3 className="font-bold text-gray-800 text-lg mb-3">Your Rooms</h3>
+                  
+                  {MINE_ROOMS.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {MINE_ROOMS.map((room) => (
+                        <div
+                          key={room.id}
+                          className="relative bg-white rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow border border-gray-100"
+                          style={{ height: '200px' }}
+                        >
+                          <img
+                            src={room.image}
+                            alt={room.roomName}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-white font-semibold text-sm">{room.roomName}</span>
+                              {room.isLive && (
+                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                                  LIVE
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 mt-1">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="8" r="4" stroke="white" strokeWidth="1.5"/>
+                                <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" stroke="white" strokeWidth="1.5"/>
+                              </svg>
+                              <span className="text-white/90 text-xs">{room.members} members</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="text-4xl mb-3">🎉</div>
+                      <p className="text-gray-500 font-medium">No rooms yet!</p>
+                      <p className="text-gray-400 text-sm mt-1">Create your first room to get started</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent Activity Section */}
+                <div className="mb-6">
+                  <h3 className="font-bold text-gray-800 text-lg mb-3">Recent Activity</h3>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((item) => (
+                      <div 
+                        key={item}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                          {String.fromCharCode(64 + item)}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-800">Joined a new room</p>
+                          <p className="text-xs text-gray-500">2 hours ago</p>
+                        </div>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M9 18l6-6-6-6" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Popular Tab Content - Shown when activeTab is 'popular' */}
+            {activeTab === 'popular' && (
+              <>
+                {/* User Cards Grid */}
+                <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
+                  {userCards.map((user) => (
+                    <div
+                      key={user.id}
+                      className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                      style={{ height: '180px' }}
+                    >
+                      <img
+                        src={user.image}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base">{user.country}</span>
+                          <div className="flex-1">
+                            <div className="text-white font-semibold text-xs">{user.name}</div>
+                          </div>
+                        </div>
+                        <div className="absolute top-2 right-2 bg-blue-400 rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
+                          {user.score}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Recharge Event */}
+                <div className="px-4 pb-24 pt-3 flex justify-center">
+                  <div className="text-center">
+                    <div className="text-3xl mb-1"></div>
+                    <div className="font-bold text-blue-800 text-sm"></div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
