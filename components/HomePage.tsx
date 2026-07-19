@@ -128,11 +128,11 @@ export default function HomePage({ onLogout }) {
       <div className="w-full">
         {currentPage === 'home' && (
           <div className="w-full bg-white">
-            {/* Top Section */}
+            {/* Top Section - Height badha di banner ke liye */}
             <div 
               className="w-full pt-3 px-4" 
               style={{ 
-                height: '28vh', 
+                height: '34vh', 
                 background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)' 
               }}
             >
@@ -203,10 +203,10 @@ export default function HomePage({ onLogout }) {
                 </button>
               </div>
 
-              {/* Banner Carousel - Height increase */}
+              {/* Banner Carousel - Height badha di thodi si */}
               <div 
-                className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl p-4 text-white font-bold text-center shadow-md relative overflow-hidden`}
-                style={{ marginBottom: '0px' }}
+                className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl text-white font-bold text-center shadow-md relative overflow-hidden`}
+                style={{ padding: '20px 16px' }}
               >
                 <div 
                   key={currentBanner}
@@ -220,7 +220,7 @@ export default function HomePage({ onLogout }) {
               </div>
               
               {/* Dots - Active dot black */}
-              <div className="flex justify-center gap-1.5" style={{ marginTop: '5px', marginBottom: '0px' }}>
+              <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '2px' }}>
                 {BANNERS.map((_, index) => (
                   <div
                     key={index}
@@ -232,8 +232,8 @@ export default function HomePage({ onLogout }) {
               </div>
             </div>
 
-            {/* Category Cards - Gap kam kiya cards ke beech */}
-            <div className="px-4" style={{ marginTop: '0px' }}>
+            {/* Category Cards - Gap bilkul kam kar diya banner aur cards ke beech */}
+            <div className="px-4" style={{ marginTop: '-6px' }}>
               <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
@@ -428,4 +428,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-}
+    }
