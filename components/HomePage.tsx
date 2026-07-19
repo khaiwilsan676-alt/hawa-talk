@@ -44,24 +44,25 @@ const userCards: UserCard[] = [
   }
 ]
 
-// Doosra banner add kiya
+// Banners ab red color mein
 const BANNERS = [
   {
     emoji: '🎁',
     title: 'Magic Box King',
-    date: '18/07 - 19/07 23:59'
+    date: '18/07 - 19/07 23:59',
+    gradient: 'from-red-500 to-red-600'
   },
   {
     emoji: '👑',
     title: 'VIP Room Event',
-    date: '20/07 - 22/07 23:59'
+    date: '20/07 - 22/07 23:59',
+    gradient: 'from-red-600 to-red-700'
   }
 ]
 
 type Tab = 'mine' | 'popular'
 type Page = 'home' | 'message' | 'me'
 
-// आपके दूसरे कंपोनेंट से ली गई कार्ड्स की स्टाइल थीम्स
 const CATEGORY_CARDS = [
   {
     label: 'Honour',
@@ -95,11 +96,7 @@ const CATEGORY_CARDS = [
 export default function HomePage({ onLogout }) {
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [currentPage, setCurrentPage] = useState<Page>('home')
-  
-  // कार्ड एनिमेशन के लिए माउंटेड स्टेट
   const [mounted, setMounted] = useState(false)
-
-  // Banner auto scroll ke liye current index
   const [currentBanner, setCurrentBanner] = useState(0)
 
   useEffect(() => {
@@ -107,7 +104,6 @@ export default function HomePage({ onLogout }) {
     return () => clearTimeout(id)
   }, [])
 
-  // Banner har 5 second mein auto change hoga
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
@@ -116,8 +112,7 @@ export default function HomePage({ onLogout }) {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white pb-28">
-      {/* फॉन्ट और एनिमेशन स्टाइल्स जो आपने दूसरे प्रोग्राम में यूज की थीं */}
+    <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white pb-24">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
         @keyframes cardIn {
@@ -130,28 +125,26 @@ export default function HomePage({ onLogout }) {
         }
       `}</style>
 
-      {/* Page Content */}
       <div className="w-full">
         {currentPage === 'home' && (
           <div className="w-full bg-white">
-            {/* Top 30vh Section */}
+            {/* Top Section - Height thoda kam kiya */}
             <div 
-              className="w-full pt-4 px-4" 
+              className="w-full pt-3 px-4" 
               style={{ 
-                height: '30vh', 
+                height: '26vh', 
                 background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)' 
               }}
             >
-              {/* Top Navigation */}
-              <div className="w-full flex justify-between items-center py-2 box-border mb-6">
-                {/* Left Icon - House Chart */}
+              {/* Top Navigation - Padding kam */}
+              <div className="w-full flex justify-between items-center py-1 box-border mb-4">
                 <button
                   type="button"
                   onClick={() => console.log('Home clicked')}
                   className="flex items-center justify-center cursor-pointer"
                   aria-label="Home"
                 >
-                  <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                     <path
                       d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"
                       stroke="#2D2D2D"
@@ -165,8 +158,7 @@ export default function HomePage({ onLogout }) {
                   </svg>
                 </button>
 
-                {/* Center Tabs */}
-                <div className="flex items-center gap-9">
+                <div className="flex items-center gap-8">
                   <button
                     type="button"
                     onClick={() => setActiveTab('mine')}
@@ -198,23 +190,22 @@ export default function HomePage({ onLogout }) {
                   </button>
                 </div>
 
-                {/* Right Icon - Search */}
                 <button
                   type="button"
                   onClick={() => console.log('Search clicked')}
                   className="flex items-center justify-center cursor-pointer"
                   aria-label="Search"
                 >
-                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
                     <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
               </div>
 
-              {/* Banner Carousel - Ab do banners hain jo har 5 sec mein change honge */}
+              {/* Banner Carousel - Ab red color */}
               <div 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md relative overflow-hidden" 
+                className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl p-3 text-white font-bold text-center shadow-md relative overflow-hidden`}
                 style={{ marginBottom: '0px' }}
               >
                 <div 
@@ -223,41 +214,39 @@ export default function HomePage({ onLogout }) {
                     animation: 'fadeInBanner 400ms ease-out'
                   }}
                 >
-                  <div className="text-2xl mb-1">{BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}</div>
-                  <div className="text-sm">{BANNERS[currentBanner].date}</div>
+                  <div className="text-xl mb-0.5">{BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}</div>
+                  <div className="text-xs">{BANNERS[currentBanner].date}</div>
                 </div>
-                
-                {/* Banner Dots Indicator */}
-                <div className="flex justify-center gap-2 mt-2">
-                  {BANNERS.map((_, index) => (
-                    <div
-                      key={index}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentBanner ? 'bg-white w-4' : 'bg-white/50'
-                      }`}
-                    />
-                  ))}
-                </div>
+              </div>
+              
+              {/* Dots - Banner ke theek neeche */}
+              <div className="flex justify-center gap-1.5" style={{ marginTop: '4px', marginBottom: '0px' }}>
+                {BANNERS.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${
+                      index === currentBanner ? 'bg-red-500 w-3' : 'bg-gray-300'
+                    }`}
+                  />
+                ))}
               </div>
             </div>
 
-            {/* Main Content Area - Gap kam kar diya banner aur cards ke beech */}
-            <div className="px-4" style={{ marginTop: '2px' }}>
-              
-              {/* नए स्टाइलिस्ट कैटेगरी कार्ड्स का सेक्शन (Flexbox में एडजस्ट किया ताकि मोबाइल स्क्रीन पर फिट रहे) */}
-              <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '8px' }}>
+            {/* Category Cards - Gap zero */}
+            <div className="px-4" style={{ marginTop: '0px' }}>
+              <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
                     key={card.label}
                     className="group flex-1"
                     style={{
-                      height: '105px',
-                      borderRadius: '18px',
+                      height: '90px',
+                      borderRadius: '16px',
                       display: 'flex',
                       flexDirection: 'column',
-                      padding: '10px 8px 8px 8px',
+                      padding: '8px 6px 6px 6px',
                       border: '1.5px solid rgba(0,0,0,0.06)',
-                      boxShadow: '0 6px 15px rgba(0,0,0,0.08)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                       background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
                       opacity: mounted ? 1 : 0,
                       transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
@@ -267,22 +256,22 @@ export default function HomePage({ onLogout }) {
                     }}
                     onMouseEnter={(e) => {
                       const el = e.currentTarget as HTMLDivElement;
-                      el.style.transform = 'translateY(-4px) scale(1.02)';
-                      el.style.boxShadow = '0 12px 24px rgba(0,0,0,0.14), 0 3px 8px rgba(0,0,0,0.06)';
+                      el.style.transform = 'translateY(-3px) scale(1.02)';
+                      el.style.boxShadow = '0 10px 20px rgba(0,0,0,0.14), 0 3px 8px rgba(0,0,0,0.06)';
                     }}
                     onMouseLeave={(e) => {
                       const el = e.currentTarget as HTMLDivElement;
                       el.style.transform = 'translateY(0) scale(1)';
-                      el.style.boxShadow = '0 6px 15px rgba(0,0,0,0.08)';
+                      el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                     }}
                   >
                     <div
                       style={{
                         textAlign: 'center',
-                        fontSize: '16px',
+                        fontSize: '14px',
                         fontWeight: 700,
                         color: card.textColor,
-                        marginBottom: '6px',
+                        marginBottom: '4px',
                         textShadow: '0 1px 0 rgba(255,255,255,0.7)',
                       }}
                     >
@@ -292,7 +281,7 @@ export default function HomePage({ onLogout }) {
                     <div
                       style={{
                         flex: 1,
-                        borderRadius: '12px',
+                        borderRadius: '10px',
                         backgroundColor: card.innerBg,
                         border: `1.5px solid ${card.innerBorder}`,
                         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
@@ -310,35 +299,34 @@ export default function HomePage({ onLogout }) {
                           background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 58%)',
                         }}
                       />
-                      {/* आपका ऑरिजनल आइकॉन */}
-                      <span className="text-2xl relative z-10">{card.icon}</span>
+                      <span className="text-xl relative z-10">{card.icon}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* User Cards Grid */}
-            <div className="px-4 grid grid-cols-2 gap-3" style={{ paddingTop: '2px', paddingBottom: '4px' }}>
+            {/* User Cards Grid - Height kam kiya */}
+            <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
               {userCards.map((user) => (
                 <div
                   key={user.id}
                   className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                  style={{ height: '220px' }}
+                  style={{ height: '180px' }}
                 >
                   <img
                     src={user.image}
                     alt={user.name}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{user.country}</span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">{user.country}</span>
                       <div className="flex-1">
-                        <div className="text-white font-semibold text-sm">{user.name}</div>
+                        <div className="text-white font-semibold text-xs">{user.name}</div>
                       </div>
                     </div>
-                    <div className="absolute top-3 right-3 bg-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
+                    <div className="absolute top-2 right-2 bg-blue-400 rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
                       {user.score}
                     </div>
                   </div>
@@ -346,11 +334,11 @@ export default function HomePage({ onLogout }) {
               ))}
             </div>
 
-            {/* Recharge Event Banner */}
-            <div className="px-4 pb-28 pt-4 flex justify-center">
+            {/* Recharge Event - Compact */}
+            <div className="px-4 pb-24 pt-3 flex justify-center">
               <div className="text-center">
-                <div className="text-4xl mb-2">🎁</div>
-                <div className="font-bold text-blue-800">Recharge Event</div>
+                <div className="text-3xl mb-1">🎁</div>
+                <div className="font-bold text-blue-800 text-sm">Recharge Event</div>
               </div>
             </div>
           </div>
@@ -360,16 +348,15 @@ export default function HomePage({ onLogout }) {
         {currentPage === 'me' && <MePage />}
       </div>
 
-      {/* Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar - Thoda compact */}
       <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
-        <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-4 w-full">
+        <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
           
-          {/* HOME BUTTON */}
           <button 
             onClick={() => setCurrentPage('home')}
-            className="flex flex-col items-center gap-1.5 transition-all active:scale-95"
+            className="flex flex-col items-center gap-1 transition-all active:scale-95"
           >
-            <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
+            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
               <path
                 d="M18 2.8C20.2 2.8 30.2 8.2 30.2 12.6V23.2C30.2 27.8 28 31 18 31C8 31 5.8 27.8 5.8 23.2V12.6C5.8 8.2 15.8 2.8 18 2.8Z"
                 fill={currentPage === 'home' ? '#3b82f6' : 'white'}
@@ -390,17 +377,16 @@ export default function HomePage({ onLogout }) {
                 strokeLinecap="round"
               />
             </svg>
-            <span className={`text-[14px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+            <span className={`text-[12px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>
               Home
             </span>
           </button>
 
-          {/* MESSAGE BUTTON */}
           <button 
             onClick={() => setCurrentPage('message')}
-            className="flex flex-col items-center gap-1.5 transition-all active:scale-95"
+            className="flex flex-col items-center gap-1 transition-all active:scale-95"
           >
-            <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
+            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
               <path
                 d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
                 fill={currentPage === 'message' ? '#3b82f6' : 'white'}
@@ -414,17 +400,16 @@ export default function HomePage({ onLogout }) {
                 strokeLinecap="round"
               />
             </svg>
-            <span className={`text-[14px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+            <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
               Message
             </span>
           </button>
 
-          {/* ME BUTTON */}
           <button 
             onClick={() => setCurrentPage('me')}
-            className="flex flex-col items-center gap-1.5 transition-all active:scale-95"
+            className="flex flex-col items-center gap-1 transition-all active:scale-95"
           >
-            <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
+            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
               <path
                 d="M18 4.5C23.5 4.5 28 8.5 27.2 13.8L26.2 19.8C26 21.2 27.2 22.5 28.6 23.1C30.6 24 31 26.2 29 27.5C27.5 28.5 25 28.8 22 28.8H14C11 28.8 8.5 28.5 7 27.5C5 26.2 5.4 24 7.4 23.1C8.8 22.5 10 21.2 9.8 19.8L8.8 13.8C8 8.5 12.5 4.5 18 4.5Z"
                 fill={currentPage === 'me' ? '#3b82f6' : 'white'}
@@ -434,7 +419,7 @@ export default function HomePage({ onLogout }) {
               <circle cx="14" cy="15" r="1.6" fill="#1D1D1F" />
               <circle cx="22" cy="15" r="1.6" fill="#1D1D1F" />
             </svg>
-            <span className={`text-[14px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+            <span className={`text-[12px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>
               Me
             </span>
           </button>
