@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Flame, Heart, Zap } from 'lucide-react'
+
 import MessagePage from './MessagePage'
 import MePage from './MePage'
 
@@ -224,36 +224,24 @@ export default function HomePage() {
       <nav className="fixed bottom-0 left-0 right-0 bg-blue-500 border-t border-blue-600 flex justify-around items-center h-20 z-30">
         <button
           onClick={() => setCurrentPage('home')}
-          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
-            currentPage === 'home'
-              ? 'text-white'
-              : 'text-blue-100 hover:text-white'
-          }`}
+          className="flex flex-col items-center justify-center w-full h-full gap-1 transition-opacity hover:opacity-80"
         >
-          <Flame size={28} />
-          <span className="text-xs font-medium">Popular</span>
+          <img src="/icon-home.png" alt="Home" className="w-7 h-7" />
+          <span className="text-xs font-medium text-white">Home</span>
         </button>
         <button
           onClick={() => setCurrentPage('message')}
-          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
-            currentPage === 'message'
-              ? 'text-white'
-              : 'text-blue-100 hover:text-white'
-          }`}
+          className="flex flex-col items-center justify-center w-full h-full gap-1 transition-opacity hover:opacity-80"
         >
-          <Heart size={28} />
-          <span className="text-xs font-medium">Likes</span>
+          <img src="/icon-message.png" alt="Message" className="w-7 h-7" />
+          <span className="text-xs font-medium text-white">Message</span>
         </button>
         <button
           onClick={() => setCurrentPage('me')}
-          className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${
-            currentPage === 'me'
-              ? 'text-white'
-              : 'text-blue-100 hover:text-white'
-          }`}
+          className="flex flex-col items-center justify-center w-full h-full gap-1 transition-opacity hover:opacity-80"
         >
-          <Zap size={28} />
-          <span className="text-xs font-medium">Profile</span>
+          <img src="/icon-me.png" alt="Me" className="w-7 h-7" />
+          <span className="text-xs font-medium text-white">Me</span>
         </button>
       </nav>
     </div>
