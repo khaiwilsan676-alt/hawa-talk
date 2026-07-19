@@ -184,17 +184,17 @@ export default function HomePage({ onLogout }) {
               </div>
 
               {/* Banner Carousel */}
-              <div className="mb-0.5bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md" style={{ marginBottom: '1px' }}>
                 <div className="text-2xl mb-1">🎁 Magic Box King</div>
                 <div className="text-sm">18/07 - 19/07 23:59</div>
               </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="px-4 mt-0.5">
+            <div className="px-4" style={{ marginTop: '1px' }}>
               
               {/* नए स्टाइलिस्ट कैटेगरी कार्ड्स का सेक्शन (Flexbox में एडजस्ट किया ताकि मोबाइल स्क्रीन पर फिट रहे) */}
-              <div className="flex flex-row justify-between items-center gap-2 mb-6 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif' }}>
+              <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '1px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
                     key={card.label}
@@ -268,16 +268,17 @@ export default function HomePage({ onLogout }) {
             </div>
 
             {/* User Cards Grid */}
-            <div className="px-4 py-2 grid grid-cols-2 gap-4">
+            <div className="px-4 grid grid-cols-2 gap-3" style={{ paddingTop: '1px', paddingBottom: '1px' }}>
               {userCards.map((user) => (
                 <div
                   key={user.id}
                   className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                  style={{ height: '220px' }}
                 >
                   <img
                     src={user.image}
                     alt={user.name}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3">
                     <div className="flex items-center gap-2">
@@ -295,7 +296,7 @@ export default function HomePage({ onLogout }) {
             </div>
 
             {/* Recharge Event Banner */}
-            <div className="px-4 pb-28 pt-6 flex justify-center">
+            <div className="px-4 pb-28 pt-4 flex justify-center">
               <div className="text-center">
                 <div className="text-4xl mb-2">🎁</div>
                 <div className="font-bold text-blue-800">Recharge Event</div>
@@ -391,4 +392,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-                          }
+          }
