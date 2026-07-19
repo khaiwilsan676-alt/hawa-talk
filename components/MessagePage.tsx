@@ -12,8 +12,9 @@ export default function MessagePage() {
         <CheckCircle size={28} className="text-green-500" />
       </div>
 
-      {/* Patli Si White Patti */}
-      <div className="px-4 pt-4 pb-24">
+      {/* Chat List */}
+      <div className="px-4 pt-4 pb-24 flex flex-col gap-3">
+        {/* Hawa Team */}
         <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-xl px-3 py-2 cursor-pointer">
           <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
             <Image 
@@ -26,6 +27,22 @@ export default function MessagePage() {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-800 text-sm">Hawa Team</h3>
+          </div>
+        </div>
+
+        {/* Hawa System */}
+        <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-xl px-3 py-2 cursor-pointer">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <Image 
+              src="/1784465161302~2.jpg" 
+              alt="Hawa System" 
+              width={40} 
+              height={40} 
+              className="object-cover"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-800 text-sm">Hawa System</h3>
           </div>
         </div>
       </div>
