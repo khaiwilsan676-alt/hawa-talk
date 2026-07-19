@@ -1,4 +1,4 @@
-'use client'
+'use client' 
 
 import { useState, useEffect, useRef } from 'react'
 
@@ -92,6 +92,7 @@ export default function HomePage({ onLogout }) {
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [mounted, setMounted] = useState(false)
   const [currentBanner, setCurrentBanner] = useState(0)
+  const [isChatOpen, setIsChatOpen] = useState(false) // Track if a chat is open
   
   // Touch swipe ke liye refs
   const bannerRef = useRef<HTMLDivElement>(null)
@@ -212,6 +213,13 @@ export default function HomePage({ onLogout }) {
     }
   }, [])
 
+  // Reset chat state when navigating away from message page
+  useEffect(() => {
+    if (currentPage !== 'message') {
+      setIsChatOpen(false)
+    }
+  }, [currentPage])
+
   // AI tag hatane ka function
   useEffect(() => {
     const removeAITags = () => {
@@ -267,8 +275,9 @@ export default function HomePage({ onLogout }) {
 
   return (
     <div 
-      className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white pb-24"
+      className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{ 
+        paddingBottom: isChatOpen ? '0px' : '96px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -296,20 +305,30 @@ export default function HomePage({ onLogout }) {
           0% { opacity: 0; }
           100% { opacity: 1; }
         }
+        @keyframes slideUp {
+          0% { transform: translateY(100%); }
+          100% { transform: translateY(0); }
+        }
+        @keyframes slideDown {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(100%); }
+        }
       `}</style>
 
-      {/* Bottom Right Corner Image */}
-      <div className="fixed bottom-24 right-4 z-40">
-        <img 
-          src="/IMG_20260719_203213.png" 
-          alt="Corner decoration"
-          className="rounded-2xl object-cover"
-          style={{ 
-            width: '70px', 
-            height: '70px',
-          }}
-        />
-      </div>
+      {/* Bottom Right Corner Image - Hide when chat is open */}
+      {!isChatOpen && (
+        <div className="fixed bottom-24 right-4 z-40">
+          <img 
+            src="/IMG_20260719_203213.png" 
+            alt="Corner decoration"
+            className="rounded-2xl object-cover"
+            style={{ 
+              width: '70px', 
+              height: '70px',
+            }}
+          />
+        </div>
+      )}
 
       <div className="w-full">
         {currentPage === 'home' && (
@@ -551,88 +570,92 @@ export default function HomePage({ onLogout }) {
           </div>
         )}
 
-        {currentPage === 'message' && <MessagePage />}
+        {currentPage === 'message' && (
+          <MessagePage onChatOpen={setIsChatOpen} />
+        )}
         {currentPage === 'me' && <MePage />}
       </div>
 
-      {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
-        <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
-          
-          <button 
-            onClick={() => setCurrentPage('home')}
-            className="flex flex-col items-center gap-1 transition-all active:scale-95"
-          >
-            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-              <path
-                d="M18 2.8C20.2 2.8 30.2 8.2 30.2 12.6V23.2C30.2 27.8 28 31 18 31C8 31 5.8 27.8 5.8 23.2V12.6C5.8 8.2 15.8 2.8 18 2.8Z"
-                fill={currentPage === 'home' ? '#3b82f6' : 'white'}
-                stroke="#1D1D1F"
-                strokeWidth="2.4"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M12.2 14.2C13.3 12.6 14.9 12.1 16.8 13.4"
-                stroke="#1D1D1F"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-              <path
-                d="M11.2 20.8C12.5 24.2 21 25.6 24.3 20.2"
-                stroke="#1D1D1F"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className={`text-[12px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-              Home
-            </span>
-          </button>
+      {/* Bottom Navigation Bar - Only show when chat is NOT open */}
+      {!isChatOpen && (
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
+          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
+            
+            <button 
+              onClick={() => setCurrentPage('home')}
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+            >
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+                <path
+                  d="M18 2.8C20.2 2.8 30.2 8.2 30.2 12.6V23.2C30.2 27.8 28 31 18 31C8 31 5.8 27.8 5.8 23.2V12.6C5.8 8.2 15.8 2.8 18 2.8Z"
+                  fill={currentPage === 'home' ? '#3b82f6' : 'white'}
+                  stroke="#1D1D1F"
+                  strokeWidth="2.4"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M12.2 14.2C13.3 12.6 14.9 12.1 16.8 13.4"
+                  stroke="#1D1D1F"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M11.2 20.8C12.5 24.2 21 25.6 24.3 20.2"
+                  stroke="#1D1D1F"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className={`text-[12px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+                Home
+              </span>
+            </button>
 
-          <button 
-            onClick={() => setCurrentPage('message')}
-            className="flex flex-col items-center gap-1 transition-all active:scale-95"
-          >
-            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-              <path
-                d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
-                fill={currentPage === 'message' ? '#3b82f6' : 'white'}
-                stroke="#1D1D1F"
-                strokeWidth="2.4"
-              />
-              <path
-                d="M12 14.5C13.5 12.5 15.5 14.5 19.5 12.5C21.5 14.5 24 14.5 24 14.5"
-                stroke="#1D1D1F"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-              Message
-            </span>
-          </button>
+            <button 
+              onClick={() => setCurrentPage('message')}
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+            >
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+                <path
+                  d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
+                  fill={currentPage === 'message' ? '#3b82f6' : 'white'}
+                  stroke="#1D1D1F"
+                  strokeWidth="2.4"
+                />
+                <path
+                  d="M12 14.5C13.5 12.5 15.5 14.5 19.5 12.5C21.5 14.5 24 14.5 24 14.5"
+                  stroke="#1D1D1F"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+                Message
+              </span>
+            </button>
 
-          <button 
-            onClick={() => setCurrentPage('me')}
-            className="flex flex-col items-center gap-1 transition-all active:scale-95"
-          >
-            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-              <path
-                d="M18 4.5C23.5 4.5 28 8.5 27.2 13.8L26.2 19.8C26 21.2 27.2 22.5 28.6 23.1C30.6 24 31 26.2 29 27.5C27.5 28.5 25 28.8 22 28.8H14C11 28.8 8.5 28.5 7 27.5C5 26.2 5.4 24 7.4 23.1C8.8 22.5 10 21.2 9.8 19.8L8.8 13.8C8 8.5 12.5 4.5 18 4.5Z"
-                fill={currentPage === 'me' ? '#3b82f6' : 'white'}
-                stroke="#1D1D1F"
-                strokeWidth="2.4"
-              />
-              <circle cx="14" cy="15" r="1.6" fill="#1D1D1F" />
-              <circle cx="22" cy="15" r="1.6" fill="#1D1D1F" />
-            </svg>
-            <span className={`text-[12px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-              Me
-            </span>
-          </button>
+            <button 
+              onClick={() => setCurrentPage('me')}
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+            >
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+                <path
+                  d="M18 4.5C23.5 4.5 28 8.5 27.2 13.8L26.2 19.8C26 21.2 27.2 22.5 28.6 23.1C30.6 24 31 26.2 29 27.5C27.5 28.5 25 28.8 22 28.8H14C11 28.8 8.5 28.5 7 27.5C5 26.2 5.4 24 7.4 23.1C8.8 22.5 10 21.2 9.8 19.8L8.8 13.8C8 8.5 12.5 4.5 18 4.5Z"
+                  fill={currentPage === 'me' ? '#3b82f6' : 'white'}
+                  stroke="#1D1D1F"
+                  strokeWidth="2.4"
+                />
+                <circle cx="14" cy="15" r="1.6" fill="#1D1D1F" />
+                <circle cx="22" cy="15" r="1.6" fill="#1D1D1F" />
+              </svg>
+              <span className={`text-[12px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+                Me
+              </span>
+            </button>
 
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
-  }
+}
