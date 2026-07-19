@@ -57,20 +57,20 @@ export default function MePage({ onLogout }) {
           </div>
         </div>
 
-        {/* Images below stats */}
-        <div className="flex gap-4">
+        {/* Images below stats - curve removed, gap reduced */}
+        <div className="flex gap-1">
           <div className="flex-1">
             <img 
               src="/1784480382765~2.jpg" 
               alt="Feature 1"
-              className="w-full h-16 object-cover rounded-xl"
+              className="w-full h-16 object-cover"
             />
           </div>
           <div className="flex-1">
             <img 
               src="/1784480368941~2.jpg" 
               alt="Feature 2"
-              className="w-full h-16 object-cover rounded-xl"
+              className="w-full h-16 object-cover"
             />
           </div>
         </div>
