@@ -56,10 +56,28 @@ export default function MePage({ onLogout }) {
             <div className="text-xs text-gray-600 mt-1">Visitors</div>
           </div>
         </div>
+
+        {/* Images below stats */}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <img 
+              src="/1784480382765~2.jpg" 
+              alt="Feature 1"
+              className="w-full h-24 object-cover rounded-xl"
+            />
+          </div>
+          <div className="flex-1">
+            <img 
+              src="/1784480368941~2.jpg" 
+              alt="Feature 2"
+              className="w-full h-24 object-cover rounded-xl"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Menu Items */}
-      <div className="px-4 space-y-2 pb-24">
+      <div className="px-4 space-y-2 pb-24 mt-4">
         {menuItems.map((item) => (
           <div
             key={item.id}
