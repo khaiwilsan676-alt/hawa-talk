@@ -184,14 +184,14 @@ export default function HomePage({ onLogout }) {
               </div>
 
               {/* Banner Carousel */}
-              <div className="mb-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md">
+              <div className="mb-0.5bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md">
                 <div className="text-2xl mb-1">🎁 Magic Box King</div>
                 <div className="text-sm">18/07 - 19/07 23:59</div>
               </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="px-4 mt-2">
+            <div className="px-4 mt-0.5">
               
               {/* नए स्टाइलिस्ट कैटेगरी कार्ड्स का सेक्शन (Flexbox में एडजस्ट किया ताकि मोबाइल स्क्रीन पर फिट रहे) */}
               <div className="flex flex-row justify-between items-center gap-2 mb-6 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif' }}>
