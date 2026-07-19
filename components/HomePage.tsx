@@ -19,28 +19,28 @@ const userCards: UserCard[] = [
     name: 'JIYA',
     country: '🇮🇳',
     score: 5,
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop'
+    image: '/1784466691241~2.jpg'
   },
   {
     id: '2',
     name: 'Ginni',
     country: '🇮🇳',
     score: 4,
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop'
+    image: '/1784466691241~2.jpg'
   },
   {
     id: '3',
     name: 'new_user',
     country: '🇮🇳',
     score: 7,
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop'
+    image: '/1784466691241~2.jpg'
   },
   {
     id: '4',
     name: 'User123',
     country: '🇮🇳',
     score: 3,
-    image: 'https://images.unsplash.com/photo-1516726817505-f5cc8ad323ad?w=400&h=500&fit=crop'
+    image: '/1784466691241~2.jpg'
   }
 ]
 
@@ -622,4 +622,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-                         }
+      }
