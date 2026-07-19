@@ -23,7 +23,7 @@ const menuItems: MenuItem[] = [
   { id: '10', label: 'My Items', icon: '👕' }
 ]
 
-export default function MePage() {
+export default function MePage({ onLogout }) {
   return (
     <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
       {/* Profile Header */}
@@ -89,6 +89,16 @@ export default function MePage() {
           <div className="text-xs font-bold text-blue-800">Recharge</div>
           <div className="text-xs font-bold text-blue-800">Event</div>
         </div>
+      </div>
+
+      {/* Logout Button */}
+      <div className="px-4 py-6">
+        <button
+          onClick={onLogout}
+          className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg"
+        >
+          Logout
+        </button>
       </div>
     </div>
   )

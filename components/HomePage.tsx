@@ -47,7 +47,7 @@ const userCards: UserCard[] = [
 type Tab = 'mine' | 'popular'
 type Page = 'home' | 'message' | 'me'
 
-export default function HomePage() {
+export default function HomePage({ onLogout }) {
   const [selectedFilter, setSelectedFilter] = useState('Popular')
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [currentPage, setCurrentPage] = useState<Page>('home')
