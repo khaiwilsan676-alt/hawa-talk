@@ -111,10 +111,112 @@ export default function HomePage({ onLogout }) {
     return () => clearInterval(interval)
   }, [])
 
+  // Zoom prevent karne ka meta tag dynamically add karo
+  useEffect(() => {
+    // Pehle se koi viewport meta tag hai toh hata do
+    const existingMeta = document.querySelector('meta[name="viewport"]')
+    if (existingMeta) {
+      existingMeta.remove()
+    }
+    
+    // Naya viewport meta tag add karo jo zoom prevent kare
+    const meta = document.createElement('meta')
+    meta.name = 'viewport'
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+    document.head.appendChild(meta)
+
+    // Cleanup on unmount
+    return () => {
+      const metaTag = document.querySelector('meta[name="viewport"]')
+      if (metaTag && metaTag.getAttribute('content') === 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no') {
+        metaTag.remove()
+      }
+    }
+  }, [])
+
+  // AI tag hatane ka function
+  useEffect(() => {
+    // Sabhi AI related tags ko remove karne ka observer
+    const removeAITags = () => {
+      // AI badge/tag remove karo
+      const aiElements = document.querySelectorAll('[class*="ai"], [class*="AI"], [id*="ai"], [id*="AI"]')
+      aiElements.forEach(el => {
+        if (el instanceof HTMLElement) {
+          el.style.display = 'none'
+          el.style.visibility = 'hidden'
+          el.style.opacity = '0'
+          el.style.pointerEvents = 'none'
+        }
+      })
+
+      // Kuch specific AI tag patterns bhi hide karo
+      const allElements = document.querySelectorAll('*')
+      allElements.forEach(el => {
+        if (el instanceof HTMLElement) {
+          const text = el.textContent?.toLowerCase() || ''
+          const className = el.className?.toLowerCase() || ''
+          const id = el.id?.toLowerCase() || ''
+          
+          if (
+            (text.includes('ai') && el.children.length === 0 && el.textContent?.trim().length <= 5) ||
+            className.includes('ai-') ||
+            id.includes('ai-') ||
+            className.includes('_ai') ||
+            id.includes('_ai')
+          ) {
+            el.style.display = 'none'
+            el.style.visibility = 'hidden'
+            el.style.opacity = '0'
+          }
+        }
+      })
+    }
+
+    // Page load hone par turant remove karo
+    removeAITags()
+
+    // MutationObserver se baad mein aane wale AI tags bhi remove karo
+    const observer = new MutationObserver(() => {
+      removeAITags()
+    })
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    })
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white pb-24">
+    <div 
+      className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white pb-24"
+      style={{ 
+        touchAction: 'manipulation',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        WebkitTouchCallout: 'none'
+      }}
+    >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
+        
+        /* Zoom prevent karo */
+        * {
+          -webkit-text-size-adjust: 100%;
+          -ms-text-size-adjust: 100%;
+          touch-action: manipulation;
+        }
+        
+        /* Double tap zoom prevent karo */
+        button, a, div, span {
+          touch-action: manipulation;
+        }
+        
         @keyframes cardIn {
           0% { opacity: 0; transform: translateY(14px) scale(0.96); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -220,7 +322,7 @@ export default function HomePage({ onLogout }) {
               </div>
               
               {/* Dots - Active dot black */}
-              <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '2px' }}>
+              <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>
                 {BANNERS.map((_, index) => (
                   <div
                     key={index}
@@ -232,8 +334,8 @@ export default function HomePage({ onLogout }) {
               </div>
             </div>
 
-            {/* Category Cards - Gap bilkul kam kar diya banner aur cards ke beech */}
-            <div className="px-4" style={{ marginTop: '-6px' }}>
+            {/* Category Cards - Gap BILKUL KAM kar diya, negative margin se upar khich liya */}
+            <div className="px-4" style={{ marginTop: '-20px', position: 'relative', zIndex: 10 }}>
               <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
@@ -428,4 +530,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-    }
+            }
