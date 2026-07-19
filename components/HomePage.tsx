@@ -44,7 +44,6 @@ const userCards: UserCard[] = [
   }
 ]
 
-// Banners with just images, no text
 const BANNERS = [
   {
     image: '/1784458869444~2.jpg'
@@ -56,6 +55,7 @@ const BANNERS = [
 
 type Tab = 'mine' | 'popular'
 type Page = 'home' | 'message' | 'me'
+type MineTab = 'following' | 'recent'
 
 const CATEGORY_CARDS = [
   {
@@ -87,32 +87,14 @@ const CATEGORY_CARDS = [
   },
 ];
 
-// Mine tab ke liye room cards data
-const MINE_ROOMS = [
-  {
-    id: '1',
-    roomName: 'Royal Lounge',
-    members: 12,
-    isLive: true,
-    image: '/1784466691241~2.jpg'
-  },
-  {
-    id: '2',
-    roomName: 'Fun Zone',
-    members: 8,
-    isLive: false,
-    image: '/1784466691241~2.jpg'
-  }
-]
-
 export default function HomePage({ onLogout }) {
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [mounted, setMounted] = useState(false)
   const [currentBanner, setCurrentBanner] = useState(0)
-  const [isChatOpen, setIsChatOpen] = useState(false) // Track if a chat is open
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [mineTab, setMineTab] = useState<MineTab>('following')
   
-  // Touch swipe ke liye refs
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
   const touchEndX = useRef<number>(0)
@@ -131,7 +113,6 @@ export default function HomePage({ onLogout }) {
     return () => clearInterval(interval)
   }, [])
 
-  // Touch swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchEndX.current = e.touches[0].clientX
@@ -170,7 +151,6 @@ export default function HomePage({ onLogout }) {
     touchEndX.current = 0
   }
 
-  // Mouse drag handlers for desktop
   const handleMouseDown = (e: React.MouseEvent) => {
     touchStartX.current = e.clientX
     touchEndX.current = e.clientX
@@ -211,7 +191,6 @@ export default function HomePage({ onLogout }) {
     }
   }
 
-  // Zoom prevent karne ka meta tag dynamically add karo
   useEffect(() => {
     const existingMeta = document.querySelector('meta[name="viewport"]')
     if (existingMeta) {
@@ -231,14 +210,12 @@ export default function HomePage({ onLogout }) {
     }
   }, [])
 
-  // Reset chat state when navigating away from message page
   useEffect(() => {
     if (currentPage !== 'message') {
       setIsChatOpen(false)
     }
   }, [currentPage])
 
-  // AI tag hatane ka function
   useEffect(() => {
     const removeAITags = () => {
       const aiElements = document.querySelectorAll('[class*="ai"], [class*="AI"], [id*="ai"], [id*="AI"]')
@@ -323,21 +300,12 @@ export default function HomePage({ onLogout }) {
           0% { opacity: 0; }
           100% { opacity: 1; }
         }
-        @keyframes slideUp {
-          0% { transform: translateY(100%); }
-          100% { transform: translateY(0); }
-        }
-        @keyframes slideDown {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(100%); }
-        }
         @keyframes fadeIn {
           0% { opacity: 0; transform: translateY(10px); }
           100% { opacity: 1; transform: translateY(0); }
         }
       `}</style>
 
-      {/* Bottom Right Corner Image - Hide when chat is open */}
       {!isChatOpen && (
         <div className="fixed bottom-24 right-4 z-40">
           <img 
@@ -355,133 +323,206 @@ export default function HomePage({ onLogout }) {
       <div className="w-full">
         {currentPage === 'home' && (
           <div className="w-full bg-white">
-            {/* Top Section */}
-            <div 
-              className="w-full pt-3 px-4" 
-              style={{ 
-                height: '34vh', 
-                background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)' 
-              }}
-            >
-              {/* Top Navigation */}
-              <div className="w-full flex justify-between items-center py-1 box-border mb-4">
-                <button
-                  type="button"
-                  onClick={() => console.log('Home clicked')}
-                  className="flex items-center justify-center cursor-pointer"
-                  aria-label="Home"
-                >
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                    <path
-                      d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"
-                      stroke="#2D2D2D"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <rect x="9" y="14.5" width="3.5" height="6" rx="1.5" fill="#2D2D2D" />
-                    <rect x="14.2" y="11.5" width="3.5" height="9" rx="1.5" fill="#2D2D2D" />
-                    <rect x="19.5" y="14" width="3.5" height="6.5" rx="1.5" fill="#2D2D2D" />
-                  </svg>
-                </button>
-
-                <div className="flex items-center gap-8">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('mine')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
-                      activeTab === 'mine'
-                        ? 'font-bold text-[#1E1E1E]'
-                        : 'font-medium text-[#6E6E6E]'
-                    }`}
-                  >
-                    Mine
-                    {activeTab === 'mine' && (
-                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('popular')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
-                      activeTab === 'popular'
-                        ? 'font-bold text-[#1E1E1E]'
-                        : 'font-medium text-[#6E6E6E]'
-                    }`}
-                  >
-                    Popular
-                    {activeTab === 'popular' && (
-                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
-                    )}
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => console.log('Search clicked')}
-                  className="flex items-center justify-center cursor-pointer"
-                  aria-label="Search"
-                >
-                  <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-                    <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Banner Carousel - Only Images, No Text */}
+            {/* Top Section - Only visible in Popular tab */}
+            {activeTab === 'popular' && (
               <div 
-                ref={bannerRef}
-                className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
+                className="w-full pt-3 px-4" 
                 style={{ 
-                  height: '90px',
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-                  transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
+                  height: '34vh', 
+                  background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)' 
                 }}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
               >
+                {/* Top Navigation */}
+                <div className="w-full flex justify-between items-center py-1 box-border mb-4">
+                  <button
+                    type="button"
+                    onClick={() => console.log('Home clicked')}
+                    className="flex items-center justify-center cursor-pointer"
+                    aria-label="Home"
+                  >
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                      <path
+                        d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"
+                        stroke="#2D2D2D"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <rect x="9" y="14.5" width="3.5" height="6" rx="1.5" fill="#2D2D2D" />
+                      <rect x="14.2" y="11.5" width="3.5" height="9" rx="1.5" fill="#2D2D2D" />
+                      <rect x="19.5" y="14" width="3.5" height="6.5" rx="1.5" fill="#2D2D2D" />
+                    </svg>
+                  </button>
+
+                  <div className="flex items-center gap-8">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('mine')}
+                      className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                        activeTab === 'mine'
+                          ? 'font-bold text-[#1E1E1E]'
+                          : 'font-medium text-[#6E6E6E]'
+                      }`}
+                    >
+                      Mine
+                      {activeTab === 'mine' && (
+                        <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('popular')}
+                      className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                        activeTab === 'popular'
+                          ? 'font-bold text-[#1E1E1E]'
+                          : 'font-medium text-[#6E6E6E]'
+                      }`}
+                    >
+                      Popular
+                      {activeTab === 'popular' && (
+                        <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
+                      )}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => console.log('Search clicked')}
+                    className="flex items-center justify-center cursor-pointer"
+                    aria-label="Search"
+                  >
+                    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+                      <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Banner Carousel */}
                 <div 
-                  key={currentBanner}
-                  className="w-full h-full"
-                  style={{
-                    animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',
+                  ref={bannerRef}
+                  className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
+                  style={{ 
+                    height: '90px',
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                    transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
                   }}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseLeave}
                 >
-                  <img 
-                    src={BANNERS[currentBanner].image} 
-                    alt="Banner"
-                    className="w-full h-full object-cover rounded-2xl"
-                    draggable="false"
-                  />
+                  <div 
+                    key={currentBanner}
+                    className="w-full h-full"
+                    style={{
+                      animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',
+                    }}
+                  >
+                    <img 
+                      src={BANNERS[currentBanner].image} 
+                      alt="Banner"
+                      className="w-full h-full object-cover rounded-2xl"
+                      draggable="false"
+                    />
+                  </div>
+                </div>
+                
+                {/* Dots */}
+                <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>
+                  {BANNERS.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${
+                        index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
-              
-              {/* Dots - Active dot black */}
-              <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>
-                {BANNERS.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
-            {/* Category Cards */}
-            <div className="px-4" style={{ marginTop: '-85px', position: 'relative', zIndex: 10 }}>
+            {/* Mine Tab Header - Simple header without blue gradient */}
+            {activeTab === 'mine' && (
+              <div className="w-full pt-3 px-4 pb-2 bg-white border-b border-gray-100">
+                <div className="w-full flex justify-between items-center py-1 box-border">
+                  <button
+                    type="button"
+                    onClick={() => console.log('Home clicked')}
+                    className="flex items-center justify-center cursor-pointer"
+                    aria-label="Home"
+                  >
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                      <path
+                        d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"
+                        stroke="#2D2D2D"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <rect x="9" y="14.5" width="3.5" height="6" rx="1.5" fill="#2D2D2D" />
+                      <rect x="14.2" y="11.5" width="3.5" height="9" rx="1.5" fill="#2D2D2D" />
+                      <rect x="19.5" y="14" width="3.5" height="6.5" rx="1.5" fill="#2D2D2D" />
+                    </svg>
+                  </button>
+
+                  <div className="flex items-center gap-8">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('mine')}
+                      className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                        activeTab === 'mine'
+                          ? 'font-bold text-[#1E1E1E]'
+                          : 'font-medium text-[#6E6E6E]'
+                      }`}
+                    >
+                      Mine
+                      {activeTab === 'mine' && (
+                        <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('popular')}
+                      className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                        activeTab === 'popular'
+                          ? 'font-bold text-[#1E1E1E]'
+                          : 'font-medium text-[#6E6E6E]'
+                      }`}
+                    >
+                      Popular
+                      {activeTab === 'popular' && (
+                        <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
+                      )}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => console.log('Search clicked')}
+                    className="flex items-center justify-center cursor-pointer"
+                    aria-label="Search"
+                  >
+                    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+                      <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Category Cards - Show in BOTH tabs */}
+            <div className="px-4" style={{ marginTop: activeTab === 'popular' ? '-85px' : '0px', position: 'relative', zIndex: 10 }}>
               <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
@@ -554,106 +595,60 @@ export default function HomePage({ onLogout }) {
               </div>
             </div>
 
-            {/* Mine Tab Content - Shown when activeTab is 'mine' */}
+            {/* Mine Tab - Following/Recent sub tabs */}
             {activeTab === 'mine' && (
-              <div className="px-4" style={{ animation: 'fadeIn 0.3s ease-out' }}>
-                {/* Create Room Card */}
-                <div 
-                  className="rounded-2xl p-4 mb-4 cursor-pointer hover:shadow-md transition-shadow"
-                  style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
-                  }}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="text-white font-bold text-lg">Create your Room</div>
-                      <div className="text-white/80 text-sm">Embark Your Hawa journey!</div>
-                    </div>
-                  </div>
+              <div className="px-4 mt-4" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                {/* Following / Recent Tabs */}
+                <div className="flex items-center gap-6 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setMineTab('following')}
+                    className={`text-sm font-semibold transition-colors relative pb-1 ${
+                      mineTab === 'following' ? 'text-black' : 'text-gray-400'
+                    }`}
+                  >
+                    Following
+                    {mineTab === 'following' && (
+                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-black rounded-full block" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMineTab('recent')}
+                    className={`text-sm font-semibold transition-colors relative pb-1 ${
+                      mineTab === 'recent' ? 'text-black' : 'text-gray-400'
+                    }`}
+                  >
+                    Recent
+                    {mineTab === 'recent' && (
+                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-black rounded-full block" />
+                    )}
+                  </button>
                 </div>
 
-                {/* Your Rooms Section */}
-                <div className="mb-4">
-                  <h3 className="font-bold text-gray-800 text-lg mb-3">Your Rooms</h3>
-                  
-                  {MINE_ROOMS.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {MINE_ROOMS.map((room) => (
-                        <div
-                          key={room.id}
-                          className="relative bg-white rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow border border-gray-100"
-                          style={{ height: '200px' }}
-                        >
-                          <img
-                            src={room.image}
-                            alt={room.roomName}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-white font-semibold text-sm">{room.roomName}</span>
-                              {room.isLive && (
-                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-                                  LIVE
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 mt-1">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="8" r="4" stroke="white" strokeWidth="1.5"/>
-                                <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" stroke="white" strokeWidth="1.5"/>
-                              </svg>
-                              <span className="text-white/90 text-xs">{room.members} members</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="text-4xl mb-3">🎉</div>
-                      <p className="text-gray-500 font-medium">No rooms yet!</p>
-                      <p className="text-gray-400 text-sm mt-1">Create your first room to get started</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Recent Activity Section */}
-                <div className="mb-6">
-                  <h3 className="font-bold text-gray-800 text-lg mb-3">Recent Activity</h3>
-                  <div className="space-y-2">
-                    {[1, 2, 3].map((item) => (
-                      <div 
-                        key={item}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                          {String.fromCharCode(64 + item)}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-800">Joined a new room</p>
-                          <p className="text-xs text-gray-500">2 hours ago</p>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <path d="M9 18l6-6-6-6" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                      </div>
-                    ))}
+                {/* Following Content */}
+                {mineTab === 'following' && (
+                  <div className="text-center py-16">
+                    <div className="text-5xl mb-4">👥</div>
+                    <p className="text-gray-500 font-medium">No following yet</p>
+                    <p className="text-gray-400 text-sm mt-1">Follow people to see them here</p>
                   </div>
-                </div>
+                )}
+
+                {/* Recent Content */}
+                {mineTab === 'recent' && (
+                  <div className="text-center py-16">
+                    <div className="text-5xl mb-4">🕐</div>
+                    <p className="text-gray-500 font-medium">No recent activity</p>
+                    <p className="text-gray-400 text-sm mt-1">Your recent activity will appear here</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Popular Tab Content - Shown when activeTab is 'popular' */}
+            {/* Popular Tab Content */}
             {activeTab === 'popular' && (
               <>
-                {/* User Cards Grid */}
                 <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
                   {userCards.map((user) => (
                     <div
@@ -681,7 +676,6 @@ export default function HomePage({ onLogout }) {
                   ))}
                 </div>
 
-                {/* Recharge Event */}
                 <div className="px-4 pb-24 pt-3 flex justify-center">
                   <div className="text-center">
                     <div className="text-3xl mb-1"></div>
@@ -699,7 +693,6 @@ export default function HomePage({ onLogout }) {
         {currentPage === 'me' && <MePage />}
       </div>
 
-      {/* Bottom Navigation Bar - Only show when chat is NOT open */}
       {!isChatOpen && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
@@ -781,4 +774,4 @@ export default function HomePage({ onLogout }) {
       )}
     </div>
   )
-}
+      }
