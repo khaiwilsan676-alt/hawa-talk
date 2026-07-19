@@ -120,7 +120,6 @@ export default function HomePage({ onLogout }) {
 
   // Touch swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Prevent default to stop page scrolling during swipe
     touchStartX.current = e.touches[0].clientX
     touchEndX.current = e.touches[0].clientX
     setIsSwiping(true)
@@ -133,7 +132,6 @@ export default function HomePage({ onLogout }) {
     const diff = touchEndX.current - touchStartX.current
     setSwipeOffset(diff)
     
-    // Prevent page scroll during horizontal swipe
     if (Math.abs(diff) > 10) {
       e.preventDefault()
     }
@@ -143,19 +141,16 @@ export default function HomePage({ onLogout }) {
     if (!isSwiping) return
     
     const diff = touchEndX.current - touchStartX.current
-    const threshold = 50 // Minimum swipe distance to trigger change
+    const threshold = 50
     
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
-        // Swipe right - go to previous banner
         setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
       } else {
-        // Swipe left - go to next banner
         setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
       }
     }
     
-    // Reset swipe state
     setIsSwiping(false)
     setSwipeOffset(0)
     touchStartX.current = 0
@@ -167,8 +162,6 @@ export default function HomePage({ onLogout }) {
     touchStartX.current = e.clientX
     touchEndX.current = e.clientX
     setIsSwiping(true)
-    
-    // Prevent text selection during drag
     e.preventDefault()
   }
 
@@ -207,19 +200,16 @@ export default function HomePage({ onLogout }) {
 
   // Zoom prevent karne ka meta tag dynamically add karo
   useEffect(() => {
-    // Pehle se koi viewport meta tag hai toh hata do
     const existingMeta = document.querySelector('meta[name="viewport"]')
     if (existingMeta) {
       existingMeta.remove()
     }
     
-    // Naya viewport meta tag add karo jo zoom prevent kare
     const meta = document.createElement('meta')
     meta.name = 'viewport'
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
     document.head.appendChild(meta)
 
-    // Cleanup on unmount
     return () => {
       const metaTag = document.querySelector('meta[name="viewport"]')
       if (metaTag && metaTag.getAttribute('content') === 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no') {
@@ -230,9 +220,7 @@ export default function HomePage({ onLogout }) {
 
   // AI tag hatane ka function
   useEffect(() => {
-    // Sabhi AI related tags ko remove karne ka observer
     const removeAITags = () => {
-      // AI badge/tag remove karo
       const aiElements = document.querySelectorAll('[class*="ai"], [class*="AI"], [id*="ai"], [id*="AI"]')
       aiElements.forEach(el => {
         if (el instanceof HTMLElement) {
@@ -243,7 +231,6 @@ export default function HomePage({ onLogout }) {
         }
       })
 
-      // Kuch specific AI tag patterns bhi hide karo
       const allElements = document.querySelectorAll('*')
       allElements.forEach(el => {
         if (el instanceof HTMLElement) {
@@ -266,10 +253,8 @@ export default function HomePage({ onLogout }) {
       })
     }
 
-    // Page load hone par turant remove karo
     removeAITags()
 
-    // MutationObserver se baad mein aane wale AI tags bhi remove karo
     const observer = new MutationObserver(() => {
       removeAITags()
     })
@@ -299,14 +284,12 @@ export default function HomePage({ onLogout }) {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
         
-        /* Zoom prevent karo */
         * {
           -webkit-text-size-adjust: 100%;
           -ms-text-size-adjust: 100%;
           touch-action: manipulation;
         }
         
-        /* Double tap zoom prevent karo */
         button, a, div, span {
           touch-action: manipulation;
         }
@@ -324,7 +307,7 @@ export default function HomePage({ onLogout }) {
       <div className="w-full">
         {currentPage === 'home' && (
           <div className="w-full bg-white">
-            {/* Top Section - Height badha di banner ke liye */}
+            {/* Top Section */}
             <div 
               className="w-full pt-3 px-4" 
               style={{ 
@@ -399,17 +382,17 @@ export default function HomePage({ onLogout }) {
                 </button>
               </div>
 
-              {/* Banner Carousel - FIXED SIZE, kabhi chota bada nahi hoga */}
+              {/* Banner Carousel - Height choti, NO arrows */}
               <div 
                 ref={bannerRef}
                 className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl text-white font-bold text-center shadow-md relative overflow-hidden cursor-grab active:cursor-grabbing select-none`}
                 style={{ 
-                  height: '120px', // FIXED HEIGHT - kabhi change nahi hogi
+                  height: '90px', // Height choti kar di (120px se 90px)
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '0 16px', // Fixed padding
+                  padding: '0 16px',
                   transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                   transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
                 }}
@@ -421,7 +404,6 @@ export default function HomePage({ onLogout }) {
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseLeave}
               >
-                {/* Content wrapper - fixed size mein center */}
                 <div 
                   key={currentBanner}
                   className="w-full flex flex-col items-center justify-center"
@@ -431,9 +413,8 @@ export default function HomePage({ onLogout }) {
                     overflow: 'hidden',
                   }}
                 >
-                  {/* Title - fixed font size with truncation */}
                   <div 
-                    className="text-2xl mb-1 truncate"
+                    className="text-xl mb-1 truncate"
                     style={{
                       maxWidth: '100%',
                       whiteSpace: 'nowrap',
@@ -445,9 +426,8 @@ export default function HomePage({ onLogout }) {
                     {BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}
                   </div>
                   
-                  {/* Date - fixed font size */}
                   <div 
-                    className="text-sm"
+                    className="text-xs"
                     style={{
                       lineHeight: '1.2',
                     }}
@@ -455,18 +435,7 @@ export default function HomePage({ onLogout }) {
                     {BANNERS[currentBanner].date}
                   </div>
                 </div>
-                
-                {/* Swipe indicator arrows */}
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                    <path d="M15 18l-6-6 6-6" stroke="white" strokeWidth="2" fill="none"/>
-                  </svg>
-                </div>
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                    <path d="M9 18l6-6-6-6" stroke="white" strokeWidth="2" fill="none"/>
-                  </svg>
-                </div>
+                {/* ❌ Arrows REMOVED - Left arrow hata diya, Right arrow hata diya */}
               </div>
               
               {/* Dots - Active dot black */}
@@ -482,7 +451,7 @@ export default function HomePage({ onLogout }) {
               </div>
             </div>
 
-            {/* Category Cards - Gap BILKUL KAM kar diya, negative margin se upar khich liya */}
+            {/* Category Cards */}
             <div className="px-4" style={{ marginTop: '-80px', position: 'relative', zIndex: 10 }}>
               <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
@@ -678,4 +647,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-      }
+                        }
