@@ -184,17 +184,17 @@ export default function HomePage({ onLogout }) {
               </div>
 
               {/* Banner Carousel */}
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md" style={{ marginBottom: '1px' }}>
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md" style={{ marginBottom: '2px' }}>
                 <div className="text-2xl mb-1">🎁 Magic Box King</div>
                 <div className="text-sm">18/07 - 19/07 23:59</div>
               </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="px-4" style={{ marginTop: '1px' }}>
+            <div className="px-4" style={{ marginTop: '2px' }}>
               
               {/* नए स्टाइलिस्ट कैटेगरी कार्ड्स का सेक्शन (Flexbox में एडजस्ट किया ताकि मोबाइल स्क्रीन पर फिट रहे) */}
-              <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '1px' }}>
+              <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '8px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
                     key={card.label}
@@ -268,7 +268,7 @@ export default function HomePage({ onLogout }) {
             </div>
 
             {/* User Cards Grid */}
-            <div className="px-4 grid grid-cols-2 gap-3" style={{ paddingTop: '1px', paddingBottom: '1px' }}>
+            <div className="px-4 grid grid-cols-2 gap-3" style={{ paddingTop: '2px', paddingBottom: '4px' }}>
               {userCards.map((user) => (
                 <div
                   key={user.id}
@@ -392,4 +392,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-          }
+}
