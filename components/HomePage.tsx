@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
@@ -47,13 +47,61 @@ const userCards: UserCard[] = [
 type Tab = 'mine' | 'popular'
 type Page = 'home' | 'message' | 'me'
 
+// आपके दूसरे कंपोनेंट से ली गई कार्ड्स की स्टाइल थीम्स
+const CATEGORY_CARDS = [
+  {
+    label: 'Honour',
+    icon: '',
+    outerFrom: '#FFED99',
+    outerTo: '#FFE27A',
+    textColor: '#7A4E1B',
+    innerBg: '#FFF6CC',
+    innerBorder: 'rgba(122,78,27,0.08)',
+  },
+  {
+    label: 'Charm',
+    icon: '',
+    outerFrom: '#A2D8FF',
+    outerTo: '#8ECBFF',
+    textColor: '#184E6E',
+    innerBg: '#C8E8FF',
+    innerBorder: 'rgba(24,78,110,0.08)',
+  },
+  {
+    label: 'Room',
+    icon: '',
+    outerFrom: '#D1B1FF',
+    outerTo: '#C39BFF',
+    textColor: '#4E2A7A',
+    innerBg: '#DFC8FF',
+    innerBorder: 'rgba(78,42,122,0.08)',
+  },
+];
+
 export default function HomePage({ onLogout }) {
   const [selectedFilter, setSelectedFilter] = useState('Popular')
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [currentPage, setCurrentPage] = useState<Page>('home')
+  
+  // कार्ड एनिमेशन के लिए माउंटेड स्टेट
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const id = setTimeout(() => setMounted(true), 30)
+    return () => clearTimeout(id)
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white pb-28">
+      {/* फॉन्ट और एनिमेशन स्टाइल्स जो आपने दूसरे प्रोग्राम में यूज की थीं */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
+        @keyframes cardIn {
+          0% { opacity: 0; transform: translateY(14px) scale(0.96); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+
       {/* Page Content */}
       <div className="w-full">
         {currentPage === 'home' && (
@@ -145,20 +193,78 @@ export default function HomePage({ onLogout }) {
 
             {/* Main Content Area */}
             <div className="px-4 mt-6">
-              {/* Category Cards */}
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                <div className="bg-blue-200 rounded-2xl p-4 text-center">
-                  <div className="text-xl mb-2">👥</div>
-                  <div className="text-sm font-semibold">Ranking</div>
-                </div>
-                <div className="bg-pink-300 rounded-2xl p-4 text-center">
-                  <div className="text-xl mb-2">👑</div>
-                  <div className="text-sm font-semibold">CP</div>
-                </div>
-                <div className="bg-cyan-300 rounded-2xl p-4 text-center">
-                  <div className="text-xl mb-2">👨‍👩‍👧</div>
-                  <div className="text-sm font-semibold">Family</div>
-                </div>
+              
+              {/* नए स्टाइलिस्ट कैटेगरी कार्ड्स का सेक्शन (Flexbox में एडजस्ट किया ताकि मोबाइल स्क्रीन पर फिट रहे) */}
+              <div className="flex flex-row justify-between items-center gap-2 mb-6 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif' }}>
+                {CATEGORY_CARDS.map((card, i) => (
+                  <div
+                    key={card.label}
+                    className="group flex-1"
+                    style={{
+                      height: '120px',
+                      borderRadius: '18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '10px 8px 8px 8px',
+                      border: '1.5px solid rgba(0,0,0,0.06)',
+                      boxShadow: '0 6px 15px rgba(0,0,0,0.08)',
+                      background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
+                      opacity: mounted ? 1 : 0,
+                      transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
+                      transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
+                      animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
+                      animationDelay: `${i * 100}ms`,
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLDivElement;
+                      el.style.transform = 'translateY(-4px) scale(1.02)';
+                      el.style.boxShadow = '0 12px 24px rgba(0,0,0,0.14), 0 3px 8px rgba(0,0,0,0.06)';
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLDivElement;
+                      el.style.transform = 'translateY(0) scale(1)';
+                      el.style.boxShadow = '0 6px 15px rgba(0,0,0,0.08)';
+                    }}
+                  >
+                    <div
+                      style={{
+                        textAlign: 'center',
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        color: card.textColor,
+                        marginBottom: '6px',
+                        textShadow: '0 1px 0 rgba(255,255,255,0.7)',
+                      }}
+                    >
+                      {card.label}
+                    </div>
+                    
+                    <div
+                      style={{
+                        flex: 1,
+                        borderRadius: '12px',
+                        backgroundColor: card.innerBg,
+                        border: `1.5px solid ${card.innerBorder}`,
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 58%)',
+                        }}
+                      />
+                      {/* आपका ऑरिजनल आइकॉन */}
+                      <span className="text-2xl relative z-10">{card.icon}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Filter Buttons */}
@@ -220,7 +326,7 @@ export default function HomePage({ onLogout }) {
         {currentPage === 'me' && <MePage />}
       </div>
 
-      {/* Modified Bottom Navigation Bar - Fixed at absolute bottom & Left/Right */}
+      {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
         <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-4 w-full">
           
@@ -262,7 +368,7 @@ export default function HomePage({ onLogout }) {
           >
             <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
               <path
-                d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
+                d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
                 fill={currentPage === 'message' ? '#3b82f6' : 'white'}
                 stroke="#1D1D1F"
                 strokeWidth="2.4"
