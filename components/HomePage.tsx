@@ -220,9 +220,9 @@ export default function HomePage() {
         {currentPage === 'me' && <MePage />}
       </div>
 
-      {/* New Fixed Custom Bottom Navigation Bar Container */}
-      <div className="fixed bottom-4 left-0 right-0 flex justify-center z-30 px-4">
-        <div className="flex justify-around items-center bg-white rounded-[24px] border border-zinc-100 shadow-lg px-3 py-4 w-[380px] max-w-full">
+      {/* Modified Bottom Navigation Bar - Fixed at absolute bottom & Left/Right */}
+      <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
+        <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-4 w-full">
           
           {/* HOME BUTTON */}
           <button 
@@ -232,7 +232,7 @@ export default function HomePage() {
             <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
               <path
                 d="M18 2.8C20.2 2.8 30.2 8.2 30.2 12.6V23.2C30.2 27.8 28 31 18 31C8 31 5.8 27.8 5.8 23.2V12.6C5.8 8.2 15.8 2.8 18 2.8Z"
-                fill={currentPage === 'home' ? '#FFEB3B' : 'white'}
+                fill={currentPage === 'home' ? '#3b82f6' : 'white'}
                 stroke="#1D1D1F"
                 strokeWidth="2.4"
                 strokeLinejoin="round"
@@ -263,7 +263,7 @@ export default function HomePage() {
             <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
               <path
                 d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
-                fill={currentPage === 'message' ? '#FFEB3B' : 'white'}
+                fill={currentPage === 'message' ? '#3b82f6' : 'white'}
                 stroke="#1D1D1F"
                 strokeWidth="2.4"
               />
@@ -287,7 +287,7 @@ export default function HomePage() {
             <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
               <path
                 d="M18 4.5C23.5 4.5 28 8.5 27.2 13.8L26.2 19.8C26 21.2 27.2 22.5 28.6 23.1C30.6 24 31 26.2 29 27.5C27.5 28.5 25 28.8 22 28.8H14C11 28.8 8.5 28.5 7 27.5C5 26.2 5.4 24 7.4 23.1C8.8 22.5 10 21.2 9.8 19.8L8.8 13.8C8 8.5 12.5 4.5 18 4.5Z"
-                fill={currentPage === 'me' ? '#FFEB3B' : 'white'}
+                fill={currentPage === 'me' ? '#3b82f6' : 'white'}
                 stroke="#1D1D1F"
                 strokeWidth="2.4"
               />
