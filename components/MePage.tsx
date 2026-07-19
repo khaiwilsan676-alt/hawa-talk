@@ -13,7 +13,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { id: '1', label: 'Wallet', icon: '👛' },
   { id: '2', label: 'Invite Friends', icon: '💸' },
-  { id: '3', label: 'Earn Coins', icon: '🎁', badge: 'bg-yellow-300' },
+  { id: '3', label: 'Earn Coins', icon: '🎁', badge: 'bg-blue-300' },
   { id: '4', label: 'Medal', icon: '⭐' },
   { id: '5', label: 'SVIP', icon: '🏆', action: 'Join now' },
   { id: '6', label: 'Level', icon: '👑', badge: 'Lv.0' },
@@ -25,9 +25,9 @@ const menuItems: MenuItem[] = [
 
 export default function MePage() {
   return (
-    <div className="w-full bg-yellow-100 min-h-screen">
+    <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
       {/* Profile Header */}
-      <div className="bg-yellow-100 px-4 pt-6 pb-6">
+      <div className="bg-gradient-to-b from-blue-400 to-blue-100 px-4 pt-6 pb-6">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl">
@@ -86,8 +86,8 @@ export default function MePage() {
       <div className="fixed bottom-24 right-4">
         <div className="text-center text-sm">
           <div className="text-2xl mb-1">🎁</div>
-          <div className="text-xs font-bold text-yellow-800">Recharge</div>
-          <div className="text-xs font-bold text-yellow-800">Event</div>
+          <div className="text-xs font-bold text-blue-800">Recharge</div>
+          <div className="text-xs font-bold text-blue-800">Event</div>
         </div>
       </div>
     </div>
