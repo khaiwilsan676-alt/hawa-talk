@@ -63,14 +63,14 @@ export default function MePage({ onLogout }) {
             <img 
               src="/1784480382765~2.jpg" 
               alt="Feature 1"
-              className="w-full h-24 object-cover rounded-xl"
+              className="w-full h-16 object-cover rounded-xl"
             />
           </div>
           <div className="flex-1">
             <img 
               src="/1784480368941~2.jpg" 
               alt="Feature 2"
-              className="w-full h-24 object-cover rounded-xl"
+              className="w-full h-16 object-cover rounded-xl"
             />
           </div>
         </div>
