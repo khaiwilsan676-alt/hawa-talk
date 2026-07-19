@@ -335,7 +335,7 @@ export default function HomePage({ onLogout }) {
             </div>
 
             {/* Category Cards - Gap BILKUL KAM kar diya, negative margin se upar khich liya */}
-            <div className="px-4" style={{ marginTop: '-20px', position: 'relative', zIndex: 10 }}>
+            <div className="px-4" style={{ marginTop: '-50px', position: 'relative', zIndex: 10 }}>
               <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
