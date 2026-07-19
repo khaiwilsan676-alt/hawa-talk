@@ -44,19 +44,13 @@ const userCards: UserCard[] = [
   }
 ]
 
-// Ek red ek blue banner
+// Banners with just images, no text
 const BANNERS = [
   {
-    emoji: '',
-    title: 'Welcome To Hawa',
-    date: '28 July 2026',
-    gradient: 'from-red-500 to-red-600'
+    image: '/1784458869444~2.jpg'
   },
   {
-    emoji: '',
-    title: 'VIP Room Event',
-    date: '18 July 2026',
-    gradient: 'from-blue-500 to-blue-600'
+    image: '/1784458869444~2.jpg'
   }
 ]
 
@@ -299,8 +293,8 @@ export default function HomePage({ onLogout }) {
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes fadeInBanner {
-          0% { opacity: 0; transform: translateX(20px); }
-          100% { opacity: 1; transform: translateX(0); }
+          0% { opacity: 0; }
+          100% { opacity: 1; }
         }
       `}</style>
 
@@ -382,17 +376,16 @@ export default function HomePage({ onLogout }) {
                 </button>
               </div>
 
-              {/* Banner Carousel - Height choti, NO arrows */}
+              {/* Banner Carousel - Only Images, No Text */}
               <div 
                 ref={bannerRef}
-                className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl text-white font-bold text-center shadow-md relative overflow-hidden cursor-grab active:cursor-grabbing select-none`}
+                className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
                 style={{ 
-                  height: '90px', // Height choti kar di (120px se 90px)
+                  height: '90px',
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '0 16px',
                   transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                   transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
                 }}
@@ -406,36 +399,18 @@ export default function HomePage({ onLogout }) {
               >
                 <div 
                   key={currentBanner}
-                  className="w-full flex flex-col items-center justify-center"
+                  className="w-full h-full"
                   style={{
                     animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',
-                    maxWidth: '100%',
-                    overflow: 'hidden',
                   }}
                 >
-                  <div 
-                    className="text-xl mb-1 truncate"
-                    style={{
-                      maxWidth: '100%',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      lineHeight: '1.2',
-                    }}
-                  >
-                    {BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}
-                  </div>
-                  
-                  <div 
-                    className="text-xs"
-                    style={{
-                      lineHeight: '1.2',
-                    }}
-                  >
-                    {BANNERS[currentBanner].date}
-                  </div>
+                  <img 
+                    src={BANNERS[currentBanner].image} 
+                    alt="Banner"
+                    className="w-full h-full object-cover rounded-2xl"
+                    draggable="false"
+                  />
                 </div>
-                {/* ❌ Arrows REMOVED - Left arrow hata diya, Right arrow hata diya */}
               </div>
               
               {/* Dots - Active dot black */}
@@ -647,4 +622,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-                        }
+                         }
