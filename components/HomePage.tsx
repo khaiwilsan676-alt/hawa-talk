@@ -44,7 +44,7 @@ const userCards: UserCard[] = [
   }
 ]
 
-// Banners ab red color mein
+// Ek red ek blue banner
 const BANNERS = [
   {
     emoji: '🎁',
@@ -56,7 +56,7 @@ const BANNERS = [
     emoji: '👑',
     title: 'VIP Room Event',
     date: '20/07 - 22/07 23:59',
-    gradient: 'from-red-600 to-red-700'
+    gradient: 'from-blue-500 to-blue-600'
   }
 ]
 
@@ -128,15 +128,15 @@ export default function HomePage({ onLogout }) {
       <div className="w-full">
         {currentPage === 'home' && (
           <div className="w-full bg-white">
-            {/* Top Section - Height thoda kam kiya */}
+            {/* Top Section */}
             <div 
               className="w-full pt-3 px-4" 
               style={{ 
-                height: '26vh', 
+                height: '28vh', 
                 background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)' 
               }}
             >
-              {/* Top Navigation - Padding kam */}
+              {/* Top Navigation */}
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
                 <button
                   type="button"
@@ -203,9 +203,9 @@ export default function HomePage({ onLogout }) {
                 </button>
               </div>
 
-              {/* Banner Carousel - Ab red color */}
+              {/* Banner Carousel - Height increase */}
               <div 
-                className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl p-3 text-white font-bold text-center shadow-md relative overflow-hidden`}
+                className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl p-4 text-white font-bold text-center shadow-md relative overflow-hidden`}
                 style={{ marginBottom: '0px' }}
               >
                 <div 
@@ -214,27 +214,27 @@ export default function HomePage({ onLogout }) {
                     animation: 'fadeInBanner 400ms ease-out'
                   }}
                 >
-                  <div className="text-xl mb-0.5">{BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}</div>
-                  <div className="text-xs">{BANNERS[currentBanner].date}</div>
+                  <div className="text-2xl mb-1">{BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}</div>
+                  <div className="text-sm">{BANNERS[currentBanner].date}</div>
                 </div>
               </div>
               
-              {/* Dots - Banner ke theek neeche */}
-              <div className="flex justify-center gap-1.5" style={{ marginTop: '4px', marginBottom: '0px' }}>
+              {/* Dots - Active dot black */}
+              <div className="flex justify-center gap-1.5" style={{ marginTop: '5px', marginBottom: '0px' }}>
                 {BANNERS.map((_, index) => (
                   <div
                     key={index}
                     className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      index === currentBanner ? 'bg-red-500 w-3' : 'bg-gray-300'
+                      index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
                     }`}
                   />
                 ))}
               </div>
             </div>
 
-            {/* Category Cards - Gap zero */}
+            {/* Category Cards - Gap kam kiya cards ke beech */}
             <div className="px-4" style={{ marginTop: '0px' }}>
-              <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
+              <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
                     key={card.label}
@@ -306,7 +306,7 @@ export default function HomePage({ onLogout }) {
               </div>
             </div>
 
-            {/* User Cards Grid - Height kam kiya */}
+            {/* User Cards Grid */}
             <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
               {userCards.map((user) => (
                 <div
@@ -334,7 +334,7 @@ export default function HomePage({ onLogout }) {
               ))}
             </div>
 
-            {/* Recharge Event - Compact */}
+            {/* Recharge Event */}
             <div className="px-4 pb-24 pt-3 flex justify-center">
               <div className="text-center">
                 <div className="text-3xl mb-1">🎁</div>
@@ -348,7 +348,7 @@ export default function HomePage({ onLogout }) {
         {currentPage === 'me' && <MePage />}
       </div>
 
-      {/* Bottom Navigation Bar - Thoda compact */}
+      {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
         <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
           
