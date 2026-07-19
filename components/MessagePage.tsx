@@ -11,7 +11,9 @@ export default function MessagePage() {
   useEffect(() => {
     if (typeof document === 'undefined') return
 
-    if (activeChat) {
+    // When no chat is selected (chat list view) we want to hide the bottom bars.
+    // Previously this logic was inverted which prevented the class from being added.
+    if (!activeChat) {
       document.body.classList.add('hide-bottom-bars')
     } else {
       document.body.classList.remove('hide-bottom-bars')
