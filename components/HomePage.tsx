@@ -79,7 +79,6 @@ const CATEGORY_CARDS = [
 ];
 
 export default function HomePage({ onLogout }) {
-  const [selectedFilter, setSelectedFilter] = useState('Popular')
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [currentPage, setCurrentPage] = useState<Page>('home')
   
@@ -108,7 +107,7 @@ export default function HomePage({ onLogout }) {
           <div className="w-full bg-white">
             {/* Top 30vh Section */}
             <div 
-              className="w-full pt-4 px-4 pb-6" 
+              className="w-full pt-4 px-4" 
               style={{ 
                 height: '30vh', 
                 background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)' 
@@ -142,7 +141,7 @@ export default function HomePage({ onLogout }) {
                   <button
                     type="button"
                     onClick={() => setActiveTab('mine')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative ${
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
                       activeTab === 'mine'
                         ? 'font-bold text-[#1E1E1E]'
                         : 'font-medium text-[#6E6E6E]'
@@ -150,14 +149,14 @@ export default function HomePage({ onLogout }) {
                   >
                     Mine
                     {activeTab === 'mine' && (
-                      <span className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-1.5 h-1.5 bg-[#1E1E1E] rounded-full block" />
+                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
                     )}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveTab('popular')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative ${
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
                       activeTab === 'popular'
                         ? 'font-bold text-[#1E1E1E]'
                         : 'font-medium text-[#6E6E6E]'
@@ -165,7 +164,7 @@ export default function HomePage({ onLogout }) {
                   >
                     Popular
                     {activeTab === 'popular' && (
-                      <span className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-1.5 h-1.5 bg-[#1E1E1E] rounded-full block" />
+                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
                     )}
                   </button>
                 </div>
@@ -185,14 +184,14 @@ export default function HomePage({ onLogout }) {
               </div>
 
               {/* Banner Carousel */}
-              <div className="mb-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md">
+              <div className="mb-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md">
                 <div className="text-2xl mb-1">🎁 Magic Box King</div>
                 <div className="text-sm">18/07 - 19/07 23:59</div>
               </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="px-4 mt-6">
+            <div className="px-4 mt-2">
               
               {/* नए स्टाइलिस्ट कैटेगरी कार्ड्स का सेक्शन (Flexbox में एडजस्ट किया ताकि मोबाइल स्क्रीन पर फिट रहे) */}
               <div className="flex flex-row justify-between items-center gap-2 mb-6 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif' }}>
@@ -201,7 +200,7 @@ export default function HomePage({ onLogout }) {
                     key={card.label}
                     className="group flex-1"
                     style={{
-                      height: '120px',
+                      height: '105px',
                       borderRadius: '18px',
                       display: 'flex',
                       flexDirection: 'column',
@@ -264,23 +263,6 @@ export default function HomePage({ onLogout }) {
                       <span className="text-2xl relative z-10">{card.icon}</span>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Filter Buttons */}
-              <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-                {['Popular', 'Game', 'Video/Music'].map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setSelectedFilter(filter)}
-                    className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                      selectedFilter === filter
-                        ? 'bg-cyan-400 text-white'
-                        : 'bg-gray-200 text-gray-700'
-                    }`}
-                  >
-                    {filter === 'Popular' ? '🔥 Popular' : filter}
-                  </button>
                 ))}
               </div>
             </div>
@@ -409,5 +391,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-}
-
+                          }
