@@ -47,15 +47,15 @@ const userCards: UserCard[] = [
 // Ek red ek blue banner
 const BANNERS = [
   {
-    emoji: '🎁',
-    title: 'Magic Box King',
-    date: '18/07 - 19/07 23:59',
+    emoji: '',
+    title: 'Welcome To Hawa',
+    date: '',
     gradient: 'from-red-500 to-red-600'
   },
   {
-    emoji: '👑',
+    emoji: '',
     title: 'VIP Room Event',
-    date: '20/07 - 22/07 23:59',
+    date: '',
     gradient: 'from-blue-500 to-blue-600'
   }
 ]
@@ -335,7 +335,7 @@ export default function HomePage({ onLogout }) {
             </div>
 
             {/* Category Cards - Gap BILKUL KAM kar diya, negative margin se upar khich liya */}
-            <div className="px-4" style={{ marginTop: '-70px', position: 'relative', zIndex: 10 }}>
+            <div className="px-4" style={{ marginTop: '-80px', position: 'relative', zIndex: 10 }}>
               <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
                 {CATEGORY_CARDS.map((card, i) => (
                   <div
