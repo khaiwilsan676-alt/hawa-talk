@@ -1,72 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Phone } from 'lucide-react'
-import ChatApp from './ChatApp' // Import your main chat app component
 
-export default function LoginPage() {
+export default function LoginPage({ onLoginSuccess }) {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | null>(null)
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-
-  // Check authentication status on component mount
-  useEffect(() => {
-    checkAuthStatus()
-  }, [])
-
-  const checkAuthStatus = () => {
-    // Check if user is already logged in
-    const userEmail = localStorage.getItem('userEmail')
-    const userPhone = localStorage.getItem('userPhone')
-    const isAuthenticated = localStorage.getItem('isAuthenticated')
-    
-    if (userEmail || userPhone || isAuthenticated) {
-      setIsLoggedIn(true)
-    }
-    setIsCheckingAuth(false)
-  }
-
-  const handleLoginSuccess = (userIdentifier) => {
-    // Set authentication flag
-    localStorage.setItem('isAuthenticated', 'true')
-    localStorage.setItem('loginTimestamp', new Date().toISOString())
-    
-    if (loginMethod === 'email') {
-      localStorage.setItem('userEmail', userIdentifier)
-    } else {
-      localStorage.setItem('userPhone', userIdentifier)
-    }
-    
-    setIsLoggedIn(true)
-  }
-
-  const handleLogout = () => {
-    // Clear all authentication data
-    localStorage.removeItem('isAuthenticated')
-    localStorage.removeItem('userEmail')
-    localStorage.removeItem('userPhone')
-    localStorage.removeItem('loginTimestamp')
-    
-    setIsLoggedIn(false)
-    setLoginMethod(null)
-    setEmail('')
-    setPhone('')
-  }
 
   const handleGmailLogin = async () => {
     setLoading(true)
     try {
       // Simulate Gmail login
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
       if (email.trim()) {
-        handleLoginSuccess(email)
+        localStorage.setItem('userEmail', email)
+        onLoginSuccess(email)
       }
     } catch (error) {
-      console.error('Google login error:', error)
+      console.error('Gmail login error:', error)
     } finally {
       setLoading(false)
     }
@@ -76,10 +28,9 @@ export default function LoginPage() {
     setLoading(true)
     try {
       // Simulate Phone login
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
       if (phone.trim()) {
-        handleLoginSuccess(phone)
+        localStorage.setItem('userPhone', phone)
+        onLoginSuccess(phone)
       }
     } catch (error) {
       console.error('Phone login error:', error)
@@ -88,24 +39,6 @@ export default function LoginPage() {
     }
   }
 
-  // Show loading state while checking authentication
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show main app if logged in
-  if (isLoggedIn) {
-    return <ChatApp onLogout={handleLogout} />
-  }
-
-  // Show login page if not logged in
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -125,7 +58,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Login with</h2>
 
-            {/* Google Login Button */}
+            {/* Gmail Login Button */}
             <button
               onClick={() => setLoginMethod('email')}
               className="w-full bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center gap-3 transition-all hover:border-blue-500 hover:shadow-lg"
@@ -156,7 +89,7 @@ export default function LoginPage() {
             </button>
           </div>
         ) : loginMethod === 'email' ? (
-          /* Google Login Form */
+          /* Gmail Login Form */
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <button
               onClick={() => setLoginMethod(null)}
