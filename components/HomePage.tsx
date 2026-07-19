@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
@@ -49,13 +49,13 @@ const BANNERS = [
   {
     emoji: '',
     title: 'Welcome To Hawa',
-    date: '',
+    date: '28 July 2026',
     gradient: 'from-red-500 to-red-600'
   },
   {
     emoji: '',
     title: 'VIP Room Event',
-    date: '',
+    date: '18 July 2026',
     gradient: 'from-blue-500 to-blue-600'
   }
 ]
@@ -98,6 +98,13 @@ export default function HomePage({ onLogout }) {
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [mounted, setMounted] = useState(false)
   const [currentBanner, setCurrentBanner] = useState(0)
+  
+  // Touch swipe ke liye refs
+  const bannerRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef<number>(0)
+  const touchEndX = useRef<number>(0)
+  const [isSwiping, setIsSwiping] = useState(false)
+  const [swipeOffset, setSwipeOffset] = useState(0)
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
@@ -110,6 +117,93 @@ export default function HomePage({ onLogout }) {
     }, 5000)
     return () => clearInterval(interval)
   }, [])
+
+  // Touch swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Prevent default to stop page scrolling during swipe
+    touchStartX.current = e.touches[0].clientX
+    touchEndX.current = e.touches[0].clientX
+    setIsSwiping(true)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSwiping) return
+    
+    touchEndX.current = e.touches[0].clientX
+    const diff = touchEndX.current - touchStartX.current
+    setSwipeOffset(diff)
+    
+    // Prevent page scroll during horizontal swipe
+    if (Math.abs(diff) > 10) {
+      e.preventDefault()
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (!isSwiping) return
+    
+    const diff = touchEndX.current - touchStartX.current
+    const threshold = 50 // Minimum swipe distance to trigger change
+    
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        // Swipe right - go to previous banner
+        setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
+      } else {
+        // Swipe left - go to next banner
+        setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
+      }
+    }
+    
+    // Reset swipe state
+    setIsSwiping(false)
+    setSwipeOffset(0)
+    touchStartX.current = 0
+    touchEndX.current = 0
+  }
+
+  // Mouse drag handlers for desktop
+  const handleMouseDown = (e: React.MouseEvent) => {
+    touchStartX.current = e.clientX
+    touchEndX.current = e.clientX
+    setIsSwiping(true)
+    
+    // Prevent text selection during drag
+    e.preventDefault()
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isSwiping) return
+    touchEndX.current = e.clientX
+    const diff = touchEndX.current - touchStartX.current
+    setSwipeOffset(diff)
+  }
+
+  const handleMouseUp = () => {
+    if (!isSwiping) return
+    
+    const diff = touchEndX.current - touchStartX.current
+    const threshold = 50
+    
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
+      } else {
+        setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
+      }
+    }
+    
+    setIsSwiping(false)
+    setSwipeOffset(0)
+    touchStartX.current = 0
+    touchEndX.current = 0
+  }
+
+  const handleMouseLeave = () => {
+    if (isSwiping) {
+      handleMouseUp()
+    }
+  }
 
   // Zoom prevent karne ka meta tag dynamically add karo
   useEffect(() => {
@@ -305,19 +399,73 @@ export default function HomePage({ onLogout }) {
                 </button>
               </div>
 
-              {/* Banner Carousel - Height badha di thodi si */}
+              {/* Banner Carousel - FIXED SIZE, kabhi chota bada nahi hoga */}
               <div 
-                className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl text-white font-bold text-center shadow-md relative overflow-hidden`}
-                style={{ padding: '20px 16px' }}
+                ref={bannerRef}
+                className={`bg-gradient-to-r ${BANNERS[currentBanner].gradient} rounded-2xl text-white font-bold text-center shadow-md relative overflow-hidden cursor-grab active:cursor-grabbing select-none`}
+                style={{ 
+                  height: '120px', // FIXED HEIGHT - kabhi change nahi hogi
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 16px', // Fixed padding
+                  transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                  transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
+                }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
               >
+                {/* Content wrapper - fixed size mein center */}
                 <div 
                   key={currentBanner}
+                  className="w-full flex flex-col items-center justify-center"
                   style={{
-                    animation: 'fadeInBanner 400ms ease-out'
+                    animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
                   }}
                 >
-                  <div className="text-2xl mb-1">{BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}</div>
-                  <div className="text-sm">{BANNERS[currentBanner].date}</div>
+                  {/* Title - fixed font size with truncation */}
+                  <div 
+                    className="text-2xl mb-1 truncate"
+                    style={{
+                      maxWidth: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      lineHeight: '1.2',
+                    }}
+                  >
+                    {BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}
+                  </div>
+                  
+                  {/* Date - fixed font size */}
+                  <div 
+                    className="text-sm"
+                    style={{
+                      lineHeight: '1.2',
+                    }}
+                  >
+                    {BANNERS[currentBanner].date}
+                  </div>
+                </div>
+                
+                {/* Swipe indicator arrows */}
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M15 18l-6-6 6-6" stroke="white" strokeWidth="2" fill="none"/>
+                  </svg>
+                </div>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M9 18l6-6-6-6" stroke="white" strokeWidth="2" fill="none"/>
+                  </svg>
                 </div>
               </div>
               
@@ -439,8 +587,8 @@ export default function HomePage({ onLogout }) {
             {/* Recharge Event */}
             <div className="px-4 pb-24 pt-3 flex justify-center">
               <div className="text-center">
-                <div className="text-3xl mb-1">🎁</div>
-                <div className="font-bold text-blue-800 text-sm">Recharge Event</div>
+                <div className="text-3xl mb-1"></div>
+                <div className="font-bold text-blue-800 text-sm"></div>
               </div>
             </div>
           </div>
@@ -530,4 +678,4 @@ export default function HomePage({ onLogout }) {
       </div>
     </div>
   )
-            }
+      }
