@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Home, MessageCircle, User } from 'lucide-react'
+import { Flame, Heart, Zap } from 'lucide-react'
 import MessagePage from './MessagePage'
 import MePage from './MePage'
 
@@ -230,8 +230,8 @@ export default function HomePage() {
               : 'text-blue-100 hover:text-white'
           }`}
         >
-          <Home size={24} />
-          <span className="text-xs font-medium">Home</span>
+          <Flame size={28} />
+          <span className="text-xs font-medium">Popular</span>
         </button>
         <button
           onClick={() => setCurrentPage('message')}
@@ -241,8 +241,8 @@ export default function HomePage() {
               : 'text-blue-100 hover:text-white'
           }`}
         >
-          <MessageCircle size={24} />
-          <span className="text-xs font-medium">Message</span>
+          <Heart size={28} />
+          <span className="text-xs font-medium">Likes</span>
         </button>
         <button
           onClick={() => setCurrentPage('me')}
@@ -252,8 +252,8 @@ export default function HomePage() {
               : 'text-blue-100 hover:text-white'
           }`}
         >
-          <User size={24} />
-          <span className="text-xs font-medium">Me</span>
+          <Zap size={28} />
+          <span className="text-xs font-medium">Profile</span>
         </button>
       </nav>
     </div>
