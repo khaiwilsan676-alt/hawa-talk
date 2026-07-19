@@ -1,11 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckCircle, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 
 export default function MessagePage() {
   const [activeChat, setActiveChat] = useState(null)
+
+  // toggle a body class so other UI (bottom bars) can be hidden
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+
+    if (activeChat) {
+      document.body.classList.add('hide-bottom-bars')
+    } else {
+      document.body.classList.remove('hide-bottom-bars')
+    }
+
+    return () => {
+      // cleanup in case component unmounts
+      document.body.classList.remove('hide-bottom-bars')
+    }
+  }, [activeChat])
 
   // Chat data
   const chats = [
