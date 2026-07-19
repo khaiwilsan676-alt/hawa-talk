@@ -44,6 +44,20 @@ const userCards: UserCard[] = [
   }
 ]
 
+// Doosra banner add kiya
+const BANNERS = [
+  {
+    emoji: '🎁',
+    title: 'Magic Box King',
+    date: '18/07 - 19/07 23:59'
+  },
+  {
+    emoji: '👑',
+    title: 'VIP Room Event',
+    date: '20/07 - 22/07 23:59'
+  }
+]
+
 type Tab = 'mine' | 'popular'
 type Page = 'home' | 'message' | 'me'
 
@@ -85,9 +99,20 @@ export default function HomePage({ onLogout }) {
   // कार्ड एनिमेशन के लिए माउंटेड स्टेट
   const [mounted, setMounted] = useState(false)
 
+  // Banner auto scroll ke liye current index
+  const [currentBanner, setCurrentBanner] = useState(0)
+
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
     return () => clearTimeout(id)
+  }, [])
+
+  // Banner har 5 second mein auto change hoga
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
+    }, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -98,6 +123,10 @@ export default function HomePage({ onLogout }) {
         @keyframes cardIn {
           0% { opacity: 0; transform: translateY(14px) scale(0.96); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeInBanner {
+          0% { opacity: 0; transform: translateX(20px); }
+          100% { opacity: 1; transform: translateX(0); }
         }
       `}</style>
 
@@ -183,14 +212,36 @@ export default function HomePage({ onLogout }) {
                 </button>
               </div>
 
-              {/* Banner Carousel */}
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md" style={{ marginBottom: '2px' }}>
-                <div className="text-2xl mb-1">🎁 Magic Box King</div>
-                <div className="text-sm">18/07 - 19/07 23:59</div>
+              {/* Banner Carousel - Ab do banners hain jo har 5 sec mein change honge */}
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white font-bold text-center shadow-md relative overflow-hidden" 
+                style={{ marginBottom: '0px' }}
+              >
+                <div 
+                  key={currentBanner}
+                  style={{
+                    animation: 'fadeInBanner 400ms ease-out'
+                  }}
+                >
+                  <div className="text-2xl mb-1">{BANNERS[currentBanner].emoji} {BANNERS[currentBanner].title}</div>
+                  <div className="text-sm">{BANNERS[currentBanner].date}</div>
+                </div>
+                
+                {/* Banner Dots Indicator */}
+                <div className="flex justify-center gap-2 mt-2">
+                  {BANNERS.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentBanner ? 'bg-white w-4' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Main Content Area */}
+            {/* Main Content Area - Gap kam kar diya banner aur cards ke beech */}
             <div className="px-4" style={{ marginTop: '2px' }}>
               
               {/* नए स्टाइलिस्ट कैटेगरी कार्ड्स का सेक्शन (Flexbox में एडजस्ट किया ताकि मोबाइल स्क्रीन पर फिट रहे) */}
