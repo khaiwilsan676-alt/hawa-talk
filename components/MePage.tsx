@@ -46,10 +46,11 @@ const bottomMenuItems: MenuItem[] = [
     id: '9',
     label: 'Customer Service',
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 14.5c0-4.42 3.58-8 8-8s8 3.58 8 8v2a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"></path>
-        <path d="M4 14.5v2a2 2 0 0 0 2 2h1"></path>
-        <path d="M12 12.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1E1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5.5 11 V8.5 C5.5 5 8.2 3 12 3 C15.8 3 18.5 5 18.5 8.5 V15.2 C18.5 18.5 16.2 21 12 21"/>
+        <path d="M3 10.2 V13.8 C3 14.6 3.5 15.2 4.2 15.2 H5.5 V9 H4.2 C3.5 9 3 9.5 3 10.2 Z"/>
+        <path d="M18.5 9 V15.2 H19.8 C20.5 15.2 21 14.6 21 13.8 V10.2 C21 9.4 20.5 9 19.8 9 H18.5"/>
+        <path d="M9.2 13.8 C9.2 15 10.3 16 12 16 C13.7 16 14.8 15 14.8 13.8"/>
       </svg>
     )
   },
@@ -195,4 +196,4 @@ export default function MePage({ onLogout }) {
       </div>
     </div>
   )
-          }
+}
