@@ -80,7 +80,7 @@ export default function MePage({ onLogout }) {
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
                 
                 {/* 👇 IKON KA CODE (rounded-sm HATA DIYA) 👇 */}
-                <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
                     alt={item.label}
