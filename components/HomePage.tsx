@@ -832,4 +832,4 @@ export default function HomePage({ onLogout }) {
       )}
     </div>
   )
-    }
+}
