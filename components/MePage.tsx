@@ -15,7 +15,7 @@ const menuItems: MenuItem[] = [
   { 
     id: '1', 
     label: 'Invite Friends', 
-    icon: '/1784537179259.png' 
+    icon: '/1784480368941~2.jpg' 
   },
   { 
     id: '2', 
