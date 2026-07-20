@@ -1,9 +1,10 @@
-'use client' 
+'use client'  
 
 import { useState, useEffect, useRef } from 'react'
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
+import RoomPage from './RoomPage' // Import RoomPage
 
 interface UserCard {
   id: string  
@@ -56,7 +57,7 @@ const BANNERS = [
 
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
-type Page = 'home' | 'message' | 'me'
+type Page = 'home' | 'message' | 'me' | 'room' // Add 'room' to Page type
 
 const CATEGORY_CARDS = [
   {
@@ -94,7 +95,8 @@ export default function HomePage({ onLogout }) {
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [mounted, setMounted] = useState(false)
   const [currentBanner, setCurrentBanner] = useState(0)
-  const [isChatOpen, setIsChatOpen] = useState(false) // Track if a chat is open
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null) // Track selected user
   
   // Touch swipe ke liye refs
   const bannerRef = useRef<HTMLDivElement>(null)
@@ -193,6 +195,18 @@ export default function HomePage({ onLogout }) {
     if (isSwiping) {
       handleMouseUp()
     }
+  }
+
+  // Handle user card click
+  const handleUserCardClick = (user: UserCard) => {
+    setSelectedUser(user)
+    setCurrentPage('room')
+  }
+
+  // Handle back from room page
+  const handleBackFromRoom = () => {
+    setCurrentPage('home')
+    setSelectedUser(null)
   }
 
   // Zoom prevent karne ka meta tag dynamically add karo
@@ -464,6 +478,7 @@ export default function HomePage({ onLogout }) {
         {userCards.map((user) => (
           <div
             key={user.id}
+            onClick={() => handleUserCardClick(user)} // Add click handler
             className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
             style={{ height: '180px' }}
           >
@@ -540,7 +555,7 @@ export default function HomePage({ onLogout }) {
       `}</style>
 
       {/* Bottom Right Corner Image - Hide when chat is open */}
-      {!isChatOpen && (
+      {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-24 right-4 z-40">
           <img 
             src="/IMG_20260719_203213.png" 
@@ -699,10 +714,16 @@ export default function HomePage({ onLogout }) {
           <MessagePage onChatOpen={setIsChatOpen} />
         )}
         {currentPage === 'me' && <MePage />}
+        {currentPage === 'room' && selectedUser && (
+          <RoomPage 
+            user={selectedUser} 
+            onBack={handleBackFromRoom}
+          />
+        )}
       </div>
 
-      {/* Bottom Navigation Bar - Only show when chat is NOT open */}
-      {!isChatOpen && (
+      {/* Bottom Navigation Bar - Only show when chat is NOT open and NOT on room page */}
+      {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             
@@ -783,4 +804,4 @@ export default function HomePage({ onLogout }) {
       )}
     </div>
   )
-                  }
+    }
