@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
-import RoomPage from './RoomPage' // Import RoomPage
+import RoomPage from './RoomPage'
+import Leaderboard from './Leaderboard' // Import Leaderboard
 
 interface UserCard {
   id: string  
@@ -57,7 +58,8 @@ const BANNERS = [
 
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
-type Page = 'home' | 'message' | 'me' | 'room' // Add 'room' to Page type
+type Page = 'home' | 'message' | 'me' | 'room' | 'leaderboard' // Add 'leaderboard' to Page type
+type LeaderboardCategory = 'Honour' | 'Charm' | 'Room' // Category type for leaderboard
 
 const CATEGORY_CARDS = [
   {
@@ -96,7 +98,8 @@ export default function HomePage({ onLogout }) {
   const [mounted, setMounted] = useState(false)
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null) // Track selected user
+  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
+  const [leaderboardCategory, setLeaderboardCategory] = useState<LeaderboardCategory>('Honour') // Track which category leaderboard to show
   
   // Touch swipe ke liye refs
   const bannerRef = useRef<HTMLDivElement>(null)
@@ -207,6 +210,17 @@ export default function HomePage({ onLogout }) {
   const handleBackFromRoom = () => {
     setCurrentPage('home')
     setSelectedUser(null)
+  }
+
+  // Handle category card click
+  const handleCategoryClick = (category: LeaderboardCategory) => {
+    setLeaderboardCategory(category)
+    setCurrentPage('leaderboard')
+  }
+
+  // Handle back from leaderboard page
+  const handleBackFromLeaderboard = () => {
+    setCurrentPage('home')
   }
 
   // Zoom prevent karne ka meta tag dynamically add karo
@@ -412,7 +426,8 @@ export default function HomePage({ onLogout }) {
           {CATEGORY_CARDS.map((card, i) => (
             <div
               key={card.label}
-              className="group flex-1"
+              onClick={() => handleCategoryClick(card.label as LeaderboardCategory)} // Add click handler
+              className="group flex-1 cursor-pointer"
               style={{
                 height: '90px',
                 borderRadius: '16px',
@@ -485,7 +500,7 @@ export default function HomePage({ onLogout }) {
         {userCards.map((user) => (
           <div
             key={user.id}
-            onClick={() => handleUserCardClick(user)} // Add click handler
+            onClick={() => handleUserCardClick(user)}
             className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
             style={{ height: '180px' }}
           >
@@ -562,7 +577,7 @@ export default function HomePage({ onLogout }) {
       `}</style>
 
       {/* Bottom Right Corner Image - Hide when chat is open */}
-      {!isChatOpen && currentPage !== 'room' && (
+      {!isChatOpen && currentPage !== 'room' && currentPage !== 'leaderboard' && (
         <div className="fixed bottom-24 right-4 z-40">
           <img 
             src="/IMG_20260719_203213.png" 
@@ -727,10 +742,16 @@ export default function HomePage({ onLogout }) {
             onBack={handleBackFromRoom}
           />
         )}
+        {currentPage === 'leaderboard' && (
+          <Leaderboard 
+            category={leaderboardCategory}
+            onBack={handleBackFromLeaderboard}
+          />
+        )}
       </div>
 
-      {/* Bottom Navigation Bar - Only show when chat is NOT open and NOT on room page */}
-      {!isChatOpen && currentPage !== 'room' && (
+      {/* Bottom Navigation Bar - Only show when chat is NOT open and NOT on room or leaderboard page */}
+      {!isChatOpen && currentPage !== 'room' && currentPage !== 'leaderboard' && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             
@@ -811,4 +832,4 @@ export default function HomePage({ onLogout }) {
       )}
     </div>
   )
-          }
+    }
