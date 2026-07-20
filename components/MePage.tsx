@@ -1,6 +1,7 @@
 'use client'
 
 import { ChevronRight } from 'lucide-react'
+import Image from 'next/image'
 
 interface MenuItem {
   id: string
@@ -82,7 +83,17 @@ export default function MePage({ onLogout }) {
                 index !== menuItems.length - 1 ? 'border-b border-gray-100' : ''
               }`}
             >
-              <img src={item.icon} alt={item.label} className="w-6 h-6 object-contain" />
+              <div className="w-6 h-6 relative flex-shrink-0">
+                <img 
+                  src={item.icon} 
+                  alt={item.label}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                    console.log(`Failed to load: ${item.icon}`)
+                  }}
+                />
+              </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">{item.label}</p>
               </div>
