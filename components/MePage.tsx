@@ -15,36 +15,37 @@ const menuItems: MenuItem[] = [
   { 
     id: '1', 
     label: 'Invite Friends', 
-    icon: 'https://raw.githubusercontent.com/khaiwilsan676-alt/hawa-talk/main/public/IMG_20260720_142310.png' 
+    icon: '/IMG_20260720_142310.png' 
   },
   { 
     id: '2', 
     label: 'Medal', 
-    icon: 'https://raw.githubusercontent.com/khaiwilsan676-alt/hawa-talk/main/public/IMG_20260720_142417.png' 
+    icon: '/IMG_20260720_142417.png' 
   },
   { 
     id: '3', 
     label: 'Level', 
-    icon: 'https://raw.githubusercontent.com/khaiwilsan676-alt/hawa-talk/main/public/IMG_20260720_142443.png',
+    icon: '/IMG_20260720_142443.png',
     badge: 'Lv.0' 
   },
   { 
     id: '4', 
     label: 'Family', 
-    icon: 'https://raw.githubusercontent.com/khaiwilsan676-alt/hawa-talk/main/public/IMG_20260720_142354.png',
+    icon: '/IMG_20260720_142354.png',
     action: 'Join Now' 
   },
   { 
     id: '5', 
     label: 'Store', 
-    icon: 'https://raw.githubusercontent.com/khaiwilsan676-alt/hawa-talk/main/public/IMG_20260720_142332.png' 
+    icon: '/IMG_20260720_142332.png' 
   },
   { 
     id: '6', 
     label: 'Bag', 
-    icon: 'https://raw.githubusercontent.com/khaiwilsan676-alt/hawa-talk/main/public/IMG_20260720_142227.png' 
+    icon: '/IMG_20260720_142227.png' 
   }
 ]
+
 export default function MePage({ onLogout }) {
   return (
     <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
