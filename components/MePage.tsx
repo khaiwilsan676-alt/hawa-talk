@@ -11,7 +11,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { id: '1', label: 'Invite Friends', src: '/IMG_20260720_142310.png' },
+  { id: '1', label: 'Invite Friends', src: '/IMG_20260720_182737.png' },
   { id: '2', label: 'Family', src: '/IMG_20260720_142354.png' },
   { id: '3', label: 'Level', src: '/IMG_20260720_142443.png' },
   { id: '4', label: 'Medal', src: '/IMG_20260720_142417.png' },
