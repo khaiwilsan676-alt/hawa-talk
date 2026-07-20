@@ -5,7 +5,8 @@ import { ChevronRight } from 'lucide-react'
 interface MenuItem {
   id: string
   label: string
-  src: string
+  src?: string
+  icon?: React.ReactNode
   action?: string
   badge?: string
 }
@@ -17,6 +18,52 @@ const menuItems: MenuItem[] = [
   { id: '4', label: 'Medal', src: '/IMG_20260720_213053.png' },
   { id: '5', label: 'Store', src: '/IMG_20260720_142332.png' },
   { id: '6', label: 'Bag', src: '/IMG_20260720_142227.png' }
+]
+
+const bottomMenuItems: MenuItem[] = [
+  {
+    id: '7',
+    label: 'Language',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+      </svg>
+    )
+  },
+  {
+    id: '8',
+    label: 'Settings',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2l8 4.67v9.33L12 22l-8-4.67V6.67L12 2z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    )
+  },
+  {
+    id: '9',
+    label: 'Customer Service',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 14.5c0-4.42 3.58-8 8-8s8 3.58 8 8v2a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"></path>
+        <path d="M4 14.5v2a2 2 0 0 0 2 2h1"></path>
+        <path d="M12 12.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path>
+      </svg>
+    )
+  },
+  {
+    id: '10',
+    label: 'Help & Feedback',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    )
+  }
 ]
 
 export default function MePage({ onLogout }) {
@@ -72,14 +119,12 @@ export default function MePage({ onLogout }) {
         </div>
       </div>
 
-      {/* Menu Items - Round Corner Hata Diya Hai */}
+      {/* Main Menu Items */}
       <div className="px-4 mt-4">
         <div className="bg-white rounded-xl overflow-hidden">
           {menuItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                
-                {/* 👇 IKON KA CODE (rounded-sm HATA DIYA) 👇 */}
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
@@ -87,7 +132,6 @@ export default function MePage({ onLogout }) {
                     className="w-full h-full object-cover" 
                   />
                 </div>
-                {/* 👆 IKON KA CODE END 👆 */}
 
                 <div className="flex-1">
                   <p className="font-semibold text-gray-900">{item.label}</p>
@@ -110,6 +154,37 @@ export default function MePage({ onLogout }) {
         </div>
       </div>
 
+      {/* Bottom Menu Items (Language, Settings, Customer Service, Help & Feedback) */}
+      <div className="px-4 mt-4 mb-6">
+        <div className="bg-white rounded-xl overflow-hidden">
+          {bottomMenuItems.map((item, index) => (
+            <div key={item.id}>
+              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">
+                  {item.icon}
+                </div>
+
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{item.label}</p>
+                </div>
+                {item.action && (
+                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
+                )}
+                {item.badge && (
+                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
+                    {item.badge}
+                  </span>
+                )}
+                <ChevronRight size={20} className="text-gray-400" />
+              </div>
+              {index < bottomMenuItems.length - 1 && (
+                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Recharge Event */}
       <div className="fixed bottom-24 right-4">
         <div className="text-center text-sm">
@@ -118,16 +193,6 @@ export default function MePage({ onLogout }) {
           <div className="text-xs font-bold text-blue-800">Event</div>
         </div>
       </div>
-
-      {/* Logout Button */}
-      <div className="px-4 py-6">
-        <button
-          onClick={onLogout}
-          className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg"
-        >
-          Logout
-        </button>
-      </div>
     </div>
   )
-}
+          }
