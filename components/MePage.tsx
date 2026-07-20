@@ -13,10 +13,10 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { id: '1', label: 'Invite Friends', src: '/IMG_20260720_142310.png' },
   { id: '2', label: 'Family', src: '/IMG_20260720_142354.png' },
-  { id: '3', label: 'Level', src: '/IMG_20260720_142443.png', badge: 'Lv.0' },
+  { id: '3', label: 'Level', src: '/IMG_20260720_142443.png' },
   { id: '4', label: 'Medal', src: '/IMG_20260720_142417.png' },
   { id: '5', label: 'Store', src: '/IMG_20260720_142332.png' },
-  { id: '6', label: 'My Items', src: '/IMG_20260720_142227.png' }
+  { id: '6', label: 'Bag', src: '/IMG_20260720_142227.png' }
 ]
 
 export default function MePage({ onLogout }) {
@@ -80,7 +80,7 @@ export default function MePage({ onLogout }) {
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
                 
                 {/* 👇 IKON KA CODE (rounded-sm HATA DIYA) 👇 */}
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
                     alt={item.label}
