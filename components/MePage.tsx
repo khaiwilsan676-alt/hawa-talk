@@ -57,17 +57,23 @@ export default function MePage({ onLogout }) {
         {/* Images with rounded corners - thore niche */}
         <div className="flex gap-1 mt-8">
           <div className="flex-1 rounded-lg overflow-hidden">
-            <img 
+            <Image 
               src="/1784480382765~2.jpg" 
               alt="Feature 1"
+              width={200}
+              height={56}
               className="w-full h-14 object-cover"
+              priority={false}
             />
           </div>
           <div className="flex-1 rounded-lg overflow-hidden">
-            <img 
+            <Image 
               src="/1784480368941~2.jpg" 
               alt="Feature 2"
+              width={200}
+              height={56}
               className="w-full h-14 object-cover"
+              priority={false}
             />
           </div>
         </div>
