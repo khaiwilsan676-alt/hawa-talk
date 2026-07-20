@@ -105,7 +105,7 @@ export default function MePage({ onLogout }) {
         </div>
       </div>
 
-      {/* Menu Items - bina gap ke joined pattiya */}
+      {/* Menu Items - white patti ke upar icon, phir name */}
       <div className="px-4 pb-24 mt-4">
         <div className="bg-white rounded-xl overflow-hidden">
           {menuItems.map((item, index) => (
@@ -115,15 +115,21 @@ export default function MePage({ onLogout }) {
                 index !== menuItems.length - 1 ? 'border-b border-gray-100' : ''
               }`}
             >
-              <div className="w-6 h-6 relative flex-shrink-0">
-                <Image 
-                  src={item.icon} 
-                  alt={item.label}
-                  width={24}
-                  height={24}
-                  className="w-full h-full object-contain"
-                  priority={false}
-                />
+              {/* White patti background mein icon */}
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-200 relative">
+                {/* White patti strip */}
+                <div className="absolute top-0 left-0 right-0 h-2 bg-white rounded-t-lg z-10"></div>
+                {/* Icon white patti ke upar */}
+                <div className="relative z-20">
+                  <Image 
+                    src={item.icon} 
+                    alt={item.label}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 object-contain"
+                    priority={false}
+                  />
+                </div>
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">{item.label}</p>
@@ -162,4 +168,4 @@ export default function MePage({ onLogout }) {
       </div>
     </div>
   )
-}
+        }
