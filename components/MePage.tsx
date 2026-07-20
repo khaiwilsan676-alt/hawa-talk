@@ -11,16 +11,12 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { id: '1', label: 'Wallet', icon: '👛' },
-  { id: '2', label: 'Invite Friends', icon: '💸' },
-  { id: '3', label: 'Earn Coins', icon: '🎁', badge: 'bg-blue-300' },
-  { id: '4', label: 'Medal', icon: '⭐' },
-  { id: '5', label: 'SVIP', icon: '🏆', action: 'Join now' },
-  { id: '6', label: 'Level', icon: '👑', badge: 'Lv.0' },
-  { id: '7', label: 'CP / Friend', icon: '💖' },
-  { id: '8', label: 'Family', icon: '🐻', action: 'Join Now' },
-  { id: '9', label: 'Store', icon: '🛒' },
-  { id: '10', label: 'My Items', icon: '👕' }
+  { id: '1', label: 'Invite Friends', icon: '/IMG_20260720_142310.png' },
+  { id: '2', label: 'Medal', icon: '/IMG_20260720_142417.png' },
+  { id: '3', label: 'Level', icon: '/IMG_20260720_142443.png' },
+  { id: '4', label: 'Family', icon: '/IMG_20260720_142354.png' },
+  { id: '5', label: 'Store', icon: '/IMG_20260720_142332.png' },
+  { id: '6', label: 'Bag', icon: '/IMG_20260720_142227.png' }
 ]
 
 export default function MePage({ onLogout }) {
@@ -57,8 +53,8 @@ export default function MePage({ onLogout }) {
           </div>
         </div>
 
-        {/* Images with rounded corners */}
-        <div className="flex gap-1">
+        {/* Images with rounded corners - thore niche */}
+        <div className="flex gap-1 mt-8">
           <div className="flex-1 rounded-lg overflow-hidden">
             <img 
               src="/1784480382765~2.jpg" 
@@ -76,28 +72,32 @@ export default function MePage({ onLogout }) {
         </div>
       </div>
 
-      {/* Menu Items */}
-      <div className="px-4 space-y-2 pb-24 mt-4">
-        {menuItems.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center gap-4 bg-white rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow"
-          >
-            <div className="text-2xl">{item.icon}</div>
-            <div className="flex-1">
-              <p className="font-semibold text-gray-900">{item.label}</p>
+      {/* Menu Items - bina gap ke joined pattiya */}
+      <div className="px-4 pb-24 mt-4">
+        <div className="bg-white rounded-xl overflow-hidden">
+          {menuItems.map((item, index) => (
+            <div
+              key={item.id}
+              className={`flex items-center gap-4 px-4 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                index !== menuItems.length - 1 ? 'border-b border-gray-100' : ''
+              }`}
+            >
+              <img src={item.icon} alt={item.label} className="w-6 h-6 object-contain" />
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">{item.label}</p>
+              </div>
+              {item.action && (
+                <span className="text-sm font-medium text-gray-500">{item.action}</span>
+              )}
+              {item.badge && (
+                <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
+                  {item.badge}
+                </span>
+              )}
+              <ChevronRight size={20} className="text-gray-400" />
             </div>
-            {item.action && (
-              <span className="text-sm font-medium text-gray-500">{item.action}</span>
-            )}
-            {item.badge && (
-              <span className={`${item.badge} text-xs font-bold px-2 py-1 rounded-full text-gray-900`}>
-                {typeof item.badge === 'string' && item.badge.startsWith('Lv') ? item.badge : ''}
-              </span>
-            )}
-            <ChevronRight size={20} className="text-gray-400" />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Recharge Event */}
