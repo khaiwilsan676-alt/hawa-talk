@@ -11,12 +11,12 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { id: '1', label: 'Invite Friends', src: '/IMG_20260720_182737.png' },
+  { id: '1', label: 'Invite Friends', src: '/IMG_20260720_142310.png' },
   { id: '2', label: 'Family', src: '/IMG_20260720_142354.png' },
   { id: '3', label: 'Level', src: '/IMG_20260720_142443.png' },
   { id: '4', label: 'Medal', src: '/IMG_20260720_142417.png' },
   { id: '5', label: 'Store', src: '/IMG_20260720_142332.png' },
-  { id: '6', label: 'Bag', src: '/IMG_20260720_142227.png' }
+  { id: '6', label: 'My Items', src: '/IMG_20260720_142227.png' }
 ]
 
 export default function MePage({ onLogout }) {
@@ -53,7 +53,7 @@ export default function MePage({ onLogout }) {
           </div>
         </div>
 
-        {/* Images with rounded corners */}
+        {/* Feature Images */}
         <div className="flex gap-1 mt-6">
           <div className="flex-1 rounded-lg overflow-hidden">
             <img
@@ -72,22 +72,22 @@ export default function MePage({ onLogout }) {
         </div>
       </div>
 
-      {/* Menu Items - Round Corner Hata Diya Hai */}
+      {/* Menu Items - Size badhaya (40x40), Object-Contain lagaya */}
       <div className="px-4 mt-4">
         <div className="bg-white rounded-xl overflow-hidden">
           {menuItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
                 
-                {/* 👇 IKON KA CODE (rounded-sm HATA DIYA) 👇 */}
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                {/* 👇 BOX HAI (40x40), IMAGE POORI DIKHEGI 👇 */}
+                <div className="w-10 h-10 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
                     alt={item.label}
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-contain" // 🟢 Poori image, kategi nahi!
                   />
                 </div>
-                {/* 👆 IKON KA CODE END 👆 */}
+                {/* 👆 BOX END 👆 */}
 
                 <div className="flex-1">
                   <p className="font-semibold text-gray-900">{item.label}</p>
