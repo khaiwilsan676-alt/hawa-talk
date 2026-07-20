@@ -11,10 +11,10 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { id: '1', label: 'Invite Friends', src: '/IMG_20260720_211438.png' },
+  { id: '1', label: 'Invite Friends', src: '/1784562849790.png' },
   { id: '2', label: 'Family', src: '/IMG_20260720_142354.png' },
   { id: '3', label: 'Level', src: '/IMG_20260720_211413.png' },
-  { id: '4', label: 'Medal', src: '/IMG_20260720_211500.png' },
+  { id: '4', label: 'Medal', src: '/IMG_20260720_213053.png' },
   { id: '5', label: 'Store', src: '/IMG_20260720_142332.png' },
   { id: '6', label: 'Bag', src: '/IMG_20260720_142227.png' }
 ]
