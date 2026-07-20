@@ -124,9 +124,9 @@ export default function MePage({ onLogout }) {
                   <Image 
                     src={item.icon} 
                     alt={item.label}
-                    width={24}
-                    height={24}
-                    className="w-6 h-6 object-contain"
+                    width={15}
+                    height={15}
+                    className="w-4 h-4 object-contain"
                     priority={false}
                   />
                 </div>
