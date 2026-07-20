@@ -1,49 +1,22 @@
 'use client'
 
 import { ChevronRight } from 'lucide-react'
-import Image from 'next/image'
 
 interface MenuItem {
   id: string
   label: string
-  icon: string
+  src: string
   action?: string
   badge?: string
 }
 
 const menuItems: MenuItem[] = [
-  { 
-    id: '1', 
-    label: 'Invite Friends', 
-    icon: '/1784480368941~2.jpg' 
-  },
-  { 
-    id: '2', 
-    label: 'Medal', 
-    icon: '/IMG_20260720_142417.png' 
-  },
-  { 
-    id: '3', 
-    label: 'Level', 
-    icon: '/IMG_20260720_142443.png',
-    badge: 'Lv.0' 
-  },
-  { 
-    id: '4', 
-    label: 'Family', 
-    icon: '/IMG_20260720_142354.png',
-    action: 'Join Now' 
-  },
-  { 
-    id: '5', 
-    label: 'Store', 
-    icon: '/IMG_20260720_142332.png' 
-  },
-  { 
-    id: '6', 
-    label: 'Bag', 
-    icon: '/IMG_20260720_142227.png' 
-  }
+  { id: '1', label: 'Invite Friends', src: '/IMG_20260720_142310.png' },
+  { id: '2', label: 'Family', src: '/IMG_20260720_142354.png' },
+  { id: '3', label: 'Level', src: '/IMG_20260720_142443.png', badge: 'Lv.0' },
+  { id: '4', label: 'Medal', src: '/IMG_20260720_142417.png' },
+  { id: '5', label: 'Store', src: '/IMG_20260720_142332.png' },
+  { id: '6', label: 'My Items', src: '/IMG_20260720_142227.png' }
 ]
 
 export default function MePage({ onLogout }) {
@@ -80,69 +53,50 @@ export default function MePage({ onLogout }) {
           </div>
         </div>
 
-        {/* Images with rounded corners - thore niche */}
-        <div className="flex gap-1 mt-8">
+        {/* Images with rounded corners - thora niche */}
+        <div className="flex gap-1 mt-6">
           <div className="flex-1 rounded-lg overflow-hidden">
-            <Image 
+            <img 
               src="/1784480382765~2.jpg" 
               alt="Feature 1"
-              width={200}
-              height={56}
               className="w-full h-14 object-cover"
-              priority={false}
             />
           </div>
           <div className="flex-1 rounded-lg overflow-hidden">
-            <Image 
+            <img 
               src="/1784480368941~2.jpg" 
               alt="Feature 2"
-              width={200}
-              height={56}
               className="w-full h-14 object-cover"
-              priority={false}
             />
           </div>
         </div>
       </div>
 
-      {/* Menu Items - white patti ke upar icon, phir name */}
-      <div className="px-4 pb-24 mt-4">
+      {/* Menu Items - joined pattiya with no gap */}
+      <div className="px-4 mt-4">
         <div className="bg-white rounded-xl overflow-hidden">
           {menuItems.map((item, index) => (
-            <div
-              key={item.id}
-              className={`flex items-center gap-4 px-4 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                index !== menuItems.length - 1 ? 'border-b border-gray-100' : ''
-              }`}
-            >
-              {/* White patti background mein icon */}
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-200 relative">
-                {/* White patti strip */}
-                <div className="absolute top-0 left-0 right-0 h-2 bg-white rounded-t-lg z-10"></div>
-                {/* Icon white patti ke upar */}
-                <div className="relative z-20">
-                  <Image 
-                    src={item.icon} 
-                    alt={item.label}
-                    width={15}
-                    height={15}
-                    className="w-4 h-4 object-contain"
-                    priority={false}
-                  />
+            <div key={item.id}>
+              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img src={item.src} alt={item.label} className="w-8 h-8 object-contain" />
                 </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{item.label}</p>
+                </div>
+                {item.action && (
+                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
+                )}
+                {item.badge && (
+                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
+                    {item.badge}
+                  </span>
+                )}
+                <ChevronRight size={20} className="text-gray-400" />
               </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">{item.label}</p>
-              </div>
-              {item.action && (
-                <span className="text-sm font-medium text-gray-500">{item.action}</span>
+              {index < menuItems.length - 1 && (
+                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
               )}
-              {item.badge && (
-                <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
-                  {item.badge}
-                </span>
-              )}
-              <ChevronRight size={20} className="text-gray-400" />
             </div>
           ))}
         </div>
@@ -168,4 +122,4 @@ export default function MePage({ onLogout }) {
       </div>
     </div>
   )
-        }
+}
