@@ -84,14 +84,13 @@ export default function MePage({ onLogout }) {
               }`}
             >
               <div className="w-6 h-6 relative flex-shrink-0">
-                <img 
+                <Image 
                   src={item.icon} 
                   alt={item.label}
+                  width={24}
+                  height={24}
                   className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.target.style.display = 'none'
-                    console.log(`Failed to load: ${item.icon}`)
-                  }}
+                  priority={false}
                 />
               </div>
               <div className="flex-1">
