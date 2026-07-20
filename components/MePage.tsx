@@ -53,18 +53,18 @@ export default function MePage({ onLogout }) {
           </div>
         </div>
 
-        {/* Images with rounded corners - thora niche */}
+        {/* Images with rounded corners */}
         <div className="flex gap-1 mt-6">
           <div className="flex-1 rounded-lg overflow-hidden">
-            <img 
-              src="/1784480382765~2.jpg" 
+            <img
+              src="/1784480382765~2.jpg"
               alt="Feature 1"
               className="w-full h-14 object-cover"
             />
           </div>
           <div className="flex-1 rounded-lg overflow-hidden">
-            <img 
-              src="/1784480368941~2.jpg" 
+            <img
+              src="/1784480368941~2.jpg"
               alt="Feature 2"
               className="w-full h-14 object-cover"
             />
@@ -72,15 +72,23 @@ export default function MePage({ onLogout }) {
         </div>
       </div>
 
-      {/* Menu Items - joined pattiya with no gap */}
+      {/* Menu Items - WITH FIXED ICON STYLING */}
       <div className="px-4 mt-4">
         <div className="bg-white rounded-xl overflow-hidden">
           {menuItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <img src={item.src} alt={item.label} className="w-8 h-8 object-contain" />
+                
+                {/* 👇 FIXED ICON SECTION 👇 */}
+                <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                  <img
+                    src={item.src}
+                    alt={item.label}
+                    className="w-full h-full object-cover rounded-sm"
+                  />
                 </div>
+                {/* 👆 FIXED ICON SECTION 👆 */}
+
                 <div className="flex-1">
                   <p className="font-semibold text-gray-900">{item.label}</p>
                 </div>
