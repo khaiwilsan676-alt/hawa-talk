@@ -1,4 +1,4 @@
-'use client'  
+'use client'
 
 import { useState, useEffect, useRef } from 'react'
 
@@ -334,29 +334,36 @@ export default function HomePage({ onLogout }) {
         </div>
       </div>
 
-      {/* Following / Recent Tabs */}
-      <div className="flex gap-1 mb-4 bg-gray-100 rounded-xl p-1">
+      {/* Following / Recent Tabs - Updated to text-only with underline */}
+      <div className="flex gap-6 mb-6">
         <button
           type="button"
           onClick={() => setActiveMineTab('following')}
-          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
+          className={`relative pb-1 text-sm font-medium transition-all ${
             activeMineTab === 'following'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'text-gray-900 font-semibold'
+              : 'text-gray-400 hover:text-gray-600'
           }`}
         >
           Following
+          {activeMineTab === 'following' && (
+            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
+          )}
         </button>
+        
         <button
           type="button"
           onClick={() => setActiveMineTab('recent')}
-          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
+          className={`relative pb-1 text-sm font-medium transition-all ${
             activeMineTab === 'recent'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'text-gray-900 font-semibold'
+              : 'text-gray-400 hover:text-gray-600'
           }`}
         >
           Recent
+          {activeMineTab === 'recent' && (
+            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
+          )}
         </button>
       </div>
 
@@ -804,4 +811,4 @@ export default function HomePage({ onLogout }) {
       )}
     </div>
   )
-    }
+          }
