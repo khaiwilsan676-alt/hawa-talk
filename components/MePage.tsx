@@ -72,22 +72,22 @@ export default function MePage({ onLogout }) {
         </div>
       </div>
 
-      {/* Menu Items - WITH FIXED ICON STYLING */}
+      {/* Menu Items - Round Corner Hata Diya Hai */}
       <div className="px-4 mt-4">
         <div className="bg-white rounded-xl overflow-hidden">
           {menuItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
                 
-                {/* 👇 FIXED ICON SECTION 👇 */}
+                {/* 👇 IKON KA CODE (rounded-sm HATA DIYA) 👇 */}
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
                     alt={item.label}
-                    className="w-full h-full object-cover rounded-sm"
+                    className="w-full h-full object-cover" 
                   />
                 </div>
-                {/* 👆 FIXED ICON SECTION 👆 */}
+                {/* 👆 IKON KA CODE END 👆 */}
 
                 <div className="flex-1">
                   <p className="font-semibold text-gray-900">{item.label}</p>
