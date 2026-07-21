@@ -25,47 +25,62 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         
         {/* Top Header Section */}
         <div className="flex justify-between items-center text-white">
-          {/* Top Left Icons (From Provided Image) */}
-          <div className="flex items-center gap-2">
-            {/* User count pill */}
-            <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full text-sm font-medium border border-white/10">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span>1</span>
-            </div>
-
-            {/* Settings Hexagon Icon */}
-            <button className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-
-            {/* Share Arrow Icon */}
-            <button className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-            </button>
-
-            {/* Power / Exit Icon */}
-            <button 
-              onClick={onClose}
-              className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </button>
-          </div>
-
-          {/* User Details */}
-          <div className="text-right">
+          
+          {/* User Details (Left Side) */}
+          <div className="text-left">
             <h2 className="font-bold text-base">{user.name}</h2>
             <p className="text-xs text-gray-300">ID: 313574</p>
           </div>
+
+          {/* Top Right Icons (Moved to Right Side) */}
+          <div className="flex items-center gap-2">
+            
+            {/* 1. Followers / User Count Pill */}
+            <div className="flex items-center bg-[#232F46]/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 h-9">
+              <svg viewBox="0 0 120 60" className="h-6 w-auto" fill="none">
+                <circle cx="30" cy="18" r="12" stroke="#E8EEF8" strokeWidth={5} strokeLinecap="round"/>
+                <path d="M 10 50 C 10 36 19 28 30 28 C 41 28 50 36 50 50" stroke="#E8EEF8" strokeWidth={5} strokeLinecap="round"/>
+                <line x1="58" y1="18" x2="78" y2="18" stroke="#E8EEF8" strokeWidth={4} strokeLinecap="round"/>
+                <line x1="58" y1="28" x2="78" y2="28" stroke="#E8EEF8" strokeWidth={4} strokeLinecap="round"/>
+                <line x1="58" y1="38" x2="72" y2="38" stroke="#E8EEF8" strokeWidth={4} strokeLinecap="round"/>
+                <text x="94" y="48" fontWeight={700} fontSize={36} fill="#E8EEF8">1</text>
+              </svg>
+            </div>
+
+            {/* 2. Hexagon Settings Icon */}
+            <button 
+              aria-label="Settings"
+              className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                <path d="M12 2.8 L19.2 7 L19.2 17 L12 21.2 L4.8 17 L4.8 7 Z" />
+                <circle cx="12" cy="12" r="3.2" />
+              </svg>
+            </button>
+
+            {/* 3. Share Arrow Icon (Strictly updated based on image) */}
+            <button 
+              aria-label="Share"
+              className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
+              </svg>
+            </button>
+
+            {/* 4. Power / Exit Icon */}
+            <button 
+              onClick={onClose}
+              aria-label="Power"
+              className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                <path d="M12 3 L12 11" />
+                <path d="M18.5 6.5 A 9.5 0 1 0 5.5 6.5 A 9.5 0 0 0 18.5 6.5" />
+              </svg>
+            </button>
+          </div>
+
         </div>
 
         {/* Room Seats Layout (1 + 4 + 4) */}
@@ -120,7 +135,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
   )
 }
 
-{/* Seat Component based on Concert.tsx */}
+{/* Seat Component */}
 function SeatItem({ seatNumber }: { seatNumber: number }) {
   return (
     <div className="flex flex-col items-center gap-1">
@@ -152,13 +167,15 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
               <path d="M 50 74 L 50 86" />
               <path d="M 38 90 L 62 90" />
             </g>
-            {/* mic head */}
+
+            {/* mic head - (Slightly shifted down using transform) */}
             <g
               fill="#94a7be"
               stroke="#5a6d89"
               strokeWidth="2.8"
               strokeLinejoin="round"
               strokeLinecap="round"
+              transform="translate(0, 6)"
             >
               <path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" />
             </g>
@@ -170,3 +187,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
     </div>
   )
 }
+
