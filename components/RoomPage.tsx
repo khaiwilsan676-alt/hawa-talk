@@ -123,90 +123,71 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         </div>
 
         {/* Footer Controls */}
-        <div className="flex-shrink-0 pb-4 relative">
-          
-          {/* Say Hi Button (Image 2 - Placed at Right Side Corner above controls) */}
-          <div className="flex justify-end mb-2">
-            <button 
-              aria-label="Say Hi"
-              className="bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 hover:bg-black/60 transition-colors text-white text-xs font-medium tracking-wide shadow-sm"
-            >
+        <div className="flex-shrink-0 pb-4">
+          <div className="flex items-center justify-between gap-2">
+            
+            {/* Left/Middle Action Icons */}
+            <div className="flex items-center gap-2">
+              <button className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+
+              {/* Mic Icon */}
+              <button 
+                aria-label="Toggle Microphone"
+                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="22" />
+                </svg>
+              </button>
+
+              {/* Speaker Icon */}
+              <button 
+                aria-label="Toggle Speaker"
+                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              </button>
+
+              {/* Message Box Menu Icon */}
+              <button 
+                aria-label="Message Box Menu"
+                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                  <rect x="4" y="4" width="16" height="16" rx="4" />
+                  <path d="M7 9.5L12 14.5L17 9.5" />
+                </svg>
+              </button>
+
+              {/* Bottom Grid Menu Icon */}
+              <button 
+                aria-label="Apps Menu"
+                className="bg-black/40 backdrop-blur-md p-2.5 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
+                  <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" />
+                  <rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" />
+                  <rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" />
+                  <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Right Side Corner: "Say Hi" Pill Button */}
+            <button className="bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-white/30 transition-colors shadow-md shrink-0">
               Say Hi
             </button>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <input 
-              type="text" 
-              placeholder="Send a message..." 
-              className="flex-1 bg-black/30 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 text-white placeholder-gray-400 outline-none focus:border-white/40 min-w-0 text-sm"
-            />
-            <button className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-
-            {/* Emoji Icon (Image 1 Strictly Matched - Added Before Mic Icon) */}
-            <button 
-              aria-label="Emoji Picker"
-              className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <circle cx="12" cy="12" r="9" />
-                <circle cx="9" cy="10" r="1" fill="white" />
-                <circle cx="15" cy="10" r="1" fill="white" />
-                <path d="M9.5 15c.8 1.2 2 1.8 3.5 1.8s2.7-.6 3.5-1.8" />
-              </svg>
-            </button>
-
-            {/* Mic Icon (Image 1 Strictly Matched) */}
-            <button 
-              aria-label="Toggle Microphone"
-              className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" y1="19" x2="12" y2="22" />
-              </svg>
-            </button>
-
-            {/* Speaker Icon (Image 2 Strictly Matched) */}
-            <button 
-              aria-label="Toggle Speaker"
-              className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-              </svg>
-            </button>
-
-            {/* Message Box Menu Icon */}
-            <button 
-              aria-label="Message Box Menu"
-              className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <rect x="4" y="4" width="16" height="16" rx="4" />
-                <path d="M7 9.5L12 14.5L17 9.5" />
-              </svg>
-            </button>
-
-            {/* Bottom Right Grid Menu Icon */}
-            <button 
-              aria-label="Apps Menu"
-              className="bg-black/40 backdrop-blur-md p-2.5 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
-                <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" />
-                <rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" />
-                <rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" />
-                <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -214,7 +195,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
       {/* Exit Menu Overlay */}
       {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-6">
             
             {/* Keep Button */}
@@ -315,3 +296,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
     </div>
   )
 }
+
