@@ -83,7 +83,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
             {/* 4. Power / Exit Icon - Bigger */}
             <button 
-              onClick={() => onClose()}
+              onClick={() => setShowExitMenu(true)}
               aria-label="Power"
               className="p-1.5 bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center w-9 h-9"
             >
@@ -126,12 +126,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         <div className="flex-shrink-0 pb-4">
           <div className="flex items-center justify-between gap-2">
             
-            {/* Left Side Corner: "Say Hi" Pill Button (Matched Black Theme) */}
-            <button className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 h-10 flex items-center justify-center">
-              Say Hi
-            </button>
-
-            {/* Right Side Action Icons */}
+            {/* Left Side - Action Icons + Say Hi */}
             <div className="flex items-center gap-2">
               <button className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -186,6 +181,11 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
                   <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
                 </svg>
               </button>
+
+              {/* Say Hi Button - Now black like other icons, in left corner */}
+              <button className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0">
+                Say Hi
+              </button>
             </div>
 
           </div>
@@ -193,9 +193,9 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
       </div>
 
-      {/* Exit Menu Overlay (No Background Blur, Original Background Visible) */}
+      {/* Exit Menu Overlay - No blur, showing original background */}
       {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-auto">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
           <div className="flex flex-col items-center gap-6">
             
             {/* Keep Button */}
@@ -211,10 +211,13 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               <span className="text-white font-semibold text-base">Keep</span>
             </div>
 
-            {/* Exit Button */}
+            {/* Exit Button - Now works properly */}
             <div className="flex flex-col items-center gap-2">
               <button 
-                onClick={onClose}
+                onClick={() => {
+                  setShowExitMenu(false);
+                  onClose();
+                }}
                 className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30"
               >
                 <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
@@ -295,5 +298,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-}
-
+                    }
