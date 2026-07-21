@@ -32,19 +32,19 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
             <p className="text-xs text-gray-300">ID: 313574</p>
           </div>
 
-          {/* Top Right Icons (Moved to Right Side) */}
+          {/* Top Right Icons */}
           <div className="flex items-center gap-2">
             
             {/* 1. Followers / User Count Pill */}
-            <div className="flex items-center bg-[#232F46]/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 h-9">
-              <svg viewBox="0 0 120 60" className="h-6 w-auto" fill="none">
-                <circle cx="30" cy="18" r="12" stroke="#E8EEF8" strokeWidth={5} strokeLinecap="round"/>
-                <path d="M 10 50 C 10 36 19 28 30 28 C 41 28 50 36 50 50" stroke="#E8EEF8" strokeWidth={5} strokeLinecap="round"/>
-                <line x1="58" y1="18" x2="78" y2="18" stroke="#E8EEF8" strokeWidth={4} strokeLinecap="round"/>
-                <line x1="58" y1="28" x2="78" y2="28" stroke="#E8EEF8" strokeWidth={4} strokeLinecap="round"/>
-                <line x1="58" y1="38" x2="72" y2="38" stroke="#E8EEF8" strokeWidth={4} strokeLinecap="round"/>
-                <text x="94" y="48" fontWeight={700} fontSize={36} fill="#E8EEF8">1</text>
+            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 h-9">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                <circle cx="9" cy="7" r="4" />
+                <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
+                <line x1="18" y1="8" x2="21" y2="8" />
+                <line x1="18" y1="12" x2="21" y2="12" />
+                <line x1="18" y1="16" x2="20" y2="16" />
               </svg>
+              <span className="text-white text-sm font-semibold leading-none">1</span>
             </div>
 
             {/* 2. Hexagon Settings Icon */}
@@ -53,12 +53,12 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M12 2.8 L19.2 7 L19.2 17 L12 21.2 L4.8 17 L4.8 7 Z" />
-                <circle cx="12" cy="12" r="3.2" />
+                <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
+                <circle cx="12" cy="12" r="2.8" />
               </svg>
             </button>
 
-            {/* 3. Share Arrow Icon (Strictly updated based on image) */}
+            {/* 3. Share Arrow Icon */}
             <button 
               aria-label="Share"
               className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
@@ -75,16 +75,16 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M12 3 L12 11" />
-                <path d="M18.5 6.5 A 9.5 0 1 0 5.5 6.5 A 9.5 0 0 0 18.5 6.5" />
+                <path d="M12 3.5v7.5" />
+                <path d="M18.36 5.64a8.5 8.5 0 1 1-12.72 0" />
               </svg>
             </button>
           </div>
 
         </div>
 
-        {/* Room Seats Layout (1 + 4 + 4) */}
-        <div className="flex-1 flex flex-col justify-center gap-6 my-auto">
+        {/* Room Seats Layout (1 + 4 + 4) - Reduced gap from header */}
+        <div className="flex-1 flex flex-col justify-center gap-4 mt-2">
           
           {/* Row 1: 1 Seat */}
           <div className="flex justify-center">
@@ -110,11 +110,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         </div>
 
         {/* Footer Controls */}
-        <div className="pb-4 space-y-3">
-          <button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-full font-bold transition-colors shadow-lg">
-            Join Voice Chat
-          </button>
-          
+        <div className="pb-4">
           {/* Input field and action icons */}
           <div className="flex gap-2">
             <input 
@@ -168,7 +164,7 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
               <path d="M 38 90 L 62 90" />
             </g>
 
-            {/* mic head - (Slightly shifted down using transform) */}
+            {/* mic head */}
             <g
               fill="#94a7be"
               stroke="#5a6d89"
@@ -187,4 +183,3 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
     </div>
   )
 }
-
