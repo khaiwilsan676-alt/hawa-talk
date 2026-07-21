@@ -1,10 +1,10 @@
-'use client'
+'use client'  
 
 import { useState, useEffect, useRef } from 'react'
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
-import RoomPage from './RoomPage' // Import RoomPage
+import RoomPage from './RoomPage'  // ✅ Add this import
 
 interface UserCard {
   id: string  
@@ -45,7 +45,6 @@ const userCards: UserCard[] = [
   }
 ]
 
-// Banners with just images, no text
 const BANNERS = [
   {
     image: '/1784458869444~2.jpg'
@@ -57,11 +56,7 @@ const BANNERS = [
 
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
-type Page = 'home' | 'message' | 'me' | 'room' // Add 'room' to Page type
-
-interface HomePageProps {
-  onLogout: () => void
-}
+type Page = 'home' | 'message' | 'me' | 'room'  // ✅ Add 'room'
 
 const CATEGORY_CARDS = [
   {
@@ -93,16 +88,15 @@ const CATEGORY_CARDS = [
   },
 ];
 
-export default function HomePage({ onLogout }: HomePageProps) {
+export default function HomePage({ onLogout }) {
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [activeMineTab, setActiveMineTab] = useState<MineTab>('following')
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [mounted, setMounted] = useState(false)
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null) // Track selected user
+  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)  // ✅ Add this state
   
-  // Touch swipe ke liye refs
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
   const touchEndX = useRef<number>(0)
@@ -160,7 +154,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     touchEndX.current = 0
   }
 
-  // Mouse drag handlers for desktop
   const handleMouseDown = (e: React.MouseEvent) => {
     touchStartX.current = e.clientX
     touchEndX.current = e.clientX
@@ -201,19 +194,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Handle user card click
+  // ✅ Add these two functions
   const handleUserCardClick = (user: UserCard) => {
     setSelectedUser(user)
     setCurrentPage('room')
   }
 
-  // Handle back from room page
   const handleBackFromRoom = () => {
     setCurrentPage('home')
     setSelectedUser(null)
   }
 
-  // Zoom prevent karne ka meta tag dynamically add karo
   useEffect(() => {
     const existingMeta = document.querySelector('meta[name="viewport"]')
     if (existingMeta) {
@@ -233,14 +224,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // Reset chat state when navigating away from message page
   useEffect(() => {
     if (currentPage !== 'message') {
       setIsChatOpen(false)
     }
   }, [currentPage])
 
-  // AI tag hatane ka function
   useEffect(() => {
     const removeAITags = () => {
       const aiElements = document.querySelectorAll('[class*="ai"], [class*="AI"], [id*="ai"], [id*="AI"]')
@@ -293,10 +282,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // Render Mine Tab Content
   const renderMineTab = () => (
     <div className="px-4 mt-6">
-      {/* Create Your Room Card */}
       <div 
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
         style={{
@@ -314,7 +301,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           el.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.4)';
         }}
       >
-        {/* Plus Icon */}
         <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
             <path
@@ -327,7 +313,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           </svg>
         </div>
 
-        {/* Text Content */}
         <div className="flex flex-col">
           <h3 className="text-white font-bold text-xl leading-tight">
             Create your Room
@@ -338,40 +323,31 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {/* Following / Recent Tabs - Updated to text-only with underline */}
-      <div className="flex gap-6 mb-6">
+      <div className="flex gap-1 mb-4 bg-gray-100 rounded-xl p-1">
         <button
           type="button"
           onClick={() => setActiveMineTab('following')}
-          className={`relative pb-1 text-sm font-medium transition-all ${
+          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
             activeMineTab === 'following'
-              ? 'text-gray-900 font-semibold'
-              : 'text-gray-400 hover:text-gray-600'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           Following
-          {activeMineTab === 'following' && (
-            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
-          )}
         </button>
-        
         <button
           type="button"
           onClick={() => setActiveMineTab('recent')}
-          className={`relative pb-1 text-sm font-medium transition-all ${
+          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
             activeMineTab === 'recent'
-              ? 'text-gray-900 font-semibold'
-              : 'text-gray-400 hover:text-gray-600'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           Recent
-          {activeMineTab === 'recent' && (
-            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
-          )}
         </button>
       </div>
 
-      {/* Tab Content */}
       <div className="flex flex-col items-center justify-center py-12 text-gray-400">
         {activeMineTab === 'following' ? (
           <div className="text-center">
@@ -407,10 +383,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
     </div>
   );
 
-  // Render Popular Tab Content
   const renderPopularTab = () => (
     <>
-      {/* Category Cards */}
       <div className="px-4" style={{ marginTop: '-85px', position: 'relative', zIndex: 10 }}>
         <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
           {CATEGORY_CARDS.map((card, i) => (
@@ -484,12 +458,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {/* User Cards Grid */}
+      {/* ✅ User Cards Grid - Add onClick here */}
       <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
         {userCards.map((user) => (
           <div
             key={user.id}
-            onClick={() => handleUserCardClick(user)} // Add click handler
+            onClick={() => handleUserCardClick(user)}  // ✅ ADD THIS LINE
             className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
             style={{ height: '180px' }}
           >
@@ -513,7 +487,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         ))}
       </div>
 
-      {/* Recharge Event */}
       <div className="px-4 pb-24 pt-3 flex justify-center">
         <div className="text-center">
           <div className="text-3xl mb-1"></div>
@@ -565,7 +538,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       `}</style>
 
-      {/* Bottom Right Corner Image - Hide when chat is open */}
+      {/* ✅ Hide corner image on room page */}
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-24 right-4 z-40">
           <img 
@@ -583,7 +556,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       <div className="w-full">
         {currentPage === 'home' && (
           <div className="w-full bg-white min-h-screen">
-            {/* Top Section */}
             <div 
               className="w-full pt-3 px-4" 
               style={{ 
@@ -595,7 +567,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 paddingBottom: activeTab === 'mine' ? '12px' : '0px'
               }}
             >
-              {/* Top Navigation */}
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
                 <button
                   type="button"
@@ -662,7 +633,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 </button>
               </div>
 
-              {/* Banner Carousel - Only show in Popular tab */}
               {activeTab === 'popular' && (
                 <>
                   <div 
@@ -701,7 +671,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
                   
-                  {/* Dots - Active dot black */}
                   <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>
                     {BANNERS.map((_, index) => (
                       <div
@@ -716,7 +685,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
               )}
             </div>
 
-            {/* Content based on active tab */}
             {activeTab === 'mine' ? renderMineTab() : renderPopularTab()}
           </div>
         )}
@@ -725,6 +693,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <MessagePage onChatOpen={setIsChatOpen} />
         )}
         {currentPage === 'me' && <MePage />}
+        
+        {/* ✅ Add RoomPage render */}
         {currentPage === 'room' && selectedUser && (
           <RoomPage 
             user={selectedUser} 
@@ -733,7 +703,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
       </div>
 
-      {/* Bottom Navigation Bar - Only show when chat is NOT open and NOT on room page */}
+      {/* ✅ Hide bottom nav on room page */}
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
@@ -815,4 +785,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-}
+        }
