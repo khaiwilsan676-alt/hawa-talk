@@ -19,7 +19,7 @@ export default function Page() {
     setLoading(false)
   }, [])
 
-  const handleLoginSuccess = (credentials: Record<string, unknown>) => {
+  const handleLoginSuccess = (credentials:) => {
     setIsLoggedIn(true)
   }
 
