@@ -1,0 +1,29 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+      - run: npm run build
+
+      - run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init Hawa com.hawa.app || true
+          npx cap add android || true
+          npx cap sync
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-project
+          path: android
