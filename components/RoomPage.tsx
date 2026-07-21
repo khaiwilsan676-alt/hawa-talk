@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 
 interface RoomPageProps {
   user: {
@@ -11,6 +11,8 @@ interface RoomPageProps {
 }
 
 export default function RoomPage({ user, onClose }: RoomPageProps) {
+  const [showExitMenu, setShowExitMenu] = useState(false)
+
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* Background Image */}
@@ -23,16 +25,27 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
       {/* Content Overlay */}
       <div className="relative z-10 flex flex-col h-full p-4">
         
-        {/* Top Header Section - More Compact */}
+        {/* Top Header Section */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
           
-          {/* User Details (Left Side) */}
-          <div className="text-left">
-            <h2 className="font-bold text-base">{user.name}</h2>
-            <p className="text-xs text-gray-300">ID: 313574</p>
+          {/* User Details with DP (Left Side) */}
+          <div className="flex items-center gap-3">
+            {/* Profile Picture */}
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30 flex-shrink-0">
+              <img 
+                src={user.image} 
+                alt={user.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {/* Name and ID */}
+            <div className="text-left">
+              <h2 className="font-bold text-base">{user.name}</h2>
+              <p className="text-xs text-gray-300">ID: 313574</p>
+            </div>
           </div>
 
-          {/* Top Right Icons - Increased icon sizes, smaller pill */}
+          {/* Top Right Icons */}
           <div className="flex items-center gap-1.5">
             
             {/* 1. Followers / User Count Pill - Smaller */}
@@ -70,7 +83,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
             {/* 4. Power / Exit Icon - Bigger */}
             <button 
-              onClick={onClose}
+              onClick={() => setShowExitMenu(true)}
               aria-label="Power"
               className="p-1.5 bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center w-9 h-9"
             >
@@ -83,7 +96,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
         </div>
 
-        {/* Room Seats Layout - Moved slightly down */}
+        {/* Room Seats Layout */}
         <div className="flex-1 flex flex-col justify-start gap-3 pt-6">
           
           {/* Row 1: 1 Seat */}
@@ -127,6 +140,57 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         </div>
 
       </div>
+
+      {/* Exit Menu Overlay */}
+      {showExitMenu && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-6">
+            
+            {/* Keep Button - Blue Circle with Minimize Icon */}
+            <div className="flex flex-col items-center gap-2">
+              <button 
+                onClick={() => setShowExitMenu(false)}
+                className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30"
+              >
+                {/* Minimize Icon */}
+                <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+              <span className="text-white font-semibold text-base">Keep</span>
+            </div>
+
+            {/* Exit Button - Circle with Door Icon */}
+            <div className="flex flex-col items-center gap-2">
+              <button 
+                onClick={onClose}
+                className="w-20 h-20 rounded-full bg-white/10 hover:bg-white/20 border-2 border-white/30 flex items-center justify-center transition-all duration-200 backdrop-blur-md"
+              >
+                {/* Door/Exit Icon */}
+                <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
+              <span className="text-white/70 font-medium text-sm">Exit</span>
+            </div>
+
+          </div>
+
+          {/* Close Cross Button - Bottom */}
+          <button 
+            onClick={() => setShowExitMenu(false)}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200"
+          >
+            {/* Cross Icon */}
+            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   )
 }
