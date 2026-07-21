@@ -12,7 +12,7 @@ interface RoomPageProps {
 
 export default function RoomPage({ user, onClose }: RoomPageProps) {
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* Background Image */}
       <img 
         src="/1784533036732~2.jpg" 
@@ -21,10 +21,10 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
       />
       
       {/* Content Overlay */}
-      <div className="relative z-10 flex flex-col h-full justify-between p-4">
+      <div className="relative z-10 flex flex-col h-full p-4">
         
         {/* Top Header Section - More Compact */}
-        <div className="flex justify-between items-center text-white">
+        <div className="flex justify-between items-center text-white flex-shrink-0">
           
           {/* User Details (Left Side) */}
           <div className="text-left">
@@ -83,8 +83,8 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
         </div>
 
-        {/* Room Seats Layout - Moved Up with minimal gap */}
-        <div className="flex flex-col justify-start gap-3 mt-1">
+        {/* Room Seats Layout - Moved Up Completely */}
+        <div className="flex-1 flex flex-col justify-start gap-3 pt-2">
           
           {/* Row 1: 1 Seat */}
           <div className="flex justify-center">
@@ -110,7 +110,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         </div>
 
         {/* Footer Controls */}
-        <div className="pb-4">
+        <div className="flex-shrink-0 pb-4">
           {/* Input field and action icons */}
           <div className="flex gap-2">
             <input 
@@ -134,7 +134,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 {/* Seat Component */}
 function SeatItem({ seatNumber }: { seatNumber: number }) {
   return (
-    <div className="flex flex-col items-center gap-1 -mt-5">
+    <div className="flex flex-col items-center gap-1">
       <div
         className="w-16 h-16 rounded-full flex items-center justify-center shrink-0
         bg-[rgba(125,143,168,0.32)]
