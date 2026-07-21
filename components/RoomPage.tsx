@@ -134,7 +134,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 {/* Seat Component */}
 function SeatItem({ seatNumber }: { seatNumber: number }) {
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1 -mt-5">
       <div
         className="w-16 h-16 rounded-full flex items-center justify-center shrink-0
         bg-[rgba(125,143,168,0.32)]
