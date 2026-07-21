@@ -32,12 +32,12 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
             <p className="text-xs text-gray-300">ID: 313574</p>
           </div>
 
-          {/* Top Right Icons - More Compact */}
+          {/* Top Right Icons - Increased icon sizes, smaller pill */}
           <div className="flex items-center gap-1.5">
             
-            {/* 1. Followers / User Count Pill */}
-            <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 h-8">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+            {/* 1. Followers / User Count Pill - Smaller */}
+            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
                 <line x1="18" y1="8" x2="21" y2="8" />
@@ -47,44 +47,44 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               <span className="text-white text-xs font-semibold leading-none">1</span>
             </div>
 
-            {/* 2. Hexagon Settings Icon */}
+            {/* 2. Hexagon Settings Icon - Bigger */}
             <button 
               aria-label="Settings"
               className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
                 <circle cx="12" cy="12" r="2.8" />
               </svg>
             </button>
 
-            {/* 3. Share Arrow Icon */}
+            {/* 3. Share Arrow Icon - Bigger */}
             <button 
               aria-label="Share"
               className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
               </svg>
             </button>
 
-            {/* 4. Power / Exit Icon */}
+            {/* 4. Power / Exit Icon - Bigger */}
             <button 
               onClick={onClose}
               aria-label="Power"
-              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+              className="p-1.5 bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center w-9 h-9"
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M12 3.5v7.5" />
-                <path d="M18.36 5.64a8.5 8.5 0 1 1-12.72 0" />
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                <path d="M12 4v8" />
+                <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
               </svg>
             </button>
           </div>
 
         </div>
 
-        {/* Room Seats Layout - Moved Up Completely */}
-        <div className="flex-1 flex flex-col justify-start gap-3 pt-2">
+        {/* Room Seats Layout - Moved slightly down */}
+        <div className="flex-1 flex flex-col justify-start gap-3 pt-6">
           
           {/* Row 1: 1 Seat */}
           <div className="flex justify-center">
