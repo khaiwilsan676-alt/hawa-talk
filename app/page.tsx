@@ -19,7 +19,7 @@ export default function Page() {
     setLoading(false)
   }, [])
 
-  const handleLoginSuccess = (credentials) => {
+  const handleLoginSuccess = (credentials: any) => {
     setIsLoggedIn(true)
   }
 
