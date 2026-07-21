@@ -4,7 +4,11 @@ import { useState, useEffect, useRef } from 'react'
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
-import RoomPage from './RoomPage'  // ✅ Add this import
+import RoomPage from './RoomPage'
+
+interface HomePageProps {
+  onLogout?: () => void;
+}
 
 interface UserCard {
   id: string  
@@ -56,7 +60,7 @@ const BANNERS = [
 
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
-type Page = 'home' | 'message' | 'me' | 'room'  // ✅ Add 'room'
+type Page = 'home' | 'message' | 'me' | 'room'
 
 const CATEGORY_CARDS = [
   {
@@ -88,14 +92,14 @@ const CATEGORY_CARDS = [
   },
 ];
 
-export default function HomePage({ onLogout }) {
+export default function HomePage({ onLogout }: HomePageProps) {
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [activeMineTab, setActiveMineTab] = useState<MineTab>('following')
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [mounted, setMounted] = useState(false)
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)  // ✅ Add this state
+  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
   
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
@@ -194,7 +198,6 @@ export default function HomePage({ onLogout }) {
     }
   }
 
-  // ✅ Add these two functions
   const handleUserCardClick = (user: UserCard) => {
     setSelectedUser(user)
     setCurrentPage('room')
@@ -458,12 +461,11 @@ export default function HomePage({ onLogout }) {
         </div>
       </div>
 
-      {/* ✅ User Cards Grid - Add onClick here */}
       <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
         {userCards.map((user) => (
           <div
             key={user.id}
-            onClick={() => handleUserCardClick(user)}  // ✅ ADD THIS LINE
+            onClick={() => handleUserCardClick(user)}
             className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
             style={{ height: '180px' }}
           >
@@ -538,7 +540,6 @@ export default function HomePage({ onLogout }) {
         }
       `}</style>
 
-      {/* ✅ Hide corner image on room page */}
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-24 right-4 z-40">
           <img 
@@ -694,7 +695,6 @@ export default function HomePage({ onLogout }) {
         )}
         {currentPage === 'me' && <MePage />}
         
-        {/* ✅ Add RoomPage render */}
         {currentPage === 'room' && selectedUser && (
           <RoomPage 
             user={selectedUser} 
@@ -703,7 +703,6 @@ export default function HomePage({ onLogout }) {
         )}
       </div>
 
-      {/* ✅ Hide bottom nav on room page */}
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
@@ -785,4 +784,4 @@ export default function HomePage({ onLogout }) {
       )}
     </div>
   )
-        }
+                    }
