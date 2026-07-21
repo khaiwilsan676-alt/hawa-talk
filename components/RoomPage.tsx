@@ -83,7 +83,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
             {/* 4. Power / Exit Icon - Bigger */}
             <button 
-              onClick={() => setShowExitMenu(true)}
+              onClick={() => onClose()}
               aria-label="Power"
               className="p-1.5 bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center w-9 h-9"
             >
@@ -126,7 +126,12 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         <div className="flex-shrink-0 pb-4">
           <div className="flex items-center justify-between gap-2">
             
-            {/* Left/Middle Action Icons */}
+            {/* Left Side Corner: "Say Hi" Pill Button (Matched Black Theme) */}
+            <button className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 h-10 flex items-center justify-center">
+              Say Hi
+            </button>
+
+            {/* Right Side Action Icons */}
             <div className="flex items-center gap-2">
               <button className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -183,19 +188,14 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               </button>
             </div>
 
-            {/* Right Side Corner: "Say Hi" Pill Button */}
-            <button className="bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-white/30 transition-colors shadow-md shrink-0">
-              Say Hi
-            </button>
-
           </div>
         </div>
 
       </div>
 
-      {/* Exit Menu Overlay */}
+      {/* Exit Menu Overlay (No Background Blur, Original Background Visible) */}
       {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-auto">
           <div className="flex flex-col items-center gap-6">
             
             {/* Keep Button */}
