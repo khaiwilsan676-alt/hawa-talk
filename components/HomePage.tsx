@@ -59,6 +59,10 @@ type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
 type Page = 'home' | 'message' | 'me' | 'room' // Add 'room' to Page type
 
+interface HomePageProps {
+  onLogout: () => void
+}
+
 const CATEGORY_CARDS = [
   {
     label: 'Honour',
@@ -89,7 +93,7 @@ const CATEGORY_CARDS = [
   },
 ];
 
-export default function HomePage({ onLogout }) {
+export default function HomePage({ onLogout }: HomePageProps) {
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [activeMineTab, setActiveMineTab] = useState<MineTab>('following')
   const [currentPage, setCurrentPage] = useState<Page>('home')
@@ -811,5 +815,4 @@ export default function HomePage({ onLogout }) {
       )}
     </div>
   )
-          }
-
+}
