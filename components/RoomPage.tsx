@@ -23,7 +23,7 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
       {/* Content Overlay */}
       <div className="relative z-10 flex flex-col h-full justify-between p-4">
         
-        {/* Top Header Section */}
+        {/* Top Header Section - More Compact */}
         <div className="flex justify-between items-center text-white">
           
           {/* User Details (Left Side) */}
@@ -32,27 +32,27 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
             <p className="text-xs text-gray-300">ID: 313574</p>
           </div>
 
-          {/* Top Right Icons */}
-          <div className="flex items-center gap-2">
+          {/* Top Right Icons - More Compact */}
+          <div className="flex items-center gap-1.5">
             
             {/* 1. Followers / User Count Pill */}
-            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 h-9">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+            <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 h-8">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
                 <line x1="18" y1="8" x2="21" y2="8" />
                 <line x1="18" y1="12" x2="21" y2="12" />
                 <line x1="18" y1="16" x2="20" y2="16" />
               </svg>
-              <span className="text-white text-sm font-semibold leading-none">1</span>
+              <span className="text-white text-xs font-semibold leading-none">1</span>
             </div>
 
             {/* 2. Hexagon Settings Icon */}
             <button 
               aria-label="Settings"
-              className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
                 <circle cx="12" cy="12" r="2.8" />
               </svg>
@@ -61,9 +61,9 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
             {/* 3. Share Arrow Icon */}
             <button 
               aria-label="Share"
-              className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
               </svg>
             </button>
@@ -72,9 +72,9 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
             <button 
               onClick={onClose}
               aria-label="Power"
-              className="p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M12 3.5v7.5" />
                 <path d="M18.36 5.64a8.5 8.5 0 1 1-12.72 0" />
               </svg>
@@ -83,8 +83,8 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
         </div>
 
-        {/* Room Seats Layout (1 + 4 + 4) - Reduced gap from header */}
-        <div className="flex-1 flex flex-col justify-center gap-4 mt-2">
+        {/* Room Seats Layout - Moved Up with minimal gap */}
+        <div className="flex flex-col justify-start gap-3 mt-1">
           
           {/* Row 1: 1 Seat */}
           <div className="flex justify-center">
