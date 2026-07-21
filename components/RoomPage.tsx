@@ -30,8 +30,8 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
           
           {/* User Details with DP (Left Side) */}
           <div className="flex items-center gap-3">
-            {/* Profile Picture */}
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30 flex-shrink-0">
+            {/* Profile Picture - Square with rounded corners */}
+            <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
               <img 
                 src={user.image} 
                 alt={user.name}
@@ -123,17 +123,88 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         </div>
 
         {/* Footer Controls */}
-        <div className="flex-shrink-0 pb-4">
-          {/* Input field and action icons */}
-          <div className="flex gap-2">
+        <div className="flex-shrink-0 pb-4 relative">
+          
+          {/* Say Hi Button (Image 2 - Placed at Right Side Corner above controls) */}
+          <div className="flex justify-end mb-2">
+            <button 
+              aria-label="Say Hi"
+              className="bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 hover:bg-black/60 transition-colors text-white text-xs font-medium tracking-wide shadow-sm"
+            >
+              Say Hi
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
             <input 
               type="text" 
               placeholder="Send a message..." 
-              className="flex-1 bg-black/30 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 text-white placeholder-gray-400 outline-none focus:border-white/40"
+              className="flex-1 bg-black/30 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 text-white placeholder-gray-400 outline-none focus:border-white/40 min-w-0 text-sm"
             />
-            <button className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors">
+            <button className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+
+            {/* Emoji Icon (Image 1 Strictly Matched - Added Before Mic Icon) */}
+            <button 
+              aria-label="Emoji Picker"
+              className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="9" cy="10" r="1" fill="white" />
+                <circle cx="15" cy="10" r="1" fill="white" />
+                <path d="M9.5 15c.8 1.2 2 1.8 3.5 1.8s2.7-.6 3.5-1.8" />
+              </svg>
+            </button>
+
+            {/* Mic Icon (Image 1 Strictly Matched) */}
+            <button 
+              aria-label="Toggle Microphone"
+              className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </svg>
+            </button>
+
+            {/* Speaker Icon (Image 2 Strictly Matched) */}
+            <button 
+              aria-label="Toggle Speaker"
+              className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </button>
+
+            {/* Message Box Menu Icon */}
+            <button 
+              aria-label="Message Box Menu"
+              className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                <rect x="4" y="4" width="16" height="16" rx="4" />
+                <path d="M7 9.5L12 14.5L17 9.5" />
+              </svg>
+            </button>
+
+            {/* Bottom Right Grid Menu Icon */}
+            <button 
+              aria-label="Apps Menu"
+              className="bg-black/40 backdrop-blur-md p-2.5 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
+                <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" />
+                <rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" />
+                <rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" />
+                <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
               </svg>
             </button>
           </div>
@@ -143,16 +214,15 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
       {/* Exit Menu Overlay */}
       {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="absolute inset-0 z-20 flex items-center justify-center">
           <div className="flex flex-col items-center gap-6">
             
-            {/* Keep Button - Blue Circle with Minimize Icon */}
+            {/* Keep Button */}
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={() => setShowExitMenu(false)}
                 className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30"
               >
-                {/* Minimize Icon */}
                 <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
@@ -160,13 +230,12 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               <span className="text-white font-semibold text-base">Keep</span>
             </div>
 
-            {/* Exit Button - Circle with Door Icon */}
+            {/* Exit Button */}
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={onClose}
-                className="w-20 h-20 rounded-full bg-white/10 hover:bg-white/20 border-2 border-white/30 flex items-center justify-center transition-all duration-200 backdrop-blur-md"
+                className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30"
               >
-                {/* Door/Exit Icon */}
                 <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
@@ -178,12 +247,11 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
           </div>
 
-          {/* Close Cross Button - Bottom */}
+          {/* Close Cross Button */}
           <button 
             onClick={() => setShowExitMenu(false)}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200"
           >
-            {/* Cross Icon */}
             <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
