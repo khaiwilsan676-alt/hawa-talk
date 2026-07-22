@@ -7,11 +7,18 @@ interface RoomPageProps {
     name: string
     image: string
   }
-  onClose: () => void
+  onClose?: () => void
+  onBack?: () => void
 }
 
-export default function RoomPage({ user, onClose }: RoomPageProps) {
+export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
+
+  const handleExit = () => {
+    setShowExitMenu(false)
+    if (onBack) onBack()
+    if (onClose) onClose()
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -28,9 +35,8 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
         {/* Top Header Section */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
           
-          {/* User Details with DP (Left Side) */}
+          {/* User Details with DP */}
           <div className="flex items-center gap-3">
-            {/* Profile Picture - Square with rounded corners */}
             <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
               <img 
                 src={user.image} 
@@ -38,7 +44,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
                 className="w-full h-full object-cover"
               />
             </div>
-            {/* Name and ID */}
             <div className="text-left">
               <h2 className="font-bold text-base">{user.name}</h2>
               <p className="text-xs text-gray-300">ID: 313574</p>
@@ -47,8 +52,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
           {/* Top Right Icons */}
           <div className="flex items-center gap-1.5">
-            
-            {/* 1. Followers / User Count Pill - Smaller */}
             <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7">
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <circle cx="9" cy="7" r="4" />
@@ -60,7 +63,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               <span className="text-white text-xs font-semibold leading-none">1</span>
             </div>
 
-            {/* 2. Hexagon Settings Icon - Bigger */}
             <button 
               aria-label="Settings"
               className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
@@ -71,7 +73,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               </svg>
             </button>
 
-            {/* 3. Share Arrow Icon - Bigger */}
             <button 
               aria-label="Share"
               className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
@@ -81,7 +82,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               </svg>
             </button>
 
-            {/* 4. Power / Exit Icon - Bigger */}
             <button 
               onClick={() => setShowExitMenu(true)}
               aria-label="Power"
@@ -98,13 +98,10 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
 
         {/* Room Seats Layout */}
         <div className="flex-1 flex flex-col justify-start gap-3 pt-6">
-          
-          {/* Row 1: 1 Seat */}
           <div className="flex justify-center">
             <SeatItem seatNumber={1} />
           </div>
 
-          {/* Row 2: 4 Seats */}
           <div className="flex justify-around items-center px-2">
             <SeatItem seatNumber={2} />
             <SeatItem seatNumber={3} />
@@ -112,21 +109,17 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
             <SeatItem seatNumber={5} />
           </div>
 
-          {/* Row 3: 4 Seats */}
           <div className="flex justify-around items-center px-2">
             <SeatItem seatNumber={6} />
             <SeatItem seatNumber={7} />
             <SeatItem seatNumber={8} />
             <SeatItem seatNumber={9} />
           </div>
-
         </div>
 
         {/* Footer Controls */}
         <div className="flex-shrink-0 pb-4">
           <div className="flex items-center justify-between gap-2">
-            
-            {/* Left Side - Action Icons + Say Hi */}
             <div className="flex items-center gap-2">
               <button className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -134,7 +127,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
                 </svg>
               </button>
 
-              {/* Mic Icon */}
               <button 
                 aria-label="Toggle Microphone"
                 className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
@@ -146,7 +138,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
                 </svg>
               </button>
 
-              {/* Speaker Icon */}
               <button 
                 aria-label="Toggle Speaker"
                 className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
@@ -158,7 +149,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
                 </svg>
               </button>
 
-              {/* Message Box Menu Icon */}
               <button 
                 aria-label="Message Box Menu"
                 className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
@@ -169,7 +159,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
                 </svg>
               </button>
 
-              {/* Bottom Grid Menu Icon */}
               <button 
                 aria-label="Apps Menu"
                 className="bg-black/40 backdrop-blur-md p-2.5 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10"
@@ -182,23 +171,19 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
                 </svg>
               </button>
 
-              {/* Say Hi Button - Now black like other icons, in left corner */}
               <button className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0">
                 Say Hi
               </button>
             </div>
-
           </div>
         </div>
 
       </div>
 
-      {/* Exit Menu Overlay - No blur, showing original background */}
+      {/* Exit Menu Overlay */}
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
           <div className="flex flex-col items-center gap-6">
-            
-            {/* Keep Button */}
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={() => setShowExitMenu(false)}
@@ -211,13 +196,9 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               <span className="text-white font-semibold text-base">Keep</span>
             </div>
 
-            {/* Exit Button - Now works properly */}
             <div className="flex flex-col items-center gap-2">
               <button 
-                onClick={() => {
-                  setShowExitMenu(false);
-                  onClose();
-                }}
+                onClick={handleExit}
                 className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30"
               >
                 <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
@@ -228,10 +209,8 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
               </button>
               <span className="text-white/70 font-medium text-sm">Exit</span>
             </div>
-
           </div>
 
-          {/* Close Cross Button */}
           <button 
             onClick={() => setShowExitMenu(false)}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200"
@@ -247,7 +226,6 @@ export default function RoomPage({ user, onClose }: RoomPageProps) {
   )
 }
 
-{/* Seat Component */}
 function SeatItem({ seatNumber }: { seatNumber: number }) {
   return (
     <div className="flex flex-col items-center gap-1">
@@ -267,7 +245,6 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
             xmlns="http://www.w3.org/2000/svg"
             style={{ overflow: "visible", display: "block" }}
           >
-            {/* mic stand */}
             <g
               fill="none"
               stroke="#94a7be"
@@ -280,7 +257,6 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
               <path d="M 38 90 L 62 90" />
             </g>
 
-            {/* mic head */}
             <g
               fill="#94a7be"
               stroke="#5a6d89"
@@ -294,8 +270,8 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
           </svg>
         </div>
       </div>
-      {/* Seat Number */}
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-                    }
+}
+
