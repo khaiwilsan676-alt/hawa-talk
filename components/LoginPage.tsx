@@ -3,7 +3,11 @@
 import { useState } from 'react'
 import { Phone } from 'lucide-react'
 
-export default function LoginPage({ onLoginSuccess }) {
+interface LoginPageProps {
+  onLoginSuccess?: (data?: any) => void
+}
+
+export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | null>(null)
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -15,7 +19,7 @@ export default function LoginPage({ onLoginSuccess }) {
       // Simulate Gmail login
       if (email.trim()) {
         localStorage.setItem('userEmail', email)
-        onLoginSuccess(email)
+        if (onLoginSuccess) onLoginSuccess(email)
       }
     } catch (error) {
       console.error('Gmail login error:', error)
@@ -30,7 +34,7 @@ export default function LoginPage({ onLoginSuccess }) {
       // Simulate Phone login
       if (phone.trim()) {
         localStorage.setItem('userPhone', phone)
-        onLoginSuccess(phone)
+        if (onLoginSuccess) onLoginSuccess(phone)
       }
     } catch (error) {
       console.error('Phone login error:', error)
@@ -150,7 +154,7 @@ export default function LoginPage({ onLoginSuccess }) {
                   <input
                     type="tel"
                     placeholder="9876543210"
-                    maxLength="10"
+                    maxLength={10}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                     className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
@@ -177,3 +181,4 @@ export default function LoginPage({ onLoginSuccess }) {
     </div>
   )
 }
+
