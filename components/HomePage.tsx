@@ -330,20 +330,22 @@ export default function HomePage({ onLogout }: HomePageProps) {
         <button
           type="button"
           onClick={() => setActiveMineTab('following')}
-          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${activeMineTab === 'following'
+          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
+            activeMineTab === 'following'
               ? 'bg-white text-gray-900 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
-            }`}
+          }`}
         >
           Following
         </button>
         <button
           type="button"
           onClick={() => setActiveMineTab('recent')}
-          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${activeMineTab === 'recent'
+          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
+            activeMineTab === 'recent'
               ? 'bg-white text-gray-900 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
-            }`}
+          }`}
         >
           Recent
         </button>
@@ -591,10 +593,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <button
                     type="button"
                     onClick={() => setActiveTab('mine')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${activeTab === 'mine'
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                      activeTab === 'mine'
                         ? 'font-bold text-[#1E1E1E]'
                         : 'font-medium text-[#6E6E6E]'
-                      }`}
+                    }`}
                   >
                     Mine
                     {activeTab === 'mine' && (
@@ -605,10 +608,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <button
                     type="button"
                     onClick={() => setActiveTab('popular')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${activeTab === 'popular'
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                      activeTab === 'popular'
                         ? 'font-bold text-[#1E1E1E]'
                         : 'font-medium text-[#6E6E6E]'
-                      }`}
+                    }`}
                   >
                     Popular
                     {activeTab === 'popular' && (
@@ -672,8 +676,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     {BANNERS.map((_, index) => (
                       <div
                         key={index}
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
-                          }`}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                          index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
+                        }`}
                       />
                     ))}
                   </div>
@@ -688,7 +693,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         {currentPage === 'message' && (
           <MessagePage onChatOpen={setIsChatOpen} />
         )}
-        {currentPage === 'me' && <MePage />}
+        
+        {currentPage === 'me' && <MePage onLogout={onLogout} />}
 
         {currentPage === 'room' && selectedUser && (
           <RoomPage
@@ -779,4 +785,5 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-      }
+}
+
