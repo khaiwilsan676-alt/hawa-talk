@@ -344,7 +344,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         <button
           type="button"
           onClick={() => setActiveMineTab('recent')}
-          className={`relative pb-1.5 text-xs font-medium transition-colors ${
+          className={`relative pb-1.5 text-sm font-medium transition-colors ${
             activeMineTab === 'recent'
               ? 'text-gray-900'
               : 'text-gray-400 hover:text-gray-600'
