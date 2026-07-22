@@ -1,18 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Dispatch, SetStateAction } from 'react'
 import { CheckCircle, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 
-export default function MessagePage() {
-  const [activeChat, setActiveChat] = useState(null)
+// 1. Types define kar diye hain taaki Vercel par error na aaye
+interface ChatItem {
+  id: string
+  name: string
+  image: string
+}
+
+interface MessagePageProps {
+  onChatOpen?: Dispatch<SetStateAction<boolean>> | ((open: boolean) => void)
+}
+
+export default function MessagePage({ onChatOpen }: MessagePageProps) {
+  const [activeChat, setActiveChat] = useState<ChatItem | null>(null)
 
   // toggle a body class so other UI (bottom bars) can be hidden
   useEffect(() => {
     if (typeof document === 'undefined') return
 
-    // When no chat is selected (chat list view) we want to hide the bottom bars.
-    // Previously this logic was inverted which prevented the class from being added.
+    // When activeChat changes, inform parent if needed
+    if (onChatOpen) {
+      onChatOpen(!!activeChat)
+    }
+
     if (!activeChat) {
       document.body.classList.add('hide-bottom-bars')
     } else {
@@ -20,13 +34,12 @@ export default function MessagePage() {
     }
 
     return () => {
-      // cleanup in case component unmounts
       document.body.classList.remove('hide-bottom-bars')
     }
-  }, [activeChat])
+  }, [activeChat, onChatOpen])
 
   // Chat data
-  const chats = [
+  const chats: ChatItem[] = [
     {
       id: 'hawa-team',
       name: 'Hawa Team',
@@ -115,3 +128,4 @@ export default function MessagePage() {
     </div>
   )
 }
+
