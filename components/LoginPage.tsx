@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Phone } from 'lucide-react'
 import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "@/lib/firebase";
+import { auth, provider } from "../lib/firebase";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -156,4 +156,5 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       </div>
     </div>
   )
-      }
+}
+
