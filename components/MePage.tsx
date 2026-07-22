@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { ChevronRight } from 'lucide-react'
 
 interface MenuItem {
@@ -9,6 +10,11 @@ interface MenuItem {
   icon?: React.ReactNode
   action?: string
   badge?: string
+}
+
+// MePage Component Props Interface Added
+interface MePageProps {
+  onLogout?: () => void
 }
 
 const menuItems: MenuItem[] = [
@@ -67,7 +73,7 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
-export default function MePage({ onLogout }) {
+export default function MePage({ onLogout }: MePageProps) {
   return (
     <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
       {/* Profile Header */}
@@ -155,7 +161,7 @@ export default function MePage({ onLogout }) {
         </div>
       </div>
 
-      {/* Bottom Menu Items (Language, Settings, Customer Service, Help & Feedback) */}
+      {/* Bottom Menu Items */}
       <div className="px-4 mt-4 mb-6">
         <div className="bg-white rounded-xl overflow-hidden">
           {bottomMenuItems.map((item, index) => (
@@ -197,3 +203,4 @@ export default function MePage({ onLogout }) {
     </div>
   )
 }
+
