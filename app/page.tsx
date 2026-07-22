@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import HomePage from './components/HomePage'
-import LoginPage from './components/LoginPage'
+import HomePage from '@/components/HomePage'
+import LoginPage from '@/components/LoginPage'
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
