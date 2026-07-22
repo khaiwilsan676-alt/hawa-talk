@@ -1,4 +1,4 @@
-'use client'  
+'use client'
 
 import { useState, useEffect, useRef } from 'react'
 
@@ -11,7 +11,7 @@ interface HomePageProps {
 }
 
 interface UserCard {
-  id: string  
+  id: string
   name: string
   country: string
   score: number
@@ -100,7 +100,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
-  
+
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
   const touchEndX = useRef<number>(0)
@@ -128,22 +128,22 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isSwiping) return
-    
+
     touchEndX.current = e.touches[0].clientX
     const diff = touchEndX.current - touchStartX.current
     setSwipeOffset(diff)
-    
+
     if (Math.abs(diff) > 10) {
-      e.preventDefault()
+      if (e.cancelable) e.preventDefault()
     }
   }
 
   const handleTouchEnd = () => {
     if (!isSwiping) return
-    
+
     const diff = touchEndX.current - touchStartX.current
     const threshold = 50
-    
+
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
         setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
@@ -151,7 +151,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
       }
     }
-    
+
     setIsSwiping(false)
     setSwipeOffset(0)
     touchStartX.current = 0
@@ -174,10 +174,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const handleMouseUp = () => {
     if (!isSwiping) return
-    
+
     const diff = touchEndX.current - touchStartX.current
     const threshold = 50
-    
+
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
         setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
@@ -185,7 +185,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
       }
     }
-    
+
     setIsSwiping(false)
     setSwipeOffset(0)
     touchStartX.current = 0
@@ -213,7 +213,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     if (existingMeta) {
       existingMeta.remove()
     }
-    
+
     const meta = document.createElement('meta')
     meta.name = 'viewport'
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
@@ -251,9 +251,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
           const text = el.textContent?.toLowerCase() || ''
           const className = el.className?.toLowerCase() || ''
           const id = el.id?.toLowerCase() || ''
-          
+
           if (
-            (text.includes('ai') && el.children.length === 0 && el.textContent?.trim().length <= 5) ||
+            (text.includes('ai') && el.children.length === 0 && (el.textContent?.trim().length || 0) <= 5) ||
             className.includes('ai-') ||
             id.includes('ai-') ||
             className.includes('_ai') ||
@@ -287,7 +287,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const renderMineTab = () => (
     <div className="px-4 mt-6">
-      <div 
+      <div
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -330,22 +330,20 @@ export default function HomePage({ onLogout }: HomePageProps) {
         <button
           type="button"
           onClick={() => setActiveMineTab('following')}
-          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
-            activeMineTab === 'following'
+          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${activeMineTab === 'following'
               ? 'bg-white text-gray-900 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Following
         </button>
         <button
           type="button"
           onClick={() => setActiveMineTab('recent')}
-          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
-            activeMineTab === 'recent'
+          className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${activeMineTab === 'recent'
               ? 'bg-white text-gray-900 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Recent
         </button>
@@ -432,7 +430,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               >
                 {card.label}
               </div>
-              
+
               <div
                 style={{
                   flex: 1,
@@ -499,9 +497,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
   );
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
-      style={{ 
+      style={{
         paddingBottom: isChatOpen ? '0px' : '96px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
@@ -511,43 +509,43 @@ export default function HomePage({ onLogout }: HomePageProps) {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
-        
-        * {
-          -webkit-text-size-adjust: 100%;
-          -ms-text-size-adjust: 100%;
-          touch-action: manipulation;
-        }
-        
-        button, a, div, span {
-          touch-action: manipulation;
-        }
-        
-        @keyframes cardIn {
-          0% { opacity: 0; transform: translateY(14px) scale(0.96); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes fadeInBanner {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        @keyframes slideUp {
-          0% { transform: translateY(100%); }
-          100% { transform: translateY(0); }
-        }
-        @keyframes slideDown {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(100%); }
-        }
+
+        * {  
+          -webkit-text-size-adjust: 100%;  
+          -ms-text-size-adjust: 100%;  
+          touch-action: manipulation;  
+        }  
+          
+        button, a, div, span {  
+          touch-action: manipulation;  
+        }  
+          
+        @keyframes cardIn {  
+          0% { opacity: 0; transform: translateY(14px) scale(0.96); }  
+          100% { opacity: 1; transform: translateY(0) scale(1); }  
+        }  
+        @keyframes fadeInBanner {  
+          0% { opacity: 0; }  
+          100% { opacity: 1; }  
+        }  
+        @keyframes slideUp {  
+          0% { transform: translateY(100%); }  
+          100% { transform: translateY(0); }  
+        }  
+        @keyframes slideDown {  
+          0% { transform: translateY(0); }  
+          100% { transform: translateY(100%); }  
+        }  
       `}</style>
 
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-24 right-4 z-40">
-          <img 
-            src="/IMG_20260719_203213.png" 
+          <img
+            src="/IMG_20260719_203213.png"
             alt="Corner decoration"
             className="rounded-2xl object-cover"
-            style={{ 
-              width: '70px', 
+            style={{
+              width: '70px',
               height: '70px',
             }}
           />
@@ -557,13 +555,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
       <div className="w-full">
         {currentPage === 'home' && (
           <div className="w-full bg-white min-h-screen">
-            <div 
-              className="w-full pt-3 px-4" 
-              style={{ 
+            <div
+              className="w-full pt-3 px-4"
+              style={{
                 height: activeTab === 'mine' ? 'auto' : '34vh',
                 minHeight: activeTab === 'mine' ? 'auto' : '34vh',
-                background: activeTab === 'mine' 
-                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)' 
+                background: activeTab === 'mine'
+                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
                 paddingBottom: activeTab === 'mine' ? '12px' : '0px'
               }}
@@ -593,11 +591,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <button
                     type="button"
                     onClick={() => setActiveTab('mine')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
-                      activeTab === 'mine'
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${activeTab === 'mine'
                         ? 'font-bold text-[#1E1E1E]'
                         : 'font-medium text-[#6E6E6E]'
-                    }`}
+                      }`}
                   >
                     Mine
                     {activeTab === 'mine' && (
@@ -608,11 +605,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <button
                     type="button"
                     onClick={() => setActiveTab('popular')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
-                      activeTab === 'popular'
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${activeTab === 'popular'
                         ? 'font-bold text-[#1E1E1E]'
                         : 'font-medium text-[#6E6E6E]'
-                    }`}
+                      }`}
                   >
                     Popular
                     {activeTab === 'popular' && (
@@ -636,10 +632,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
               {activeTab === 'popular' && (
                 <>
-                  <div 
+                  <div
                     ref={bannerRef}
                     className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
-                    style={{ 
+                    style={{
                       height: '90px',
                       width: '100%',
                       display: 'flex',
@@ -656,29 +652,28 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div 
+                    <div
                       key={currentBanner}
                       className="w-full h-full"
                       style={{
                         animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',
                       }}
                     >
-                      <img 
-                        src={BANNERS[currentBanner].image} 
+                      <img
+                        src={BANNERS[currentBanner].image}
                         alt="Banner"
                         className="w-full h-full object-cover rounded-2xl"
                         draggable="false"
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>
                     {BANNERS.map((_, index) => (
                       <div
                         key={index}
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${
-                          index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
-                        }`}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
+                          }`}
                       />
                     ))}
                   </div>
@@ -694,10 +689,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <MessagePage onChatOpen={setIsChatOpen} />
         )}
         {currentPage === 'me' && <MePage />}
-        
+
         {currentPage === 'room' && selectedUser && (
-          <RoomPage 
-            user={selectedUser} 
+          <RoomPage
+            user={selectedUser}
             onBack={handleBackFromRoom}
           />
         )}
@@ -706,8 +701,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
-            
-            <button 
+
+            <button
               onClick={() => setCurrentPage('home')}
               className="flex flex-col items-center gap-1 transition-all active:scale-95"
             >
@@ -737,7 +732,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               </span>
             </button>
 
-            <button 
+            <button
               onClick={() => setCurrentPage('message')}
               className="flex flex-col items-center gap-1 transition-all active:scale-95"
             >
@@ -760,7 +755,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               </span>
             </button>
 
-            <button 
+            <button
               onClick={() => setCurrentPage('me')}
               className="flex flex-col items-center gap-1 transition-all active:scale-95"
             >
@@ -784,4 +779,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-                    }
+      }
