@@ -18,37 +18,6 @@ interface UserCard {
   image: string
 }
 
-const userCards: UserCard[] = [
-  {
-    id: '1',
-    name: 'JIYA',
-    country: '🇮🇳',
-    score: 5,
-    image: '/1784466691241~2.jpg'
-  },
-  {
-    id: '2',
-    name: 'Ginni',
-    country: '🇮🇳',
-    score: 4,
-    image: '/1784466691241~2.jpg'
-  },
-  {
-    id: '3',
-    name: 'new_user',
-    country: '🇮🇳',
-    score: 7,
-    image: '/1784466691241~2.jpg'
-  },
-  {
-    id: '4',
-    name: 'User123',
-    country: '🇮🇳',
-    score: 3,
-    image: '/1784466691241~2.jpg'
-  }
-]
-
 const BANNERS = [
   {
     image: '/1784458869444~2.jpg'
@@ -100,6 +69,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
+
+  // Room creation state for current user
+  const [myRoom, setMyRoom] = useState<UserCard | null>(null)
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
@@ -198,6 +170,20 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
+  // Handle creating room when clicking the + card in Mine tab
+  const handleCreateRoom = () => {
+    const createdRoomCard: UserCard = {
+      id: '885421', // User ID
+      name: 'JIYA', // User Name
+      country: '🇮🇳',
+      score: 1,
+      image: '/1784466691241~2.jpg' // User Profile Avatar
+    }
+    setMyRoom(createdRoomCard)
+    setSelectedUser(createdRoomCard)
+    setCurrentPage('room')
+  }
+
   const handleUserCardClick = (user: UserCard) => {
     setSelectedUser(user)
     setCurrentPage('room')
@@ -288,6 +274,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const renderMineTab = () => (
     <div className="px-4 mt-6">
       <div
+        onClick={handleCreateRoom}
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -468,32 +455,38 @@ export default function HomePage({ onLogout }: HomePageProps) {
       </div>
 
       <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
-        {userCards.map((user) => (
+        {myRoom && (
           <div
-            key={user.id}
-            onClick={() => handleUserCardClick(user)}
+            onClick={() => handleUserCardClick(myRoom)}
             className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
             style={{ height: '180px' }}
           >
             <img
-              src={user.image}
-              alt={user.name}
+              src={myRoom.image}
+              alt={myRoom.name}
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-base">{user.country}</span>
+                <span className="text-base">{myRoom.country}</span>
                 <div className="flex-1">
-                  <div className="text-white font-semibold text-xs">{user.name}</div>
+                  <div className="text-white font-semibold text-xs">{myRoom.name}</div>
+                  <div className="text-white/80 text-[10px]">ID: {myRoom.id}</div>
                 </div>
               </div>
-              <div className="absolute top-2 right-2 bg-blue-400 rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
-                {user.score}
+              <div className="absolute top-2 right-2 bg-blue-400 rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold text-white shadow-md">
+                {myRoom.score}
               </div>
             </div>
           </div>
-        ))}
+        )}
       </div>
+
+      {!myRoom && (
+        <div className="px-4 py-16 text-center text-gray-400">
+          <p className="text-sm font-medium">No rooms created yet. Go to <span className="text-blue-500 font-bold">Mine</span> tab and tap the <span className="font-bold">+</span> card to create your room!</p>
+        </div>
+      )}
 
       <div className="px-4 pb-24 pt-3 flex justify-center">
         <div className="text-center">
@@ -791,4 +784,5 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-              }
+}
+
