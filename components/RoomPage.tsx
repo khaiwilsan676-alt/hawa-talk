@@ -39,20 +39,25 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   const handleExit = () => {
     setShowExitMenu(false)
+    // Remove kept room from localStorage on Exit
+    localStorage.removeItem('keptRoom')
     if (onBack) onBack()
     if (onClose) onClose()
   }
 
   const handleKeep = () => {
+    // Save room data and go back to home
+    const roomData = {
+      name: user.name,
+      image: user.image,
+      accountId: accountId
+    }
+    localStorage.setItem('keptRoom', JSON.stringify(roomData))
     setShowExitMenu(false)
     if (onKeepRoom) {
-      onKeepRoom({
-        name: user.name,
-        image: user.image,
-        accountId: accountId
-      })
+      onKeepRoom(roomData)
     }
-    // Keep in room, just close the exit menu
+    if (onBack) onBack()
   }
 
   return (
@@ -218,7 +223,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
           <div className="flex flex-col items-center gap-8">
-            {/* Keep Button */}
+            {/* Keep Button - Top */}
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={handleKeep}
@@ -231,7 +236,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               <span className="text-white font-semibold text-base">Keep</span>
             </div>
 
-            {/* Exit Button - Below Keep Button */}
+            {/* Exit Button - Below Keep */}
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={handleExit}
@@ -247,7 +252,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </div>
           </div>
 
-          {/* Cross Close Button - At bottom */}
+          {/* Cross Close Button */}
           <button 
             onClick={() => setShowExitMenu(false)}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200"
