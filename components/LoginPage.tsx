@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { Phone } from 'lucide-react'
 import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "../lib/firebase";
+// ⬇️ FIXED IMPORT LINE: Directly pointing to the index file inside the firebase folder
+import { auth, provider } from "../lib/firebase/index";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -156,5 +157,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       </div>
     </div>
   )
-}
-
+        }
