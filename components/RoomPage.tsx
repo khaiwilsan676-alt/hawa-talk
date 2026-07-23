@@ -98,30 +98,17 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
 
         {/* Room Seats Layout */}
         <div className="flex-1 flex flex-col justify-start gap-3 pt-6">
-          <div className="flex justify-center relative">
-            <SeatItem seatNumber={1} />
-            
-            {/* Image with U-shape curve on left side */}
-            <div className="absolute left-0 top-1/2 -translate-y-1/2">
+          {/* First Row with U-bracket image on left */}
+          <div className="flex justify-center items-center gap-1">
+            {/* U-Shape Bracket Image - Left Side */}
+            <div className="flex-shrink-0 w-10 h-16 -mr-2 relative z-10">
               <img 
                 src="/1784799230071~2.jpg" 
-                alt="Corner"
-                className="w-5 h-5 object-cover"
-                style={{
-                  clipPath: 'path("M 0 0 Q 10 0 10 10 Q 10 20 0 20 Z")'
-                }}
+                alt="U Bracket"
+                className="w-full h-full object-contain"
               />
             </div>
-
-            {/* U-shape curve on right side */}
-            <div className="absolute right-0 top-1/2 -translate-y-1/2">
-              <div 
-                className="w-5 h-5 bg-white/20"
-                style={{
-                  clipPath: 'path("M 20 0 Q 10 0 10 10 Q 10 20 20 20 Z")'
-                }}
-              />
-            </div>
+            <SeatItem seatNumber={1} />
           </div>
 
           <div className="flex justify-around items-center px-2">
