@@ -1,36 +1,48 @@
-'use client'
+'use client' 
 
 import { useState } from 'react'
 import { Phone } from 'lucide-react'
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../lib/firebase.ts";
 
-export default function LoginPage({ onLoginSuccess }) {
+interface LoginPageProps {
+  onLoginSuccess?: (data?: any) => void
+}
+
+// ⬇️ YAHAN FIX HAI: Props ka type 'LoginPageProps' daal diya hai
+export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | null>(null)
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleGmailLogin = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      // Simulate Gmail login
-      if (email.trim()) {
-        localStorage.setItem('userEmail', email)
-        onLoginSuccess(email)
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      localStorage.setItem("userName", user.displayName || "");
+      localStorage.setItem("userEmail", user.email || "");
+      localStorage.setItem("userPhoto", user.photoURL || "");
+
+      if (onLoginSuccess) {
+        onLoginSuccess(user);
       }
     } catch (error) {
-      console.error('Gmail login error:', error)
+      console.error(error);
+      alert("Google Login Failed");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const handlePhoneLogin = async () => {
     setLoading(true)
     try {
-      // Simulate Phone login
       if (phone.trim()) {
         localStorage.setItem('userPhone', phone)
-        onLoginSuccess(phone)
+        if (onLoginSuccess) onLoginSuccess(phone)
       }
     } catch (error) {
       console.error('Phone login error:', error)
@@ -60,10 +72,10 @@ export default function LoginPage({ onLoginSuccess }) {
 
             {/* Gmail Login Button */}
             <button
-              onClick={() => setLoginMethod('email')}
+              onClick={handleGmailLogin}
               className="w-full bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center gap-3 transition-all hover:border-blue-500 hover:shadow-lg"
+              disabled={loading}
             >
-              {/* Original Google G Icon */}
               <svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -71,7 +83,9 @@ export default function LoginPage({ onLoginSuccess }) {
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
               <div className="text-left flex-1">
-                <p className="font-semibold text-gray-900">Google</p>
+                <p className="font-semibold text-gray-900">
+                  {loading ? 'Signing in...' : 'Google'}
+                </p>
                 <p className="text-sm text-gray-600">Sign in with your Google account</p>
               </div>
             </button>
@@ -87,41 +101,6 @@ export default function LoginPage({ onLoginSuccess }) {
                 <p className="text-sm text-gray-600">Sign in with your mobile number</p>
               </div>
             </button>
-          </div>
-        ) : loginMethod === 'email' ? (
-          /* Gmail Login Form */
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <button
-              onClick={() => setLoginMethod(null)}
-              className="text-blue-500 font-semibold mb-4 flex items-center gap-1"
-            >
-              ← Back
-            </button>
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Google Login</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  placeholder="your.email@gmail.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              <button
-                onClick={handleGmailLogin}
-                disabled={!email || loading}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Signing in...' : 'Continue with Google'}
-              </button>
-            </div>
           </div>
         ) : (
           /* Phone Login Form */
@@ -150,7 +129,7 @@ export default function LoginPage({ onLoginSuccess }) {
                   <input
                     type="tel"
                     placeholder="9876543210"
-                    maxLength="10"
+                    maxLength={10}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                     className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
