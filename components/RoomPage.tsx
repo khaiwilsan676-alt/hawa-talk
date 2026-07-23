@@ -36,33 +36,15 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
         <div className="flex justify-between items-center text-white flex-shrink-0">
           
           {/* User Details with DP */}
-          <div className="flex flex-col items-center gap-1">
-            {/* Room DP with U-Shape Cover Below */}
-            <div className="relative flex flex-col items-center">
-              {/* Profile Picture */}
-              <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 relative z-10">
-                <img 
-                  src={user.image} 
-                  alt={user.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              {/* U-Shape Cover Image - DP ke niche */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-8 z-20 pointer-events-none">
-                <img 
-                  src="/1784799230071~2.jpg" 
-                  alt="Cover"
-                  className="w-full h-full object-cover"
-                  style={{
-                    clipPath: 'polygon(0% 0%, 15% 0%, 25% 30%, 35% 60%, 50% 70%, 65% 60%, 75% 30%, 85% 0%, 100% 0%, 100% 100%, 0% 100%)'
-                  }}
-                />
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
+              <img 
+                src={user.image} 
+                alt={user.name}
+                className="w-full h-full object-cover"
+              />
             </div>
-            
-            {/* User Info Below Cover */}
-            <div className="text-left -mt-1">
+            <div className="text-left">
               <h2 className="font-bold text-base">{user.name}</h2>
               <p className="text-xs text-gray-300">ID: 313574</p>
             </div>
@@ -116,8 +98,33 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
 
         {/* Room Seats Layout */}
         <div className="flex-1 flex flex-col justify-start gap-3 pt-6">
-          <div className="flex justify-center">
+          <div className="flex justify-center relative">
             <SeatItem seatNumber={1} />
+            
+            {/* Image with U-shape curve on left side */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2">
+              <div className="relative">
+                <img 
+                  src="/1784799230071~2.jpg" 
+                  alt="Corner"
+                  className="w-12 h-12 object-cover rounded-full"
+                  style={{
+                    clipPath: 'path("M 0 0 Q 24 0 24 24 Q 24 48 0 48 Z")'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* U-shape curve on right side */}
+            <div className="absolute right-0 top-1/2 -translate-y-1/2">
+              <div 
+                className="w-12 h-12"
+                style={{
+                  background: 'transparent',
+                  clipPath: 'path("M 48 0 Q 24 0 24 24 Q 24 48 48 48 Z")'
+                }}
+              />
+            </div>
           </div>
 
           <div className="flex justify-around items-center px-2">
