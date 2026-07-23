@@ -14,7 +14,6 @@ interface UserCard {
   id: string
   name: string
   country: string
-  score: number
   image: string
 }
 
@@ -70,8 +69,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
 
-  // Room creation state for current user
+  // Room state and user profile info fetched dynamically from localStorage
+  const [isRoomCreated, setIsRoomCreated] = useState(false)
   const [myRoom, setMyRoom] = useState<UserCard | null>(null)
+  const [userName, setUserName] = useState('Guest')
+  const [userPhoto, setUserPhoto] = useState('')
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
@@ -82,6 +84,19 @@ export default function HomePage({ onLogout }: HomePageProps) {
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
     return () => clearTimeout(id)
+  }, [])
+
+  useEffect(() => {
+    const loadProfile = () => {
+      const name = localStorage.getItem('userName') || 'JIYA'
+      const photo = localStorage.getItem('userPhoto') || '/1784466691241~2.jpg'
+      const uid = localStorage.getItem('userUID') || '742918'
+      setUserName(name)
+      setUserPhoto(photo)
+    }
+    loadProfile()
+    window.addEventListener('storage', loadProfile)
+    return () => window.removeEventListener('storage', loadProfile)
   }, [])
 
   useEffect(() => {
@@ -170,18 +185,33 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Handle creating room when clicking the + card in Mine tab
-  const handleCreateRoom = () => {
-    const createdRoomCard: UserCard = {
-      id: '885421', // User ID
-      name: 'JIYA', // User Name
-      country: '🇮🇳',
-      score: 1,
-      image: '/1784466691241~2.jpg' // User Profile Avatar
+  // Handle creating room or entering room from Mine tab card
+  const handleCardClick = () => {
+    if (!isRoomCreated) {
+      const createdRoomCard: UserCard = {
+        id: localStorage.getItem('userUID') || '742918',
+        name: userName,
+        country: '🇮🇳',
+        image: userPhoto
+      }
+      setIsRoomCreated(true)
+      setMyRoom(createdRoomCard)
+      setSelectedUser(createdRoomCard)
+      setCurrentPage('room')
+    } else if (myRoom) {
+      setSelectedUser(myRoom)
+      setCurrentPage('room')
     }
-    setMyRoom(createdRoomCard)
-    setSelectedUser(createdRoomCard)
-    setCurrentPage('room')
+  }
+
+  // Handle top-left house icon click to enter own room if created
+  const handleHouseClick = () => {
+    if (isRoomCreated && myRoom) {
+      setSelectedUser(myRoom)
+      setCurrentPage('room')
+    } else {
+      console.log('No room created yet')
+    }
   }
 
   const handleUserCardClick = (user: UserCard) => {
@@ -274,7 +304,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const renderMineTab = () => (
     <div className="px-4 mt-6">
       <div
-        onClick={handleCreateRoom}
+        onClick={handleCardClick}
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -291,26 +321,52 @@ export default function HomePage({ onLogout }: HomePageProps) {
           el.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.4)';
         }}
       >
-        <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <path
-              d="M16 8V24M8 16H24"
-              stroke="white"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
+        {!isRoomCreated ? (
+          <>
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <path
+                  d="M16 8V24M8 16H24"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
 
-        <div className="flex flex-col">
-          <h3 className="text-white font-bold text-xl leading-tight">
-            Create your Room
-          </h3>
-          <p className="text-white/80 text-sm mt-1 font-medium">
-            Embark Your Hawa journey!
-          </p>
-        </div>
+            <div className="flex flex-col">
+              <h3 className="text-white font-bold text-xl leading-tight">
+                Create your Room
+              </h3>
+              <p className="text-white/80 text-sm mt-1 font-medium">
+                Embark Your Hawa journey!
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/40">
+              {userPhoto ? (
+                <img
+                  src={userPhoto}
+                  alt="Profile Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white font-bold text-xl">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col">
+              <h3 className="text-white font-bold text-xl leading-tight">
+                {userName}
+              </h3>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex gap-4 mb-4">
@@ -454,8 +510,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
-        {myRoom && (
+      {isRoomCreated && myRoom && (
+        <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
           <div
             onClick={() => handleUserCardClick(myRoom)}
             className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
@@ -471,20 +527,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <span className="text-base">{myRoom.country}</span>
                 <div className="flex-1">
                   <div className="text-white font-semibold text-xs">{myRoom.name}</div>
-                  <div className="text-white/80 text-[10px]">ID: {myRoom.id}</div>
                 </div>
-              </div>
-              <div className="absolute top-2 right-2 bg-blue-400 rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold text-white shadow-md">
-                {myRoom.score}
               </div>
             </div>
           </div>
-        )}
-      </div>
-
-      {!myRoom && (
-        <div className="px-4 py-16 text-center text-gray-400">
-          <p className="text-sm font-medium">No rooms created yet. Go to <span className="text-blue-500 font-bold">Mine</span> tab and tap the <span className="font-bold">+</span> card to create your room!</p>
         </div>
       )}
 
@@ -570,7 +616,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
                 <button
                   type="button"
-                  onClick={() => console.log('Home clicked')}
+                  onClick={handleHouseClick}
                   className="flex items-center justify-center cursor-pointer"
                   aria-label="Home"
                 >
