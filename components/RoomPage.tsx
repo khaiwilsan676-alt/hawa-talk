@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 interface RoomPageProps {
   user: {
@@ -13,6 +13,28 @@ interface RoomPageProps {
 
 export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
+  const [accountId, setAccountId] = useState("N/A")
+
+  useEffect(() => {
+    const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
+    
+    if (uid !== 'N/A') {
+      const storageKey = `user_account_number_${uid}`
+      let savedAccountNumber = localStorage.getItem(storageKey)
+      
+      if (!savedAccountNumber) {
+        const targetLength = uid.length
+        let numericStr = ''
+        for (let i = 0; i < targetLength; i++) {
+          numericStr += Math.floor(Math.random() * 10).toString()
+        }
+        savedAccountNumber = numericStr
+        localStorage.setItem(storageKey, savedAccountNumber)
+      }
+      
+      setAccountId(savedAccountNumber.slice(0, 8))
+    }
+  }, [])
 
   const handleExit = () => {
     setShowExitMenu(false)
@@ -46,7 +68,7 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
             </div>
             <div className="text-left">
               <h2 className="font-bold text-base">{user.name}</h2>
-              <p className="text-xs text-gray-300">ID: 313574</p>
+              <p className="text-xs text-gray-300">ID: {accountId}</p>
             </div>
           </div>
 
@@ -181,8 +203,20 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
 
       {/* Exit Menu Overlay */}
       {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
-          <div className="flex flex-col items-center gap-6">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40">
+          {/* Cross Close Button - Moved Higher */}
+          <button 
+            onClick={() => setShowExitMenu(false)}
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+
+          {/* Keep and Exit Buttons */}
+          <div className="flex items-center gap-6">
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={() => setShowExitMenu(false)}
@@ -209,16 +243,6 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
               <span className="text-white/70 font-medium text-sm">Exit</span>
             </div>
           </div>
-
-          <button 
-            onClick={() => setShowExitMenu(false)}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
         </div>
       )}
     </div>
@@ -272,4 +296,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-}
+                  }
