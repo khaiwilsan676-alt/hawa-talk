@@ -17,6 +17,12 @@ interface UserCard {
   image: string
 }
 
+interface KeptRoomData {
+  name: string
+  image: string
+  accountId: string
+}
+
 const BANNERS = [
   {
     image: '/1784458869444~2.jpg'
@@ -74,6 +80,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [myRoom, setMyRoom] = useState<UserCard | null>(null)
   const [userName, setUserName] = useState('Guest')
   const [userPhoto, setUserPhoto] = useState('')
+  
+  // Kept room state for the floating DP circle
+  const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
@@ -86,7 +95,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => clearTimeout(id)
   }, [])
 
-  // Load profile and room state from localStorage
+  // Load profile, room state, and kept room from localStorage
   useEffect(() => {
     const loadProfile = () => {
       const name = localStorage.getItem('userName') || 'JIYA'
@@ -111,6 +120,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
       } else {
         setIsRoomCreated(false)
         setMyRoom(null)
+      }
+      
+      // Load kept room
+      const keptRoomData = localStorage.getItem('keptRoom')
+      if (keptRoomData) {
+        try {
+          setKeptRoom(JSON.parse(keptRoomData))
+        } catch (e) {
+          console.error('Error parsing kept room data:', e)
+          setKeptRoom(null)
+        }
       }
     }
     
@@ -202,6 +222,26 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const handleMouseLeave = () => {
     if (isSwiping) {
       handleMouseUp()
+    }
+  }
+
+  // Handle Keep Room - saves kept room and shows floating DP
+  const handleKeepRoom = (roomData: KeptRoomData) => {
+    setKeptRoom(roomData)
+    localStorage.setItem('keptRoom', JSON.stringify(roomData))
+  }
+
+  // Handle clicking on floating kept room DP
+  const handleKeptRoomClick = () => {
+    if (keptRoom) {
+      const roomUser: UserCard = {
+        id: keptRoom.accountId,
+        name: keptRoom.name,
+        country: '🇮🇳',
+        image: keptRoom.image
+      }
+      setSelectedUser(roomUser)
+      setCurrentPage('room')
     }
   }
 
@@ -620,7 +660,34 @@ export default function HomePage({ onLogout }: HomePageProps) {
           0% { transform: translateY(0); }  
           100% { transform: translateY(100%); }  
         }  
+        @keyframes pulseGlow {  
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }  
+          50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }  
+        }  
       `}</style>
+
+      {/* Kept Room Floating DP Circle - Shows when Keep is clicked in Room */}
+      {keptRoom && currentPage === 'home' && (
+        <div 
+          className="fixed right-4 z-50 cursor-pointer group"
+          style={{ bottom: '40vh' }}
+          onClick={handleKeptRoomClick}
+        >
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg bg-white animate-pulseGlow">
+              <img 
+                src={keptRoom.image} 
+                alt={keptRoom.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+          </div>
+          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+            {keptRoom.name}
+          </div>
+        </div>
+      )}
 
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-24 right-4 z-40">
@@ -782,6 +849,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <RoomPage
             user={selectedUser}
             onBack={handleBackFromRoom}
+            onKeepRoom={handleKeepRoom}
           />
         )}
       </div>
@@ -867,4 +935,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-}
+  }
