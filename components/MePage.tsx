@@ -72,37 +72,65 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
+// Helper function to generate a unique numeric account number matching the Firebase UID length
+// and ensure it persists permanently in localStorage once assigned.
+const getOrCreateAccountNumber = (uid: string) => {
+  if (!uid || uid === 'N/A') return 'N/A'
+  
+  const storageKey = `user_account_number_${uid}`
+  let savedAccountNumber = localStorage.getItem(storageKey)
+  
+  if (!savedAccountNumber) {
+    const targetLength = uid.length
+    let numericStr = ''
+    
+    // Generate random digits matching the UID length
+    for (let i = 0; i < targetLength; i++) {
+      numericStr += Math.floor(Math.random() * 10).toString()
+    }
+    
+    savedAccountNumber = numericStr
+    localStorage.setItem(storageKey, savedAccountNumber)
+  }
+  
+  // Return the full number or just the first 8 digits as requested
+  return savedAccountNumber
+}
+
 export default function MePage({ onLogout }: MePageProps) {
   const [user, setUser] = useState({
     name: "Guest",
-    email: "",
-    photo: "",
     uid: "",
+    accountNumber: "",
+    displayAccountNumber: "",
+    phone: "",
+    photo: "",
   })
 
   useEffect(() => {
     const fetchUserData = () => {
-      const name = localStorage.getItem("userName") || localStorage.getItem("userPhone") || "Guest"
-      const email = localStorage.getItem("userEmail") || ""
+      const name = localStorage.getItem("userName") || "Guest"
+      const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
+      const phone = localStorage.getItem("userPhone") || ""
       const photo = localStorage.getItem("userPhoto") || ""
-      // Fallback check: agar userUID na ho toh phone ya email ko UID maan lo
-      const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || localStorage.getItem("userEmail") || "N/A"
 
-      setUser({ name, email, photo, uid })
+      const fullAccNum = getOrCreateAccountNumber(uid)
+      // Display only the first 8 digits of the unique account number
+      const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : 'N/A'
+
+      setUser({ name, uid, accountNumber: fullAccNum, displayAccountNumber: displayAccNum, phone, photo })
     }
 
     fetchUserData()
 
-    // Listen for storage changes if updated in another tab/component
     window.addEventListener("storage", fetchUserData)
     return () => window.removeEventListener("storage", fetchUserData)
   }, [])
 
-  // Copy UID functionality to clipboard on clicking 📋
-  const handleCopyUid = () => {
-    if (user.uid && user.uid !== 'N/A') {
-      navigator.clipboard.writeText(user.uid)
-      alert("User ID copied to clipboard!")
+  const handleCopyAccountNumber = () => {
+    if (user.accountNumber && user.accountNumber !== 'N/A') {
+      navigator.clipboard.writeText(user.accountNumber)
+      alert("Account Number copied to clipboard!")
     }
   }
 
@@ -128,14 +156,19 @@ export default function MePage({ onLogout }: MePageProps) {
             <div>
               {/* Name */}
               <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
-              {/* ID with Click to Copy */}
+              {/* Account Number Display (First 8 digits shown, permanent) */}
               <p 
-                onClick={handleCopyUid}
-                className="text-gray-700 text-sm font-medium mt-1 cursor-pointer hover:text-blue-900 transition-colors inline-flex items-center gap-1 bg-white/40 px-2 py-0.5 rounded-md"
-                title="Click to copy ID"
+                onClick={handleCopyAccountNumber}
+                className="text-gray-700 text-xs font-medium mt-1 cursor-pointer hover:text-blue-900 transition-colors inline-flex items-center gap-1 bg-white/40 px-2 py-0.5 rounded-md truncate max-w-[220px]"
+                title="Click to copy full Account Number"
               >
-                ID: {user.uid} <span className="text-xs">📋</span>
+                ID: {user.displayAccountNumber} <span className="text-xs">📋</span>
               </p>
+              {user.phone && (
+                <p className="text-gray-600 text-xs mt-0.5 font-semibold">
+                  {user.phone}
+                </p>
+              )}
             </div>
           </div>
           <ChevronRight className="text-gray-400 mt-2" />
