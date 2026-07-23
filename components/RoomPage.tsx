@@ -107,9 +107,9 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
                 <img 
                   src="/1784799230071~2.jpg" 
                   alt="Corner"
-                  className="w-12 h-12 object-cover rounded-full"
+                  className="w-5 h-5 object-cover rounded-full"
                   style={{
-                    clipPath: 'path("M 0 0 Q 24 0 24 24 Q 24 48 0 48 Z")'
+                    clipPath: 'path("M 0 0 Q 10 0 10 10 Q 10 20 0 20 Z")'
                   }}
                 />
               </div>
@@ -118,10 +118,10 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
             {/* U-shape curve on right side */}
             <div className="absolute right-0 top-1/2 -translate-y-1/2">
               <div 
-                className="w-12 h-12"
+                className="w-5 h-5"
                 style={{
                   background: 'transparent',
-                  clipPath: 'path("M 48 0 Q 24 0 24 24 Q 24 48 48 48 Z")'
+                  clipPath: 'path("M 20 0 Q 10 0 10 10 Q 10 20 20 20 Z")'
                 }}
               />
             </div>
