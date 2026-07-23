@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Copy } from 'lucide-react'
 
 interface MenuItem {
   id: string
@@ -72,8 +72,6 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
-// Helper function to generate a unique numeric account number matching the Firebase UID length
-// and ensure it persists permanently in localStorage once assigned.
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return 'N/A'
   
@@ -84,7 +82,6 @@ const getOrCreateAccountNumber = (uid: string) => {
     const targetLength = uid.length
     let numericStr = ''
     
-    // Generate random digits matching the UID length
     for (let i = 0; i < targetLength; i++) {
       numericStr += Math.floor(Math.random() * 10).toString()
     }
@@ -93,7 +90,6 @@ const getOrCreateAccountNumber = (uid: string) => {
     localStorage.setItem(storageKey, savedAccountNumber)
   }
   
-  // Return the full number or just the first 8 digits as requested
   return savedAccountNumber
 }
 
@@ -115,7 +111,6 @@ export default function MePage({ onLogout }: MePageProps) {
       const photo = localStorage.getItem("userPhoto") || ""
 
       const fullAccNum = getOrCreateAccountNumber(uid)
-      // Display only the first 8 digits of the unique account number
       const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : 'N/A'
 
       setUser({ name, uid, accountNumber: fullAccNum, displayAccountNumber: displayAccNum, phone, photo })
@@ -128,9 +123,8 @@ export default function MePage({ onLogout }: MePageProps) {
   }, [])
 
   const handleCopyAccountNumber = () => {
-    if (user.accountNumber && user.accountNumber !== 'N/A') {
-      navigator.clipboard.writeText(user.accountNumber)
-      alert("Account Number copied to clipboard!")
+    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
+      navigator.clipboard.writeText(user.displayAccountNumber)
     }
   }
 
@@ -156,14 +150,23 @@ export default function MePage({ onLogout }: MePageProps) {
             <div>
               {/* Name */}
               <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
-              {/* Account Number Display (First 8 digits shown, permanent) */}
-              <p 
-                onClick={handleCopyAccountNumber}
-                className="text-gray-700 text-xs font-medium mt-1 cursor-pointer hover:text-blue-900 transition-colors inline-flex items-center gap-1 bg-white/40 px-2 py-0.5 rounded-md truncate max-w-[220px]"
-                title="Click to copy full Account Number"
-              >
-                ID: {user.displayAccountNumber} <span className="text-xs">📋</span>
-              </p>
+              
+              {/* Account Number Display & Copy Icon */}
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-gray-700 text-xs font-medium">
+                  ID: {user.displayAccountNumber}
+                </p>
+                {user.displayAccountNumber !== 'N/A' && (
+                  <button 
+                    onClick={handleCopyAccountNumber}
+                    className="text-gray-600 hover:text-blue-900 transition-colors p-1"
+                    title="Copy ID"
+                  >
+                    <Copy size={14} />
+                  </button>
+                )}
+              </div>
+
               {user.phone && (
                 <p className="text-gray-600 text-xs mt-0.5 font-semibold">
                   {user.phone}
@@ -278,7 +281,7 @@ export default function MePage({ onLogout }: MePageProps) {
       {/* Recharge Event Floating Card */}  
       <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">  
         <div className="text-center text-sm">  
-          <div className="text-2xl mb-1">🎁</div>  
+          <div className="text-2xl mb-1"></div>  
           <div className="text-xs font-bold text-blue-800">Recharge</div>  
           <div className="text-xs font-bold text-blue-800">Event</div>  
         </div>  
