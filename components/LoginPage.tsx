@@ -1,8 +1,8 @@
-'use client' 
+'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Phone } from 'lucide-react'
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 import { auth, provider } from "../src/lib/firebase"; 
 
 interface LoginPageProps {
@@ -12,7 +12,26 @@ interface LoginPageProps {
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | null>(null)
   const [phone, setPhone] = useState('')
+  const [otp, setOtp] = useState('')
+  const [step, setStep] = useState<'phone' | 'otp'>('phone')
   const [loading, setLoading] = useState(false)
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
+
+  // Initialize reCAPTCHAVerifier safely
+  useEffect(() => {
+    if (loginMethod === 'phone' && !window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {
+            // reCAPTCHA solved, allow signInWithPhoneNumber
+          },
+        });
+      } catch (error) {
+        console.error("Error initializing reCAPTCHA:", error);
+      }
+    }
+  }, [loginMethod]);
 
   const handleGmailLogin = async () => {
     setLoading(true);
@@ -34,29 +53,53 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     } finally { 
       setLoading(false);
     }
-  }
+  };
 
-  const handlePhoneLogin = async () => {
-    setLoading(true)
+  // Step 1: Send OTP to Phone Number
+  const handleSendOtp = async () => {
+    if (!phone || phone.length < 10) return;
+    setLoading(true);
+
     try {
-      if (phone.trim()) {
-        const fullPhoneNumber = `+91 ${phone}`;
-        
-        // Clear previous user data and set phone details
-        localStorage.clear();
-        localStorage.setItem('userPhone', fullPhoneNumber);
-        localStorage.setItem('userName', `User ${phone.slice(-4)}`); // e.g. User 3210
-        localStorage.setItem('userUID', fullPhoneNumber);
-        localStorage.setItem('userPhoto', ''); // No photo for phone login initially
+      const formattedPhone = `+91${phone.trim()}`;
+      const appVerifier = window.recaptchaVerifier;
 
-        if (onLoginSuccess) onLoginSuccess({ phone: fullPhoneNumber });
-      }
-    } catch (error) {
-      console.error('Phone login error:', error)
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(confirmation);
+      setStep('otp'); // Switch to OTP input view
+    } catch (error: any) {
+      console.error('Error sending OTP:', error);
+      alert(error.message || 'Failed to send OTP. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  // Step 2: Verify OTP and Complete Login
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.length < 6 || !confirmationResult) return;
+    setLoading(true);
+
+    try {
+      const result = await confirmationResult.confirm(otp);
+      const user = result.user;
+
+      localStorage.clear();
+      localStorage.setItem('userName', user.displayName || `User ${phone.slice(-4)}`);
+      localStorage.setItem('userPhone', user.phoneNumber || phone);
+      localStorage.setItem('userUID', user.uid);
+      localStorage.setItem('userPhoto', '');
+
+      if (onLoginSuccess) {
+        onLoginSuccess(user);
+      }
+    } catch (error: any) {
+      console.error('Invalid OTP:', error);
+      alert('Invalid OTP. Please check the code and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex items-center justify-center px-4">
@@ -110,48 +153,82 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </button>
           </div>
         ) : (
-          /* Phone Login Form */
+          /* Phone Login & OTP Form */
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <button
-              onClick={() => setLoginMethod(null)}
+              onClick={() => {
+                setLoginMethod(null);
+                setStep('phone');
+              }}
               className="text-blue-500 font-semibold mb-4 flex items-center gap-1 cursor-pointer"
             >
               ← Back
             </button>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Phone Number Login</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {step === 'phone' ? 'Phone Number Login' : 'Enter OTP'}
+            </h2>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <div className="flex gap-2">
+            {step === 'phone' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value="+91"
+                      disabled
+                      className="w-20 px-3 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-center font-semibold text-gray-700"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="9876543210"
+                      maxLength={10}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSendOtp}
+                  disabled={!phone || loading || phone.length < 10}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {loading ? 'Sending OTP...' : 'Send OTP'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Enter 6-digit OTP sent to +91 {phone}
+                  </label>
                   <input
                     type="text"
-                    value="+91"
-                    disabled
-                    className="w-20 px-3 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-center font-semibold text-gray-700"
-                  />
-                  <input
-                    type="tel"
-                    placeholder="9876543210"
-                    maxLength={10}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                    placeholder="123456"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-center tracking-widest text-lg font-bold focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
-              </div>
 
-              <button
-                onClick={handlePhoneLogin}
-                disabled={!phone || loading || phone.length < 10}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {loading ? 'Signing in...' : 'Continue with Phone'}
-              </button>
-            </div>
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={!otp || loading || otp.length < 6}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {loading ? 'Verifying...' : 'Verify & Sign In'}
+                </button>
+              </div>
+            )}
+
+            {/* Invisible reCAPTCHA container required by Firebase */}
+            <div id="recaptcha-container"></div>
           </div>
         )}
 
@@ -162,5 +239,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       </div>
     </div>
   )
+}
+
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+  }
 }
 
