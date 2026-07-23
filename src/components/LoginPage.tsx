@@ -1,4 +1,4 @@
-'use client'
+'use client' 
 
 import { useState } from 'react'
 import { Phone } from 'lucide-react'
