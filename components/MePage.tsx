@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 
 interface MenuItem {
@@ -12,7 +12,6 @@ interface MenuItem {
   badge?: string
 }
 
-// MePage Component Props Interface Added
 interface MePageProps {
   onLogout?: () => void
 }
@@ -74,132 +73,162 @@ const bottomMenuItems: MenuItem[] = [
 ]
 
 export default function MePage({ onLogout }: MePageProps) {
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
+    photo: "",
+    uid: "",
+  })
+
+  useEffect(() => {
+    setUser({
+      name: localStorage.getItem("userName") || "Guest",
+      email: localStorage.getItem("userEmail") || "",
+      photo: localStorage.getItem("userPhoto") || "",
+      uid: localStorage.getItem("userUID") || "",
+    })
+  }, [])
+
   return (
     <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
       {/* Profile Header */}
       <div className="bg-gradient-to-b from-blue-400 to-blue-100 px-4 pt-6 pb-6">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl">
-              K
-            </div>
+            {/* Avatar */}
+            {user.photo ? (
+              <img
+                src={user.photo}
+                className="w-20 h-20 rounded-full object-cover"
+                alt="Profile"
+              />
+            ) : (
+              <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold">
+                {user.name.charAt(0) || "G"}
+              </div>
+            )}
+
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Khai Wilsan</h2>
-              <p className="text-gray-600 text-sm">id:13526731 📋</p>
+              {/* Name */}
+              <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
+              {/* ID */}
+              <p className="text-gray-600 text-sm">
+                ID: {user.uid || 'N/A'} 📋
+              </p>
             </div>
           </div>
           <ChevronRight className="text-gray-400 mt-2" />
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">1</div>
-            <div className="text-xs text-gray-600 mt-1">Followers</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">0</div>
-            <div className="text-xs text-gray-600 mt-1">Following</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">1</div>
-            <div className="text-xs text-gray-600 mt-1">Visitors</div>
-          </div>
-        </div>
+        {/* Stats */}  
+        <div className="grid grid-cols-3 gap-4 mb-6">  
+          <div className="text-center">  
+            <div className="text-2xl font-bold text-gray-900">1</div>  
+            <div className="text-xs text-gray-600 mt-1">Followers</div>  
+          </div>  
+          <div className="text-center">  
+            <div className="text-2xl font-bold text-gray-900">0</div>  
+            <div className="text-xs text-gray-600 mt-1">Following</div>  
+          </div>  
+          <div className="text-center">  
+            <div className="text-2xl font-bold text-gray-900">1</div>  
+            <div className="text-xs text-gray-600 mt-1">Visitors</div>  
+          </div>  
+        </div>  
 
-        {/* Images with rounded corners */}
-        <div className="flex gap-1 mt-6">
-          <div className="flex-1 rounded-lg overflow-hidden">
-            <img
-              src="/1784480382765~2.jpg"
-              alt="Feature 1"
-              className="w-full h-14 object-cover"
-            />
-          </div>
-          <div className="flex-1 rounded-lg overflow-hidden">
-            <img
-              src="/1784480368941~2.jpg"
-              alt="Feature 2"
-              className="w-full h-14 object-cover"
-            />
-          </div>
-        </div>
-      </div>
+        {/* Banner Images */}  
+        <div className="flex gap-1 mt-6">  
+          <div className="flex-1 rounded-lg overflow-hidden">  
+            <img  
+              src="/1784480382765~2.jpg"  
+              alt="Feature 1"  
+              className="w-full h-14 object-cover"  
+            />  
+          </div>  
+          <div className="flex-1 rounded-lg overflow-hidden">  
+            <img  
+              src="/1784480368941~2.jpg"  
+              alt="Feature 2"  
+              className="w-full h-14 object-cover"  
+            />  
+          </div>  
+        </div>  
+      </div>  
 
-      {/* Main Menu Items */}
-      <div className="px-4 mt-4">
-        <div className="bg-white rounded-xl overflow-hidden">
-          {menuItems.map((item, index) => (
-            <div key={item.id}>
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                  <img
-                    src={item.src}
-                    alt={item.label}
-                    className="w-full h-full object-cover" 
-                  />
-                </div>
+      {/* Main Menu Items */}  
+      <div className="px-4 mt-4">  
+        <div className="bg-white rounded-xl overflow-hidden">  
+          {menuItems.map((item, index) => (  
+            <div key={item.id}>  
+              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">  
+                <div className="w-8 h-8 flex items-center justify-center shrink-0">  
+                  <img  
+                    src={item.src}  
+                    alt={item.label}  
+                    className="w-full h-full object-cover"   
+                  />  
+                </div>  
 
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{item.label}</p>
-                </div>
-                {item.action && (
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
-                )}
-                {item.badge && (
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
-                    {item.badge}
-                  </span>
-                )}
-                <ChevronRight size={20} className="text-gray-400" />
-              </div>
-              {index < menuItems.length - 1 && (
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+                <div className="flex-1">  
+                  <p className="font-semibold text-gray-900">{item.label}</p>  
+                </div>  
+                {item.action && (  
+                  <span className="text-sm font-medium text-gray-500">{item.action}</span>  
+                )}  
+                {item.badge && (  
+                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">  
+                    {item.badge}  
+                  </span>  
+                )}  
+                <ChevronRight size={20} className="text-gray-400" />  
+              </div>  
+              {index < menuItems.length - 1 && (  
+                <div className="h-[0.5px] bg-gray-200 mx-4"></div>  
+              )}  
+            </div>  
+          ))}  
+        </div>  
+      </div>  
 
-      {/* Bottom Menu Items */}
-      <div className="px-4 mt-4 mb-6">
-        <div className="bg-white rounded-xl overflow-hidden">
-          {bottomMenuItems.map((item, index) => (
-            <div key={item.id}>
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">
-                  {item.icon}
-                </div>
+      {/* Bottom Menu Items */}  
+      <div className="px-4 mt-4 mb-6">  
+        <div className="bg-white rounded-xl overflow-hidden">  
+          {bottomMenuItems.map((item, index) => (  
+            <div key={item.id}>  
+              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">  
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">  
+                  {item.icon}  
+                </div>  
 
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{item.label}</p>
-                </div>
-                {item.action && (
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
-                )}
-                {item.badge && (
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
-                    {item.badge}
-                  </span>
-                )}
-                <ChevronRight size={20} className="text-gray-400" />
-              </div>
-              {index < bottomMenuItems.length - 1 && (
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+                <div className="flex-1">  
+                  <p className="font-semibold text-gray-900">{item.label}</p>  
+                </div>  
+                {item.action && (  
+                  <span className="text-sm font-medium text-gray-500">{item.action}</span>  
+                )}  
+                {item.badge && (  
+                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">  
+                    {item.badge}  
+                  </span>  
+                )}  
+                <ChevronRight size={20} className="text-gray-400" />  
+              </div>  
+              {index < bottomMenuItems.length - 1 && (  
+                <div className="h-[0.5px] bg-gray-200 mx-4"></div>  
+              )}  
+            </div>  
+          ))}  
+        </div>  
+      </div>  
 
-      {/* Recharge Event */}
-      <div className="fixed bottom-24 right-4">
-        <div className="text-center text-sm">
-          <div className="text-2xl mb-1">🎁</div>
-          <div className="text-xs font-bold text-blue-800">Recharge</div>
-          <div className="text-xs font-bold text-blue-800">Event</div>
-        </div>
-      </div>
+      {/* Recharge Event Floating Card */}  
+      <div className="fixed bottom-24 right-4">  
+        <div className="text-center text-sm">  
+          <div className="text-2xl mb-1">🎁</div>  
+          <div className="text-xs font-bold text-blue-800">Recharge</div>  
+          <div className="text-xs font-bold text-blue-800">Event</div>  
+        </div>  
+      </div>  
     </div>
   )
 }
