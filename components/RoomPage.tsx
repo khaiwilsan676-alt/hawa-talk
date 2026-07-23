@@ -9,9 +9,10 @@ interface RoomPageProps {
   }
   onClose?: () => void
   onBack?: () => void
+  onKeepRoom?: (roomData: { name: string; image: string; accountId: string }) => void
 }
 
-export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
+export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [accountId, setAccountId] = useState("N/A")
 
@@ -40,6 +41,18 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
     setShowExitMenu(false)
     if (onBack) onBack()
     if (onClose) onClose()
+  }
+
+  const handleKeep = () => {
+    setShowExitMenu(false)
+    if (onKeepRoom) {
+      onKeepRoom({
+        name: user.name,
+        image: user.image,
+        accountId: accountId
+      })
+    }
+    // Keep in room, just close the exit menu
   }
 
   return (
@@ -203,23 +216,12 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
 
       {/* Exit Menu Overlay */}
       {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40">
-          {/* Cross Close Button - Moved Higher */}
-          <button 
-            onClick={() => setShowExitMenu(false)}
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-
-          {/* Keep and Exit Buttons */}
-          <div className="flex items-center gap-6">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
+          <div className="flex flex-col items-center gap-8">
+            {/* Keep Button */}
             <div className="flex flex-col items-center gap-2">
               <button 
-                onClick={() => setShowExitMenu(false)}
+                onClick={handleKeep}
                 className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30"
               >
                 <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
@@ -229,6 +231,7 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
               <span className="text-white font-semibold text-base">Keep</span>
             </div>
 
+            {/* Exit Button - Below Keep Button */}
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={handleExit}
@@ -243,6 +246,17 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
               <span className="text-white/70 font-medium text-sm">Exit</span>
             </div>
           </div>
+
+          {/* Cross Close Button - At bottom */}
+          <button 
+            onClick={() => setShowExitMenu(false)}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
       )}
     </div>
@@ -296,4 +310,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-                  }
+}
