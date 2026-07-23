@@ -36,26 +36,33 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
         <div className="flex justify-between items-center text-white flex-shrink-0">
           
           {/* User Details with DP */}
-          <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
-              <img 
-                src={user.image} 
-                alt={user.name}
-                className="w-full h-full object-cover"
-              />
-              {/* U-Shaped Cover Image */}
-              <div className="absolute inset-0 pointer-events-none">
+          <div className="flex flex-col items-center gap-1">
+            {/* Room DP with U-Shape Cover Below */}
+            <div className="relative flex flex-col items-center">
+              {/* Profile Picture */}
+              <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 relative z-10">
+                <img 
+                  src={user.image} 
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* U-Shape Cover Image - DP ke niche */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-8 z-20 pointer-events-none">
                 <img 
                   src="/1784799230071~2.jpg" 
                   alt="Cover"
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="w-full h-full object-cover"
                   style={{
-                    clipPath: 'polygon(0% 0%, 100% 0%, 100% 60%, 85% 75%, 75% 80%, 65% 82%, 50% 83%, 35% 82%, 25% 80%, 15% 75%, 0% 60%)'
+                    clipPath: 'polygon(0% 0%, 15% 0%, 25% 30%, 35% 60%, 50% 70%, 65% 60%, 75% 30%, 85% 0%, 100% 0%, 100% 100%, 0% 100%)'
                   }}
                 />
               </div>
             </div>
-            <div className="text-left">
+            
+            {/* User Info Below Cover */}
+            <div className="text-left -mt-1">
               <h2 className="font-bold text-base">{user.name}</h2>
               <p className="text-xs text-gray-300">ID: 313574</p>
             </div>
@@ -283,4 +290,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-      }
+}
