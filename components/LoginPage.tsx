@@ -9,6 +9,7 @@ interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
 }
 
+// ⬇️ YAHAN FIX HAI: Props ka type 'LoginPageProps' daal diya hai
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | null>(null)
   const [email, setEmail] = useState('')
@@ -39,7 +40,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const handlePhoneLogin = async () => {
     setLoading(true)
     try {
-      // Simulate Phone login
       if (phone.trim()) {
         localStorage.setItem('userPhone', phone)
         if (onLoginSuccess) onLoginSuccess(phone)
@@ -76,7 +76,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               className="w-full bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center gap-3 transition-all hover:border-blue-500 hover:shadow-lg"
               disabled={loading}
             >
-              {/* Original Google G Icon */}
               <svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -156,4 +155,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       </div>
     </div>
   )
-            }
+}
