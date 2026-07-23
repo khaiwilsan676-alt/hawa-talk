@@ -69,10 +69,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
 
-  // Room state and user profile info fetched dynamically from localStorage
+  // Permanent room creation state linked with localStorage
   const [isRoomCreated, setIsRoomCreated] = useState(false)
   const [myRoom, setMyRoom] = useState<UserCard | null>(null)
-  const [userName, setUserName] = useState('Guest')
+  const [userName, setUserName] = useState('JIYA')
   const [userPhoto, setUserPhoto] = useState('')
 
   const bannerRef = useRef<HTMLDivElement>(null)
@@ -93,6 +93,18 @@ export default function HomePage({ onLogout }: HomePageProps) {
       const uid = localStorage.getItem('userUID') || '742918'
       setUserName(name)
       setUserPhoto(photo)
+
+      // Check if room was already created previously in localStorage
+      const savedRoomStatus = localStorage.getItem('isRoomCreatedPermanently')
+      if (savedRoomStatus === 'true') {
+        setIsRoomCreated(true)
+        setMyRoom({
+          id: uid,
+          name: name,
+          country: '🇮🇳',
+          image: photo
+        })
+      }
     }
     loadProfile()
     window.addEventListener('storage', loadProfile)
@@ -185,23 +197,22 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Handle creating room or entering room from Mine tab card
+  // Handle creating room permanently and saving to localStorage
   const handleCardClick = () => {
-    if (!isRoomCreated) {
-      const createdRoomCard: UserCard = {
-        id: localStorage.getItem('userUID') || '742918',
-        name: userName,
-        country: '🇮🇳',
-        image: userPhoto
-      }
-      setIsRoomCreated(true)
-      setMyRoom(createdRoomCard)
-      setSelectedUser(createdRoomCard)
-      setCurrentPage('room')
-    } else if (myRoom) {
-      setSelectedUser(myRoom)
-      setCurrentPage('room')
+    const uid = localStorage.getItem('userUID') || '742918'
+    const createdRoomCard: UserCard = {
+      id: uid,
+      name: userName,
+      country: '🇮🇳',
+      image: userPhoto
     }
+
+    setIsRoomCreated(true)
+    setMyRoom(createdRoomCard)
+    localStorage.setItem('isRoomCreatedPermanently', 'true')
+
+    setSelectedUser(createdRoomCard)
+    setCurrentPage('room')
   }
 
   // Handle top-left house icon click to enter own room if created
@@ -209,8 +220,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     if (isRoomCreated && myRoom) {
       setSelectedUser(myRoom)
       setCurrentPage('room')
-    } else {
-      console.log('No room created yet')
     }
   }
 
@@ -260,45 +269,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
           el.style.pointerEvents = 'none'
         }
       })
-
-      const allElements = document.querySelectorAll('*')
-      allElements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          const text = el.textContent?.toLowerCase() || ''
-          const className = el.className?.toLowerCase() || ''
-          const id = el.id?.toLowerCase() || ''
-
-          if (
-            (text.includes('ai') && el.children.length === 0 && (el.textContent?.trim().length || 0) <= 5) ||
-            className.includes('ai-') ||
-            id.includes('ai-') ||
-            className.includes('_ai') ||
-            id.includes('_ai')
-          ) {
-            el.style.display = 'none'
-            el.style.visibility = 'hidden'
-            el.style.opacity = '0'
-          }
-        }
-      })
     }
-
     removeAITags()
-
-    const observer = new MutationObserver(() => {
-      removeAITags()
-    })
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style']
-    })
-
-    return () => {
-      observer.disconnect()
-    }
   }, [])
 
   const renderMineTab = () => (
@@ -309,16 +281,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
-        }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.transform = 'translateY(-2px)';
-          el.style.boxShadow = '0 12px 40px rgba(102, 126, 234, 0.6)';
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.transform = 'translateY(0)';
-          el.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.4)';
         }}
       >
         {!isRoomCreated ? (
@@ -455,18 +417,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 opacity: mounted ? 1 : 0,
                 transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
                 transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
-                animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
-                animationDelay: `${i * 100}ms`,
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.transform = 'translateY(-3px) scale(1.02)';
-                el.style.boxShadow = '0 10px 20px rgba(0,0,0,0.14), 0 3px 8px rgba(0,0,0,0.06)';
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.transform = 'translateY(0) scale(1)';
-                el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
               }}
             >
               <div
@@ -496,13 +446,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   justifyContent: 'center'
                 }}
               >
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 58%)',
-                  }}
-                />
                 <span className="text-xl relative z-10">{card.icon}</span>
               </div>
             </div>
@@ -533,13 +476,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           </div>
         </div>
       )}
-
-      <div className="px-4 pb-24 pt-3 flex justify-center">
-        <div className="text-center">
-          <div className="text-3xl mb-1"></div>
-          <div className="font-bold text-blue-800 text-sm"></div>
-        </div>
-      </div>
     </>
   );
 
@@ -551,50 +487,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
-        WebkitTouchCallout: 'none'
       }}
     >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
-
-        * {  
-          -webkit-text-size-adjust: 100%;  
-          -ms-text-size-adjust: 100%;  
-          touch-action: manipulation;  
-        }  
-          
-        button, a, div, span {  
-          touch-action: manipulation;  
-        }  
-          
-        @keyframes cardIn {  
-          0% { opacity: 0; transform: translateY(14px) scale(0.96); }  
-          100% { opacity: 1; transform: translateY(0) scale(1); }  
-        }  
-        @keyframes fadeInBanner {  
-          0% { opacity: 0; }  
-          100% { opacity: 1; }  
-        }  
-        @keyframes slideUp {  
-          0% { transform: translateY(100%); }  
-          100% { transform: translateY(0); }  
-        }  
-        @keyframes slideDown {  
-          0% { transform: translateY(0); }  
-          100% { transform: translateY(100%); }  
-        }  
-      `}</style>
-
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-24 right-4 z-40">
           <img
             src="/IMG_20260719_203213.png"
             alt="Corner decoration"
             className="rounded-2xl object-cover"
-            style={{
-              width: '70px',
-              height: '70px',
-            }}
+            style={{ width: '70px', height: '70px' }}
           />
         </div>
       )}
@@ -701,13 +602,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div
-                      key={currentBanner}
-                      className="w-full h-full"
-                      style={{
-                        animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',
-                      }}
-                    >
+                    <div className="w-full h-full">
                       <img
                         src={BANNERS[currentBanner].image}
                         alt="Banner"
@@ -717,7 +612,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>
+                  <div className="flex justify-center gap-1.5" style={{ marginTop: '8px' }}>
                     {BANNERS.map((_, index) => (
                       <div
                         key={index}
@@ -735,24 +630,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
           </div>
         )}
 
-        {currentPage === 'message' && (
-          <MessagePage onChatOpen={setIsChatOpen} />
-        )}
-        
+        {currentPage === 'message' && <MessagePage onChatOpen={setIsChatOpen} />}
         {currentPage === 'me' && <MePage onLogout={onLogout} />}
-
         {currentPage === 'room' && selectedUser && (
-          <RoomPage
-            user={selectedUser}
-            onBack={handleBackFromRoom}
-          />
+          <RoomPage user={selectedUser} onBack={handleBackFromRoom} />
         )}
       </div>
 
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
-
             <button
               onClick={() => setCurrentPage('home')}
               className="flex flex-col items-center gap-1 transition-all active:scale-95"
@@ -764,18 +651,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   stroke="#1D1D1F"
                   strokeWidth="2.4"
                   strokeLinejoin="round"
-                />
-                <path
-                  d="M12.2 14.2C13.3 12.6 14.9 12.1 16.8 13.4"
-                  stroke="#1D1D1F"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M11.2 20.8C12.5 24.2 21 25.6 24.3 20.2"
-                  stroke="#1D1D1F"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
                 />
               </svg>
               <span className={`text-[12px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>
@@ -794,12 +669,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   stroke="#1D1D1F"
                   strokeWidth="2.4"
                 />
-                <path
-                  d="M12 14.5C13.5 12.5 15.5 14.5 19.5 12.5C21.5 14.5 24 14.5 24 14.5"
-                  stroke="#1D1D1F"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
               </svg>
               <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
                 Message
@@ -817,14 +686,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   stroke="#1D1D1F"
                   strokeWidth="2.4"
                 />
-                <circle cx="14" cy="15" r="1.6" fill="#1D1D1F" />
-                <circle cx="22" cy="15" r="1.6" fill="#1D1D1F" />
               </svg>
               <span className={`text-[12px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>
                 Me
               </span>
             </button>
-
           </div>
         </div>
       )}
