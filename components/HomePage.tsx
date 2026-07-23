@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
@@ -75,14 +75,25 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
 
-  // Room state and user profile info fetched dynamically from localStorage
+  // Room state and user profile info
   const [isRoomCreated, setIsRoomCreated] = useState(false)
   const [myRoom, setMyRoom] = useState<UserCard | null>(null)
   const [userName, setUserName] = useState('Guest')
   const [userPhoto, setUserPhoto] = useState('')
   
-  // Kept room state for the floating DP circle
+  // Kept room state
   const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
+  const [enteredFromKept, setEnteredFromKept] = useState(false)
+
+  // Drag state for kept room circle
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 })
+  const [showDeleteZone, setShowDeleteZone] = useState(false)
+  const [isOverDeleteZone, setIsOverDeleteZone] = useState(false)
+  const dragStartPos = useRef({ x: 0, y: 0 })
+  const circleStartPos = useRef({ x: 16, y: window.innerHeight * 0.4 }) // right-4, bottom: 40vh
+  const deleteZoneRef = useRef<HTMLDivElement>(null)
+  const circleRef = useRef<HTMLDivElement>(null)
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
@@ -95,6 +106,40 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => clearTimeout(id)
   }, [])
 
+  // Calculate initial position
+  useEffect(() => {
+    circleStartPos.current = { 
+      x: window.innerWidth - 16 - 48, // right-4 (16px) - circle width (48px)
+      y: window.innerHeight * 0.6 // 40vh from bottom = 60vh from top
+    }
+    setDragPosition(circleStartPos.current)
+  }, [])
+
+  // Check if dragged circle is over delete zone
+  const checkOverlap = useCallback((circleX: number, circleY: number) => {
+    if (!deleteZoneRef.current) return false
+    
+    const deleteRect = deleteZoneRef.current.getBoundingClientRect()
+    const circleSize = 48 // w-12 = 48px
+    
+    const circleCenter = {
+      x: circleX + circleSize / 2,
+      y: circleY + circleSize / 2
+    }
+    
+    const deleteCenter = {
+      x: deleteRect.left + deleteRect.width / 2,
+      y: deleteRect.top + deleteRect.height / 2
+    }
+    
+    const distance = Math.sqrt(
+      Math.pow(circleCenter.x - deleteCenter.x, 2) + 
+      Math.pow(circleCenter.y - deleteCenter.y, 2)
+    )
+    
+    return distance < 60 // Overlap threshold
+  }, [])
+
   // Load profile, room state, and kept room from localStorage
   useEffect(() => {
     const loadProfile = () => {
@@ -104,7 +149,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setUserName(name)
       setUserPhoto(photo)
       
-      // Load room state
       const roomCreated = localStorage.getItem('isRoomCreated')
       const roomData = localStorage.getItem('myRoom')
       
@@ -113,7 +157,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         try {
           setMyRoom(JSON.parse(roomData))
         } catch (e) {
-          console.error('Error parsing room data:', e)
           setIsRoomCreated(false)
           setMyRoom(null)
         }
@@ -122,13 +165,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
         setMyRoom(null)
       }
       
-      // Load kept room
       const keptRoomData = localStorage.getItem('keptRoom')
       if (keptRoomData) {
         try {
           setKeptRoom(JSON.parse(keptRoomData))
         } catch (e) {
-          console.error('Error parsing kept room data:', e)
           setKeptRoom(null)
         }
       }
@@ -140,13 +181,136 @@ export default function HomePage({ onLogout }: HomePageProps) {
   }, [])
 
   useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'keptRoom') {
+        if (!e.newValue) {
+          setKeptRoom(null)
+          setEnteredFromKept(false)
+        } else {
+          try {
+            setKeptRoom(JSON.parse(e.newValue))
+          } catch {
+            setKeptRoom(null)
+          }
+        }
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
     }, 5000)
     return () => clearInterval(interval)
   }, [])
 
-  // Touch swipe handlers
+  // Mouse drag handlers for kept room circle
+  const handleCircleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+    setShowDeleteZone(true)
+    dragStartPos.current = { x: e.clientX, y: e.clientY }
+    circleStartPos.current = { x: dragPosition.x, y: dragPosition.y }
+  }
+
+  const handleCircleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation()
+    const touch = e.touches[0]
+    setIsDragging(true)
+    setShowDeleteZone(true)
+    dragStartPos.current = { x: touch.clientX, y: touch.clientY }
+    circleStartPos.current = { x: dragPosition.x, y: dragPosition.y }
+  }
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return
+      
+      const deltaX = e.clientX - dragStartPos.current.x
+      const deltaY = e.clientY - dragStartPos.current.y
+      
+      const newX = circleStartPos.current.x + deltaX
+      const newY = circleStartPos.current.y + deltaY
+      
+      setDragPosition({ x: newX, y: newY })
+      
+      const isOverlap = checkOverlap(newX, newY)
+      setIsOverDeleteZone(isOverlap)
+    }
+
+    const handleMouseUp = () => {
+      if (!isDragging) return
+      
+      const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
+      
+      if (isOverlap) {
+        // Remove kept room
+        localStorage.removeItem('keptRoom')
+        setKeptRoom(null)
+        setEnteredFromKept(false)
+      } else {
+        // Reset to original position
+        setDragPosition(circleStartPos.current)
+      }
+      
+      setIsDragging(false)
+      setShowDeleteZone(false)
+      setIsOverDeleteZone(false)
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging) return
+      
+      const touch = e.touches[0]
+      const deltaX = touch.clientX - dragStartPos.current.x
+      const deltaY = touch.clientY - dragStartPos.current.y
+      
+      const newX = circleStartPos.current.x + deltaX
+      const newY = circleStartPos.current.y + deltaY
+      
+      setDragPosition({ x: newX, y: newY })
+      
+      const isOverlap = checkOverlap(newX, newY)
+      setIsOverDeleteZone(isOverlap)
+    }
+
+    const handleTouchEnd = () => {
+      if (!isDragging) return
+      
+      const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
+      
+      if (isOverlap) {
+        localStorage.removeItem('keptRoom')
+        setKeptRoom(null)
+        setEnteredFromKept(false)
+      } else {
+        setDragPosition(circleStartPos.current)
+      }
+      
+      setIsDragging(false)
+      setShowDeleteZone(false)
+      setIsOverDeleteZone(false)
+    }
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+      window.addEventListener('touchmove', handleTouchMove, { passive: true })
+      window.addEventListener('touchend', handleTouchEnd)
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isDragging, dragPosition, checkOverlap])
+
+  // Touch swipe handlers for banner
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchEndX.current = e.touches[0].clientX
@@ -155,11 +319,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isSwiping) return
-
     touchEndX.current = e.touches[0].clientX
     const diff = touchEndX.current - touchStartX.current
     setSwipeOffset(diff)
-
     if (Math.abs(diff) > 10) {
       if (e.cancelable) e.preventDefault()
     }
@@ -167,10 +329,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const handleTouchEnd = () => {
     if (!isSwiping) return
-
     const diff = touchEndX.current - touchStartX.current
     const threshold = 50
-
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
         setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
@@ -178,7 +338,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
       }
     }
-
     setIsSwiping(false)
     setSwipeOffset(0)
     touchStartX.current = 0
@@ -201,10 +360,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const handleMouseUp = () => {
     if (!isSwiping) return
-
     const diff = touchEndX.current - touchStartX.current
     const threshold = 50
-
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
         setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
@@ -212,7 +369,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
       }
     }
-
     setIsSwiping(false)
     setSwipeOffset(0)
     touchStartX.current = 0
@@ -225,15 +381,22 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Handle Keep Room - saves kept room and shows floating DP
   const handleKeepRoom = (roomData: KeptRoomData) => {
     setKeptRoom(roomData)
+    setEnteredFromKept(false)
     localStorage.setItem('keptRoom', JSON.stringify(roomData))
+    // Reset position
+    circleStartPos.current = { 
+      x: window.innerWidth - 16 - 48, 
+      y: window.innerHeight * 0.6 
+    }
+    setDragPosition(circleStartPos.current)
   }
 
-  // Handle clicking on floating kept room DP
   const handleKeptRoomClick = () => {
+    if (isDragging) return // Don't click if was dragging
     if (keptRoom) {
+      setEnteredFromKept(true)
       const roomUser: UserCard = {
         id: keptRoom.accountId,
         name: keptRoom.name,
@@ -245,8 +408,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Handle creating room or entering room from Mine tab card
   const handleCardClick = () => {
+    setEnteredFromKept(false)
     if (!isRoomCreated) {
       const createdRoomCard: UserCard = {
         id: localStorage.getItem('userUID') || '742918',
@@ -254,11 +417,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         country: '🇮🇳',
         image: userPhoto
       }
-      
-      // Save to localStorage for persistence
       localStorage.setItem('isRoomCreated', 'true')
       localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
-      
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
       setSelectedUser(createdRoomCard)
@@ -269,32 +429,28 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Handle top-left house icon click to enter own room if created
   const handleHouseClick = () => {
+    setEnteredFromKept(false)
     if (isRoomCreated && myRoom) {
       setSelectedUser(myRoom)
       setCurrentPage('room')
-    } else {
-      console.log('No room created yet')
     }
   }
 
   const handleUserCardClick = (user: UserCard) => {
+    setEnteredFromKept(false)
     setSelectedUser(user)
     setCurrentPage('room')
   }
 
   const handleBackFromRoom = () => {
+    if (enteredFromKept) {
+      localStorage.removeItem('keptRoom')
+      setKeptRoom(null)
+      setEnteredFromKept(false)
+    }
     setCurrentPage('home')
     setSelectedUser(null)
-  }
-
-  // Add this function if you want to reset room state
-  const handleResetRoom = () => {
-    localStorage.removeItem('isRoomCreated')
-    localStorage.removeItem('myRoom')
-    setIsRoomCreated(false)
-    setMyRoom(null)
   }
 
   useEffect(() => {
@@ -302,12 +458,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
     if (existingMeta) {
       existingMeta.remove()
     }
-
     const meta = document.createElement('meta')
     meta.name = 'viewport'
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
     document.head.appendChild(meta)
-
     return () => {
       const metaTag = document.querySelector('meta[name="viewport"]')
       if (metaTag && metaTag.getAttribute('content') === 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no') {
@@ -333,14 +487,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
           el.style.pointerEvents = 'none'
         }
       })
-
       const allElements = document.querySelectorAll('*')
       allElements.forEach(el => {
         if (el instanceof HTMLElement) {
           const text = el.textContent?.toLowerCase() || ''
           const className = el.className?.toLowerCase() || ''
           const id = el.id?.toLowerCase() || ''
-
           if (
             (text.includes('ai') && el.children.length === 0 && (el.textContent?.trim().length || 0) <= 5) ||
             className.includes('ai-') ||
@@ -355,20 +507,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       })
     }
-
     removeAITags()
-
     const observer = new MutationObserver(() => {
       removeAITags()
     })
-
     observer.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
       attributeFilter: ['class', 'style']
     })
-
     return () => {
       observer.disconnect()
     }
@@ -407,7 +555,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 />
               </svg>
             </div>
-
             <div className="flex flex-col">
               <h3 className="text-white font-bold text-xl leading-tight">
                 Create your Room
@@ -432,7 +579,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 </div>
               )}
             </div>
-
             <div className="flex flex-col">
               <h3 className="text-white font-bold text-xl leading-tight">
                 {userName}
@@ -557,7 +703,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
               >
                 {card.label}
               </div>
-
               <div
                 style={{
                   flex: 1,
@@ -586,7 +731,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {/* Only show room card in Popular tab if room is created and user exists */}
       {isRoomCreated && myRoom && (
         <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
           <div
@@ -652,40 +796,86 @@ export default function HomePage({ onLogout }: HomePageProps) {
           0% { opacity: 0; }  
           100% { opacity: 1; }  
         }  
-        @keyframes slideUp {  
-          0% { transform: translateY(100%); }  
-          100% { transform: translateY(0); }  
-        }  
-        @keyframes slideDown {  
-          0% { transform: translateY(0); }  
-          100% { transform: translateY(100%); }  
-        }  
         @keyframes pulseGlow {  
           0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }  
           50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }  
-        }  
+        }
+        @keyframes deletePulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
       `}</style>
 
-      {/* Kept Room Floating DP Circle - Shows when Keep is clicked in Room */}
+      {/* Delete Zone - Shows at bottom right when dragging */}
+      {showDeleteZone && keptRoom && (
+        <div 
+          ref={deleteZoneRef}
+          className="fixed bottom-4 right-4 z-[60] transition-all duration-300"
+          style={{
+            animation: isOverDeleteZone ? 'deletePulse 0.5s ease-in-out infinite' : 'none'
+          }}
+        >
+          <div 
+            className={`flex items-center justify-center rounded-full transition-all duration-300 ${
+              isOverDeleteZone 
+                ? 'w-16 h-16 bg-red-600 shadow-lg shadow-red-500/50 scale-110' 
+                : 'w-14 h-14 bg-red-500/60'
+            }`}
+          >
+            <svg 
+              viewBox="0 0 24 24" 
+              className={`transition-all duration-300 ${isOverDeleteZone ? 'w-8 h-8' : 'w-6 h-6'}`}
+              fill="none" 
+              stroke="white" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* Kept Room Floating DP Circle - Draggable */}
       {keptRoom && currentPage === 'home' && (
         <div 
-          className="fixed right-4 z-50 cursor-pointer group"
-          style={{ bottom: '40vh' }}
+          ref={circleRef}
+          className={`fixed z-50 cursor-grab active:cursor-grabbing group ${
+            isDragging ? 'transition-none' : 'transition-all duration-300'
+          } ${isOverDeleteZone ? 'opacity-50 scale-75' : 'opacity-100'}`}
+          style={{
+            left: `${dragPosition.x}px`,
+            top: `${dragPosition.y}px`,
+            touchAction: 'none'
+          }}
           onClick={handleKeptRoomClick}
+          onMouseDown={handleCircleMouseDown}
+          onTouchStart={handleCircleTouchStart}
         >
           <div className="relative">
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg bg-white animate-pulseGlow">
+            <div 
+              className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg bg-white"
+              style={{ animation: isDragging ? 'none' : 'pulseGlow 2s infinite' }}
+            >
               <img 
                 src={keptRoom.image} 
                 alt={keptRoom.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover pointer-events-none"
+                draggable="false"
               />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white pointer-events-none"></div>
           </div>
-          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-            {keptRoom.name}
-          </div>
+          {!isDragging && (
+            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              {keptRoom.name}
+            </div>
+          )}
         </div>
       )}
 
@@ -857,7 +1047,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       {!isChatOpen && currentPage !== 'room' && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
-
             <button
               onClick={() => setCurrentPage('home')}
               className="flex flex-col items-center gap-1 transition-all active:scale-95"
@@ -929,10 +1118,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 Me
               </span>
             </button>
-
           </div>
         </div>
       )}
     </div>
   )
-  }
+      }
