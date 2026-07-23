@@ -98,16 +98,7 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
 
         {/* Room Seats Layout */}
         <div className="flex-1 flex flex-col justify-start gap-3 pt-6">
-          {/* First Row with U-bracket image on left */}
-          <div className="flex justify-center items-center gap-1">
-            {/* U-Shape Bracket Image - Left Side */}
-            <div className="flex-shrink-0 w-10 h-16 -mr-2 relative z-10">
-              <img 
-                src="/1784799230071~2.jpg" 
-                alt="U Bracket"
-                className="w-full h-full object-contain"
-              />
-            </div>
+          <div className="flex justify-center">
             <SeatItem seatNumber={1} />
           </div>
 
@@ -281,4 +272,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-              }
+}
