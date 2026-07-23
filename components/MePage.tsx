@@ -74,20 +74,37 @@ const bottomMenuItems: MenuItem[] = [
 
 export default function MePage({ onLogout }: MePageProps) {
   const [user, setUser] = useState({
-    name: "",
+    name: "Guest",
     email: "",
     photo: "",
     uid: "",
   })
 
   useEffect(() => {
-    setUser({
-      name: localStorage.getItem("userName") || "Guest",
-      email: localStorage.getItem("userEmail") || "",
-      photo: localStorage.getItem("userPhoto") || "",
-      uid: localStorage.getItem("userUID") || "",
-    })
+    const fetchUserData = () => {
+      const name = localStorage.getItem("userName") || localStorage.getItem("userPhone") || "Guest"
+      const email = localStorage.getItem("userEmail") || ""
+      const photo = localStorage.getItem("userPhoto") || ""
+      // Fallback check: agar userUID na ho toh phone ya email ko UID maan lo
+      const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || localStorage.getItem("userEmail") || "N/A"
+
+      setUser({ name, email, photo, uid })
+    }
+
+    fetchUserData()
+
+    // Listen for storage changes if updated in another tab/component
+    window.addEventListener("storage", fetchUserData)
+    return () => window.removeEventListener("storage", fetchUserData)
   }, [])
+
+  // Copy UID functionality to clipboard on clicking 📋
+  const handleCopyUid = () => {
+    if (user.uid && user.uid !== 'N/A') {
+      navigator.clipboard.writeText(user.uid)
+      alert("User ID copied to clipboard!")
+    }
+  }
 
   return (
     <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
@@ -104,16 +121,20 @@ export default function MePage({ onLogout }: MePageProps) {
               />
             ) : (
               <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold">
-                {user.name.charAt(0) || "G"}
+                {user.name.charAt(0).toUpperCase() || "G"}
               </div>
             )}
 
             <div>
               {/* Name */}
               <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
-              {/* ID */}
-              <p className="text-gray-600 text-sm">
-                ID: {user.uid || 'N/A'} 📋
+              {/* ID with Click to Copy */}
+              <p 
+                onClick={handleCopyUid}
+                className="text-gray-700 text-sm font-medium mt-1 cursor-pointer hover:text-blue-900 transition-colors inline-flex items-center gap-1 bg-white/40 px-2 py-0.5 rounded-md"
+                title="Click to copy ID"
+              >
+                ID: {user.uid} <span className="text-xs">📋</span>
               </p>
             </div>
           </div>
@@ -157,7 +178,7 @@ export default function MePage({ onLogout }: MePageProps) {
 
       {/* Main Menu Items */}  
       <div className="px-4 mt-4">  
-        <div className="bg-white rounded-xl overflow-hidden">  
+        <div className="bg-white rounded-xl overflow-hidden shadow-sm">  
           {menuItems.map((item, index) => (  
             <div key={item.id}>  
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">  
@@ -192,7 +213,7 @@ export default function MePage({ onLogout }: MePageProps) {
 
       {/* Bottom Menu Items */}  
       <div className="px-4 mt-4 mb-6">  
-        <div className="bg-white rounded-xl overflow-hidden">  
+        <div className="bg-white rounded-xl overflow-hidden shadow-sm">  
           {bottomMenuItems.map((item, index) => (  
             <div key={item.id}>  
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">  
@@ -222,7 +243,7 @@ export default function MePage({ onLogout }: MePageProps) {
       </div>  
 
       {/* Recharge Event Floating Card */}  
-      <div className="fixed bottom-24 right-4">  
+      <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">  
         <div className="text-center text-sm">  
           <div className="text-2xl mb-1">🎁</div>  
           <div className="text-xs font-bold text-blue-800">Recharge</div>  
