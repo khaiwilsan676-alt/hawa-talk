@@ -9,10 +9,8 @@ interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
 }
 
-// ⬇️ YAHAN FIX HAI: Props ka type 'LoginPageProps' daal diya hai
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | null>(null)
-  const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -22,17 +20,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      localStorage.setItem("userName", user.displayName || "");
+      localStorage.setItem("userName", user.displayName || "Google User");
       localStorage.setItem("userEmail", user.email || "");
       localStorage.setItem("userPhoto", user.photoURL || "");
+      localStorage.setItem("userUID", user.uid || "");
 
       if (onLoginSuccess) {
         onLoginSuccess(user);
       }
     } catch (error: any) {
-  console.error(error);
-  alert(error.code + "\n" + error.message);
-} finally { 
+      console.error(error);
+      alert(error.code + "\n" + error.message);
+    } finally { 
       setLoading(false);
     }
   }
@@ -41,8 +40,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true)
     try {
       if (phone.trim()) {
-        localStorage.setItem('userPhone', phone)
-        if (onLoginSuccess) onLoginSuccess(phone)
+        const fullPhoneNumber = `+91 ${phone}`;
+        
+        // Clear previous user data and set phone details
+        localStorage.clear();
+        localStorage.setItem('userPhone', fullPhoneNumber);
+        localStorage.setItem('userName', `User ${phone.slice(-4)}`); // e.g. User 3210
+        localStorage.setItem('userUID', fullPhoneNumber);
+        localStorage.setItem('userPhoto', ''); // No photo for phone login initially
+
+        if (onLoginSuccess) onLoginSuccess({ phone: fullPhoneNumber });
       }
     } catch (error) {
       console.error('Phone login error:', error)
@@ -73,7 +80,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             {/* Gmail Login Button */}
             <button
               onClick={handleGmailLogin}
-              className="w-full bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center gap-3 transition-all hover:border-blue-500 hover:shadow-lg"
+              className="w-full bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center gap-3 transition-all hover:border-blue-500 hover:shadow-lg cursor-pointer"
               disabled={loading}
             >
               <svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -93,7 +100,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             {/* Phone Login Button */}
             <button
               onClick={() => setLoginMethod('phone')}
-              className="w-full bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center gap-3 transition-all hover:border-blue-500 hover:shadow-lg"
+              className="w-full bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center gap-3 transition-all hover:border-blue-500 hover:shadow-lg cursor-pointer"
             >
               <Phone className="text-blue-500" size={32} />
               <div className="text-left flex-1">
@@ -107,7 +114,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <button
               onClick={() => setLoginMethod(null)}
-              className="text-blue-500 font-semibold mb-4 flex items-center gap-1"
+              className="text-blue-500 font-semibold mb-4 flex items-center gap-1 cursor-pointer"
             >
               ← Back
             </button>
@@ -124,7 +131,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     type="text"
                     value="+91"
                     disabled
-                    className="w-20 px-3 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-center"
+                    className="w-20 px-3 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-center font-semibold text-gray-700"
                   />
                   <input
                     type="tel"
@@ -139,8 +146,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
               <button
                 onClick={handlePhoneLogin}
-                disabled={!phone || loading}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!phone || loading || phone.length < 10}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? 'Signing in...' : 'Continue with Phone'}
               </button>
@@ -156,3 +163,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     </div>
   )
 }
+
