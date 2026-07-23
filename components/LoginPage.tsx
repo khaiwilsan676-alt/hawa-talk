@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Phone } from 'lucide-react'
 import { signInWithPopup } from "firebase/auth";
-// ⬇️ FIXED: Directly targeting the .ts file (since it's in src/lib)
 import { auth, provider } from "../lib/firebase.ts";
 
 interface LoginPageProps {
@@ -157,4 +156,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       </div>
     </div>
   )
-}
+            }
