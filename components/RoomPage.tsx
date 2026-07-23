@@ -37,12 +37,23 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
           
           {/* User Details with DP */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
+            <div className="relative w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
               <img 
                 src={user.image} 
                 alt={user.name}
                 className="w-full h-full object-cover"
               />
+              {/* U-Shaped Cover Image */}
+              <div className="absolute inset-0 pointer-events-none">
+                <img 
+                  src="/1784799230071~2.jpg" 
+                  alt="Cover"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{
+                    clipPath: 'polygon(0% 0%, 100% 0%, 100% 60%, 85% 75%, 75% 80%, 65% 82%, 50% 83%, 35% 82%, 25% 80%, 15% 75%, 0% 60%)'
+                  }}
+                />
+              </div>
             </div>
             <div className="text-left">
               <h2 className="font-bold text-base">{user.name}</h2>
@@ -272,4 +283,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-                    }
+      }
