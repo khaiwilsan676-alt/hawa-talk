@@ -103,24 +103,21 @@ export default function RoomPage({ user, onClose, onBack }: RoomPageProps) {
             
             {/* Image with U-shape curve on left side */}
             <div className="absolute left-0 top-1/2 -translate-y-1/2">
-              <div className="relative">
-                <img 
-                  src="/1784799230071~2.jpg" 
-                  alt="Corner"
-                  className="w-5 h-5 object-cover rounded-full"
-                  style={{
-                    clipPath: 'path("M 0 0 Q 10 0 10 10 Q 10 20 0 20 Z")'
-                  }}
-                />
-              </div>
+              <img 
+                src="/1784799230071~2.jpg" 
+                alt="Corner"
+                className="w-5 h-5 object-cover"
+                style={{
+                  clipPath: 'path("M 0 0 Q 10 0 10 10 Q 10 20 0 20 Z")'
+                }}
+              />
             </div>
 
             {/* U-shape curve on right side */}
             <div className="absolute right-0 top-1/2 -translate-y-1/2">
               <div 
-                className="w-5 h-5"
+                className="w-5 h-5 bg-white/20"
                 style={{
-                  background: 'transparent',
                   clipPath: 'path("M 20 0 Q 10 0 10 10 Q 10 20 20 20 Z")'
                 }}
               />
@@ -297,4 +294,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-}
+              }
