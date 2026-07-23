@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Phone } from 'lucide-react'
 import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "../lib/firebase.ts";
+import { auth, provider } from "../src/lib/firebase";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
