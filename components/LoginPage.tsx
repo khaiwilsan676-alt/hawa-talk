@@ -29,10 +29,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       if (onLoginSuccess) {
         onLoginSuccess(user);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Google Login Failed");
-    } finally {
+    } catch (error: any) {
+  console.error(error);
+  alert(error.code + "\n" + error.message);
+} finally { 
       setLoading(false);
     }
   }
