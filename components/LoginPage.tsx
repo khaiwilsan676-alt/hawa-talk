@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Phone, X } from 'lucide-react'
-import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
+import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, GoogleAuthProvider } from "firebase/auth";
 import { auth, provider } from "../src/lib/firebase"; 
 
 interface LoginPageProps {
@@ -17,11 +17,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loading, setLoading] = useState(false)
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   
-  // State for the 40vh Google Account Bottom Sheet mockup/picker
-  const [showGoogleSheet, setShowGoogleSheet] = useState(false)
-  const [mockAccounts] = useState([
-    { name: 'User Account', email: 'user@gmail.com', photo: '' },
-    { name: 'Developer Account', email: 'dev.hawa@gmail.com', photo: '' }
+  // State for the 40vh Google Account Bottom Sheet
+  const [showGoogleSheet, setShowGoogleSheet] = useState(2026) // Sheet control flag
+  
+  // Real accounts state jo Firebase/Google sign-in ke waqt capture honge ya selectable honge
+  const [realAccounts, setRealAccounts] = useState([
+    { name: 'Google Account', email: 'Tap below to select account', photo: '' }
   ])
 
   // Initialize reCAPTCHAVerifier safely
@@ -41,15 +42,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   }, [loginMethod]);
 
   const handleGoogleClick = () => {
-    // Open the 40vh glossy sheet instead of direct popup if you want simulated picker, 
-    // or call handleGmailLogin directly. As requested: "40Vh sheet aaygi Google P tab kerne s"
+    // 40vh glossy sheet khulegi jab user Google par tap karega
     setShowGoogleSheet(true);
   };
 
+  // Ye function real Firebase Google Auth trigger karega bina kisi extra page redirect ke (Popup flow handle karega directly sheet ke andar se)
   const handleActualGmailLogin = async () => {
     setShowGoogleSheet(false);
     setLoading(true);
     try {
+      // Firebase standard popup jo browser ka native real account chooser kholta hai seamlessly
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
@@ -132,9 +134,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {/* Login Method Selection */}
         {!loginMethod ? (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Login with</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6"></h2>
 
-            {/* Google Login Button - Glossy White Patti with only G logo and Google */}
+            {/* Google Login Button */}
             <button
               onClick={handleGoogleClick}
               className="w-full bg-white/80 backdrop-blur-md border border-white/40 shadow-md rounded-2xl p-4 flex items-center justify-center gap-3 transition-all hover:bg-white hover:shadow-lg cursor-pointer"
@@ -246,7 +248,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </p>
       </div>
 
-      {/* 40vh Glossy White Bottom Sheet for Google Account Picker */}
+      {/* 40vh Glossy White Bottom Sheet for Real Google Account Picker */}
       {showGoogleSheet && (
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50 transition-all">
           <div className="w-full max-w-md h-[40vh] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl p-6 flex flex-col justify-between border-t border-white animate-in slide-in-from-bottom duration-300">
@@ -259,7 +261,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                   </svg>
-                  <h3 className="font-bold text-gray-800 text-lg">Choose an account</h3>
+                  <h3 className="font-bold text-gray-800 text-lg">Choose your account</h3>
                 </div>
                 <button 
                   onClick={() => setShowGoogleSheet(false)}
@@ -268,34 +270,31 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   <X size={20} />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mb-3">to continue to Hawa</p>
+              <p className="text-xs text-gray-500 mb-3">Select your real account to continue to Hawa</p>
 
-              {/* Account List */}
+              {/* Dynamic Real Account Trigger Box */}
               <div className="space-y-2 overflow-y-auto max-h-[16vh]">
-                {mockAccounts.map((acc, index) => (
-                  <div
-                    key={index}
-                    onClick={handleActualGmailLogin}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-blue-50 border border-gray-100 transition-all cursor-pointer"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm">
-                      {acc.name[0]}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-800">{acc.name}</p>
-                      <p className="text-xs text-gray-500">{acc.email}</p>
-                    </div>
+                <div
+                  onClick={handleActualGmailLogin}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 border border-gray-100 transition-all cursor-pointer shadow-sm bg-white"
+                >
+                  <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-inner">
+                    G
                   </div>
-                ))}
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-800">Continue with Google Account</p>
+                    <p className="text-xs text-gray-500">Opens secure real account selector</p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Bottom action within sheet */}
             <button
               onClick={handleActualGmailLogin}
-              className="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-all hover:bg-blue-700 shadow-md cursor-pointer"
+              className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-sm transition-all hover:bg-blue-700 shadow-md cursor-pointer flex items-center justify-center gap-2"
             >
-              Sign in with Google Account
+              Sign in with Google
             </button>
           </div>
         </div>
