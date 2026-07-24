@@ -1,19 +1,2 @@
-// @ts-nocheck
-import { Capacitor } from '@capacitor/core';
-import { StatusBar, Style } from '@capacitor/status-bar';
-
-/**
- * Initialize Capacitor plugins on app startup
- */
-export async function initializeCapacitor(): Promise<void> {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      // Configure status bar
-      await StatusBar.setStyle({ style: Style.Light });
-      await StatusBar.setBackgroundColor({ color: '#FFFFFF' });
-    } catch (error) {
-      console.warn('Failed to initialize Capacitor plugins:', error);
-    }
-  }
-}
-
+import { Capacitor } from '@capacitor/core';import { StatusBar, Style } from '@capacitor/status-bar';/** * Initialize Capacitor plugins on app startup */export async function initializeCapacitor(): Promise<void> {  if (Capacitor.isNativePlatform()) {    try {      // Configure status bar      await StatusBar.setStyle({ style: Style.Light });      await StatusBar.setBackgroundColor({ color: '#FFFFFF' });    } catch (error) {      console.warn('Failed to initialize Capacitor plugins:', error);    }  }}
+0 commit commentsComments0 (0)Lock conversation
