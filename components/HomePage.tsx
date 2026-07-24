@@ -23,6 +23,15 @@ interface KeptRoomData {
   accountId: string
 }
 
+interface GlobalRoom {
+  id: string
+  name: string
+  country: string
+  image: string
+  accountId: string
+  createdAt: number
+}
+
 const BANNERS = [
   {
     image: '/1784458869444~2.jpg'
@@ -80,6 +89,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [myRoom, setMyRoom] = useState<UserCard | null>(null)
   const [userName, setUserName] = useState('Guest')
   const [userPhoto, setUserPhoto] = useState('')
+  const [userUID, setUserUID] = useState('')
+  
+  // Global rooms state - stores all rooms from all users
+  const [globalRooms, setGlobalRooms] = useState<GlobalRoom[]>([])
   
   // Kept room state
   const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
@@ -91,9 +104,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [showDeleteZone, setShowDeleteZone] = useState(false)
   const [isOverDeleteZone, setIsOverDeleteZone] = useState(false)
   const dragStartPos = useRef({ x: 0, y: 0 })
-  const circleStartPos = useRef({ x: 16, y: window.innerHeight * 0.4 }) // right-4, bottom: 40vh
+  const circleStartPos = useRef({ x: 16, y: window.innerHeight * 0.4 })
   const deleteZoneRef = useRef<HTMLDivElement>(null)
   const circleRef = useRef<HTMLDivElement>(null)
+  const broadcastChannelRef = useRef<BroadcastChannel | null>(null)
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
@@ -106,11 +120,61 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => clearTimeout(id)
   }, [])
 
+  // Initialize BroadcastChannel for real-time communication
+  useEffect(() => {
+    try {
+      broadcastChannelRef.current = new BroadcastChannel('hawa-global-rooms')
+      
+      broadcastChannelRef.current.onmessage = (event) => {
+        const { type, room } = event.data
+        
+        if (type === 'ROOM_CREATED' && room) {
+          setGlobalRooms(prev => {
+            // Check if room already exists
+            const exists = prev.some(r => r.accountId === room.accountId)
+            if (!exists) {
+              return [...prev, room]
+            }
+            return prev
+          })
+        } else if (type === 'ROOM_DELETED' && room) {
+          setGlobalRooms(prev => prev.filter(r => r.accountId !== room.accountId))
+        } else if (type === 'SYNC_ROOMS' && event.data.rooms) {
+          setGlobalRooms(event.data.rooms)
+        }
+      }
+    } catch (error) {
+      console.log('BroadcastChannel not supported, falling back to localStorage')
+    }
+
+    return () => {
+      if (broadcastChannelRef.current) {
+        broadcastChannelRef.current.close()
+      }
+    }
+  }, [])
+
+  // Load global rooms from localStorage on mount
+  useEffect(() => {
+    const loadGlobalRooms = () => {
+      try {
+        const stored = localStorage.getItem('globalRooms')
+        if (stored) {
+          setGlobalRooms(JSON.parse(stored))
+        }
+      } catch (e) {
+        console.error('Error loading global rooms:', e)
+      }
+    }
+    
+    loadGlobalRooms()
+  }, [])
+
   // Calculate initial position
   useEffect(() => {
     circleStartPos.current = { 
-      x: window.innerWidth - 16 - 48, // right-4 (16px) - circle width (48px)
-      y: window.innerHeight * 0.6 // 40vh from bottom = 60vh from top
+      x: window.innerWidth - 16 - 48,
+      y: window.innerHeight * 0.6
     }
     setDragPosition(circleStartPos.current)
   }, [])
@@ -120,7 +184,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     if (!deleteZoneRef.current) return false
     
     const deleteRect = deleteZoneRef.current.getBoundingClientRect()
-    const circleSize = 48 // w-12 = 48px
+    const circleSize = 48
     
     const circleCenter = {
       x: circleX + circleSize / 2,
@@ -137,7 +201,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       Math.pow(circleCenter.y - deleteCenter.y, 2)
     )
     
-    return distance < 60 // Overlap threshold
+    return distance < 60
   }, [])
 
   // Load profile, room state, and kept room from localStorage
@@ -148,6 +212,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       const uid = localStorage.getItem('userUID') || '742918'
       setUserName(name)
       setUserPhoto(photo)
+      setUserUID(uid)
       
       const roomCreated = localStorage.getItem('isRoomCreated')
       const roomData = localStorage.getItem('myRoom')
@@ -180,6 +245,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => window.removeEventListener('storage', loadProfile)
   }, [])
 
+  // Listen for storage changes (cross-tab communication fallback)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'keptRoom') {
@@ -193,11 +259,24 @@ export default function HomePage({ onLogout }: HomePageProps) {
             setKeptRoom(null)
           }
         }
+      } else if (e.key === 'globalRooms') {
+        if (e.newValue) {
+          try {
+            setGlobalRooms(JSON.parse(e.newValue))
+          } catch (e) {
+            console.error('Error parsing global rooms:', e)
+          }
+        }
       }
     }
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
+
+  // Sync global rooms to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('globalRooms', JSON.stringify(globalRooms))
+  }, [globalRooms])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -247,12 +326,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
       const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
       
       if (isOverlap) {
-        // Remove kept room
         localStorage.removeItem('keptRoom')
         setKeptRoom(null)
         setEnteredFromKept(false)
       } else {
-        // Reset to original position
         setDragPosition(circleStartPos.current)
       }
       
@@ -385,7 +462,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setKeptRoom(roomData)
     setEnteredFromKept(false)
     localStorage.setItem('keptRoom', JSON.stringify(roomData))
-    // Reset position
     circleStartPos.current = { 
       x: window.innerWidth - 16 - 48, 
       y: window.innerHeight * 0.6 
@@ -394,7 +470,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   }
 
   const handleKeptRoomClick = () => {
-    if (isDragging) return // Don't click if was dragging
+    if (isDragging) return
     if (keptRoom) {
       setEnteredFromKept(true)
       const roomUser: UserCard = {
@@ -412,7 +488,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setEnteredFromKept(false)
     if (!isRoomCreated) {
       const createdRoomCard: UserCard = {
-        id: localStorage.getItem('userUID') || '742918',
+        id: userUID,
         name: userName,
         country: '🇮🇳',
         image: userPhoto
@@ -421,6 +497,33 @@ export default function HomePage({ onLogout }: HomePageProps) {
       localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
+      
+      // Add to global rooms
+      const newGlobalRoom: GlobalRoom = {
+        id: userUID,
+        name: userName,
+        country: '🇮🇳',
+        image: userPhoto,
+        accountId: userUID,
+        createdAt: Date.now()
+      }
+      
+      setGlobalRooms(prev => {
+        const exists = prev.some(r => r.accountId === userUID)
+        if (!exists) {
+          const updated = [...prev, newGlobalRoom]
+          // Broadcast to other tabs/windows
+          if (broadcastChannelRef.current) {
+            broadcastChannelRef.current.postMessage({
+              type: 'ROOM_CREATED',
+              room: newGlobalRoom
+            })
+          }
+          return updated
+        }
+        return prev
+      })
+      
       setSelectedUser(createdRoomCard)
       setCurrentPage('room')
     } else if (myRoom) {
@@ -476,51 +579,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
-  useEffect(() => {
-    const removeAITags = () => {
-      const aiElements = document.querySelectorAll('[class*="ai"], [class*="AI"], [id*="ai"], [id*="AI"]')
-      aiElements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          el.style.display = 'none'
-          el.style.visibility = 'hidden'
-          el.style.opacity = '0'
-          el.style.pointerEvents = 'none'
-        }
-      })
-      const allElements = document.querySelectorAll('*')
-      allElements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          const text = el.textContent?.toLowerCase() || ''
-          const className = el.className?.toLowerCase() || ''
-          const id = el.id?.toLowerCase() || ''
-          if (
-            (text.includes('ai') && el.children.length === 0 && (el.textContent?.trim().length || 0) <= 5) ||
-            className.includes('ai-') ||
-            id.includes('ai-') ||
-            className.includes('_ai') ||
-            id.includes('_ai')
-          ) {
-            el.style.display = 'none'
-            el.style.visibility = 'hidden'
-            el.style.opacity = '0'
-          }
-        }
-      })
-    }
-    removeAITags()
-    const observer = new MutationObserver(() => {
-      removeAITags()
-    })
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style']
-    })
-    return () => {
-      observer.disconnect()
-    }
-  }, [])
+  // Filter out own room from global rooms for display
+  const otherUsersRooms = globalRooms.filter(room => room.accountId !== userUID)
 
   const renderMineTab = () => (
     <div className="px-4 mt-6">
@@ -731,36 +791,84 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {isRoomCreated && myRoom && (
-        <div className="px-4 grid grid-cols-2 gap-2.5" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
-          <div
-            onClick={() => handleUserCardClick(myRoom)}
-            className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-            style={{ height: '180px' }}
-          >
-            <img
-              src={myRoom.image}
-              alt={myRoom.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
-              <div className="flex items-center gap-1.5">
-                <span className="text-base">{myRoom.country}</span>
-                <div className="flex-1">
-                  <div className="text-white font-semibold text-xs">{myRoom.name}</div>
+      {/* Global Rooms Grid - Shows all users' rooms in real-time */}
+      {otherUsersRooms.length > 0 && (
+        <div className="px-4 mb-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Active Rooms</h3>
+          <div className="grid grid-cols-2 gap-2.5">
+            {otherUsersRooms.map((room) => (
+              <div
+                key={room.accountId}
+                onClick={() => handleUserCardClick({
+                  id: room.accountId,
+                  name: room.name,
+                  country: room.country,
+                  image: room.image
+                })}
+                className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                style={{ height: '180px' }}
+              >
+                <img
+                  src={room.image}
+                  alt={room.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">{room.country}</span>
+                    <div className="flex-1">
+                      <div className="text-white font-semibold text-xs">{room.name}</div>
+                    </div>
+                  </div>
                 </div>
+                {/* Online indicator */}
+                <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* My Room Card (if created) */}
+      {isRoomCreated && myRoom && (
+        <div className="px-4 mb-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">My Room</h3>
+          <div className="grid grid-cols-2 gap-2.5">
+            <div
+              onClick={() => handleUserCardClick(myRoom)}
+              className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 border-2 border-blue-400"
+              style={{ height: '180px' }}
+            >
+              <img
+                src={myRoom.image}
+                alt={myRoom.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">{myRoom.country}</span>
+                  <div className="flex-1">
+                    <div className="text-white font-semibold text-xs">{myRoom.name}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                You
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="px-4 pb-24 pt-3 flex justify-center">
-        <div className="text-center">
-          <div className="text-3xl mb-1"></div>
-          <div className="font-bold text-blue-800 text-sm"></div>
+      {!isRoomCreated && otherUsersRooms.length === 0 && (
+        <div className="px-4 pb-24 pt-3 flex justify-center">
+          <div className="text-center">
+            <div className="text-3xl mb-1">🏠</div>
+            <div className="font-bold text-blue-800 text-sm">No active rooms yet</div>
+            <p className="text-gray-500 text-xs mt-1">Create your room to get started!</p>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 
@@ -1123,4 +1231,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-      }
+    }
