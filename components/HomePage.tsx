@@ -1,6 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { db } from "../src/lib/firebase"
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot
+} from "firebase/firestore"
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
@@ -91,7 +99,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [userPhoto, setUserPhoto] = useState('')
   const [userUID, setUserUID] = useState('')
   
-  // Global rooms state - stores all rooms from all users
+  // Global rooms state - stores all rooms from Firestore
   const [globalRooms, setGlobalRooms] = useState<GlobalRoom[]>([])
   
   // Kept room state
@@ -107,7 +115,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const circleStartPos = useRef({ x: 16, y: window.innerHeight * 0.4 })
   const deleteZoneRef = useRef<HTMLDivElement>(null)
   const circleRef = useRef<HTMLDivElement>(null)
-  const broadcastChannelRef = useRef<BroadcastChannel | null>(null)
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
@@ -120,54 +127,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => clearTimeout(id)
   }, [])
 
-  // Initialize BroadcastChannel for real-time communication
+  // Firebase Realtime Listener for globalRooms collection
   useEffect(() => {
-    try {
-      broadcastChannelRef.current = new BroadcastChannel('hawa-global-rooms')
-      
-      broadcastChannelRef.current.onmessage = (event) => {
-        const { type, room } = event.data
-        
-        if (type === 'ROOM_CREATED' && room) {
-          setGlobalRooms(prev => {
-            const exists = prev.some(r => r.accountId === room.accountId)
-            if (!exists) {
-              return [...prev, room]
-            }
-            return prev
-          })
-        } else if (type === 'ROOM_DELETED' && room) {
-          setGlobalRooms(prev => prev.filter(r => r.accountId !== room.accountId))
-        } else if (type === 'SYNC_ROOMS' && event.data.rooms) {
-          setGlobalRooms(event.data.rooms)
-        }
-      }
-    } catch (error) {
-      console.log('BroadcastChannel not supported, falling back to localStorage')
-    }
+    const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
+      const rooms = snapshot.docs.map((d) => ({
+        ...(d.data() as GlobalRoom)
+      }));
+      setGlobalRooms(rooms);
+    });
 
-    return () => {
-      if (broadcastChannelRef.current) {
-        broadcastChannelRef.current.close()
-      }
-    }
-  }, [])
-
-  // Load global rooms from localStorage on mount
-  useEffect(() => {
-    const loadGlobalRooms = () => {
-      try {
-        const stored = localStorage.getItem('globalRooms')
-        if (stored) {
-          setGlobalRooms(JSON.parse(stored))
-        }
-      } catch (e) {
-        console.error('Error loading global rooms:', e)
-      }
-    }
-    
-    loadGlobalRooms()
-  }, [])
+    return () => unsub();
+  }, []);
 
   // Calculate initial position
   useEffect(() => {
@@ -244,7 +214,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => window.removeEventListener('storage', loadProfile)
   }, [])
 
-  // Listen for storage changes (cross-tab communication fallback)
+  // Listen for storage changes (cross-tab communication fallback for keptRoom)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'keptRoom') {
@@ -258,24 +228,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
             setKeptRoom(null)
           }
         }
-      } else if (e.key === 'globalRooms') {
-        if (e.newValue) {
-          try {
-            setGlobalRooms(JSON.parse(e.newValue))
-          } catch (e) {
-            console.error('Error parsing global rooms:', e)
-          }
-        }
       }
     }
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
-
-  // Sync global rooms to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('globalRooms', JSON.stringify(globalRooms))
-  }, [globalRooms])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -483,7 +440,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  const handleCardClick = () => {
+  const handleCardClick = async () => {
     setEnteredFromKept(false)
     if (!isRoomCreated) {
       const createdRoomCard: UserCard = {
@@ -497,30 +454,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
       
-      // Add to global rooms
-      const newGlobalRoom: GlobalRoom = {
+      // Save room to Firestore (globalRooms collection)
+      await setDoc(doc(db, "globalRooms", userUID), {
         id: userUID,
         name: userName,
-        country: '🇮🇳',
+        country: "🇮🇳",
         image: userPhoto,
         accountId: userUID,
         createdAt: Date.now()
-      }
-      
-      setGlobalRooms(prev => {
-        const exists = prev.some(r => r.accountId === userUID)
-        if (!exists) {
-          const updated = [...prev, newGlobalRoom]
-          if (broadcastChannelRef.current) {
-            broadcastChannelRef.current.postMessage({
-              type: 'ROOM_CREATED',
-              room: newGlobalRoom
-            })
-          }
-          return updated
-        }
-        return prev
-      })
+      });
       
       setSelectedUser(createdRoomCard)
       setCurrentPage('room')
@@ -544,7 +486,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setCurrentPage('room')
   }
 
-  const handleBackFromRoom = () => {
+  const handleBackFromRoom = async () => {
     if (enteredFromKept) {
       localStorage.removeItem('keptRoom')
       setKeptRoom(null)
@@ -577,7 +519,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
-  // All rooms including own room - sab ek saath show honge, no "You" tag
+  // All rooms including own room from Firestore
   const allRooms = globalRooms
 
   const renderMineTab = () => (
@@ -790,7 +732,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {/* All Rooms Grid - Simple, no borders, no "You" tag, no special styling */}
+      {/* All Rooms Grid - Simple, no borders, no "You" tag, no green dot */}
       {allRooms.length > 0 && (
         <div className="px-4">
           <div className="grid grid-cols-2 gap-2.5">
@@ -819,20 +761,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
                 </div>
-                {/* Online indicator - green dot only */}
-                <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {allRooms.length === 0 && (
-        <div className="px-4 pb-24 pt-3 flex justify-center">
-          <div className="text-center">
-            <div className="text-3xl mb-1">🏠</div>
-            <div className="font-bold text-blue-800 text-sm">No active rooms yet</div>
-            <p className="text-gray-500 text-xs mt-1">Create your room to get started!</p>
           </div>
         </div>
       )}
@@ -1198,4 +1128,5 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-        }
+}
+
