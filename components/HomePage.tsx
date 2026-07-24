@@ -92,7 +92,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
-  const [showDailyRewards, setShowDailyRewards] = useState(false)
+
+  // Daily Rewards Modal State
+  const [isDailyRewardsOpen, setIsDailyRewardsOpen] = useState(false)
 
   // Room state and user profile info
   const [isRoomCreated, setIsRoomCreated] = useState(false)
@@ -498,10 +500,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setSelectedUser(null)
   }
 
-  const handleCornerImageClick = () => {
-    setShowDailyRewards(true)
-  }
-
   useEffect(() => {
     const existingMeta = document.querySelector('meta[name="viewport"]')
     if (existingMeta) {
@@ -530,7 +528,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const renderMineTab = () => (
     <div className="px-4 mt-6">
-      {/* Create/Your Room Card - Simple purple gradient, no "My Room" text */}
       <div
         onClick={handleCardClick}
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
@@ -738,7 +735,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {/* All Rooms Grid - Simple, no borders, no "You" tag, no green dot */}
       {allRooms.length > 0 && (
         <div className="px-4">
           <div className="grid grid-cols-2 gap-2.5">
@@ -817,12 +813,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       `}</style>
 
-      {/* Daily Rewards Modal */}
-      {showDailyRewards && (
-        <DailyRewardsModal onClose={() => setShowDailyRewards(false)} />
-      )}
-
-      {/* Delete Zone - Shows at bottom right when dragging */}
+      {/* Delete Zone */}
       {showDeleteZone && keptRoom && (
         <div 
           ref={deleteZoneRef}
@@ -857,7 +848,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {/* Kept Room Floating DP Circle - Draggable */}
+      {/* Kept Room Floating DP Circle */}
       {keptRoom && currentPage === 'home' && (
         <div 
           ref={circleRef}
@@ -895,15 +886,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
+      {/* Corner Image with Click Handler for DailyRewardsModal */}
       {!isChatOpen && currentPage !== 'room' && (
         <div 
-          className="fixed bottom-24 right-4 z-40 cursor-pointer"
-          onClick={handleCornerImageClick}
+          onClick={() => setIsDailyRewardsOpen(true)}
+          className="fixed bottom-24 right-4 z-40 cursor-pointer active:scale-95 transition-transform"
         >
           <img
             src="/IMG_20260719_203213.png"
-            alt="Daily Rewards"
-            className="rounded-2xl object-cover hover:scale-105 transition-transform"
+            alt="Corner decoration"
+            className="rounded-2xl object-cover"
             style={{
               width: '70px',
               height: '70px',
@@ -911,6 +903,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
           />
         </div>
       )}
+
+      {/* Daily Rewards Modal Component */}
+      <DailyRewardsModal 
+        isOpen={isDailyRewardsOpen} 
+        onClose={() => setIsDailyRewardsOpen(false)} 
+      />
 
       <div className="w-full">
         {currentPage === 'home' && (
@@ -1142,4 +1140,5 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-        }
+}
+
