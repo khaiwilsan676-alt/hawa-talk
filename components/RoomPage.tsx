@@ -64,7 +64,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* Background Image */}
       <img 
-        src="/1784533036732~2.jpg" 
+        src="/1784875884052~2.jpg" 
         alt="Room Background" 
         className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" 
       />
