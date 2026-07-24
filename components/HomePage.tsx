@@ -13,6 +13,7 @@ import {
 import MessagePage from './MessagePage'
 import MePage from './MePage'
 import RoomPage from './RoomPage'
+import DailyRewardsModal from './DailyRewardsModal'
 
 interface HomePageProps {
   onLogout?: () => void;
@@ -91,6 +92,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
+  const [showDailyRewards, setShowDailyRewards] = useState(false)
 
   // Room state and user profile info
   const [isRoomCreated, setIsRoomCreated] = useState(false)
@@ -496,6 +498,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setSelectedUser(null)
   }
 
+  const handleCornerImageClick = () => {
+    setShowDailyRewards(true)
+  }
+
   useEffect(() => {
     const existingMeta = document.querySelector('meta[name="viewport"]')
     if (existingMeta) {
@@ -811,6 +817,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       `}</style>
 
+      {/* Daily Rewards Modal */}
+      {showDailyRewards && (
+        <DailyRewardsModal onClose={() => setShowDailyRewards(false)} />
+      )}
+
       {/* Delete Zone - Shows at bottom right when dragging */}
       {showDeleteZone && keptRoom && (
         <div 
@@ -885,11 +896,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
 
       {!isChatOpen && currentPage !== 'room' && (
-        <div className="fixed bottom-24 right-4 z-40">
+        <div 
+          className="fixed bottom-24 right-4 z-40 cursor-pointer"
+          onClick={handleCornerImageClick}
+        >
           <img
             src="/IMG_20260719_203213.png"
-            alt="Corner decoration"
-            className="rounded-2xl object-cover"
+            alt="Daily Rewards"
+            className="rounded-2xl object-cover hover:scale-105 transition-transform"
             style={{
               width: '70px',
               height: '70px',
@@ -1128,5 +1142,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-}
-
+        }
