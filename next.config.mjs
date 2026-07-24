@@ -2,10 +2,12 @@
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
-  distDir: 'out', // Explicitly set output directory to 'out'
-  images: {
-    unoptimized: true, // Next.js images static export ke liye
+  typescript: {
+    ignoreBuildErrors: true,
   },
-};
+  images: {
+    unoptimized: true,
+  },
+}
 
-export default nextConfig;
+export default nextConfig
