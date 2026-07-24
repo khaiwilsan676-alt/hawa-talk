@@ -44,7 +44,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setShowGoogleSheet(false);
     setLoading(true);
     try {
-      // Force account selection prompt so Google account chooser appears like image 2
       if (provider instanceof GoogleAuthProvider) {
         provider.setCustomParameters({ prompt: 'select_account' });
       }
