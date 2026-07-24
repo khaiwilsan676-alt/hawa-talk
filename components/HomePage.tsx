@@ -130,7 +130,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         
         if (type === 'ROOM_CREATED' && room) {
           setGlobalRooms(prev => {
-            // Check if room already exists
             const exists = prev.some(r => r.accountId === room.accountId)
             if (!exists) {
               return [...prev, room]
@@ -512,7 +511,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         const exists = prev.some(r => r.accountId === userUID)
         if (!exists) {
           const updated = [...prev, newGlobalRoom]
-          // Broadcast to other tabs/windows
           if (broadcastChannelRef.current) {
             broadcastChannelRef.current.postMessage({
               type: 'ROOM_CREATED',
@@ -579,11 +577,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
-  // Filter out own room from global rooms for display
-  const otherUsersRooms = globalRooms.filter(room => room.accountId !== userUID)
+  // All rooms including own room - sab ek saath show honge, no "You" tag
+  const allRooms = globalRooms
 
   const renderMineTab = () => (
     <div className="px-4 mt-6">
+      {/* Create/Your Room Card - Simple purple gradient, no "My Room" text */}
       <div
         onClick={handleCardClick}
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
@@ -626,7 +625,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           </>
         ) : (
           <>
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/40">
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
               {userPhoto ? (
                 <img
                   src={userPhoto}
@@ -644,7 +643,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 {userName}
               </h3>
               <p className="text-white/80 text-sm mt-1 font-medium">
-                Your Room
+                Tap to enter your room
               </p>
             </div>
           </>
@@ -791,12 +790,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {/* Global Rooms Grid - Shows all users' rooms in real-time */}
-      {otherUsersRooms.length > 0 && (
-        <div className="px-4 mb-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Active Rooms</h3>
+      {/* All Rooms Grid - Simple, no borders, no "You" tag, no special styling */}
+      {allRooms.length > 0 && (
+        <div className="px-4">
           <div className="grid grid-cols-2 gap-2.5">
-            {otherUsersRooms.map((room) => (
+            {allRooms.map((room) => (
               <div
                 key={room.accountId}
                 onClick={() => handleUserCardClick({
@@ -821,7 +819,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
                 </div>
-                {/* Online indicator */}
+                {/* Online indicator - green dot only */}
                 <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
               </div>
             ))}
@@ -829,38 +827,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {/* My Room Card (if created) */}
-      {isRoomCreated && myRoom && (
-        <div className="px-4 mb-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">My Room</h3>
-          <div className="grid grid-cols-2 gap-2.5">
-            <div
-              onClick={() => handleUserCardClick(myRoom)}
-              className="relative bg-gray-300 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 border-2 border-blue-400"
-              style={{ height: '180px' }}
-            >
-              <img
-                src={myRoom.image}
-                alt={myRoom.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-base">{myRoom.country}</span>
-                  <div className="flex-1">
-                    <div className="text-white font-semibold text-xs">{myRoom.name}</div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute top-2 left-2 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                You
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!isRoomCreated && otherUsersRooms.length === 0 && (
+      {allRooms.length === 0 && (
         <div className="px-4 pb-24 pt-3 flex justify-center">
           <div className="text-center">
             <div className="text-3xl mb-1">🏠</div>
@@ -1231,4 +1198,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-    }
+        }
