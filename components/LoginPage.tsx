@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Phone, X } from 'lucide-react'
-import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
+import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, GoogleAuthProvider } from "firebase/auth";
 import { auth, provider } from "../src/lib/firebase"; 
 
 interface LoginPageProps {
@@ -44,6 +44,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setShowGoogleSheet(false);
     setLoading(true);
     try {
+      // Force account selection prompt so Google account chooser appears like image 2
+      if (provider instanceof GoogleAuthProvider) {
+        provider.setCustomParameters({ prompt: 'select_account' });
+      }
+
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
@@ -126,8 +131,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {/* Login Method Selection */}
         {!loginMethod ? (
           <div className="space-y-4">
-            {/* "Login with" text successfully removed from here */}
-
             {/* Google Login Button */}
             <button
               onClick={handleGoogleClick}
