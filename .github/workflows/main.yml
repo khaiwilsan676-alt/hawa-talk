@@ -7,15 +7,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
-
     steps:
       - uses: actions/checkout@v4
 
@@ -24,23 +15,15 @@ jobs:
           node-version: 20
 
       - run: npm install
-
       - run: npm run build
 
-      - run: npm install @capacitor/core @capacitor/cli @capacitor/android
-
-      - run: npx cap init Hawa com.hawa.app --web-dir=out || true
-
-      - run: npx cap add android || true
-
-      - run: npx cap sync
-
       - run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init Hawa com.hawa.app || true
+          npx cap add android || true
+          npx cap sync
 
       - uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: android-project
+          path: android
