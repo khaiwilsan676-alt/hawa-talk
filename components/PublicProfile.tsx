@@ -171,9 +171,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           Online
         </div>
 
-        {/* User Avatar Circle Overlay - MOVED UP */}
-        <div className="absolute -bottom-8 left-6 flex items-center">
-          <div className="w-20 h-20 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
+        {/* User Avatar Circle Overlay - MORE UP */}
+        <div className="absolute -bottom-6 left-6 flex items-center">
+          <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img
                 src={user.photo}
@@ -190,7 +190,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="px-5 pt-12">
+      <div className="px-5 pt-10">
         {/* Name & Gender/Age */}
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
@@ -234,12 +234,12 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
-      {/* Content Tabs Section - Single Image per Tab */}
+      {/* Content Tabs Section - Single Image per Tab - NO BORDERS */}
       <div className="px-5 mt-6 space-y-4">
         {/* Albums Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Albums</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
             <img src="/IMG_20260726_225835.jpg" alt="Album" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Vehicle Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
             <img src="/1785091443553.png" alt="Vehicle" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Medal Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
             <img src="/1785091431545.png" alt="Medal" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -263,7 +263,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Frame Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
             <img src="/1785091457562.png" alt="Frame" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -271,7 +271,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Gift Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
             <img src="/1785091520912.png" alt="Gift" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -446,4 +446,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-                }
+            }
