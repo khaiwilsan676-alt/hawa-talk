@@ -239,7 +239,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Albums Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Albums</h3>
-          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-32 rounded-2xl overflow-hidden border border-gray-200">
             <img src="/IMG_20260726_225835.jpg" alt="Album" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Vehicle Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
-          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-32 rounded-2xl overflow-hidden border border-gray-200">
             <img src="/1785091443553.png" alt="Vehicle" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Medal Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
-          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-32 rounded-2xl overflow-hidden border border-gray-200">
             <img src="/1785091431545.png" alt="Medal" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -263,7 +263,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Frame Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
-          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-32 rounded-2xl overflow-hidden border border-gray-200">
             <img src="/1785091457562.png" alt="Frame" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -271,7 +271,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Gift Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
-          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+          <div className="w-full h-32 rounded-2xl overflow-hidden border border-gray-200">
             <img src="/1785091520912.png" alt="Gift" className="w-full h-full object-cover" />
           </div>
         </div>
