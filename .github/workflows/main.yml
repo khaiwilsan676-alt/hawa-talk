@@ -34,13 +34,7 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install
-          npm install @capacitor/android
-
-      - name: Verify Capacitor
-        run: |
-          ls -la node_modules/.bin || true
-          npm ls @capacitor/cli || true
-          npx --yes @capacitor/cli --version
+          npm install @capacitor/android @capacitor/cli
 
       - name: Build Next.js
         run: npm run build
@@ -52,13 +46,13 @@ jobs:
         run: |
           if [ ! -d "android" ]; then
             echo "Android folder missing. Adding platform..."
-            npx --yes @capacitor/cli add android
+            npx @capacitor/cli add android
           else
             echo "Android folder already exists."
           fi
 
       - name: Sync Capacitor
-        run: npx --yes @capacitor/cli sync android
+        run: npx @capacitor/cli sync android
 
       - name: Copy google-services.json
         run: |
@@ -121,8 +115,12 @@ jobs:
           }
           EOF
 
-      - name: Build Debug APK via Capacitor CLI
-        run: npx cap build android --no-pack
+      - name: Build Debug APK
+        run: |
+          cd android
+          gradle wrapper
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
