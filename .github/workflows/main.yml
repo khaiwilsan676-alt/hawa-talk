@@ -1,4 +1,4 @@
-name: Build Android APK
+Name: Build Android APK
 
 on:
   workflow_dispatch:
@@ -59,6 +59,51 @@ jobs:
 
       - name: Sync Capacitor
         run: npx --yes @capacitor/cli sync android
+
+      - name: Copy google-services.json
+        run: |
+          mkdir -p android/app
+          cat << 'EOF' > android/app/google-services.json
+          {
+            "project_info": {
+              "project_number": "164837688319",
+              "project_id": "hawa-a74a6",
+              "storage_bucket": "hawa-a74a6.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:164837688319:android:2e58fa563dfb6b21dd9dca",
+                  "android_client_info": {
+                    "package_name": "com.hawa.app"
+                  }
+                },
+                "oauth_client": [
+                  {
+                    "client_id": "164837688319-uu6uhd20mner48etd4ci6aeu3nuvt8gp.apps.googleusercontent.com",
+                    "client_type": 3
+                  }
+                ],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyCnTCkTKXHjsWBQmgSqfiJtR5kjZgb5aUY"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": [
+                      {
+                        "client_id": "164837688319-uu6uhd20mner48etd4ci6aeu3nuvt8gp.apps.googleusercontent.com",
+                        "client_type": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
 
       - name: Fix Duplicate Kotlin Dependencies
         run: |
