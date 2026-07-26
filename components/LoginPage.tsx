@@ -2,16 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Phone, X } from 'lucide-react'
-import { 
-  signInWithCredential,
-  RecaptchaVerifier, 
-  signInWithPhoneNumber, 
-  ConfirmationResult, 
-  GoogleAuthProvider 
-} from "firebase/auth";
-import { auth } from "../src/lib/firebase"; 
-import { Capacitor } from '@capacitor/core';
-import { GoogleAuth } from '@capacitor/google-auth';
+import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, GoogleAuthProvider } from "firebase/auth";
+import { auth, provider } from "../src/lib/firebase"; 
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -25,18 +17,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loading, setLoading] = useState(false)
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   
+  // State for the 40vh Google Account Bottom Sheet
   const [showGoogleSheet, setShowGoogleSheet] = useState(false)
-
-  // Initialize Capacitor GoogleAuth for Native Android
-  useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      GoogleAuth.initialize({
-        clientId: '164837688319-web.apps.googleusercontent.com',
-        scopes: ['profile', 'email'],
-        grantOfflineAccess: true,
-      });
-    }
-  }, []);
 
   // Initialize reCAPTCHAVerifier safely
   useEffect(() => {
@@ -44,7 +26,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       try {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           size: 'invisible',
-          callback: () => {},
+          callback: () => {
+            // reCAPTCHA solved, allow signInWithPhoneNumber
+          },
         });
       } catch (error) {
         console.error("Error initializing reCAPTCHA:", error);
@@ -59,47 +43,31 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const handleActualGmailLogin = async () => {
     setShowGoogleSheet(false);
     setLoading(true);
-
     try {
-      if (Capacitor.isNativePlatform()) {
-        // Native Android: Phone ka built-in Google Account Picker kholega
-        const googleUser = await GoogleAuth.signIn();
-        
-        const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
-        const result = await signInWithCredential(auth, credential);
-        const user = result.user;
-
-        localStorage.setItem("userName", user.displayName || googleUser.displayName || "Google User");
-        localStorage.setItem("userEmail", user.email || googleUser.email || "");
-        localStorage.setItem("userPhoto", user.photoURL || googleUser.imageUrl || "");
-        localStorage.setItem("userUID", user.uid);
-
-        if (onLoginSuccess) onLoginSuccess(user);
-
-      } else {
-        // Web Browser Flow
-        const provider = new GoogleAuthProvider();
+      if (provider instanceof GoogleAuthProvider) {
         provider.setCustomParameters({ prompt: 'select_account' });
-        
-        const { signInWithPopup } = await import('firebase/auth');
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
+      }
 
-        localStorage.setItem("userName", user.displayName || "Google User");
-        localStorage.setItem("userEmail", user.email || "");
-        localStorage.setItem("userPhoto", user.photoURL || "");
-        localStorage.setItem("userUID", user.uid);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-        if (onLoginSuccess) onLoginSuccess(user);
+      localStorage.setItem("userName", user.displayName || "Google User");
+      localStorage.setItem("userEmail", user.email || "");
+      localStorage.setItem("userPhoto", user.photoURL || "");
+      localStorage.setItem("userUID", user.uid || "");
+
+      if (onLoginSuccess) {
+        onLoginSuccess(user);
       }
     } catch (error: any) {
-      console.error("Google Sign-In Error:", error);
-      alert(error.message || "Google Sign-In Failed");
+      console.error(error);
+      alert(error.code + "\n" + error.message);
     } finally { 
       setLoading(false);
     }
   };
 
+  // Step 1: Send OTP to Phone Number
   const handleSendOtp = async () => {
     if (!phone || phone.length < 10) return;
     setLoading(true);
@@ -119,6 +87,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   };
 
+  // Step 2: Verify OTP and Complete Login
   const handleVerifyOtp = async () => {
     if (!otp || otp.length < 6 || !confirmationResult) return;
     setLoading(true);
@@ -147,6 +116,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex items-center justify-center px-4 relative overflow-hidden">
       <div className="w-full max-w-md">
+        {/* Logo Section */}
         <div className="text-center mb-8">
           <img 
             src="/logo.png" 
@@ -157,8 +127,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <p className="text-gray-600">Welcome to Hawa - Chat & Connect</p>
         </div>
 
+        {/* Login Method Selection */}
         {!loginMethod ? (
           <div className="space-y-4">
+            {/* Google Login Button */}
             <button
               onClick={handleGoogleClick}
               className="w-full bg-white/80 backdrop-blur-md border border-white/40 shadow-md rounded-2xl p-4 flex items-center justify-center gap-3 transition-all hover:bg-white hover:shadow-lg cursor-pointer"
@@ -175,6 +147,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </span>
             </button>
 
+            {/* Phone Login Button */}
             <button
               onClick={() => setLoginMethod('phone')}
               className="w-full bg-white/80 backdrop-blur-md border border-white/40 shadow-md rounded-2xl p-4 flex items-center justify-center gap-3 transition-all hover:bg-white hover:shadow-lg cursor-pointer"
@@ -184,6 +157,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </button>
           </div>
         ) : (
+          /* Phone Login & OTP Form */
           <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white/50">
             <button
               onClick={() => {
@@ -257,15 +231,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </div>
             )}
 
+            {/* Invisible reCAPTCHA container required by Firebase */}
             <div id="recaptcha-container"></div>
           </div>
         )}
 
+        {/* Footer */}
         <p className="text-center text-sm text-gray-600 mt-8">
           By signing in, you agree to our Terms of Service
         </p>
       </div>
 
+      {/* 40vh Glossy White Bottom Sheet for Google Account Picker */}
       {showGoogleSheet && (
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50 transition-all">
           <div className="w-full max-w-md h-[40vh] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl p-6 flex flex-col justify-between border-t border-white animate-in slide-in-from-bottom duration-300">
@@ -289,6 +266,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </div>
               <p className="text-xs text-gray-500 mb-3">to continue to Hawa</p>
 
+              {/* Account Selection Box */}
               <div className="space-y-2 overflow-y-auto max-h-[16vh]">
                 <div
                   onClick={handleActualGmailLogin}
@@ -298,18 +276,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     G
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-800">Select Google Account</p>
-                    <p className="text-xs text-gray-500">Pick account saved on this phone</p>
+                    <p className="text-sm font-semibold text-gray-800">Continue with Google Account</p>
+                    <p className="text-xs text-gray-500">Tap to pick your account</p>
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* Bottom action within sheet */}
             <button
               onClick={handleActualGmailLogin}
               className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-sm transition-all hover:bg-blue-700 shadow-md cursor-pointer flex items-center justify-center gap-2"
             >
-              Choose Account
+              Sign in with Google Account
             </button>
           </div>
         </div>
@@ -322,5 +301,4 @@ declare global {
   interface Window {
     recaptchaVerifier: any;
   }
-}
-
+                                                                   }
