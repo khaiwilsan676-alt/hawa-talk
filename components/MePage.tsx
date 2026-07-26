@@ -1,8 +1,9 @@
 'use client' 
 
 import React, { useEffect, useState } from 'react'
-import { ChevronRight, Copy } from 'lucide-react'
+import { ChevronRight, Copy, Eye } from 'lucide-react'
 import SettingPage from './settingpage'
+import PublicProfile from './PublicProfile'
 
 interface MenuItem {
   id: string
@@ -95,7 +96,8 @@ const getOrCreateAccountNumber = (uid: string) => {
 }
 
 export default function MePage({ onLogout }: MePageProps) {
-  const [currentView, setCurrentView] = useState<'me' | 'settings'>('me')
+  // Navigation State: 'me' | 'settings' | 'public_profile'
+  const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile'>('me')
   const [user, setUser] = useState({
     name: "Guest",
     uid: "",
@@ -130,26 +132,44 @@ export default function MePage({ onLogout }: MePageProps) {
     }
   }
 
-  // Handle View Switching for Settings
+  // Handle View Switching for Settings Page
   if (currentView === 'settings') {
     return <SettingPage onBack={() => setCurrentView('me')} onLogout={onLogout} />
+  }
+
+  // Handle View Switching for Public Profile Page
+  if (currentView === 'public_profile') {
+    return <PublicProfile onBack={() => setCurrentView('me')} />
   }
 
   return (
     <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
       {/* Profile Header */}
-      <div className="bg-gradient-to-b from-blue-400 to-blue-100 px-4 pt-6 pb-6">
+      <div className="bg-gradient-to-b from-blue-400 to-blue-100 px-4 pt-6 pb-6 relative">
+        
+        {/* Top-Right Quick Public View Icon Button */}
+        <div className="flex justify-end mb-2">
+          <button 
+            onClick={() => setCurrentView('public_profile')}
+            className="flex items-center gap-1 bg-white/30 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-gray-800 hover:bg-white/50 transition-colors"
+          >
+            <Eye size={14} />
+            <span>Public View</span>
+          </button>
+        </div>
+
+        {/* User Card */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
             {/* Avatar */}
             {user.photo ? (
               <img
                 src={user.photo}
-                className="w-20 h-20 rounded-full object-cover"
+                className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
                 alt="Profile"
               />
             ) : (
-              <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold">
+              <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
                 {user.name.charAt(0).toUpperCase() || "G"}
               </div>
             )}
@@ -181,7 +201,15 @@ export default function MePage({ onLogout }: MePageProps) {
               )}
             </div>
           </div>
-          <ChevronRight className="text-gray-400 mt-2" />
+
+          {/* Top Right Arrow - Click to Open Public Profile */}
+          <button 
+            onClick={() => setCurrentView('public_profile')}
+            className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2"
+            title="View Public Profile"
+          >
+            <ChevronRight className="text-gray-700" size={24} />
+          </button>
         </div>
 
         {/* Stats */}  
