@@ -1,4 +1,4 @@
-Name: Build Android APK
+name: Build Android APK
 
 on:
   workflow_dispatch:
@@ -46,6 +46,15 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Add Android Platform if missing
+        run: |
+          if [ ! -d "android" ]; then
+            echo "Android folder missing. Adding platform..."
+            npx --yes @capacitor/cli add android
+          else
+            echo "Android folder already exists."
+          fi
+
       - name: Sync Capacitor
         run: npx --yes @capacitor/cli sync android
 
@@ -60,3 +69,4 @@ jobs:
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
