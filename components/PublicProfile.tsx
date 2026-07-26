@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
+import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight } from 'lucide-react'
 
 interface PublicProfileProps {
   onBack?: () => void
@@ -43,14 +43,15 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   const [editName, setEditName] = useState("")
   const [editAge, setEditAge] = useState("")
   const [editBio, setEditBio] = useState("")
-  const [editGender, setEditGender] = useState("") // empty = not selected, "male"/"female"
+  const [editGender, setEditGender] = useState("")
   const [genderLocked, setGenderLocked] = useState(false)
+  const [showBioInput, setShowBioInput] = useState(false)
 
   useEffect(() => {
-    // Sync values with local storage
     const storedName = localStorage.getItem("userName")
     const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
     const photo = localStorage.getItem("userPhoto") || ""
+    const storedBio = localStorage.getItem("userBio") || ""
 
     const fullAccNum = getOrCreateAccountNumber(uid)
     const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : '100379620'
@@ -60,15 +61,14 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       name: storedName || prev.name,
       uid: uid,
       displayAccountNumber: displayAccNum,
-      photo: photo || prev.photo
+      photo: photo || prev.photo,
+      bio: storedBio || prev.bio
     }))
 
-    // Initialize edit fields
     setEditName(storedName || "KāβiR Khān")
     setEditAge("24")
-    setEditBio("")
+    setEditBio(storedBio || "")
     
-    // Check if gender was already locked
     const lockedGender = localStorage.getItem("userGenderLocked")
     if (lockedGender) {
       setEditGender(lockedGender)
@@ -91,16 +91,16 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
   const handleCloseEditSheet = () => {
     setShowEditSheet(false)
+    setShowBioInput(false)
   }
 
   const handleGenderSelect = (gender: string) => {
-    if (genderLocked) return // Don't allow change if locked
+    if (genderLocked) return
     
     setEditGender(gender)
     setGenderLocked(true)
     localStorage.setItem("userGenderLocked", gender)
     
-    // Update user state
     setUser(prev => ({
       ...prev,
       gender: gender === "male" ? "♂" : "♀"
@@ -108,12 +108,10 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   }
 
   const handleSaveEdit = () => {
-    // Save to localStorage
     localStorage.setItem("userName", editName)
     if (editAge) localStorage.setItem("userAge", editAge)
     if (editBio) localStorage.setItem("userBio", editBio)
     
-    // Update user state
     setUser(prev => ({
       ...prev,
       name: editName,
@@ -122,13 +120,22 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     }))
     
     setShowEditSheet(false)
+    setShowBioInput(false)
+  }
+
+  const handleBioSave = () => {
+    localStorage.setItem("userBio", editBio)
+    setUser(prev => ({
+      ...prev,
+      bio: editBio
+    }))
+    setShowBioInput(false)
   }
 
   return (
     <div className="w-full bg-white min-h-screen text-gray-900 pb-10 relative">
       {/* Cover Image & Header Section */}
       <div className="relative w-full h-[340px] bg-gray-800">
-        {/* User's Avatar used as Cover Background */}
         {user.photo ? (
           <img
             src={user.photo}
@@ -164,9 +171,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           Online
         </div>
 
-        {/* User Avatar Circle Overlay */}
-        <div className="absolute bottom-4 left-4 flex items-center">
-          <div className="w-28 h-28 rounded-full shadow-lg overflow-hidden border-2 border-white bg-gray-700">
+        {/* User Avatar Circle Overlay - COMPACT */}
+        <div className="absolute -bottom-10 left-6 flex items-center">
+          <div className="w-20 h-20 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img
                 src={user.photo}
@@ -174,7 +181,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white">
+              <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
                 {user.name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -183,8 +190,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="px-5 pt-8">
-        {/* Name (Black) & Gender/Age */}
+      <div className="px-5 pt-14">
+        {/* Name & Gender/Age */}
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
@@ -211,31 +218,115 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span>{user.location}</span>
         </div>
 
-        {/* Bio Section */}
-        {user.bio && (
-          <div className="flex items-start gap-2 text-xs text-gray-500 mt-2">
-            <Edit3 size={14} className="text-gray-400 mt-0.5 shrink-0" />
-            <p className="italic">{user.bio}</p>
-          </div>
-        )}
+        {/* Bio Section with Edit Icon */}
+        <div className="flex items-start gap-2 mt-2">
+          <button 
+            onClick={handleOpenEditSheet}
+            className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0"
+          >
+            <Edit3 size={14} />
+          </button>
+          {user.bio ? (
+            <p className="text-xs text-gray-500 italic">{user.bio}</p>
+          ) : (
+            <p className="text-xs text-gray-400 italic">Add bio...</p>
+          )}
+        </div>
       </div>
 
-      {/* Content Section (Albums Only) */}
+      {/* Content Tabs Section */}
       <div className="px-5 mt-6">
+        {/* Albums Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Albums</h3>
           <div className="grid grid-cols-4 gap-2">
-            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-              <img src="/1784480382765~2.jpg" alt="Album 1" className="w-full h-full object-cover" />
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/IMG_20260726_225835.jpg" alt="Album 1" className="w-full h-full object-cover" />
             </div>
-            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-              <img src="/1784480368941~2.jpg" alt="Album 2" className="w-full h-full object-cover" />
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/IMG_20260726_225835.jpg" alt="Album 2" className="w-full h-full object-cover" />
             </div>
-            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-              <img src="/IMG_20260720_142332.png" alt="Album 3" className="w-full h-full object-cover" />
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/IMG_20260726_225835.jpg" alt="Album 3" className="w-full h-full object-cover" />
             </div>
-            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-              <img src="/IMG_20260720_142227.png" alt="Album 4" className="w-full h-full object-cover" />
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/IMG_20260726_225835.jpg" alt="Album 4" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+
+        {/* Vehicle Tab */}
+        <div className="mt-4">
+          <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091443553.png" alt="Vehicle 1" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091443553.png" alt="Vehicle 2" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091443553.png" alt="Vehicle 3" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091443553.png" alt="Vehicle 4" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+
+        {/* Medal Tab */}
+        <div className="mt-4">
+          <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091431545.png" alt="Medal 1" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091431545.png" alt="Medal 2" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091431545.png" alt="Medal 3" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091431545.png" alt="Medal 4" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+
+        {/* Frame Tab */}
+        <div className="mt-4">
+          <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091457562.png" alt="Frame 1" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091457562.png" alt="Frame 2" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091457562.png" alt="Frame 3" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091457562.png" alt="Frame 4" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+
+        {/* Gift Tab */}
+        <div className="mt-4">
+          <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091520912.png" alt="Gift 1" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091520912.png" alt="Gift 2" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091520912.png" alt="Gift 3" className="w-full h-full object-cover" />
+            </div>
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+              <img src="/1785091520912.png" alt="Gift 4" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
@@ -244,13 +335,11 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       {/* Edit Profile Bottom Sheet */}
       {showEditSheet && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
-          {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/50"
             onClick={handleCloseEditSheet}
           ></div>
           
-          {/* Bottom Sheet */}
           <div className="relative bg-white w-full max-w-md rounded-t-3xl animate-slide-up" style={{ height: '50vh' }}>
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -258,19 +347,19 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 <ChevronLeft size={24} className="text-gray-700" />
               </button>
               <h2 className="text-lg font-bold text-gray-900">Edit Information</h2>
-              <div className="w-6"></div> {/* Spacer for centering */}
+              <div className="w-6"></div>
             </div>
 
             {/* Scrollable Content */}
             <div className="overflow-y-auto px-5 py-4 space-y-4" style={{ height: 'calc(50vh - 60px)' }}>
-              {/* Row 1: Avatar */}
+              {/* Row 1: Avatar - COMPACT */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Avatar</span>
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300">
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300">
                   {user.photo ? (
                     <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xl font-bold text-gray-500">
+                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-500">
                       {user.name.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -322,10 +411,32 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               {/* Row 6: Bio */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Bio</span>
-                <button className="flex items-center gap-1 text-sm text-gray-400">
-                  <span>Add bio</span>
-                  <ChevronRight size={16} />
-                </button>
+                {showBioInput ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editBio}
+                      onChange={(e) => setEditBio(e.target.value)}
+                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-36"
+                      placeholder="Add bio"
+                      autoFocus
+                    />
+                    <button 
+                      onClick={handleBioSave}
+                      className="text-xs text-blue-500 font-medium"
+                    >
+                      Save
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowBioInput(true)}
+                    className="flex items-center gap-1 text-sm text-gray-400"
+                  >
+                    <span>{editBio || "Add bio"}</span>
+                    <ChevronRight size={16} />
+                  </button>
+                )}
               </div>
 
               {/* Row 7: Gender */}
@@ -375,7 +486,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       )}
 
-      {/* Add animation styles */}
       <style jsx>{`
         @keyframes slideUp {
           from {
@@ -391,4 +501,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-                }
+          }
