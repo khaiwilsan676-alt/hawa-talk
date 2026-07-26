@@ -137,7 +137,7 @@ export default function MePage({ onLogout }: MePageProps) {
     return <SettingPage onBack={() => setCurrentView('me')} onLogout={onLogout} />
   }
 
-  // Handle View Switching for Public Profile Page
+  // Handle View Switching for Public Profile Page (Strictly Hides Bottom Tabs / Outer View)
   if (currentView === 'public_profile') {
     return <PublicProfile onBack={() => setCurrentView('me')} />
   }
