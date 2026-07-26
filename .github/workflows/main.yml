@@ -60,11 +60,28 @@ jobs:
       - name: Sync Capacitor
         run: npx --yes @capacitor/cli sync android
 
+      - name: Fix Duplicate Kotlin Dependencies
+        run: |
+          mkdir -p android/gradle
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          
+          # Append exclusion rule to root build.gradle
+          cat << 'EOF' >> android/build.gradle
+
+          allprojects {
+              configurations.all {
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+              }
+          }
+          EOF
+
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug -Pkotlin.stdlib.default.dependency=false -Dorg.gradle.jvmargs="-Xmx2048m"
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
