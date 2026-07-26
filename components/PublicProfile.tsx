@@ -171,8 +171,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           Online
         </div>
 
-        {/* User Avatar Circle Overlay - COMPACT */}
-        <div className="absolute -bottom-10 left-6 flex items-center">
+        {/* User Avatar Circle Overlay - MOVED UP */}
+        <div className="absolute -bottom-8 left-6 flex items-center">
           <div className="w-20 h-20 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img
@@ -190,7 +190,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="px-5 pt-14">
+      <div className="px-5 pt-12">
         {/* Name & Gender/Age */}
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
@@ -234,100 +234,45 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
-      {/* Content Tabs Section */}
-      <div className="px-5 mt-6">
+      {/* Content Tabs Section - Single Image per Tab */}
+      <div className="px-5 mt-6 space-y-4">
         {/* Albums Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Albums</h3>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/IMG_20260726_225835.jpg" alt="Album 1" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/IMG_20260726_225835.jpg" alt="Album 2" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/IMG_20260726_225835.jpg" alt="Album 3" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/IMG_20260726_225835.jpg" alt="Album 4" className="w-full h-full object-cover" />
-            </div>
+          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+            <img src="/IMG_20260726_225835.jpg" alt="Album" className="w-full h-full object-cover" />
           </div>
         </div>
 
         {/* Vehicle Tab */}
-        <div className="mt-4">
+        <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091443553.png" alt="Vehicle 1" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091443553.png" alt="Vehicle 2" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091443553.png" alt="Vehicle 3" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091443553.png" alt="Vehicle 4" className="w-full h-full object-cover" />
-            </div>
+          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+            <img src="/1785091443553.png" alt="Vehicle" className="w-full h-full object-cover" />
           </div>
         </div>
 
         {/* Medal Tab */}
-        <div className="mt-4">
+        <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091431545.png" alt="Medal 1" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091431545.png" alt="Medal 2" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091431545.png" alt="Medal 3" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091431545.png" alt="Medal 4" className="w-full h-full object-cover" />
-            </div>
+          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+            <img src="/1785091431545.png" alt="Medal" className="w-full h-full object-cover" />
           </div>
         </div>
 
         {/* Frame Tab */}
-        <div className="mt-4">
+        <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091457562.png" alt="Frame 1" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091457562.png" alt="Frame 2" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091457562.png" alt="Frame 3" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091457562.png" alt="Frame 4" className="w-full h-full object-cover" />
-            </div>
+          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+            <img src="/1785091457562.png" alt="Frame" className="w-full h-full object-cover" />
           </div>
         </div>
 
         {/* Gift Tab */}
-        <div className="mt-4">
+        <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091520912.png" alt="Gift 1" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091520912.png" alt="Gift 2" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091520912.png" alt="Gift 3" className="w-full h-full object-cover" />
-            </div>
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
-              <img src="/1785091520912.png" alt="Gift 4" className="w-full h-full object-cover" />
-            </div>
+          <div className="w-full h-48 rounded-2xl overflow-hidden border border-gray-200">
+            <img src="/1785091520912.png" alt="Gift" className="w-full h-full object-cover" />
           </div>
         </div>
       </div>
@@ -352,7 +297,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
             {/* Scrollable Content */}
             <div className="overflow-y-auto px-5 py-4 space-y-4" style={{ height: 'calc(50vh - 60px)' }}>
-              {/* Row 1: Avatar - COMPACT */}
+              {/* Row 1: Avatar */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Avatar</span>
                 <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300">
@@ -501,4 +446,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-          }
+                }
