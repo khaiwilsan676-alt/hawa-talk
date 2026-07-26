@@ -103,6 +103,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
 
+  // Track if Public Profile is active to hide bottom tabs
+  const [isPublicProfileActive, setIsPublicProfileActive] = useState(false)
+
   // Room state and user profile info
   const [isRoomCreated, setIsRoomCreated] = useState(false)
   const [myRoom, setMyRoom] = useState<UserCard | null>(null)
@@ -560,6 +563,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
+  // Reset public profile active state when page changes
+  useEffect(() => {
+    if (currentPage !== 'me') {
+      setIsPublicProfileActive(false)
+    }
+  }, [currentPage])
+
   // All rooms including own room from Firestore
   const allRooms = globalRooms
 
@@ -814,7 +824,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     <div
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
-        paddingBottom: isChatOpen ? '0px' : '96px',
+        paddingBottom: (isChatOpen || isPublicProfileActive) ? '0px' : '96px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -1094,7 +1104,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {!isChatOpen && currentPage !== 'room' && (
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && (
         <div className="fixed bottom-24 right-4 z-40">
           <img
             src="/IMG_20260719_203213.png"
@@ -1163,7 +1173,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <button
                     type="button"
                     onClick={() => setActiveTab('popular')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                    className={`font-[#Inter] tracking-[0.2px] transition-colors relative pb-1 ${
                       activeTab === 'popular'
                         ? 'font-bold text-[#1E1E1E]'
                         : 'font-medium text-[#6E6E6E]'
@@ -1249,7 +1259,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <MessagePage onChatOpen={setIsChatOpen} />
         )}
         
-        {currentPage === 'me' && <MePage onLogout={onLogout} />}
+        {currentPage === 'me' && (
+          <MePage 
+            onLogout={onLogout} 
+            onPublicProfileChange={(active: boolean) => setIsPublicProfileActive(active)} 
+          />
+        )}
 
         {currentPage === 'room' && selectedUser && (
           <RoomPage
@@ -1260,7 +1275,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
       </div>
 
-      {!isChatOpen && currentPage !== 'room' && (
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             <button
@@ -1339,4 +1354,5 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-    }
+}
+
