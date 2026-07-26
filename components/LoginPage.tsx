@@ -2,8 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { Phone, X } from 'lucide-react'
-import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, GoogleAuthProvider } from "firebase/auth";
+import { 
+  signInWithPopup, 
+  signInWithRedirect, 
+  RecaptchaVerifier, 
+  signInWithPhoneNumber, 
+  ConfirmationResult, 
+  GoogleAuthProvider 
+} from "firebase/auth";
 import { auth, provider } from "../src/lib/firebase"; 
+import { Capacitor } from '@capacitor/core';
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -48,16 +56,24 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         provider.setCustomParameters({ prompt: 'select_account' });
       }
 
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      // Check if running inside Android APK / Capacitor
+      if (Capacitor.isNativePlatform()) {
+        // Android APK environment
+        await signInWithRedirect(auth, provider);
+        return; // Redirect flow will refresh page after sign in
+      } else {
+        // Web Browser environment
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
 
-      localStorage.setItem("userName", user.displayName || "Google User");
-      localStorage.setItem("userEmail", user.email || "");
-      localStorage.setItem("userPhoto", user.photoURL || "");
-      localStorage.setItem("userUID", user.uid || "");
+        localStorage.setItem("userName", user.displayName || "Google User");
+        localStorage.setItem("userEmail", user.email || "");
+        localStorage.setItem("userPhoto", user.photoURL || "");
+        localStorage.setItem("userUID", user.uid || "");
 
-      if (onLoginSuccess) {
-        onLoginSuccess(user);
+        if (onLoginSuccess) {
+          onLoginSuccess(user);
+        }
       }
     } catch (error: any) {
       console.error(error);
