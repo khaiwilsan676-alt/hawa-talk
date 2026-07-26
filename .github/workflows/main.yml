@@ -32,7 +32,9 @@ jobs:
           java-version: 17
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install @capacitor/android
 
       - name: Verify Capacitor
         run: |
@@ -69,4 +71,3 @@ jobs:
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
