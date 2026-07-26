@@ -16,6 +16,7 @@ interface MenuItem {
 
 interface MePageProps {
   onLogout?: () => void
+  onPublicProfileChange?: (isOpen: boolean) => void
 }
 
 const menuItems: MenuItem[] = [
@@ -35,7 +36,7 @@ const bottomMenuItems: MenuItem[] = [
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="2" y1="12" x2="22" y2="12"></line>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"></path>
       </svg>
     )
   },
@@ -95,7 +96,7 @@ const getOrCreateAccountNumber = (uid: string) => {
   return savedAccountNumber
 }
 
-export default function MePage({ onLogout }: MePageProps) {
+export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
   // Navigation State: 'me' | 'settings' | 'public_profile'
   const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile'>('me')
   const [user, setUser] = useState({
@@ -106,6 +107,14 @@ export default function MePage({ onLogout }: MePageProps) {
     phone: "",
     photo: "",
   })
+
+  // Helper function to switch view and notify parent (HomePage)
+  const switchView = (view: 'me' | 'settings' | 'public_profile') => {
+    setCurrentView(view)
+    if (onPublicProfileChange) {
+      onPublicProfileChange(view === 'public_profile')
+    }
+  }
 
   useEffect(() => {
     const fetchUserData = () => {
@@ -134,12 +143,12 @@ export default function MePage({ onLogout }: MePageProps) {
 
   // Handle View Switching for Settings Page
   if (currentView === 'settings') {
-    return <SettingPage onBack={() => setCurrentView('me')} onLogout={onLogout} />
+    return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
   }
 
-  // Handle View Switching for Public Profile Page (Strictly Hides Bottom Tabs / Outer View)
+  // Handle View Switching for Public Profile Page
   if (currentView === 'public_profile') {
-    return <PublicProfile onBack={() => setCurrentView('me')} />
+    return <PublicProfile onBack={() => switchView('me')} />
   }
 
   return (
@@ -193,7 +202,7 @@ export default function MePage({ onLogout }: MePageProps) {
 
           {/* Top Right Arrow - Click to Open Public Profile */}
           <button 
-            onClick={() => setCurrentView('public_profile')}
+            onClick={() => switchView('public_profile')}
             className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2"
             title="View Public Profile"
           >
@@ -279,7 +288,7 @@ export default function MePage({ onLogout }: MePageProps) {
               key={item.id}
               onClick={() => {
                 if (item.id === '8') {
-                  setCurrentView('settings')
+                  switchView('settings')
                 }
               }}
             >  
@@ -320,4 +329,3 @@ export default function MePage({ onLogout }: MePageProps) {
     </div>
   )
 }
-
