@@ -111,7 +111,6 @@ jobs:
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
           
-          # Append exclusion rule to root build.gradle
           cat << 'EOF' >> android/build.gradle
 
           allprojects {
@@ -125,6 +124,10 @@ jobs:
       - name: Build Debug APK
         run: |
           cd android
+          if [ ! -f "gradlew" ]; then
+            echo "Gradle wrapper missing, generating..."
+            gradle wrapper
+          fi
           chmod +x gradlew
           ./gradlew assembleDebug
 
