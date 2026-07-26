@@ -14,7 +14,7 @@ jobs:
       NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
       NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
       NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: G-QHP7G0MXFL
+      NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
 
     steps:
       - name: Checkout Repository
@@ -23,8 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          
+          node-version: 24
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -35,6 +34,12 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Verify Capacitor
+        run: |
+          ls -la node_modules/.bin || true
+          npm ls @capacitor/cli || true
+          npx --yes @capacitor/cli --version
+
       - name: Build Next.js
         run: npm run build
 
@@ -42,7 +47,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Sync Capacitor
-        run: npx cap sync android
+        run: npx --yes @capacitor/cli sync android
 
       - name: Build Debug APK
         run: |
