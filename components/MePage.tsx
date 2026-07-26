@@ -1,7 +1,7 @@
 'use client' 
 
 import React, { useEffect, useState } from 'react'
-import { ChevronRight, Copy, Eye } from 'lucide-react'
+import { ChevronRight, Copy } from 'lucide-react'
 import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
 
@@ -146,17 +146,6 @@ export default function MePage({ onLogout }: MePageProps) {
     <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
       {/* Profile Header */}
       <div className="bg-gradient-to-b from-blue-400 to-blue-100 px-4 pt-6 pb-6 relative">
-        
-        {/* Top-Right Quick Public View Icon Button */}
-        <div className="flex justify-end mb-2">
-          <button 
-            onClick={() => setCurrentView('public_profile')}
-            className="flex items-center gap-1 bg-white/30 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-gray-800 hover:bg-white/50 transition-colors"
-          >
-            <Eye size={14} />
-            <span>Public View</span>
-          </button>
-        </div>
 
         {/* User Card */}
         <div className="flex items-start justify-between mb-6">
