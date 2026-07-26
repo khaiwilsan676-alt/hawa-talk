@@ -121,17 +121,12 @@ jobs:
           }
           EOF
 
-      - name: Build Debug APK
-        run: |
-          cd android
-          chmod +x gradlew || true
-          ./gradlew assembleDebug || gradle assembleDebug
+      - name: Build Debug APK via Capacitor CLI
+        run: npx cap build android --no-pack
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
 
