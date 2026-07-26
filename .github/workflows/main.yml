@@ -129,7 +129,7 @@ jobs:
             gradle wrapper
           fi
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew :app:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
