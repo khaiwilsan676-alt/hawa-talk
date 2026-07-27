@@ -384,14 +384,14 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundSize: '98%',
-                    minWidth: '90px',
+                    minWidth: '93px',
                     paddingLeft: '0px',
-                    paddingRight: '7px',
+                    paddingRight: '5px',
                     paddingTop: '2px',
                     paddingBottom: '2px',
                   }}
                 >
-                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs" style={{ paddingLeft: '30px' }}>
+                  <span className="relative text-white text-xs" style={{ paddingLeft: '30px' }}>
                     {user.displayAccountNumber}
                   </span>
                 </span>
