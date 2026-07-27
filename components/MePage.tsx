@@ -192,12 +192,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       alt=""
                       className="absolute inset-0 w-full h-full object-contain rounded-md"
                     />
-                    <p className="relative text-white font-bold px-3 py-1.5 z-10"style={{ paddingLeft: '25px' }}>
+                    <p className="relative text-white font-bold px-3 py-1.5 z-10 text-xs"style={{ paddingLeft: '25px' }}>
                       {user.accountNumber}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-gray-700 text-[10px] font-small">
+                  <p className="text-gray-700 text-xs font-middum">
                     ID: {user.displayAccountNumber}
                   </p>
                 )}
