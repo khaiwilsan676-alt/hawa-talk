@@ -203,7 +203,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <img 
             src="/1785095149161.png" 
             alt="Badge" 
-            className="h-7 w-auto object-contain"
+            className="h-9 w-auto object-contain"
           />
         </div>
 
