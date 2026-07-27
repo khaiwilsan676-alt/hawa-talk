@@ -192,7 +192,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover rounded-md"
                     />
-                    <p className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs font-bold px-3 py-1.5 z-10 text-center">
+                    <p className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs font-bold px-3 py-1.5 z-10 text-right">
                       {user.accountNumber}
                     </p>
                   </div>
@@ -349,4 +349,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>  
     </div>
   )
-               }
+                  }
