@@ -13,7 +13,7 @@ import {
 import MessagePage from './MessagePage'
 import MePage from './MePage'
 import RoomPage from './RoomPage'
-import SearchSheet from './SearchSheet'
+import HomeSearch from './HomeSearch'
 
 interface HomePageProps {
   onLogout?: () => void;
