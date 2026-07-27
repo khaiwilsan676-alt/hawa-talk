@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
-import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight } from 'lucide-react'
+import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
 
 interface PublicProfileProps {
   onBack?: () => void
@@ -60,8 +60,19 @@ const COUNTRIES = [
   { code: 'UG', name: 'Uganda', flag: '🇺🇬' }
 ]
 
+// Special accounts configuration
+const SPECIAL_ACCOUNTS: { [key: string]: string } = {
+  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
+  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003'
+}
+
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
+
+  // Check if this is a special account
+  if (SPECIAL_ACCOUNTS[uid]) {
+    return SPECIAL_ACCOUNTS[uid]
+  }
 
   const storageKey = `user_account_number_${uid}`
   let savedAccountNumber = localStorage.getItem(storageKey)
@@ -82,12 +93,14 @@ const getOrCreateAccountNumber = (uid: string) => {
 export default function PublicProfile({ onBack }: PublicProfileProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const albumInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   const [user, setUser] = useState({
     name: "KāβiR Khān",
     uid: "",
     displayAccountNumber: "100379620",
     photo: "",
+    coverPhoto: "",
     gender: "♂",
     age: 24,
     followers: 862,
@@ -111,10 +124,17 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   
   const [showBioInput, setShowBioInput] = useState(false)
 
+  // Full image view state
+  const [fullImageView, setFullImageView] = useState<string | null>(null)
+
+  // Check if this is a special account for UI modifications
+  const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
+
   useEffect(() => {
     const storedName = localStorage.getItem("userName")
     const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
     const photo = localStorage.getItem("userPhoto") || ""
+    const coverPhoto = localStorage.getItem("userCoverPhoto") || ""
     const storedBio = localStorage.getItem("userBio") || ""
     const storedCountry = localStorage.getItem("userCountry") || ""
     
@@ -124,7 +144,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     }
 
     const fullAccNum = getOrCreateAccountNumber(uid)
-    const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : '100379620'
+    const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum : '100379620'
 
     const matchedCountry = COUNTRIES.find(c => c.name === storedCountry)
 
@@ -134,6 +154,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       uid: uid,
       displayAccountNumber: displayAccNum,
       photo: photo || prev.photo,
+      coverPhoto: coverPhoto || prev.coverPhoto,
       bio: storedBio || prev.bio,
       location: storedCountry,
       flag: matchedCountry ? matchedCountry.flag : ""
@@ -202,6 +223,19 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     }
   }
 
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64String = reader.result as string
+        localStorage.setItem("userCoverPhoto", base64String)
+        setUser(prev => ({ ...prev, coverPhoto: base64String }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleAlbumUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -262,7 +296,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     <div className="w-full bg-white min-h-screen text-gray-900 pb-10 relative">
       {/* Cover Image & Header Section */}
       <div className="relative w-full h-[340px] bg-gray-800">
-        {user.photo ? (
+        {user.coverPhoto ? (
+          <img src={user.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+        ) : user.photo ? (
           <img src={user.photo} alt="Cover" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white text-4xl font-bold">
@@ -303,10 +339,46 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-gray-500 mt-1 font-medium">
+        {/* Level Badge - Below Name Row */}
+        <div className="mt-2 flex items-center gap-2">
+          <img 
+            src="/1785137410522.png" 
+            alt="Level Badge" 
+            className="h-8 w-auto object-contain"
+          />
+          <span className="text-sm font-semibold text-gray-700">Lv.1</span>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs text-gray-500 mt-2 font-medium">
           <div className="flex items-center gap-1">
-            <span>ID:{user.displayAccountNumber}</span>
-            <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
+            {/* Special handling for special accounts - remove "ID:" prefix */}
+            {isSpecialAccount ? (
+              <>
+                {/* Golden number with custom background */}
+                <span 
+                  className="relative font-bold text-lg px-2 py-0.5 rounded"
+                  style={{
+                    backgroundImage: 'url(/1785137282040.png)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                >
+                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text">
+                    {user.displayAccountNumber}
+                  </span>
+                </span>
+                <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
+              </>
+            ) : (
+              <>
+                <span className="relative">
+                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text">
+                    ID:{user.displayAccountNumber}
+                  </span>
+                </span>
+                <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
+              </>
+            )}
           </div>
           <span>|</span>
           <span>{user.followers} Followers</span>
@@ -339,9 +411,13 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             <span className="text-xs text-gray-400 font-normal">{albumImages.length}/4</span>
           </h3>
           {albumImages.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex gap-2 overflow-x-auto">
               {albumImages.map((img, index) => (
-                <div key={index} className="w-full h-28 rounded-2xl overflow-hidden bg-gray-100">
+                <div 
+                  key={index} 
+                  className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setFullImageView(img)}
+                >
                   <img src={img} alt={`Album ${index + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
@@ -383,6 +459,27 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
+      {/* Full Image View Modal */}
+      {fullImageView && (
+        <div 
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setFullImageView(null)}
+        >
+          <button 
+            onClick={() => setFullImageView(null)}
+            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+          >
+            <X size={24} />
+          </button>
+          <img 
+            src={fullImageView} 
+            alt="Full view" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* Edit Profile Bottom Sheet */}
       {showEditSheet && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -400,6 +497,18 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               {/* Hidden Inputs for File Uploads */}
               <input type="file" ref={avatarInputRef} accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               <input type="file" ref={albumInputRef} accept="image/*" onChange={handleAlbumUpload} className="hidden" />
+              <input type="file" ref={coverInputRef} accept="image/*" onChange={handleCoverUpload} className="hidden" />
+
+              {/* Background Cover */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Background Cover</span>
+                <button 
+                  onClick={() => coverInputRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
+                >
+                  <Camera size={14} /> Add Photo
+                </button>
+              </div>
 
               {/* Avatar */}
               <div className="flex items-center justify-between">
@@ -570,4 +679,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-   }
+    }
