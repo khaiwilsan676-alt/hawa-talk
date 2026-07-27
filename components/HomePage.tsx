@@ -7,7 +7,10 @@ import {
   doc,
   setDoc,
   deleteDoc,
-  onSnapshot
+  onSnapshot,
+  query,
+  where,
+  getDocs
 } from "firebase/firestore"
 
 import MessagePage from './MessagePage'
@@ -104,12 +107,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
 
-  // Search Sheet State
+  // Search Sheet State & Results
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSearchTab, setActiveSearchTab] = useState<SearchTab>('user')
   const [searchResults, setSearchResults] = useState<GlobalRoom[]>([])
   const [hasSearched, setHasSearched] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
 
   // Track if Public Profile is active to hide bottom tabs
   const [isPublicProfileActive, setIsPublicProfileActive] = useState(false)
@@ -497,6 +501,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
         accountId: userUID,
         createdAt: Date.now()
       });
+
+      // Also ensure user is in users collection
+      await setDoc(doc(db, "users", userUID), {
+        id: userUID,
+        name: userName,
+        country: "🇮🇳",
+        image: userPhoto,
+        accountId: userUID
+      }, { merge: true });
       
       setSelectedUser(createdRoomCard)
       setCurrentPage('room')
@@ -533,20 +546,59 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setSelectedUser(null)
   }
 
-  // Search Logic
-  const handlePerformSearch = () => {
+  // Dual-Collection Dynamic Search Logic
+  const handlePerformSearch = async () => {
     if (!searchQuery.trim()) {
       setSearchResults([])
       setHasSearched(false)
       return
     }
+
+    setIsSearching(true)
     const q = searchQuery.trim().toLowerCase()
-    const filtered = globalRooms.filter(r => 
-      r.accountId.toLowerCase().includes(q) || 
-      r.name.toLowerCase().includes(q)
-    )
-    setSearchResults(filtered)
-    setHasSearched(true)
+    
+    try {
+      const foundList: GlobalRoom[] = []
+
+      // 1. First check local globalRooms state
+      const localMatches = globalRooms.filter(r => 
+        r.accountId.toLowerCase().includes(q) || 
+        r.name.toLowerCase().includes(q)
+      )
+      foundList.push(...localMatches)
+
+      // 2. Query Firestore 'users' collection directly for ID or name matches
+      const usersRef = collection(db, "users")
+      const qSnap = await getDocs(query(usersRef, where("accountId", "==", searchQuery.trim())))
+      
+      qSnap.docs.forEach((doc) => {
+        const uData = doc.data() as GlobalRoom
+        if (!foundList.some(item => item.accountId === uData.accountId)) {
+          foundList.push({
+            id: uData.id || doc.id,
+            name: uData.name || 'User',
+            country: uData.country || '🇮🇳',
+            image: uData.image || '/1784466691241~2.jpg',
+            accountId: uData.accountId || doc.id,
+            createdAt: uData.createdAt || Date.now()
+          })
+        }
+      })
+
+      setSearchResults(foundList)
+      setHasSearched(true)
+    } catch (err) {
+      console.error("Search error:", err)
+      // Fallback to local filter if Firestore query meets any error
+      const localMatches = globalRooms.filter(r => 
+        r.accountId.toLowerCase().includes(q) || 
+        r.name.toLowerCase().includes(q)
+      )
+      setSearchResults(localMatches)
+      setHasSearched(true)
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   // Sign-in modal handlers
@@ -903,7 +955,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         <div className="fixed inset-0 z-[120] bg-white flex flex-col" style={{ animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
           {/* Top Row Header */}
           <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100">
-            {/* Back Arrow */}
+            {/* Back Arrow Button */}
             <button
               onClick={() => setIsSearchOpen(false)}
               className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
@@ -970,7 +1022,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
           {/* Search Result Content Area */}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
-            {hasSearched ? (
+            {isSearching ? (
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p className="text-xs font-semibold">Searching users...</p>
+              </div>
+            ) : hasSearched ? (
               searchResults.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {searchResults.map((user) => (
@@ -982,7 +1039,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         country: user.country,
                         image: user.image
                       })}
-                      className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                      className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"
                     >
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">
                         <img
@@ -998,7 +1055,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         </div>
                         <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>
                       </div>
-                      <div className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
+                      <div className="px-3.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-sm">
                         Enter
                       </div>
                     </div>
