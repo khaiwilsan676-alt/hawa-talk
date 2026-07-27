@@ -198,7 +198,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 ) : (
                   <p className="text-gray-700 text-xs font-medium">
-                    {user.displayAccountNumber}
+                    ID: {user.displayAccountNumber}
                   </p>
                 )}
                 
@@ -349,4 +349,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>  
     </div>
   )
-      }
+               }
