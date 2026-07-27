@@ -294,7 +294,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
       {/* Profile Info Details Section */}
       <div className="px-5 pt-10">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
             {user.gender} {user.age}
