@@ -1,4 +1,4 @@
-'use client'
+'use client' 
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
@@ -365,7 +365,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               alt="Level Badge" 
               className="h-6 w-auto object-contain"
             />
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm"style={{ paddingLeft: '2px' }}>
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm" style={{ paddingLeft: '4px' }}>
               Lv.1
             </span>
           </div>
@@ -376,9 +376,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <div className="flex items-center gap-1">
             {isSpecialAccount ? (
               <>
-                {/* Special Account - Smaller image and smaller text */}
+                {/* Special Account - Chota font size */}
                 <span 
-                  className="relative font-bold text-sm px-2 py-0.5 rounded"
+                  className="relative font-bold px-2 py-0.5 rounded"
                   style={{
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
@@ -386,7 +386,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     backgroundSize: '100%',
                   }}
                 >
-                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-sm">
+                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs">
                     {user.displayAccountNumber}
                   </span>
                 </span>
@@ -716,4 +716,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-  }
+    }
