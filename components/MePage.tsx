@@ -267,7 +267,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>  
 
       {/* Main Menu Items */}  
-      <div className="px-4 mt-4">  
+      <div className="px-4 mt-1">  
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">  
           {menuItems.map((item, index) => (  
             <div key={item.id}>  
