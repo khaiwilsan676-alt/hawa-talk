@@ -75,8 +75,19 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
+// Special UIDs for custom account numbers
+const SPECIAL_UIDS = {
+  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
+  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003'
+}
+
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return 'N/A'
+  
+  // Check if this is a special UID
+  if (SPECIAL_UIDS[uid as keyof typeof SPECIAL_UIDS]) {
+    return SPECIAL_UIDS[uid as keyof typeof SPECIAL_UIDS]
+  }
   
   const storageKey = `user_account_number_${uid}`
   let savedAccountNumber = localStorage.getItem(storageKey)
@@ -141,6 +152,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   }
 
+  // Check if current user is a special UID
+  const isSpecialUID = user.uid in SPECIAL_UIDS
+
   // Handle View Switching for Settings Page
   if (currentView === 'settings') {
     return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
@@ -152,180 +166,201 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
-      {/* Profile Header */}
-      <div className="bg-gradient-to-b from-blue-400 to-blue-100 px-4 pt-6 pb-6 relative">
+    <div className="w-full min-h-screen relative">
+      {/* Background Image for Special UID */}
+      {isSpecialUID && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
+          style={{ backgroundImage: `url('/1785138451098~2.jpg')` }}
+        />
+      )}
+      
+      {/* Content */}
+      <div className={`relative z-10 ${isSpecialUID ? '' : 'bg-gradient-to-b from-blue-100 to-white'} min-h-screen`}>
+        {/* Profile Header */}
+        <div className={`px-4 pt-6 pb-6 relative ${isSpecialUID ? 'bg-black/30 backdrop-blur-sm' : 'bg-gradient-to-b from-blue-400 to-blue-100'}`}>
 
-        {/* User Card */}
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center gap-4">
-            {/* Avatar */}
-            {user.photo ? (
-              <img
-                src={user.photo}
-                className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
-                alt="Profile"
-              />
-            ) : (
-              <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
-                {user.name.charAt(0).toUpperCase() || "G"}
-              </div>
-            )}
+          {/* User Card */}
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex items-center gap-4">
+              {/* Avatar */}
+              {user.photo ? (
+                <img
+                  src={user.photo}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
+                  alt="Profile"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
+                  {user.name.charAt(0).toUpperCase() || "G"}
+                </div>
+              )}
 
-            <div>
-              {/* Name */}
-              <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
-              
-              {/* Account Number Display & Copy Icon */}
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-gray-700 text-xs font-medium">
-                  ID: {user.displayAccountNumber}
-                </p>
-                {user.displayAccountNumber !== 'N/A' && (
-                  <button 
-                    onClick={handleCopyAccountNumber}
-                    className="text-gray-600 hover:text-blue-900 transition-colors p-1"
-                    title="Copy ID"
-                  >
-                    <Copy size={14} />
-                  </button>
+              <div>
+                {/* Name */}
+                <h2 className={`text-2xl font-bold ${isSpecialUID ? 'text-white' : 'text-gray-900'}`}>{user.name}</h2>
+                
+                {/* Account Number Display & Copy Icon */}
+                <div className="flex items-center gap-2 mt-1">
+                  <p className={`text-xs font-medium ${
+                    isSpecialUID 
+                      ? 'text-yellow-400 font-bold' 
+                      : 'text-gray-700'
+                  }`}>
+                    {isSpecialUID ? user.displayAccountNumber : user.displayAccountNumber}
+                  </p>
+                  {user.displayAccountNumber !== 'N/A' && (
+                    <button 
+                      onClick={handleCopyAccountNumber}
+                      className={`${isSpecialUID ? 'text-yellow-400/80 hover:text-yellow-300' : 'text-gray-600 hover:text-blue-900'} transition-colors p-1`}
+                      title="Copy ID"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {user.phone && (
+                  <p className={`text-xs mt-0.5 font-semibold ${isSpecialUID ? 'text-white/80' : 'text-gray-600'}`}>
+                    {user.phone}
+                  </p>
                 )}
               </div>
-
-              {user.phone && (
-                <p className="text-gray-600 text-xs mt-0.5 font-semibold">
-                  {user.phone}
-                </p>
-              )}
             </div>
+
+            {/* Top Right Arrow - Click to Open Public Profile */}
+            <button 
+              onClick={() => switchView('public_profile')}
+              className={`p-2 ${isSpecialUID ? 'hover:bg-white/10' : 'hover:bg-white/20'} rounded-full transition-colors mt-2`}
+              title="View Public Profile"
+            >
+              <ChevronRight className={isSpecialUID ? 'text-white' : 'text-gray-700'} size={24} />
+            </button>
           </div>
 
-          {/* Top Right Arrow - Click to Open Public Profile */}
-          <button 
-            onClick={() => switchView('public_profile')}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2"
-            title="View Public Profile"
-          >
-            <ChevronRight className="text-gray-700" size={24} />
-          </button>
-        </div>
-
-        {/* Stats */}  
-        <div className="grid grid-cols-3 gap-4 mb-6">  
-          <div className="text-center">  
-            <div className="text-2xl font-bold text-gray-900">1</div>  
-            <div className="text-xs text-gray-600 mt-1">Followers</div>  
-          </div>  
-          <div className="text-center">  
-            <div className="text-2xl font-bold text-gray-900">0</div>  
-            <div className="text-xs text-gray-600 mt-1">Following</div>  
-          </div>  
-          <div className="text-center">  
-            <div className="text-2xl font-bold text-gray-900">1</div>  
-            <div className="text-xs text-gray-600 mt-1">Visitors</div>  
-          </div>  
-        </div>  
-
-        {/* Banner Images */}  
-        <div className="flex gap-1 mt-6">  
-          <div className="flex-1 rounded-lg overflow-hidden">  
-            <img  
-              src="/1784480382765~2.jpg"  
-              alt="Feature 1"  
-              className="w-full h-14 object-cover"  
-            />  
-          </div>  
-          <div className="flex-1 rounded-lg overflow-hidden">  
-            <img  
-              src="/1784480368941~2.jpg"  
-              alt="Feature 2"  
-              className="w-full h-14 object-cover"  
-            />  
-          </div>  
-        </div>  
-      </div>  
-
-      {/* Main Menu Items */}  
-      <div className="px-4 mt-4">  
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm">  
-          {menuItems.map((item, index) => (  
-            <div key={item.id}>  
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">  
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">  
-                  <img  
-                    src={item.src}  
-                    alt={item.label}  
-                    className="w-full h-full object-cover"   
-                  />  
-                </div>  
-
-                <div className="flex-1">  
-                  <p className="font-semibold text-gray-900">{item.label}</p>  
-                </div>  
-                {item.action && (  
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>  
-                )}  
-                {item.badge && (  
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">  
-                    {item.badge}  
-                  </span>  
-                )}  
-                <ChevronRight size={20} className="text-gray-400" />  
-              </div>  
-              {index < menuItems.length - 1 && (  
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>  
-              )}  
+          {/* Stats */}  
+          <div className="grid grid-cols-3 gap-4 mb-6">  
+            <div className="text-center">  
+              <div className={`text-2xl font-bold ${isSpecialUID ? 'text-white' : 'text-gray-900'}`}>1</div>  
+              <div className={`text-xs mt-1 ${isSpecialUID ? 'text-white/80' : 'text-gray-600'}`}>Followers</div>  
             </div>  
-          ))}  
-        </div>  
-      </div>  
-
-      {/* Bottom Menu Items */}  
-      <div className="px-4 mt-4 mb-6">  
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm">  
-          {bottomMenuItems.map((item, index) => (  
-            <div 
-              key={item.id}
-              onClick={() => {
-                if (item.id === '8') {
-                  switchView('settings')
-                }
-              }}
-            >  
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">  
-                <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">  
-                  {item.icon}  
-                </div>  
-
-                <div className="flex-1">  
-                  <p className="font-semibold text-gray-900">{item.label}</p>  
-                </div>  
-                {item.action && (  
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>  
-                )}  
-                {item.badge && (  
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">  
-                    {item.badge}  
-                  </span>  
-                )}  
-                <ChevronRight size={20} className="text-gray-400" />  
-              </div>  
-              {index < bottomMenuItems.length - 1 && (  
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>  
-              )}  
+            <div className="text-center">  
+              <div className={`text-2xl font-bold ${isSpecialUID ? 'text-white' : 'text-gray-900'}`}>0</div>  
+              <div className={`text-xs mt-1 ${isSpecialUID ? 'text-white/80' : 'text-gray-600'}`}>Following</div>  
             </div>  
-          ))}  
-        </div>  
-      </div>  
+            <div className="text-center">  
+              <div className={`text-2xl font-bold ${isSpecialUID ? 'text-white' : 'text-gray-900'}`}>1</div>  
+              <div className={`text-xs mt-1 ${isSpecialUID ? 'text-white/80' : 'text-gray-600'}`}>Visitors</div>  
+            </div>  
+          </div>  
 
-      {/* Recharge Event Floating Card */}  
-      <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">  
-        <div className="text-center text-sm">  
-          <div className="text-2xl mb-1"></div>  
-          <div className="text-xs font-bold text-blue-800">Recharge</div>  
-          <div className="text-xs font-bold text-blue-800">Event</div>  
+          {/* Banner Images */}  
+          <div className="flex gap-1 mt-6">  
+            <div className="flex-1 rounded-lg overflow-hidden">  
+              <img  
+                src="/1784480382765~2.jpg"  
+                alt="Feature 1"  
+                className="w-full h-14 object-cover"  
+              />  
+            </div>  
+            <div className="flex-1 rounded-lg overflow-hidden">  
+              <img  
+                src="/1784480368941~2.jpg"  
+                alt="Feature 2"  
+                className="w-full h-14 object-cover"  
+              />  
+            </div>  
+          </div>  
         </div>  
-      </div>  
+
+        {/* Main Menu Items */}  
+        <div className="px-4 mt-4">  
+          <div className={`rounded-xl overflow-hidden shadow-sm ${isSpecialUID ? 'bg-white/10 backdrop-blur-md' : 'bg-white'}`}>  
+            {menuItems.map((item, index) => (  
+              <div key={item.id}>  
+                <div className={`flex items-center gap-4 p-4 cursor-pointer transition-colors ${
+                  isSpecialUID ? 'hover:bg-white/20' : 'hover:bg-gray-50'
+                }`}>  
+                  <div className="w-8 h-8 flex items-center justify-center shrink-0">  
+                    <img  
+                      src={item.src}  
+                      alt={item.label}  
+                      className="w-full h-full object-cover"   
+                    />  
+                  </div>  
+
+                  <div className="flex-1">  
+                    <p className={`font-semibold ${isSpecialUID ? 'text-white' : 'text-gray-900'}`}>{item.label}</p>  
+                  </div>  
+                  {item.action && (  
+                    <span className={`text-sm font-medium ${isSpecialUID ? 'text-white/70' : 'text-gray-500'}`}>{item.action}</span>  
+                  )}  
+                  {item.badge && (  
+                    <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">  
+                      {item.badge}  
+                    </span>  
+                  )}  
+                  <ChevronRight size={20} className={isSpecialUID ? 'text-white/60' : 'text-gray-400'} />  
+                </div>  
+                {index < menuItems.length - 1 && (  
+                  <div className={`h-[0.5px] mx-4 ${isSpecialUID ? 'bg-white/20' : 'bg-gray-200'}`}></div>  
+                )}  
+              </div>  
+            ))}  
+          </div>  
+        </div>  
+
+        {/* Bottom Menu Items */}  
+        <div className="px-4 mt-4 mb-6">  
+          <div className={`rounded-xl overflow-hidden shadow-sm ${isSpecialUID ? 'bg-white/10 backdrop-blur-md' : 'bg-white'}`}>  
+            {bottomMenuItems.map((item, index) => (  
+              <div 
+                key={item.id}
+                onClick={() => {
+                  if (item.id === '8') {
+                    switchView('settings')
+                  }
+                }}
+              >  
+                <div className={`flex items-center gap-4 p-4 cursor-pointer transition-colors ${
+                  isSpecialUID ? 'hover:bg-white/20' : 'hover:bg-gray-50'
+                }`}>  
+                  <div className={`w-8 h-8 flex items-center justify-center shrink-0 ${isSpecialUID ? 'text-white' : 'text-gray-700'}`}>  
+                    {item.icon}  
+                  </div>  
+
+                  <div className="flex-1">  
+                    <p className={`font-semibold ${isSpecialUID ? 'text-white' : 'text-gray-900'}`}>{item.label}</p>  
+                  </div>  
+                  {item.action && (  
+                    <span className={`text-sm font-medium ${isSpecialUID ? 'text-white/70' : 'text-gray-500'}`}>{item.action}</span>  
+                  )}  
+                  {item.badge && (  
+                    <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">  
+                      {item.badge}  
+                    </span>  
+                  )}  
+                  <ChevronRight size={20} className={isSpecialUID ? 'text-white/60' : 'text-gray-400'} />  
+                </div>  
+                {index < bottomMenuItems.length - 1 && (  
+                  <div className={`h-[0.5px] mx-4 ${isSpecialUID ? 'bg-white/20' : 'bg-gray-200'}`}></div>  
+                )}  
+              </div>  
+            ))}  
+          </div>  
+        </div>  
+
+        {/* Recharge Event Floating Card */}  
+        <div className={`fixed bottom-24 right-4 p-2 rounded-2xl shadow-md cursor-pointer ${
+          isSpecialUID ? 'bg-white/20 backdrop-blur-md' : 'bg-white/80 backdrop-blur-md'
+        }`}>  
+          <div className="text-center text-sm">  
+            <div className="text-2xl mb-1"></div>  
+            <div className={`text-xs font-bold ${isSpecialUID ? 'text-white' : 'text-blue-800'}`}>Recharge</div>  
+            <div className={`text-xs font-bold ${isSpecialUID ? 'text-white' : 'text-blue-800'}`}>Event</div>  
+          </div>  
+        </div>  
+      </div>
     </div>
   )
 }
