@@ -184,7 +184,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
               
               {/* Account Number Display - Row 2 */}
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
                   <div className="relative inline-block w-24">
                     <img 
@@ -192,7 +192,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover rounded-md"
                     />
-                    <p className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs font-bold px-3 py-1.5 z-10 text-right">
+                    <p className="relative text-white font-bold px-3 py-1.5 z-10"style={{ paddingLeft: '20px' }}>
                       {user.accountNumber}
                     </p>
                   </div>
