@@ -178,8 +178,13 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   }, [])
 
   const handleCopyID = () => {
-    if (user.displayAccountNumber) {
+    if (isSpecialAccount) {
+      // Special account - copy full number
       navigator.clipboard.writeText(user.displayAccountNumber)
+    } else {
+      // Regular account - copy only first 8 digits
+      const first8Digits = user.displayAccountNumber.substring(0, 8)
+      navigator.clipboard.writeText(first8Digits)
     }
   }
 
@@ -234,6 +239,11 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  const handleRemoveCoverPhoto = () => {
+    localStorage.removeItem("userCoverPhoto")
+    setUser(prev => ({ ...prev, coverPhoto: "" }))
   }
 
   const handleAlbumUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -292,6 +302,14 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     setShowBioInput(false)
   }
 
+  // Get display ID: first 8 digits for regular, full for special
+  const getDisplayID = () => {
+    if (isSpecialAccount) {
+      return user.displayAccountNumber
+    }
+    return user.displayAccountNumber.substring(0, 8)
+  }
+
   return (
     <div className="w-full bg-white min-h-screen text-gray-900 pb-10 relative">
       {/* Cover Image & Header Section */}
@@ -339,31 +357,36 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
         </div>
 
-        {/* Level Badge - Below Name Row */}
-        <div className="mt-2 flex items-center gap-2">
-          <img 
-            src="/1785137410522.png" 
-            alt="Level Badge" 
-            className="h-8 w-auto object-contain"
-          />
-          <span className="text-sm font-semibold text-gray-700">Lv.1</span>
+        {/* Level Badge - Text overlaid on image */}
+        <div className="mt-0.5 flex items-center">
+          <div className="relative inline-flex items-center justify-center">
+            <img 
+              src="/1785137410522.png" 
+              alt="Level Badge" 
+              className="h-6 w-auto object-contain"
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">
+              Lv.1
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-gray-500 mt-2 font-medium">
+        {/* ID and Followers with 0.5 gap */}
+        <div className="flex items-center gap-4 text-xs mt-0.5 font-medium">
           <div className="flex items-center gap-1">
-            {/* Special handling for special accounts - remove "ID:" prefix */}
             {isSpecialAccount ? (
               <>
-                {/* Golden number with custom background */}
+                {/* Special Account - Smaller image and smaller text */}
                 <span 
-                  className="relative font-bold text-lg px-2 py-0.5 rounded"
+                  className="relative font-bold text-sm px-2 py-0.5 rounded"
                   style={{
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
+                    backgroundSize: '80%',
                   }}
                 >
-                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text">
+                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-sm">
                     {user.displayAccountNumber}
                   </span>
                 </span>
@@ -371,17 +394,14 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               </>
             ) : (
               <>
-                <span className="relative">
-                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text">
-                    ID:{user.displayAccountNumber}
-                  </span>
-                </span>
+                {/* Regular Account - First 8 digits, black color */}
+                <span className="text-black">ID:{getDisplayID()}</span>
                 <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
               </>
             )}
           </div>
           <span>|</span>
-          <span>{user.followers} Followers</span>
+          <span className="text-gray-500">{user.followers} Followers</span>
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
@@ -499,17 +519,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               <input type="file" ref={albumInputRef} accept="image/*" onChange={handleAlbumUpload} className="hidden" />
               <input type="file" ref={coverInputRef} accept="image/*" onChange={handleCoverUpload} className="hidden" />
 
-              {/* Background Cover */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Background Cover</span>
-                <button 
-                  onClick={() => coverInputRef.current?.click()}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
-                >
-                  <Camera size={14} /> Add Photo
-                </button>
-              </div>
-
               {/* Avatar */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Avatar</span>
@@ -525,6 +534,34 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Background Cover - Now below Avatar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Background Cover</span>
+                  <div className="flex items-center gap-2">
+                    {user.coverPhoto && (
+                      <button 
+                        onClick={handleRemoveCoverPhoto}
+                        className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-xs font-semibold hover:bg-red-100 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => coverInputRef.current?.click()}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
+                    >
+                      <Camera size={14} /> Add Photo
+                    </button>
+                  </div>
+                </div>
+                {user.coverPhoto && (
+                  <div className="w-full h-20 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={user.coverPhoto} alt="Cover Preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
               </div>
 
               {/* Album Upload & Management Section */}
@@ -679,4 +716,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-    }
+  }
