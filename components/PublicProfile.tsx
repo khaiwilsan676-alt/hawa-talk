@@ -383,7 +383,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    backgroundSize: '90%',
+                    backgroundSize: '95%',
                     minWidth: '90px',
                     paddingLeft: '0px',
                     paddingRight: '7px',
@@ -391,7 +391,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     paddingBottom: '2px',
                   }}
                 >
-                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs" style={{ paddingLeft: '20px' }}>
+                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs" style={{ paddingLeft: '8px' }}>
                     {user.displayAccountNumber}
                   </span>
                 </span>
