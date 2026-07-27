@@ -186,7 +186,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               {/* Account Number Display - Row 2 */}
               <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
-                  <div className="relative inline-block w-24">
+                  <div className="relative inline-block w-20">
                     <img 
                       src="/1785138451098~2.jpg" 
                       alt=""
