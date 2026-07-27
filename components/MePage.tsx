@@ -186,13 +186,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               {/* Account Number Display - Row 2 */}
               <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
-                  <div className="relative inline-block w-20">
+                  <div className="relative inline-block w-18">
                     <img 
                       src="/1785138451098~2.jpg" 
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover rounded-md"
+                      className="absolute inset-0 w-full h-full object-contain rounded-md"
                     />
-                    <p className="relative text-white font-bold px-3 py-1.5 z-10"style={{ paddingLeft: '30px' }}>
+                    <p className="relative text-white font-bold px-3 py-1.5 z-10"style={{ paddingLeft: '20px' }}>
                       {user.accountNumber}
                     </p>
                   </div>
