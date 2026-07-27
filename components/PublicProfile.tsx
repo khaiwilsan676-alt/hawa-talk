@@ -299,7 +299,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
             {user.gender} {user.age}
           </span>
-          <img src="/1785095149161.png" alt="Badge" className="h-9 w-auto object-contain" />
+          <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
+          <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
         </div>
 
         <div className="flex items-center gap-4 text-xs text-gray-500 mt-1 font-medium">
@@ -569,4 +570,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-}
+   }
