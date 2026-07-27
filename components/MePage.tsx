@@ -186,7 +186,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               {/* Account Number Display with Special Styling */}
               <div className="flex items-center gap-2 mt-1 ml-2">
                 {isSpecialUID ? (
-                  <div className="relative inline-block ml-1 w-24">
+                  <div className="relative inline-block ml-1 w-24 -ml-2">
                     <img 
                       src="/1785138451098~2.jpg" 
                       alt=""
