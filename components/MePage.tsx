@@ -186,13 +186,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               {/* Account Number Display with Special Styling */}
               <div className="flex items-center gap-2 mt-1 ml-2">
                 {isSpecialUID ? (
-                  <div className="relative inline-block ml-2" style={{ transform: 'scale(1.3)', transformOrigin: 'left center' }}>
+                  <div className="relative inline-block ml-1 w-24">
                     <img 
                       src="/1785138451098~2.jpg" 
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover rounded-md opacity-100"
+                      className="absolute inset-0 w-full h-full object-cover rounded-md"
                     />
-                    <p className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs font-bold px-3 py-1.5 z-10">
+                    <p className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs font-bold px-3 py-1.5 z-10 text-center">
                       {user.accountNumber}
                     </p>
                   </div>
@@ -349,4 +349,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>  
     </div>
   )
-      }
+}
