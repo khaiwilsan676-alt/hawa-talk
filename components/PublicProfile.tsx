@@ -385,13 +385,13 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     backgroundPosition: 'center',
                     backgroundSize: '90%',
                     minWidth: '90px',
-                    paddingLeft: '2px',
+                    paddingLeft: '0px',
                     paddingRight: '7px',
                     paddingTop: '2px',
                     paddingBottom: '2px',
                   }}
                 >
-                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs" style={{ paddingLeft: '10px' }}>
+                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs" style={{ paddingLeft: '20px' }}>
                     {user.displayAccountNumber}
                   </span>
                 </span>
