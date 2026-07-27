@@ -376,17 +376,22 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <div className="flex items-center gap-1">
             {isSpecialAccount ? (
               <>
-                {/* Special Account - Chota font size */}
+                {/* Special Account - Wider container and text shifted right */}
                 <span 
-                  className="relative font-bold px-2 py-0.5 rounded"
+                  className="relative font-bold rounded"
                   style={{
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundSize: '120%',
+                    minWidth: '140px',
+                    paddingLeft: '16px',
+                    paddingRight: '16px',
+                    paddingTop: '2px',
+                    paddingBottom: '2px',
                   }}
                 >
-                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs">
+                  <span className="relative text-transparent bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-xs" style={{ paddingLeft: '10px' }}>
                     {user.displayAccountNumber}
                   </span>
                 </span>
@@ -716,4 +721,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-    }
+      }
