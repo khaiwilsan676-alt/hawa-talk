@@ -92,8 +92,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     age: 24,
     followers: 862,
     bio: "",
-    location: "India",
-    flag: "🇮🇳"
+    location: "",
+    flag: ""
   })
 
   const [albumImages, setAlbumImages] = useState<string[]>([])
@@ -106,7 +106,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   const [editGender, setEditGender] = useState("")
   const [genderLocked, setGenderLocked] = useState(false)
   
-  const [editCountry, setEditCountry] = useState("India")
+  const [editCountry, setEditCountry] = useState("")
   const [countryLocked, setCountryLocked] = useState(false)
   
   const [showBioInput, setShowBioInput] = useState(false)
@@ -116,7 +116,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
     const photo = localStorage.getItem("userPhoto") || ""
     const storedBio = localStorage.getItem("userBio") || ""
-    const storedCountry = localStorage.getItem("userCountry") || "India"
+    const storedCountry = localStorage.getItem("userCountry") || ""
     
     const storedAlbum = localStorage.getItem("userAlbumImages")
     if (storedAlbum) {
@@ -136,7 +136,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       photo: photo || prev.photo,
       bio: storedBio || prev.bio,
       location: storedCountry,
-      flag: matchedCountry ? matchedCountry.flag : "🇮🇳"
+      flag: matchedCountry ? matchedCountry.flag : ""
     }))
 
     setEditName(storedName || "KāβiR Khān")
@@ -231,9 +231,11 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     if (editAge) localStorage.setItem("userAge", editAge)
     if (editBio) localStorage.setItem("userBio", editBio)
     
-    localStorage.setItem("userCountry", editCountry)
-    localStorage.setItem("userCountryLocked", "true")
-    setCountryLocked(true)
+    if (editCountry) {
+      localStorage.setItem("userCountry", editCountry)
+      localStorage.setItem("userCountryLocked", "true")
+      setCountryLocked(true)
+    }
 
     const matchedCountry = COUNTRIES.find(c => c.name === editCountry)
 
@@ -312,7 +314,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
           <MapPin size={14} className="text-gray-400" />
           <span className="text-base">{user.flag}</span>
-          <span>{user.location}</span>
+          <span>{user.location || "Select Country"}</span>
         </div>
 
         <div className="flex items-start gap-2 mt-2">
@@ -503,6 +505,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     countryLocked ? 'text-gray-400 border-transparent cursor-not-allowed' : 'text-gray-900 border-gray-200 focus:border-blue-500'
                   }`}
                 >
+                  <option value="" disabled>Select Country</option>
                   {COUNTRIES.map((c) => (
                     <option key={c.code} value={c.name}>
                       {c.flag} {c.name}
@@ -567,4 +570,3 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     </div>
   )
 }
-
