@@ -179,14 +179,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               </div>
             )}
 
-            <div>
-              {/* Name */}
+            <div className="flex flex-col">
+              {/* Name - Row 1 */}
               <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
               
-              {/* Account Number Display with Special Styling */}
-              <div className="flex items-center gap-2 mt-1 ml-2">
+              {/* Account Number Display - Row 2 */}
+              <div className="flex items-center gap-2 mt-1">
                 {isSpecialUID ? (
-                  <div className="relative inline-block ml-1 w-24 -ml-2">
+                  <div className="relative inline-block w-24">
                     <img 
                       src="/1785138451098~2.jpg" 
                       alt=""
@@ -214,7 +214,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               </div>
 
               {user.phone && (
-                <p className="text-gray-600 text-xs mt-0.5 font-semibold ml-2">
+                <p className="text-gray-600 text-xs mt-0.5 font-semibold">
                   {user.phone}
                 </p>
               )}
@@ -349,4 +349,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>  
     </div>
   )
-}
+      }
