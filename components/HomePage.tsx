@@ -13,6 +13,7 @@ import {
 import MessagePage from './MessagePage'
 import MePage from './MePage'
 import RoomPage from './RoomPage'
+import SearchSheet from './SearchSheet'
 
 interface HomePageProps {
   onLogout?: () => void;
@@ -102,6 +103,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
+
+  // Search Sheet State
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   // Track if Public Profile is active to hide bottom tabs
   const [isPublicProfileActive, setIsPublicProfileActive] = useState(false)
@@ -489,6 +493,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
         accountId: userUID,
         createdAt: Date.now()
       });
+
+      // Ensure user is also saved in users collection for global search
+      await setDoc(doc(db, "users", userUID), {
+        id: userUID,
+        name: userName,
+        country: "🇮🇳",
+        image: userPhoto,
+        accountId: userUID
+      }, { merge: true });
       
       setSelectedUser(createdRoomCard)
       setCurrentPage('room')
@@ -536,7 +549,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setCurrentSignInDay(nextDay)
     localStorage.setItem('signInDay', nextDay.toString())
     setIsSignInModalOpen(false)
-    // Here you can add logic to give rewards to the user
     alert(`Day ${currentSignInDay} reward claimed! 🎉`)
   }
 
@@ -575,7 +587,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const renderMineTab = () => (
     <div className="px-4 mt-6">
-      {/* Create/Your Room Card - Simple purple gradient, no "My Room" text */}
       <div
         onClick={handleCardClick}
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
@@ -783,7 +794,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {/* All Rooms Grid - Simple, no borders, no "You" tag, no green dot */}
       {allRooms.length > 0 && (
         <div className="px-4">
           <div className="grid grid-cols-2 gap-2.5">
@@ -824,7 +834,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     <div
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
-        paddingBottom: (isChatOpen || isPublicProfileActive) ? '0px' : '96px',
+        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen) ? '0px' : '96px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -870,6 +880,18 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       `}</style>
 
+      {/* SEARCH OVERLAY SHEET COMPONENT */}
+      <SearchSheet
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        globalRooms={globalRooms}
+        onUserSelect={(user) => {
+          setEnteredFromKept(false)
+          setSelectedUser(user)
+          setCurrentPage('room')
+        }}
+      />
+
       {/* Sign-in Modal */}
       {isSignInModalOpen && (
         <div 
@@ -877,10 +899,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
           style={{ animation: 'modalOverlayIn 0.3s ease-out' }}
           onClick={handleCloseModal}
         >
-          {/* Overlay */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           
-          {/* Modal Card */}
           <div 
             className="relative bg-white rounded-3xl w-full max-w-sm overflow-hidden"
             style={{ 
@@ -889,7 +909,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
             <button
               onClick={handleCloseModal}
               className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/40 transition-all"
@@ -900,7 +919,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
               </svg>
             </button>
 
-            {/* Header */}
             <div 
               className="relative px-6 pt-8 pb-6 text-center"
               style={{
@@ -919,9 +937,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               </p>
             </div>
 
-            {/* Rewards Grid */}
             <div className="px-6 pt-6 pb-4">
-              {/* Row 1: 4 small cards */}
               <div className="grid grid-cols-4 gap-2 mb-2">
                 {SIGN_IN_REWARDS.slice(0, 4).map((item, index) => (
                   <div
@@ -953,7 +969,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 ))}
               </div>
 
-              {/* Row 2: 2 medium cards */}
               <div className="grid grid-cols-2 gap-2 mb-2">
                 {SIGN_IN_REWARDS.slice(4, 6).map((item, index) => (
                   <div
@@ -985,7 +1000,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 ))}
               </div>
 
-              {/* Row 3: 1 big card */}
               <div className="mb-4">
                 <div
                   className={`relative rounded-xl p-4 text-center transition-all ${
@@ -1014,7 +1028,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 </div>
               </div>
 
-              {/* Sign-in Button */}
               <button
                 onClick={handleSignIn}
                 disabled={currentSignInDay > 7}
@@ -1031,7 +1044,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {/* Delete Zone - Shows at bottom right when dragging */}
+      {/* Delete Zone */}
       {showDeleteZone && keptRoom && (
         <div 
           ref={deleteZoneRef}
@@ -1066,8 +1079,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {/* Kept Room Floating DP Circle - Draggable */}
-      {keptRoom && currentPage === 'home' && (
+      {/* Kept Room Floating Circle */}
+      {keptRoom && currentPage === 'home' && !isSearchOpen && (
         <div 
           ref={circleRef}
           className={`fixed z-50 cursor-grab active:cursor-grabbing group ${
@@ -1104,7 +1117,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && (
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
         <div className="fixed bottom-24 right-4 z-40">
           <img
             src="/IMG_20260719_203213.png"
@@ -1186,10 +1199,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   </button>
                 </div>
 
+                {/* SEARCH ICON BUTTON - OPENS SHEET */}
                 <button
                   type="button"
-                  onClick={() => console.log('Search clicked')}
-                  className="flex items-center justify-center cursor-pointer"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   aria-label="Search"
                 >
                   <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
@@ -1275,7 +1289,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
       </div>
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && (
+      {/* BOTTOM NAVIGATION BAR */}
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             <button
