@@ -181,7 +181,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
             <div className="flex flex-col">
               {/* Name - Row 1 */}
-              <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-0.5">{user.name}</h2>
               
               {/* Account Number Display - Row 2 */}
               <div className="flex items-center gap-1 mt-1">
@@ -192,12 +192,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       alt=""
                       className="absolute inset-0 w-full h-full object-contain rounded-md"
                     />
-                    <p className="relative text-white font-bold px-3 py-1.5 z-10"style={{ paddingLeft: '20px' }}>
+                    <p className="relative text-white font-bold px-3 py-1.5 z-10"style={{ paddingLeft: '25px' }}>
                       {user.accountNumber}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-gray-700 text-xs font-medium">
+                  <p className="text-gray-700 text-[10px] font-medium">
                     ID: {user.displayAccountNumber}
                   </p>
                 )}
