@@ -372,7 +372,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
 
         {/* ID and Followers with 0.5 gap */}
-        <div className="flex items-center gap-2 text-xs mt-0.5 font-medium">
+        <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
           <div className="flex items-center gap-1">
             {isSpecialAccount ? (
               <>
