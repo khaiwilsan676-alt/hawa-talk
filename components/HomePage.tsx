@@ -52,6 +52,7 @@ const BANNERS = [
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
 type Page = 'home' | 'message' | 'me' | 'room'
+type SearchTab = 'user' | 'room'
 
 const CATEGORY_CARDS = [
   {
@@ -102,6 +103,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
+
+  // Search Sheet State
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeSearchTab, setActiveSearchTab] = useState<SearchTab>('user')
+  const [searchResults, setSearchResults] = useState<GlobalRoom[]>([])
+  const [hasSearched, setHasSearched] = useState(false)
 
   // Track if Public Profile is active to hide bottom tabs
   const [isPublicProfileActive, setIsPublicProfileActive] = useState(false)
@@ -510,6 +518,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setEnteredFromKept(false)
     setSelectedUser(user)
     setCurrentPage('room')
+    if (isSearchOpen) {
+      setIsSearchOpen(false)
+    }
   }
 
   const handleBackFromRoom = async () => {
@@ -520,6 +531,22 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
     setCurrentPage('home')
     setSelectedUser(null)
+  }
+
+  // Search Logic
+  const handlePerformSearch = () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([])
+      setHasSearched(false)
+      return
+    }
+    const q = searchQuery.trim().toLowerCase()
+    const filtered = globalRooms.filter(r => 
+      r.accountId.toLowerCase().includes(q) || 
+      r.name.toLowerCase().includes(q)
+    )
+    setSearchResults(filtered)
+    setHasSearched(true)
   }
 
   // Sign-in modal handlers
@@ -536,7 +563,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setCurrentSignInDay(nextDay)
     localStorage.setItem('signInDay', nextDay.toString())
     setIsSignInModalOpen(false)
-    // Here you can add logic to give rewards to the user
     alert(`Day ${currentSignInDay} reward claimed! 🎉`)
   }
 
@@ -575,7 +601,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const renderMineTab = () => (
     <div className="px-4 mt-6">
-      {/* Create/Your Room Card - Simple purple gradient, no "My Room" text */}
       <div
         onClick={handleCardClick}
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
@@ -783,7 +808,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       </div>
 
-      {/* All Rooms Grid - Simple, no borders, no "You" tag, no green dot */}
       {allRooms.length > 0 && (
         <div className="px-4">
           <div className="grid grid-cols-2 gap-2.5">
@@ -824,7 +848,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     <div
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
-        paddingBottom: (isChatOpen || isPublicProfileActive) ? '0px' : '96px',
+        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen) ? '0px' : '96px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -868,7 +892,135 @@ export default function HomePage({ onLogout }: HomePageProps) {
           0% { opacity: 0; }
           100% { opacity: 1; }
         }
+        @keyframes slideUpSheet {
+          0% { transform: translateY(100%); }
+          100% { transform: translateY(0); }
+        }
       `}</style>
+
+      {/* SEARCH OVERLAY SHEET */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 z-[120] bg-white flex flex-col" style={{ animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+          {/* Top Row Header */}
+          <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100">
+            {/* Back Arrow */}
+            <button
+              onClick={() => setIsSearchOpen(false)}
+              className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D2D2D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
+
+            {/* Glossy Search Bar Patti */}
+            <div className="flex-1 flex items-center bg-gradient-to-r from-gray-100/90 to-blue-50/70 border border-white/60 shadow-inner rounded-full px-4 py-2 backdrop-blur-md">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search User ID..."
+                className="w-full bg-transparent text-sm font-semibold text-gray-800 placeholder-gray-400 outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handlePerformSearch()
+                }}
+              />
+            </div>
+
+            {/* Glossy Top Right Search Icon */}
+            <button
+              onClick={handlePerformSearch}
+              className="p-2.5 bg-gradient-to-tr from-blue-500 to-indigo-500 text-white rounded-full shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </div>
+
+          {/* 2nd Row: User / Room Tabs */}
+          <div className="flex px-4 border-b border-gray-100 mt-1">
+            <button
+              type="button"
+              onClick={() => setActiveSearchTab('user')}
+              className={`py-3 px-6 text-sm font-bold relative transition-colors ${
+                activeSearchTab === 'user' ? 'text-blue-600' : 'text-gray-400'
+              }`}
+            >
+              User
+              {activeSearchTab === 'user' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSearchTab('room')}
+              className={`py-3 px-6 text-sm font-bold relative transition-colors ${
+                activeSearchTab === 'room' ? 'text-blue-600' : 'text-gray-400'
+              }`}
+            >
+              Room
+              {activeSearchTab === 'room' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+          </div>
+
+          {/* Search Result Content Area */}
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
+            {hasSearched ? (
+              searchResults.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {searchResults.map((user) => (
+                    <div
+                      key={user.accountId}
+                      onClick={() => handleUserCardClick({
+                        id: user.accountId,
+                        name: user.name,
+                        country: user.country,
+                        image: user.image
+                      })}
+                      className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">
+                        <img
+                          src={user.image}
+                          alt={user.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>
+                          <span className="text-xs">{user.country}</span>
+                        </div>
+                        <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>
+                      </div>
+                      <div className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
+                        Enter
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-40">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <p className="text-sm font-semibold">No user or room found</p>
+                </div>
+              )
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                <p className="text-xs font-medium text-gray-400">Type ID and tap search button to find user</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Sign-in Modal */}
       {isSignInModalOpen && (
@@ -877,10 +1029,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
           style={{ animation: 'modalOverlayIn 0.3s ease-out' }}
           onClick={handleCloseModal}
         >
-          {/* Overlay */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           
-          {/* Modal Card */}
           <div 
             className="relative bg-white rounded-3xl w-full max-w-sm overflow-hidden"
             style={{ 
@@ -889,7 +1039,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
             <button
               onClick={handleCloseModal}
               className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/40 transition-all"
@@ -900,7 +1049,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
               </svg>
             </button>
 
-            {/* Header */}
             <div 
               className="relative px-6 pt-8 pb-6 text-center"
               style={{
@@ -919,9 +1067,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               </p>
             </div>
 
-            {/* Rewards Grid */}
             <div className="px-6 pt-6 pb-4">
-              {/* Row 1: 4 small cards */}
               <div className="grid grid-cols-4 gap-2 mb-2">
                 {SIGN_IN_REWARDS.slice(0, 4).map((item, index) => (
                   <div
@@ -953,7 +1099,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 ))}
               </div>
 
-              {/* Row 2: 2 medium cards */}
               <div className="grid grid-cols-2 gap-2 mb-2">
                 {SIGN_IN_REWARDS.slice(4, 6).map((item, index) => (
                   <div
@@ -985,7 +1130,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 ))}
               </div>
 
-              {/* Row 3: 1 big card */}
               <div className="mb-4">
                 <div
                   className={`relative rounded-xl p-4 text-center transition-all ${
@@ -1014,7 +1158,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 </div>
               </div>
 
-              {/* Sign-in Button */}
               <button
                 onClick={handleSignIn}
                 disabled={currentSignInDay > 7}
@@ -1031,7 +1174,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {/* Delete Zone - Shows at bottom right when dragging */}
+      {/* Delete Zone */}
       {showDeleteZone && keptRoom && (
         <div 
           ref={deleteZoneRef}
@@ -1066,8 +1209,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {/* Kept Room Floating DP Circle - Draggable */}
-      {keptRoom && currentPage === 'home' && (
+      {/* Kept Room Floating Circle */}
+      {keptRoom && currentPage === 'home' && !isSearchOpen && (
         <div 
           ref={circleRef}
           className={`fixed z-50 cursor-grab active:cursor-grabbing group ${
@@ -1104,7 +1247,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && (
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
         <div className="fixed bottom-24 right-4 z-40">
           <img
             src="/IMG_20260719_203213.png"
@@ -1186,10 +1329,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   </button>
                 </div>
 
+                {/* SEARCH ICON BUTTON - OPENS SHEET */}
                 <button
                   type="button"
-                  onClick={() => console.log('Search clicked')}
-                  className="flex items-center justify-center cursor-pointer"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   aria-label="Search"
                 >
                   <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
@@ -1275,7 +1419,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
       </div>
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && (
+      {/* BOTTOM NAVIGATION BAR */}
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             <button
