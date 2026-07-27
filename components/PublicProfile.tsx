@@ -9,10 +9,10 @@ interface PublicProfileProps {
 
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
-  
+
   const storageKey = `user_account_number_${uid}`
   let savedAccountNumber = localStorage.getItem(storageKey)
-  
+
   if (!savedAccountNumber) {
     const targetLength = uid.length
     let numericStr = ''
@@ -22,7 +22,7 @@ const getOrCreateAccountNumber = (uid: string) => {
     savedAccountNumber = numericStr
     localStorage.setItem(storageKey, savedAccountNumber)
   }
-  
+
   return savedAccountNumber
 }
 
@@ -68,7 +68,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     setEditName(storedName || "KāβiR Khān")
     setEditAge("24")
     setEditBio(storedBio || "")
-    
+
     const lockedGender = localStorage.getItem("userGenderLocked")
     if (lockedGender) {
       setEditGender(lockedGender)
@@ -96,11 +96,11 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
   const handleGenderSelect = (gender: string) => {
     if (genderLocked) return
-    
+
     setEditGender(gender)
     setGenderLocked(true)
     localStorage.setItem("userGenderLocked", gender)
-    
+
     setUser(prev => ({
       ...prev,
       gender: gender === "male" ? "♂" : "♀"
@@ -111,14 +111,14 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     localStorage.setItem("userName", editName)
     if (editAge) localStorage.setItem("userAge", editAge)
     if (editBio) localStorage.setItem("userBio", editBio)
-    
+
     setUser(prev => ({
       ...prev,
       name: editName,
       age: parseInt(editAge) || prev.age,
       bio: editBio
     }))
-    
+
     setShowEditSheet(false)
     setShowBioInput(false)
   }
@@ -148,7 +148,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           </div>
         )}
 
-        {/* Top Action Bar - Plain icons without background */}
+        {/* Top Action Bar */}
         <div className="absolute top-4 left-0 right-0 px-4 flex items-center justify-between z-10">
           <button 
             onClick={onBack}
@@ -156,7 +156,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           >
             <ChevronLeft size={28} />
           </button>
-          
+
           <button 
             onClick={handleOpenEditSheet}
             className="text-white"
@@ -171,7 +171,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           Online
         </div>
 
-        {/* User Avatar Circle Overlay - MORE UP */}
+        {/* User Avatar Circle Overlay */}
         <div className="absolute -bottom-6 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
@@ -191,12 +191,20 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
       {/* Profile Info Details Section */}
       <div className="px-5 pt-10">
-        {/* Name & Gender/Age */}
+        {/* Name & Gender/Age Tag + File Image */}
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
+          
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
             {user.gender} {user.age}
           </span>
+
+          {/* Added File/Badge Image beside Gender Tag */}
+          <img 
+            src="/1785095149161.png" 
+            alt="Badge" 
+            className="h-5 w-auto object-contain"
+          />
         </div>
 
         {/* ID & Followers */}
@@ -234,7 +242,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
-      {/* Content Tabs Section - Single Image per Tab - NO BORDERS */}
+      {/* Content Tabs Section */}
       <div className="px-5 mt-6 space-y-4">
         {/* Albums Tab */}
         <div>
@@ -284,10 +292,10 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             className="absolute inset-0 bg-black/50"
             onClick={handleCloseEditSheet}
           ></div>
-          
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl animate-slide-up" style={{ height: '50vh' }}>
+
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl animate-slide-up flex flex-col h-[65vh]">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
               <button onClick={handleCloseEditSheet}>
                 <ChevronLeft size={24} className="text-gray-700" />
               </button>
@@ -295,8 +303,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               <div className="w-6"></div>
             </div>
 
-            {/* Scrollable Content */}
-            <div className="overflow-y-auto px-5 py-4 space-y-4" style={{ height: 'calc(50vh - 60px)' }}>
+            {/* Scrollable Content (Bio & Gender will now be fully visible) */}
+            <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1 pb-24">
               {/* Row 1: Avatar */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Avatar</span>
@@ -378,7 +386,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     onClick={() => setShowBioInput(true)}
                     className="flex items-center gap-1 text-sm text-gray-400"
                   >
-                    <span>{editBio || "Add bio"}</span>
+                    <span className="max-w-[180px] truncate">{editBio || "Add bio"}</span>
                     <ChevronRight size={16} />
                   </button>
                 )}
@@ -418,8 +426,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               </div>
             </div>
 
-            {/* Save Button */}
-            <div className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white border-t border-gray-100">
+            {/* Save Button (Fixed at Bottom) */}
+            <div className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white border-t border-gray-100 shrink-0">
               <button
                 onClick={handleSaveEdit}
                 className="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors"
@@ -446,4 +454,5 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-            }
+}
+
