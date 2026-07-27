@@ -383,15 +383,15 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    backgroundSize: '98%',
-                    minWidth: '93px',
+                    backgroundSize: '96%',
+                    minWidth: '90px',
                     paddingLeft: '0px',
                     paddingRight: '5px',
                     paddingTop: '2px',
                     paddingBottom: '2px',
                   }}
                 >
-                  <span className="relative text-white text-xs" style={{ paddingLeft: '30px' }}>
+                  <span className="relative text-white text-xs" style={{ paddingLeft: '35px' color: '#FFFDD0'}}>
                     {user.displayAccountNumber}
                   </span>
                 </span>
