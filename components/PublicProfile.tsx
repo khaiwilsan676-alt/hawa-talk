@@ -1,64 +1,11 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
-import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, Upload } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight } from 'lucide-react'
 
 interface PublicProfileProps {
   onBack?: () => void
 }
-
-const countries = [
-  { code: 'IN', name: 'India', flag: '🇮🇳' },
-  { code: 'US', name: 'United States', flag: '🇺🇸' },
-  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
-  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
-  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
-  { code: 'FR', name: 'France', flag: '🇫🇷' },
-  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
-  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
-  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
-  { code: 'IT', name: 'Italy', flag: '🇮🇹' },
-  { code: 'ES', name: 'Spain', flag: '🇪🇸' },
-  { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
-  { code: 'RU', name: 'Russia', flag: '🇷🇺' },
-  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
-  { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
-  { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
-  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
-  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
-  { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
-  { code: 'TH', name: 'Thailand', flag: '🇹🇭' },
-  { code: 'VN', name: 'Vietnam', flag: '🇻🇳' },
-  { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
-  { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
-  { code: 'PK', name: 'Pakistan', flag: '🇵🇰' },
-  { code: 'BD', name: 'Bangladesh', flag: '🇧🇩' },
-  { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
-  { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
-  { code: 'CL', name: 'Chile', flag: '🇨🇱' },
-  { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
-  { code: 'NZ', name: 'New Zealand', flag: '🇳🇿' },
-  { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
-  { code: 'NO', name: 'Norway', flag: '🇳🇴' },
-  { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
-  { code: 'FI', name: 'Finland', flag: '🇫🇮' },
-  { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
-  { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
-  { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
-  { code: 'AT', name: 'Austria', flag: '🇦🇹' },
-  { code: 'PL', name: 'Poland', flag: '🇵🇱' },
-  { code: 'UA', name: 'Ukraine', flag: '🇺🇦' },
-  { code: 'PT', name: 'Portugal', flag: '🇵🇹' },
-  { code: 'GR', name: 'Greece', flag: '🇬🇷' },
-  { code: 'IE', name: 'Ireland', flag: '🇮🇪' },
-  { code: 'IL', name: 'Israel', flag: '🇮🇱' },
-  { code: 'KE', name: 'Kenya', flag: '🇰🇪' },
-  { code: 'GH', name: 'Ghana', flag: '🇬🇭' },
-  { code: 'TZ', name: 'Tanzania', flag: '🇹🇿' },
-  { code: 'UG', name: 'Uganda', flag: '🇺🇬' }
-]
 
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
@@ -89,9 +36,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     age: 24,
     followers: 862,
     bio: "",
-    location: "India",
-    countryCode: "IN",
-    countryFlag: "🇮🇳"
+    location: "India"
   })
 
   const [showEditSheet, setShowEditSheet] = useState(false)
@@ -101,28 +46,15 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   const [editGender, setEditGender] = useState("")
   const [genderLocked, setGenderLocked] = useState(false)
   const [showBioInput, setShowBioInput] = useState(false)
-  const [countryLocked, setCountryLocked] = useState(false)
-  const [editCountry, setEditCountry] = useState("IN")
-  const [showCountryPicker, setShowCountryPicker] = useState(false)
-  const [albumImages, setAlbumImages] = useState<string[]>([])
-  
-  const avatarInputRef = useRef<HTMLInputElement>(null)
-  const albumInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const storedName = localStorage.getItem("userName")
     const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
     const photo = localStorage.getItem("userPhoto") || ""
     const storedBio = localStorage.getItem("userBio") || ""
-    const storedCountry = localStorage.getItem("userCountry") || "IN"
-    const storedCountryLocked = localStorage.getItem("userCountryLocked")
-    const storedAlbumImages = localStorage.getItem("userAlbumImages")
-    const storedAge = localStorage.getItem("userAge") || "24"
 
     const fullAccNum = getOrCreateAccountNumber(uid)
     const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : '100379620'
-
-    const countryData = countries.find(c => c.code === storedCountry) || countries[0]
 
     setUser(prev => ({
       ...prev,
@@ -130,30 +62,12 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       uid: uid,
       displayAccountNumber: displayAccNum,
       photo: photo || prev.photo,
-      bio: storedBio || prev.bio,
-      countryCode: storedCountry,
-      countryFlag: countryData.flag,
-      location: countryData.name,
-      age: parseInt(storedAge) || 24
+      bio: storedBio || prev.bio
     }))
 
     setEditName(storedName || "KāβiR Khān")
-    setEditAge(storedAge)
+    setEditAge("24")
     setEditBio(storedBio || "")
-    setEditCountry(storedCountry)
-
-    if (storedCountryLocked) {
-      setCountryLocked(true)
-    }
-
-    if (storedAlbumImages) {
-      try {
-        const images = JSON.parse(storedAlbumImages)
-        setAlbumImages(images)
-      } catch (e) {
-        setAlbumImages([])
-      }
-    }
 
     const lockedGender = localStorage.getItem("userGenderLocked")
     if (lockedGender) {
@@ -172,14 +86,12 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     setEditName(user.name)
     setEditAge(user.age.toString())
     setEditBio(user.bio)
-    setEditCountry(user.countryCode)
     setShowEditSheet(true)
   }
 
   const handleCloseEditSheet = () => {
     setShowEditSheet(false)
     setShowBioInput(false)
-    setShowCountryPicker(false)
   }
 
   const handleGenderSelect = (gender: string) => {
@@ -193,66 +105,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       ...prev,
       gender: gender === "male" ? "♂" : "♀"
     }))
-  }
-
-  const handleCountrySelect = (countryCode: string) => {
-    if (countryLocked) return
-
-    setEditCountry(countryCode)
-    setCountryLocked(true)
-    localStorage.setItem("userCountryLocked", "true")
-    localStorage.setItem("userCountry", countryCode)
-
-    const countryData = countries.find(c => c.code === countryCode) || countries[0]
-    
-    setUser(prev => ({
-      ...prev,
-      countryCode: countryCode,
-      countryFlag: countryData.flag,
-      location: countryData.name
-    }))
-
-    setShowCountryPicker(false)
-  }
-
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const imageData = e.target?.result as string
-        localStorage.setItem("userPhoto", imageData)
-        setUser(prev => ({
-          ...prev,
-          photo: imageData
-        }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleAlbumUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (files && files.length > 0) {
-      const newImages: string[] = []
-      let loadedCount = 0
-
-      Array.from(files).slice(0, 4).forEach(file => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const imageData = e.target?.result as string
-          newImages.push(imageData)
-          loadedCount++
-
-          if (loadedCount === Math.min(files.length, 4)) {
-            const updatedImages = [...albumImages, ...newImages].slice(0, 4)
-            setAlbumImages(updatedImages)
-            localStorage.setItem("userAlbumImages", JSON.stringify(updatedImages))
-          }
-        }
-        reader.readAsDataURL(file)
-      })
-    }
   }
 
   const handleSaveEdit = () => {
@@ -269,7 +121,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
     setShowEditSheet(false)
     setShowBioInput(false)
-    setShowCountryPicker(false)
   }
 
   const handleBioSave = () => {
@@ -348,14 +199,12 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             {user.gender} {user.age}
           </span>
 
-          {/* Show badge only if no album images */}
-          {albumImages.length === 0 && (
-            <img 
-              src="/1785095149161.png" 
-              alt="Badge" 
-              className="h-9 w-auto object-contain"
-            />
-          )}
+          {/* Added File/Badge Image beside Gender Tag */}
+          <img 
+            src="/1785095149161.png" 
+            alt="Badge" 
+            className="h-9 w-auto object-contain"
+          />
         </div>
 
         {/* ID & Followers */}
@@ -373,7 +222,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Location */}
         <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
           <MapPin size={14} className="text-gray-400" />
-          <span className="text-base">{user.countryFlag}</span>
+          <span className="text-base">🇮🇳</span>
           <span>{user.location}</span>
         </div>
 
@@ -398,24 +247,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         {/* Albums Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Albums</h3>
-          {albumImages.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
-              {albumImages.map((img, index) => (
-                <div key={index} className="h-28 rounded-2xl overflow-hidden">
-                  <img src={img} alt={`Album ${index + 1}`} className="w-full h-full object-cover" />
-                </div>
-              ))}
-              {[...Array(4 - albumImages.length)].map((_, index) => (
-                <div key={`empty-${index}`} className="h-28 rounded-2xl overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Camera size={24} className="text-gray-300" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="w-full h-28 rounded-2xl overflow-hidden">
-              <img src="/IMG_20260726_225835.jpg" alt="Album" className="w-full h-full object-cover" />
-            </div>
-          )}
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
+            <img src="/IMG_20260726_225835.jpg" alt="Album" className="w-full h-full object-cover" />
+          </div>
         </div>
 
         {/* Vehicle Tab */}
@@ -451,23 +285,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
-      {/* Hidden file inputs */}
-      <input 
-        type="file" 
-        ref={avatarInputRef} 
-        onChange={handleAvatarUpload} 
-        accept="image/*" 
-        className="hidden" 
-      />
-      <input 
-        type="file" 
-        ref={albumInputRef} 
-        onChange={handleAlbumUpload} 
-        accept="image/*" 
-        multiple 
-        className="hidden" 
-      />
-
       {/* Edit Profile Bottom Sheet */}
       {showEditSheet && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -476,7 +293,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             onClick={handleCloseEditSheet}
           ></div>
 
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl animate-slide-up flex flex-col h-[75vh]">
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl animate-slide-up flex flex-col h-[65vh]">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
               <button onClick={handleCloseEditSheet}>
@@ -486,15 +303,12 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               <div className="w-6"></div>
             </div>
 
-            {/* Scrollable Content */}
+            {/* Scrollable Content (Bio & Gender will now be fully visible) */}
             <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1 pb-24">
-              {/* Row 1: Avatar with upload */}
+              {/* Row 1: Avatar */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Avatar</span>
-                <button 
-                  onClick={() => avatarInputRef.current?.click()}
-                  className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 relative group"
-                >
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300">
                   {user.photo ? (
                     <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -502,19 +316,13 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                       {user.name.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Upload size={16} className="text-white" />
-                  </div>
-                </button>
+                </div>
               </div>
 
               {/* Row 2: Album */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Album</span>
-                <button 
-                  onClick={() => albumInputRef.current?.click()}
-                  className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                >
+                <button className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
                   <Camera size={20} className="text-gray-600" />
                 </button>
               </div>
@@ -616,45 +424,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   </button>
                 </div>
               </div>
-
-              {/* Row 8: Country */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Country</span>
-                {showCountryPicker ? (
-                  <div className="w-48 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
-                    {countries.map((country) => (
-                      <button
-                        key={country.code}
-                        onClick={() => handleCountrySelect(country.code)}
-                        disabled={countryLocked && editCountry !== country.code}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                          editCountry === country.code ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-                        } ${
-                          countryLocked && editCountry !== country.code ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <span className="text-lg">{country.flag}</span>
-                        <span>{country.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => !countryLocked && setShowCountryPicker(true)}
-                    disabled={countryLocked}
-                    className={`flex items-center gap-2 text-sm ${
-                      countryLocked ? 'text-gray-400 cursor-not-allowed' : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                  >
-                    <span className="text-lg">
-                      {countries.find(c => c.code === editCountry)?.flag || '🇮🇳'}
-                    </span>
-                    <span>{countries.find(c => c.code === editCountry)?.name || 'India'}</span>
-                    {!countryLocked && <ChevronRight size={16} />}
-                    {countryLocked && <span className="text-xs text-gray-400 ml-1">🔒</span>}
-                  </button>
-                )}
-              </div>
             </div>
 
             {/* Save Button (Fixed at Bottom) */}
@@ -685,4 +454,5 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-            }
+}
+
