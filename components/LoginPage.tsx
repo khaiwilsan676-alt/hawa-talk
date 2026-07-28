@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Phone, X } from 'lucide-react'
-import { signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, GoogleAuthProvider } from "firebase/auth";
+import { useState } from 'react'
+import { X } from 'lucide-react'
+import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, provider } from "../src/lib/firebase"; 
 
 interface LoginPageProps {
@@ -10,31 +10,14 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | null>(null)
-  const [phone, setPhone] = useState('')
-  const [otp, setOtp] = useState('')
-  const [step, setStep] = useState<'phone' | 'otp'>('phone')
+  const [loginMethod, setLoginMethod] = useState<'email' | null>(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   
   // State for the 40vh Google Account Bottom Sheet
   const [showGoogleSheet, setShowGoogleSheet] = useState(false)
-
-  // Initialize reCAPTCHAVerifier safely
-  useEffect(() => {
-    if (loginMethod === 'phone' && !window.recaptchaVerifier) {
-      try {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible',
-          callback: () => {
-            // reCAPTCHA solved, allow signInWithPhoneNumber
-          },
-        });
-      } catch (error) {
-        console.error("Error initializing reCAPTCHA:", error);
-      }
-    }
-  }, [loginMethod]);
 
   const handleGoogleClick = () => {
     setShowGoogleSheet(true);
@@ -67,47 +50,69 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   };
 
-  // Step 1: Send OTP to Phone Number
-  const handleSendOtp = async () => {
-    if (!phone || phone.length < 10) return;
-    setLoading(true);
-
-    try {
-      const formattedPhone = `+91${phone.trim()}`;
-      const appVerifier = window.recaptchaVerifier;
-
-      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      setConfirmationResult(confirmation);
-      setStep('otp');
-    } catch (error: any) {
-      console.error('Error sending OTP:', error);
-      alert(error.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setLoading(false);
+  // Email/Password Authentication
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      alert('Please enter email and password');
+      return;
     }
-  };
+    
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
 
-  // Step 2: Verify OTP and Complete Login
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length < 6 || !confirmationResult) return;
     setLoading(true);
 
     try {
-      const result = await confirmationResult.confirm(otp);
-      const user = result.user;
+      let userCredential;
+      
+      if (isSignUp) {
+        // Create new account
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        // Sign in existing account
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      }
 
-      localStorage.clear();
-      localStorage.setItem('userName', user.displayName || `User ${phone.slice(-4)}`);
-      localStorage.setItem('userPhone', user.phoneNumber || phone);
-      localStorage.setItem('userUID', user.uid);
-      localStorage.setItem('userPhoto', '');
+      const user = userCredential.user;
+
+      localStorage.setItem("userName", user.displayName || email.split('@')[0]);
+      localStorage.setItem("userEmail", user.email || "");
+      localStorage.setItem("userPhoto", user.photoURL || "");
+      localStorage.setItem("userUID", user.uid || "");
 
       if (onLoginSuccess) {
         onLoginSuccess(user);
       }
     } catch (error: any) {
-      console.error('Invalid OTP:', error);
-      alert('Invalid OTP. Please check the code and try again.');
+      console.error('Auth error:', error);
+      
+      // Handle specific Firebase auth errors
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          alert('This email is already registered. Please sign in instead.');
+          break;
+        case 'auth/invalid-email':
+          alert('Please enter a valid email address.');
+          break;
+        case 'auth/weak-password':
+          alert('Password is too weak. Please use at least 6 characters.');
+          break;
+        case 'auth/user-not-found':
+          alert('No account found with this email. Please sign up first.');
+          break;
+        case 'auth/wrong-password':
+          alert('Incorrect password. Please try again.');
+          break;
+        case 'auth/invalid-credential':
+          alert('Invalid email or password. Please check your credentials.');
+          break;
+        default:
+          alert(error.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -147,22 +152,27 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </span>
             </button>
 
-            {/* Phone Login Button */}
+            {/* Email Login Button */}
             <button
-              onClick={() => setLoginMethod('phone')}
+              onClick={() => setLoginMethod('email')}
               className="w-full bg-white/80 backdrop-blur-md border border-white/40 shadow-md rounded-2xl p-4 flex items-center justify-center gap-3 transition-all hover:bg-white hover:shadow-lg cursor-pointer"
             >
-              <Phone className="text-blue-500" size={24} />
-              <span className="font-semibold text-gray-800 text-lg">Phone Number</span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                <rect width="20" height="16" x="2" y="4" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+              <span className="font-semibold text-gray-800 text-lg">Email</span>
             </button>
           </div>
         ) : (
-          /* Phone Login & OTP Form */
+          /* Email/Password Form */
           <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white/50">
             <button
               onClick={() => {
                 setLoginMethod(null);
-                setStep('phone');
+                setIsSignUp(false);
+                setEmail('');
+                setPassword('');
               }}
               className="text-blue-500 font-semibold mb-4 flex items-center gap-1 cursor-pointer"
             >
@@ -170,69 +180,61 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </button>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {step === 'phone' ? 'Phone Number Login' : 'Enter OTP'}
+              {isSignUp ? 'Create Account' : 'Sign In'}
             </h2>
 
-            {step === 'phone' ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value="+91"
-                      disabled
-                      className="w-20 px-3 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-center font-semibold text-gray-700"
-                    />
-                    <input
-                      type="tel"
-                      placeholder="9876543210"
-                      maxLength={10}
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                      className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleSendOtp}
-                  disabled={!phone || loading || phone.length < 10}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {loading ? 'Sending OTP...' : 'Send OTP'}
-                </button>
+            <form onSubmit={handleEmailAuth} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  required
+                />
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Enter 6-digit OTP sent to +91 {phone}
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="123456"
-                    maxLength={6}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-center tracking-widest text-lg font-bold focus:outline-none focus:border-blue-500 transition-colors"
-                  />
-                </div>
 
-                <button
-                  onClick={handleVerifyOtp}
-                  disabled={!otp || loading || otp.length < 6}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {loading ? 'Verifying...' : 'Verify & Sign In'}
-                </button>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  required
+                  minLength={6}
+                />
+                <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
               </div>
-            )}
 
-            {/* Invisible reCAPTCHA container required by Firebase */}
-            <div id="recaptcha-container"></div>
+              <button
+                type="submit"
+                disabled={loading || !email || !password}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {loading ? (isSignUp ? 'Creating Account...' : 'Signing In...') : (isSignUp ? 'Create Account' : 'Sign In')}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setEmail('');
+                  setPassword('');
+                }}
+                className="text-blue-600 hover:text-blue-700 font-semibold text-sm cursor-pointer"
+              >
+                {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+              </button>
+            </div>
           </div>
         )}
 
@@ -295,12 +297,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-}
-
-declare global {
-  interface Window {
-    recaptchaVerifier: any;
-  }
-                                                                   }
-
-
+            }
