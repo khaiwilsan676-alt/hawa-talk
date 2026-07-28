@@ -123,6 +123,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   const [countryLocked, setCountryLocked] = useState(false)
   
   const [showBioInput, setShowBioInput] = useState(false)
+  const [activeTab, setActiveTab] = useState("profile")
 
   // Full image view state
   const [fullImageView, setFullImageView] = useState<string | null>(null)
@@ -333,7 +334,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
-        <div className="absolute -bottom-6 left-6 flex items-center">
+        <div className="absolute -bottom-8 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
@@ -347,7 +348,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="px-5 pt-10">
+      <div className="px-5 pt-12">
         <div className="flex items-center gap-0.5">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
@@ -357,28 +358,13 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
         </div>
 
-        {/* Level Badge - Text overlaid on image */}
-        <div className="mt-0.5 flex items-center">
-          <div className="relative inline-flex items-center justify-center">
-            <img 
-              src="/1785137410522.png" 
-              alt="Level Badge" 
-              className="h-6 w-auto object-contain"
-            />
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm" style={{ paddingLeft: '10px' }}>
-              Lv.1
-            </span>
-          </div>
-        </div>
-
-        {/* ID and Followers with 0.5 gap */}
+        {/* ID and Followers in one row */}
         <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
           <div className="flex items-center gap-1">
             {isSpecialAccount ? (
               <>
-                {/* Special Account - Wider container and text shifted right */}
                 <span 
-                  className="relative font-bold rounded"
+                  className="relative font-bold rounded text-white"
                   style={{
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
@@ -391,7 +377,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     paddingBottom: '2px',
                   }}
                 >
-                  <span className="relative text-white text-xs" style={{ paddingLeft: '35px' }}>
+                  <span className="relative text-xs" style={{ paddingLeft: '35px' }}>
                     {user.displayAccountNumber}
                   </span>
                 </span>
@@ -399,20 +385,33 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               </>
             ) : (
               <>
-                {/* Regular Account - First 8 digits, black color */}
-                <span className="text-black">ID:{getDisplayID()}</span>
+                <span className="text-gray-500">ID:{getDisplayID()}</span>
                 <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
               </>
             )}
           </div>
-          <span>|</span>
+          <span className="text-gray-300">|</span>
           <span className="text-gray-500">{user.followers} Followers</span>
+        </div>
+
+        {/* Level Badge - Below ID row */}
+        <div className="mt-1 flex items-center -ml-2">
+          <div className="relative inline-flex items-center justify-center">
+            <img 
+              src="/1785137410522.png" 
+              alt="Level Badge" 
+              className="h-6 w-auto object-contain"
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm" style={{ paddingLeft: '30px' }}>
+              Lv.1
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
           <MapPin size={14} className="text-gray-400" />
           <span className="text-base">{user.flag}</span>
-          <span>{user.location || "Select Country"}</span>
+          <span className="text-gray-500">{user.location || "Select Country"}</span>
         </div>
 
         <div className="flex items-start gap-2 mt-2">
@@ -424,6 +423,32 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           ) : (
             <p className="text-xs text-gray-400 italic">Add bio...</p>
           )}
+        </div>
+
+        {/* Profile/Do Profile Tabs */}
+        <div className="flex gap-0 mt-4 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("profile")}
+            className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
+              activeTab === "profile" ? "text-blue-500" : "text-gray-500"
+            }`}
+          >
+            Profile
+            {activeTab === "profile" && (
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-blue-500 rounded-full"></div>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("doProfile")}
+            className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
+              activeTab === "doProfile" ? "text-blue-500" : "text-gray-500"
+            }`}
+          >
+            Do Profile
+            {activeTab === "doProfile" && (
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-blue-500 rounded-full"></div>
+            )}
+          </button>
         </div>
       </div>
 
@@ -721,4 +746,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-      }
+    }
