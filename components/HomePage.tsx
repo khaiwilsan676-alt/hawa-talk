@@ -496,7 +496,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       await setDoc(doc(db, "globalRooms", userUID), {
         id: userUID,
         name: userName,
-        nameLower: userName.toLowerCase(),
         country: "🇮🇳",
         image: userPhoto,
         accountId: userUID,
@@ -507,7 +506,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       await setDoc(doc(db, "users", userUID), {
         id: userUID,
         name: userName,
-        nameLower: userName.toLowerCase(),
         country: "🇮🇳",
         image: userPhoto,
         accountId: userUID,
@@ -549,7 +547,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setSelectedUser(null)
   }
 
-  // ENHANCED SEARCH FUNCTIONALITY
+  // SIMPLE WORKING SEARCH FUNCTION
   const handlePerformSearch = async () => {
     if (!searchQuery.trim()) {
       setSearchResults([])
@@ -558,13 +556,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
 
     setIsSearching(true)
-    const query_text = searchQuery.trim()
+    const query_text = searchQuery.trim().toLowerCase()
     
     try {
       const foundList: GlobalRoom[] = []
       const addedIds = new Set<string>()
 
-      // 1. First check local globalRooms state for quick results
+      // 1. Local globalRooms se filter
       const localMatches = globalRooms.filter(r => {
         const matches = r.accountId.includes(query_text) || 
                        r.name.toLowerCase().includes(query_text.toLowerCase())
@@ -573,15 +571,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
       })
       foundList.push(...localMatches)
 
-      // 2. Query Firestore 'users' collection by exact accountId
-      const usersRef = collection(db, "users")
-      
+      // 2. Users collection - exact accountId match
       try {
-        const exactQuery = query(usersRef, where("accountId", "==", query_text))
-        const exactSnap = await getDocs(exactQuery)
+        const usersRef = collection(db, "users")
+        const qSnap = await getDocs(query(usersRef, where("accountId", "==", query_text)))
         
-        exactSnap.docs.forEach((doc) => {
-          const uData = doc.data() as GlobalRoom
+        qSnap.docs.forEach((doc) => {
+          const uData = doc.data()
           if (!addedIds.has(uData.accountId)) {
             addedIds.add(uData.accountId)
             foundList.push({
@@ -595,77 +591,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
           }
         })
       } catch (err) {
-        console.warn("Exact ID search failed:", err)
+        console.warn("Users search failed:", err)
       }
 
-      // 3. If query is numeric, also try partial ID match
-      if (/^\d+$/.test(query_text) && query_text.length >= 4) {
-        try {
-          const startQuery = query(
-            usersRef, 
-            where("accountId", ">=", query_text),
-            where("accountId", "<=", query_text + "\uf8ff")
-          )
-          const startSnap = await getDocs(startQuery)
-          
-          startSnap.docs.forEach((doc) => {
-            const uData = doc.data() as GlobalRoom
-            if (!addedIds.has(uData.accountId)) {
-              addedIds.add(uData.accountId)
-              foundList.push({
-                id: doc.id,
-                name: uData.name || 'User',
-                country: uData.country || '🇮🇳',
-                image: uData.image || '/default-avatar.png',
-                accountId: uData.accountId || doc.id,
-                createdAt: uData.createdAt || Date.now()
-              })
-            }
-          })
-        } catch (err) {
-          console.warn("Partial ID search failed:", err)
-        }
-      }
-
-      // 4. Search by name if query contains letters
-      if (/[a-zA-Z]/.test(query_text)) {
-        try {
-          const nameQuery = query(
-            usersRef,
-            where("nameLower", ">=", query_text.toLowerCase()),
-            where("nameLower", "<=", query_text.toLowerCase() + "\uf8ff")
-          )
-          const nameSnap = await getDocs(nameQuery)
-          
-          nameSnap.docs.forEach((doc) => {
-            const uData = doc.data() as GlobalRoom
-            if (!addedIds.has(uData.accountId)) {
-              addedIds.add(uData.accountId)
-              foundList.push({
-                id: doc.id,
-                name: uData.name || 'User',
-                country: uData.country || '🇮🇳',
-                image: uData.image || '/default-avatar.png',
-                accountId: uData.accountId || doc.id,
-                createdAt: uData.createdAt || Date.now()
-              })
-            }
-          })
-        } catch (err) {
-          console.warn("Name search failed:", err)
-        }
-      }
-
-      // 5. Also search in globalRooms collection
+      // 3. globalRooms collection - exact accountId match
       try {
-        const roomQuery = query(
-          collection(db, "globalRooms"),
-          where("accountId", "==", query_text)
-        )
-        const roomSnap = await getDocs(roomQuery)
+        const roomsRef = collection(db, "globalRooms")
+        const rSnap = await getDocs(query(roomsRef, where("accountId", "==", query_text)))
         
-        roomSnap.docs.forEach((doc) => {
-          const rData = doc.data() as GlobalRoom
+        rSnap.docs.forEach((doc) => {
+          const rData = doc.data()
           if (!addedIds.has(rData.accountId)) {
             addedIds.add(rData.accountId)
             foundList.push({
@@ -679,10 +614,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
           }
         })
       } catch (err) {
-        console.warn("Global rooms search failed:", err)
+        console.warn("globalRooms search failed:", err)
       }
 
-      // Sort results: exact matches first
+      // Sort: exact match pehle
       foundList.sort((a, b) => {
         const aExact = a.accountId === query_text
         const bExact = b.accountId === query_text
@@ -696,6 +631,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       
     } catch (err) {
       console.error("Search error:", err)
+      // Fallback to local search
       const localMatches = globalRooms.filter(r => 
         r.accountId.includes(query_text) || 
         r.name.toLowerCase().includes(query_text.toLowerCase())
@@ -1078,7 +1014,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by 8-digit ID or name..."
+                placeholder="Search by ID or name..."
                 className="w-full bg-transparent text-sm font-semibold text-gray-800 placeholder-gray-400 outline-none"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handlePerformSearch()
@@ -1086,7 +1022,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               />
             </div>
 
-            {/* Glossy Top Right Search Icon */}
+            {/* Search Button */}
             <button
               onClick={handlePerformSearch}
               className="p-2.5 bg-gradient-to-tr from-blue-500 to-indigo-500 text-white rounded-full shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
@@ -1098,7 +1034,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </button>
           </div>
 
-          {/* 2nd Row: User / Room Tabs */}
+          {/* User / Room Tabs */}
           <div className="flex px-4 border-b border-gray-100 mt-1">
             <button
               type="button"
@@ -1126,12 +1062,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </button>
           </div>
 
-          {/* Search Result Content Area */}
+          {/* Search Results */}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
             {isSearching ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                 <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                <p className="text-xs font-semibold">Searching users...</p>
+                <p className="text-xs font-semibold">Searching...</p>
               </div>
             ) : hasSearched ? (
               searchResults.length > 0 ? (
@@ -1173,8 +1109,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
-                  <p className="text-sm font-semibold">No user or room found</p>
-                  <p className="text-xs text-gray-400 mt-1">Try searching with different ID or name</p>
+                  <p className="text-sm font-semibold">No user found</p>
+                  <p className="text-xs text-gray-400 mt-1">Try different ID or name</p>
                 </div>
               )
             ) : (
@@ -1183,8 +1119,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-                <p className="text-sm font-semibold mb-1">Search Users & Rooms</p>
-                <p className="text-xs font-medium text-gray-400">Enter 8-digit User ID or name to find people</p>
+                <p className="text-sm font-semibold mb-1">Search Users</p>
+                <p className="text-xs font-medium text-gray-400">Enter ID or name to find people</p>
               </div>
             )}
           </div>
@@ -1498,7 +1434,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   </button>
                 </div>
 
-                {/* SEARCH ICON BUTTON - OPENS SHEET */}
+                {/* SEARCH ICON BUTTON */}
                 <button
                   type="button"
                   onClick={() => setIsSearchOpen(true)}
@@ -1668,4 +1604,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-        }
+    }
