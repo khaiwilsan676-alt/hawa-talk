@@ -364,7 +364,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             {isSpecialAccount ? (
               <>
                 <span 
-                  className="relative font-bold rounded text-white -ml-3"
+                  className="relative font-bold rounded text-white -ml-2.5"
                   style={{
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
