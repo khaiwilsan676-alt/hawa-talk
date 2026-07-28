@@ -377,7 +377,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     paddingBottom: '2px',
                   }}
                 >
-                  <span className="relative text-xs" style={{ paddingLeft: '38px' }}>
+                  <span className="relative text-xs" style={{ paddingLeft: '32px' }}>
                     {user.displayAccountNumber}
                   </span>
                 </span>
