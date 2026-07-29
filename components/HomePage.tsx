@@ -1,4 +1,4 @@
-'use client'
+'use client' 
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { db } from "../src/lib/firebase"
