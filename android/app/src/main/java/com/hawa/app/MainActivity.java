@@ -16,15 +16,23 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        applyEdgeToEdge();
         super.onCreate(savedInstanceState);
         applyEdgeToEdge();
+        getWindow().getDecorView().post(this::applyEdgeToEdge);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         applyEdgeToEdge();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            applyEdgeToEdge();
+        }
     }
 
     private void applyEdgeToEdge() {
