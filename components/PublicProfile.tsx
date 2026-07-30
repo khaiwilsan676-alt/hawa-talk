@@ -306,7 +306,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
   return (
     <div className="w-full min-h-screen bg-white text-gray-900 pb-10 relative overflow-hidden">
-      {/* Cover Image Header — Image as background */}
+      {/* Cover Image & Header Section — User uploaded image as background */}
       <div
         className="relative w-full"
         style={{
@@ -339,7 +339,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
-        <div className="absolute -bottom-15 left-5 flex items-center">
+        <div className="absolute -bottom-4 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
@@ -352,12 +352,12 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
-      {/* Profile Info Card — White bg, rounded corners */}
+      {/* Profile Info Card — White bg with rounded corners */}
       <div className="px-5 pt-12">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-3xl p-5 -mt-6 relative z-10">
           <div className="flex items-center gap-0.5">
             <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
-            <span className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
+            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
               {user.gender} {user.age}
             </span>
             <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
@@ -428,21 +428,20 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               <p className="text-xs text-gray-400 italic">Add bio...</p>
             )}
           </div>
-        </div>
 
-        {/* Profile Tab Only */}
-        <div className="flex gap-0 mt-4 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab("profile")}
-            className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
-              activeTab === "profile" ? "text-gray-900" : "text-gray-500"
-            }`}
-          >
-            Profile
-            {activeTab === "profile" && (
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-gray-900 rounded-full"></div>
-            )}
-          </button>
+          <div className="flex gap-0 mt-4 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
+                activeTab === "profile" ? "text-blue-500" : "text-gray-500"
+              }`}
+            >
+              Profile
+              {activeTab === "profile" && (
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-blue-500 rounded-full"></div>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -570,7 +569,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     )}
                     <button
                       onClick={() => coverInputRef.current?.click()}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
                     >
                       <Camera size={14} /> Add Photo
                     </button>
@@ -589,7 +588,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   {albumImages.length < 4 && (
                     <button
                       onClick={() => albumInputRef.current?.click()}
-                      className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold flex items-center gap-1 hover:bg-gray-200 transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold flex items-center gap-1 hover:bg-blue-100 transition-colors"
                     >
                       <Camera size={14} /> Add Photo
                     </button>
@@ -619,7 +618,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none px-2 py-1 w-48"
+                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
                   placeholder="Enter name"
                 />
               </div>
@@ -630,7 +629,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   type="number"
                   value={editAge}
                   onChange={(e) => setEditAge(e.target.value)}
-                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none px-2 py-1 w-48"
+                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
                   placeholder="0" min="0" max="150"
                 />
               </div>
@@ -643,10 +642,10 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                       type="text"
                       value={editBio}
                       onChange={(e) => setEditBio(e.target.value)}
-                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none px-2 py-1 w-36"
+                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-36"
                       placeholder="Add bio" autoFocus
                     />
-                    <button onClick={handleBioSave} className="text-xs text-gray-700 font-medium">Save</button>
+                    <button onClick={handleBioSave} className="text-xs text-blue-500 font-medium">Save</button>
                   </div>
                 ) : (
                   <button onClick={() => setShowBioInput(true)} className="flex items-center gap-1 text-sm text-gray-400">
@@ -663,7 +662,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   onChange={handleCountrySelect}
                   disabled={countryLocked}
                   className={`text-sm text-right outline-none px-2 py-1 bg-transparent border-b w-48 ${
-                    countryLocked ? 'text-gray-400 border-transparent cursor-not-allowed' : 'text-gray-900 border-gray-200 focus:border-gray-500'
+                    countryLocked ? 'text-gray-400 border-transparent cursor-not-allowed' : 'text-gray-900 border-gray-200 focus:border-blue-500'
                   }`}
                 >
                   <option value="" disabled>Select Country</option>
@@ -683,7 +682,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     disabled={genderLocked && editGender !== "male"}
                     className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                       editGender === "male"
-                        ? "bg-gray-800 text-white"
+                        ? "bg-blue-500 text-white"
                         : genderLocked ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -694,7 +693,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     disabled={genderLocked && editGender !== "female"}
                     className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                       editGender === "female"
-                        ? "bg-gray-800 text-white"
+                        ? "bg-pink-500 text-white"
                         : genderLocked ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -708,7 +707,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             <div className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white border-t border-gray-100 shrink-0">
               <button
                 onClick={handleSaveEdit}
-                className="w-full bg-gray-800 text-white py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors"
+                className="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors"
               >
                 Save Changes
               </button>
@@ -728,4 +727,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-}
+      }
