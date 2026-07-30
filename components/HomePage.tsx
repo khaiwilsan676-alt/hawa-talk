@@ -10,12 +10,14 @@ import {
   onSnapshot,
   query,
   where,
-  getDocs
+  getDocs,
+  getDoc
 } from "firebase/firestore"
 
 import MessagePage from './MessagePage'
 import MePage from './MePage'
 import RoomPage from './RoomPage'
+import { getStableAccountNumber } from '../lib/account'
 
 interface HomePageProps {
   onLogout?: () => void;
@@ -41,6 +43,8 @@ interface GlobalRoom {
   image: string
   accountId: string
   createdAt: number
+  active?: boolean
+  kind?: 'user' | 'room'
 }
 
 const BANNERS = [
@@ -127,6 +131,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   
   // Global rooms state - stores all rooms from Firestore
   const [globalRooms, setGlobalRooms] = useState<GlobalRoom[]>([])
+  const userAccountId = userUID ? getStableAccountNumber(userUID, 8) : ''
   
   // Kept room state
   const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
@@ -182,13 +187,32 @@ export default function HomePage({ onLogout }: HomePageProps) {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
       const rooms = snapshot.docs.map((d) => ({
-        ...(d.data() as GlobalRoom)
+        ...(d.data() as GlobalRoom),
+        id: (d.data() as GlobalRoom).id || d.id,
+        accountId: (d.data() as GlobalRoom).accountId || d.id,
+        kind: 'room' as const
       }));
       setGlobalRooms(rooms);
     });
 
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    if (!userUID || userUID === 'N/A') return
+
+    setDoc(doc(db, "users", userUID), {
+      id: userUID,
+      name: userName || 'User',
+      country: '🇮🇳',
+      image: userPhoto || '/logo.png',
+      accountId: userAccountId || userUID,
+      uid: userUID,
+      updatedAt: Date.now()
+    }, { merge: true }).catch((err) => {
+      console.warn('User sync failed:', err)
+    })
+  }, [userUID, userName, userPhoto, userAccountId])
 
   // Calculate initial position
   useEffect(() => {
@@ -503,7 +527,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setEnteredFromKept(false)
     if (!isRoomCreated) {
       const createdRoomCard: UserCard = {
-        id: userUID,
+        id: userAccountId || userUID,
         name: userName,
         country: '🇮🇳',
         image: userPhoto
@@ -519,9 +543,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: userUID,
-        createdAt: Date.now()
-      });
+        accountId: userAccountId || userUID,
+        uid: userUID,
+        active: true,
+        createdAt: Date.now(),
+        lastActiveAt: Date.now()
+      }, { merge: true });
 
       // Also ensure user is in users collection
       await setDoc(doc(db, "users", userUID), {
@@ -529,14 +556,25 @@ export default function HomePage({ onLogout }: HomePageProps) {
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: userUID,
-        createdAt: Date.now()
+        accountId: userAccountId || userUID,
+        uid: userUID,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
       }, { merge: true });
       
       setSelectedUser(createdRoomCard)
       setCurrentPage('room')
     } else if (myRoom) {
-      setSelectedUser(myRoom)
+      await setDoc(doc(db, "globalRooms", userUID), {
+        active: true,
+        lastActiveAt: Date.now(),
+        accountId: userAccountId || userUID,
+        name: userName,
+        country: '🇮🇳',
+        image: userPhoto || myRoom.image,
+        uid: userUID
+      }, { merge: true })
+      setSelectedUser({ ...myRoom, id: userAccountId || myRoom.id })
       setCurrentPage('room')
     }
   }
@@ -564,105 +602,115 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setKeptRoom(null)
       setEnteredFromKept(false)
     }
+    if (userUID) {
+      setDoc(doc(db, "globalRooms", userUID), {
+        active: false,
+        lastActiveAt: Date.now()
+      }, { merge: true }).catch((err) => console.warn('Room deactivate failed:', err))
+    }
     setCurrentPage('home')
     setSelectedUser(null)
   }
 
-  // SIMPLE WORKING SEARCH FUNCTION
-  const handlePerformSearch = async () => {
-    if (!searchQuery.trim()) {
+  const normalizeSearch = (value: string) => value.trim().toLowerCase()
+
+  const pushUniqueResult = (list: GlobalRoom[], addedIds: Set<string>, data: Partial<GlobalRoom>, fallbackId: string, kind: 'user' | 'room') => {
+    const accountId = (data.accountId || fallbackId || '').toString()
+    if (!accountId || addedIds.has(accountId)) return
+
+    addedIds.add(accountId)
+    list.push({
+      id: data.id || fallbackId || accountId,
+      name: data.name || 'User',
+      country: data.country || '🇮🇳',
+      image: data.image || '/logo.png',
+      accountId,
+      active: data.active,
+      createdAt: data.createdAt || Date.now(),
+      kind
+    })
+  }
+
+  const runSearch = useCallback(async (rawQuery: string) => {
+    const queryText = normalizeSearch(rawQuery)
+    if (!queryText) {
       setSearchResults([])
       setHasSearched(false)
+      setIsSearching(false)
       return
     }
 
     setIsSearching(true)
-    const query_text = searchQuery.trim().toLowerCase()
-    
+
+    const foundList: GlobalRoom[] = []
+    const addedIds = new Set<string>()
+
+    const localMatches = globalRooms.filter((room) => {
+      const roomAccount = normalizeSearch(room.accountId || '')
+      const roomId = normalizeSearch(room.id || '')
+      const roomName = normalizeSearch(room.name || '')
+      return roomAccount.includes(queryText) || roomId.includes(queryText) || roomName.includes(queryText)
+    })
+
+    localMatches.forEach((room) => pushUniqueResult(foundList, addedIds, room, room.id, 'room'))
+    setSearchResults(foundList.slice(0, 20))
+    setHasSearched(true)
+
     try {
-      const foundList: GlobalRoom[] = []
-      const addedIds = new Set<string>()
+      const exactUserDoc = await getDoc(doc(db, "users", rawQuery.trim()))
+      if (exactUserDoc.exists()) {
+        pushUniqueResult(foundList, addedIds, { ...(exactUserDoc.data() as GlobalRoom), id: exactUserDoc.id }, exactUserDoc.id, 'user')
+      }
 
-      // 1. Local globalRooms se filter
-      const localMatches = globalRooms.filter(r => {
-        const matches = r.accountId.includes(query_text) || 
-                       r.name.toLowerCase().includes(query_text.toLowerCase())
-        if (matches) addedIds.add(r.accountId)
-        return matches
+      const usersRef = collection(db, "users")
+      const usersByAccount = await getDocs(query(usersRef, where("accountId", "==", rawQuery.trim())))
+      usersByAccount.docs.forEach((userDoc) => {
+        pushUniqueResult(foundList, addedIds, { ...(userDoc.data() as GlobalRoom), id: userDoc.id }, userDoc.id, 'user')
       })
-      foundList.push(...localMatches)
 
-      // 2. Users collection - exact accountId match
-      try {
-        const usersRef = collection(db, "users")
-        const qSnap = await getDocs(query(usersRef, where("accountId", "==", query_text)))
-        
-        qSnap.docs.forEach((doc) => {
-          const uData = doc.data()
-          if (!addedIds.has(uData.accountId)) {
-            addedIds.add(uData.accountId)
-            foundList.push({
-              id: doc.id,
-              name: uData.name || 'User',
-              country: uData.country || '🇮🇳',
-              image: uData.image || '/default-avatar.png',
-              accountId: uData.accountId || doc.id,
-              createdAt: uData.createdAt || Date.now()
-            })
-          }
-        })
-      } catch (err) {
-        console.warn("Users search failed:", err)
+      const exactRoomDoc = await getDoc(doc(db, "globalRooms", rawQuery.trim()))
+      if (exactRoomDoc.exists()) {
+        pushUniqueResult(foundList, addedIds, { ...(exactRoomDoc.data() as GlobalRoom), id: exactRoomDoc.id, kind: 'room' }, exactRoomDoc.id, 'room')
       }
 
-      // 3. globalRooms collection - exact accountId match
-      try {
-        const roomsRef = collection(db, "globalRooms")
-        const rSnap = await getDocs(query(roomsRef, where("accountId", "==", query_text)))
-        
-        rSnap.docs.forEach((doc) => {
-          const rData = doc.data()
-          if (!addedIds.has(rData.accountId)) {
-            addedIds.add(rData.accountId)
-            foundList.push({
-              id: doc.id,
-              name: rData.name || 'User',
-              country: rData.country || '🇮🇳',
-              image: rData.image || '/default-avatar.png',
-              accountId: rData.accountId || doc.id,
-              createdAt: rData.createdAt || Date.now()
-            })
-          }
-        })
-      } catch (err) {
-        console.warn("globalRooms search failed:", err)
-      }
+      const roomsRef = collection(db, "globalRooms")
+      const roomsByAccount = await getDocs(query(roomsRef, where("accountId", "==", rawQuery.trim())))
+      roomsByAccount.docs.forEach((roomDoc) => {
+        pushUniqueResult(foundList, addedIds, { ...(roomDoc.data() as GlobalRoom), id: roomDoc.id, kind: 'room' }, roomDoc.id, 'room')
+      })
 
-      // Sort: exact match pehle
       foundList.sort((a, b) => {
-        const aExact = a.accountId === query_text
-        const bExact = b.accountId === query_text
+        const aExact = normalizeSearch(a.accountId) === queryText || normalizeSearch(a.id) === queryText
+        const bExact = normalizeSearch(b.accountId) === queryText || normalizeSearch(b.id) === queryText
         if (aExact && !bExact) return -1
         if (!aExact && bExact) return 1
+        if (a.kind === activeSearchTab && b.kind !== activeSearchTab) return -1
+        if (a.kind !== activeSearchTab && b.kind === activeSearchTab) return 1
         return (b.createdAt || 0) - (a.createdAt || 0)
       })
 
       setSearchResults(foundList.slice(0, 20))
-      setHasSearched(true)
-      
     } catch (err) {
-      console.error("Search error:", err)
-      // Fallback to local search
-      const localMatches = globalRooms.filter(r => 
-        r.accountId.includes(query_text) || 
-        r.name.toLowerCase().includes(query_text.toLowerCase())
-      )
-      setSearchResults(localMatches.slice(0, 20))
-      setHasSearched(true)
+      console.warn("Search failed, showing local results:", err)
+      setSearchResults(foundList.slice(0, 20))
     } finally {
       setIsSearching(false)
     }
+  }, [activeSearchTab, globalRooms])
+
+  const handlePerformSearch = async () => {
+    await runSearch(searchQuery)
   }
+
+  useEffect(() => {
+    if (!isSearchOpen) return
+
+    const timer = window.setTimeout(() => {
+      runSearch(searchQuery)
+    }, 120)
+
+    return () => window.clearTimeout(timer)
+  }, [isSearchOpen, searchQuery, activeSearchTab, runSearch])
 
   // Sign-in modal handlers
   const handleImageClick = () => {
@@ -712,7 +760,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   }, [currentPage])
 
   // All rooms including own room from Firestore
-  const allRooms = globalRooms
+  const allRooms = globalRooms.filter((room) => room.active !== false)
 
   const renderMineTab = () => (
     <div className="px-4 mt-6">
@@ -948,6 +996,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     <span className="text-base">{room.country}</span>
                     <div className="flex-1">
                       <div className="text-white font-semibold text-xs">{room.name}</div>
+                      <div className="text-white/80 text-[10px]">ID: {room.accountId}</div>
                     </div>
                   </div>
                 </div>
@@ -1155,10 +1204,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                           <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>
                           <span className="text-xs">{user.country}</span>
                         </div>
-                        <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>
+                        <span className="text-xs text-gray-400 mt-0.5 font-medium">{user.kind === 'room' ? 'Room ID' : 'User ID'}: {user.accountId}</span>
                       </div>
                       <div className="px-3.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-sm">
-                        Enter
+                        {user.kind === 'room' ? 'Enter Room' : 'View'}
                       </div>
                     </div>
                   ))}
@@ -1169,8 +1218,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
-                  <p className="text-sm font-semibold">No user found</p>
-                  <p className="text-xs text-gray-400 mt-1">Try different ID or name</p>
+                  <p className="text-sm font-semibold">No result found</p>
+                  <p className="text-xs text-gray-400 mt-1">Try different ID, user name, or room ID</p>
                 </div>
               )
             ) : (
@@ -1179,8 +1228,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-                <p className="text-sm font-semibold mb-1">Search Users</p>
-                <p className="text-xs font-medium text-gray-400">Enter ID or name to find people</p>
+                <p className="text-sm font-semibold mb-1">Search Users & Rooms</p>
+                <p className="text-xs font-medium text-gray-400">Enter user ID, room ID, or name</p>
               </div>
             )}
           </div>
