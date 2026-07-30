@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
     StatusBar: {
       overlay: true,
       style: 'DARK',
-      backgroundColor: '#000000'
+      backgroundColor: '#00000000'
     }
   }
 };

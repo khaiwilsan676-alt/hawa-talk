@@ -159,9 +159,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full bg-gradient-to-b from-blue-100 to-white min-h-screen">
+    <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
       {/* Profile Header */}
-      <div className="bg-gradient-to-b from-blue-400 to-blue-100 px-4 pt-6 pb-6 relative">
+      <div
+        className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-6 relative"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
+      >
 
         {/* User Card */}
         <div className="flex items-start justify-between mb-6">
