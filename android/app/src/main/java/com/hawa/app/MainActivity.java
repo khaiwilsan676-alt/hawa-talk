@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.ViewGroup;
 
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -18,7 +17,6 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         applyEdgeToEdge();
-        getWindow().getDecorView().post(this::applyEdgeToEdge);
     }
 
     @Override
@@ -27,28 +25,14 @@ public class MainActivity extends BridgeActivity {
         applyEdgeToEdge();
     }
 
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            applyEdgeToEdge();
-        }
-    }
-
     private void applyEdgeToEdge() {
         Window window = getWindow();
-
-        // Draw the WebView behind Android system bars so page headers/images
-        // reach the physical top of the APK instead of starting below a strip.
         WindowCompat.setDecorFitsSystemWindows(window, false);
+
         window.setStatusBarColor(Color.TRANSPARENT);
         window.setNavigationBarColor(Color.TRANSPARENT);
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-
-        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, window.getDecorView());
-        controller.setAppearanceLightStatusBars(true);
-        controller.setAppearanceLightNavigationBars(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             WindowManager.LayoutParams attributes = window.getAttributes();
@@ -58,22 +42,14 @@ public class MainActivity extends BridgeActivity {
         }
 
         View decorView = window.getDecorView();
-        decorView.setFitsSystemWindows(false);
         decorView.setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
         );
 
-        View contentView = decorView.findViewById(android.R.id.content);
-        if (contentView != null) {
-            contentView.setFitsSystemWindows(false);
-            if (contentView instanceof ViewGroup) {
-                ViewGroup contentGroup = (ViewGroup) contentView;
-                for (int i = 0; i < contentGroup.getChildCount(); i++) {
-                    contentGroup.getChildAt(i).setFitsSystemWindows(false);
-                }
-            }
-        }
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, decorView);
+        controller.setAppearanceLightStatusBars(true);
+        controller.setAppearanceLightNavigationBars(true);
     }
 }

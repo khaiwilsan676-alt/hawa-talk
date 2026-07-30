@@ -602,12 +602,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setKeptRoom(null)
       setEnteredFromKept(false)
     }
-    if (userUID) {
-      setDoc(doc(db, "globalRooms", userUID), {
-        active: false,
-        lastActiveAt: Date.now()
-      }, { merge: true }).catch((err) => console.warn('Room deactivate failed:', err))
-    }
     setCurrentPage('home')
     setSelectedUser(null)
   }
@@ -616,9 +610,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const pushUniqueResult = (list: GlobalRoom[], addedIds: Set<string>, data: Partial<GlobalRoom>, fallbackId: string, kind: 'user' | 'room') => {
     const accountId = (data.accountId || fallbackId || '').toString()
-    if (!accountId || addedIds.has(accountId)) return
+    const uniqueKey = `${kind}:${accountId}`
+    if (!accountId || addedIds.has(uniqueKey)) return
 
-    addedIds.add(accountId)
+    addedIds.add(uniqueKey)
     list.push({
       id: data.id || fallbackId || accountId,
       name: data.name || 'User',
@@ -760,7 +755,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   }, [currentPage])
 
   // All rooms including own room from Firestore
-  const allRooms = globalRooms.filter((room) => room.active !== false)
+  const allRooms = globalRooms
 
   const renderMineTab = () => (
     <div className="px-4 mt-6">
@@ -1012,7 +1007,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     <div
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
-        minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',
         minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
         paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen) ? '0px' : '96px',
         touchAction: 'manipulation',
@@ -1100,7 +1094,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           className="fixed inset-0 z-[120] bg-white flex flex-col" 
           style={{ 
             animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-            height: viewportHeight ? `${viewportHeight}px` : '100vh',
             height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
           }}
         >
@@ -1242,7 +1235,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           style={{ 
             animation: 'modalOverlayIn 0.3s ease-out',
-            height: viewportHeight ? `${viewportHeight}px` : '100vh',
             height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
           }}
           onClick={handleCloseModal}
@@ -1485,7 +1477,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <div 
             className="w-full bg-white" 
             style={{
-              minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',
               minHeight: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
             }}
           >

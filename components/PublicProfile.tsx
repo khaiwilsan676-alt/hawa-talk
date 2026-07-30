@@ -360,9 +360,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   className="relative font-bold rounded text-white -ml-2.5"
                   style={{
                     backgroundImage: 'url(/1785137282040.png)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
                     backgroundSize: '96%',
+                    backgroundPosition: 'center',
                     minWidth: '90px',
                     paddingLeft: '0px',
                     paddingRight: '5px',
