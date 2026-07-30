@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import EmojiPicker from './Emojipicker'
+import GiftPicker from './GiftPicker'
 
 interface RoomPageProps {
   user: {
@@ -14,6 +16,8 @@ interface RoomPageProps {
 
 export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showGiftPicker, setShowGiftPicker] = useState(false)
   const [accountId, setAccountId] = useState("N/A")
 
   useEffect(() => {
@@ -39,14 +43,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   const handleExit = () => {
     setShowExitMenu(false)
-    // Remove kept room from localStorage on Exit
     localStorage.removeItem('keptRoom')
     if (onBack) onBack()
     if (onClose) onClose()
   }
 
   const handleKeep = () => {
-    // Save room data and go back to home
     const roomData = {
       name: user.name,
       image: user.image,
@@ -58,6 +60,11 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       onKeepRoom(roomData)
     }
     if (onBack) onBack()
+  }
+
+  const handleEmojiSelect = (emoji: string) => {
+    console.log("Selected Emoji:", emoji)
+    // You can add logic to send emoji as message
   }
 
   return (
@@ -177,14 +184,19 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
             {/* Icons - Right Side */}
             <div className="flex items-center gap-2">
-              <button className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center">
+              {/* Emoji Picker Button */}
+              <button 
+                onClick={() => setShowEmojiPicker(true)}
+                className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </button>
 
-              {/* File Image in Circle */}
+              {/* Gift Picker Button */}
               <button 
+                onClick={() => setShowGiftPicker(true)}
                 aria-label="File"
                 className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 overflow-hidden"
               >
@@ -267,6 +279,21 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           </button>
         </div>
       )}
+
+      {/* Emoji Picker Modal */}
+      {showEmojiPicker && (
+        <EmojiPicker 
+          onClose={() => setShowEmojiPicker(false)}
+          onSelectEmoji={handleEmojiSelect}
+        />
+      )}
+
+      {/* Gift Picker Modal */}
+      {showGiftPicker && (
+        <GiftPicker 
+          onClose={() => setShowGiftPicker(false)}
+        />
+      )}
     </div>
   )
 }
@@ -318,4 +345,4 @@ function SeatItem({ seatNumber }: { seatNumber: number }) {
       <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
     </div>
   )
-}
+              }
