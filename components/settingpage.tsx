@@ -23,14 +23,19 @@ export default function SettingPage({
   }
 
   return (
-    <div className="w-full bg-slate-50 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200">
+    <div className="w-full min-h-screen bg-white">
+      {/* Header — White */}
+      <div
+        className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)'
+        }}
+      >
         <button onClick={onBack} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
           <ChevronLeft size={24} className="text-slate-900" />
         </button>
         <h1 className="text-lg font-semibold text-slate-900">Settings</h1>
-        <div className="w-6" /> {/* Spacer for center alignment */}
+        <div className="w-6" />
       </div>
 
       {/* Settings Options List */}
@@ -38,8 +43,7 @@ export default function SettingPage({
         {/* Message Notifications */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <span className="text-base text-slate-800">Message Notifications</span>
-          
-          {/* Custom Toggle Switch */}
+
           <button
             type="button"
             onClick={toggleSwitch}
@@ -86,4 +90,3 @@ export default function SettingPage({
     </div>
   )
 }
-
