@@ -70,7 +70,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       />
       
       {/* Content Overlay */}
-      <div className="relative z-10 flex flex-col h-full p-4">
+      <div
+        className="relative z-10 flex flex-col h-full px-4 pb-4"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
+      >
         
         {/* Top Header Section */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
