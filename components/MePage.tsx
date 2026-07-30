@@ -1,4 +1,4 @@
-'use client' 
+'use client'
 
 import React, { useEffect, useState } from 'react'
 import { ChevronRight, Copy } from 'lucide-react'
@@ -77,31 +77,29 @@ const bottomMenuItems: MenuItem[] = [
 
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return 'N/A'
-  
-  // Special UIDs with fixed account numbers
+
   if (uid === 'HUSxSvQnabgU029dWYt1TUV04hd2') return '100002'
   if (uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1') return '100003'
-  
+
   const storageKey = `user_account_number_${uid}`
   let savedAccountNumber = localStorage.getItem(storageKey)
-  
+
   if (!savedAccountNumber) {
     const targetLength = uid.length
     let numericStr = ''
-    
+
     for (let i = 0; i < targetLength; i++) {
       numericStr += Math.floor(Math.random() * 10).toString()
     }
-    
+
     savedAccountNumber = numericStr
     localStorage.setItem(storageKey, savedAccountNumber)
   }
-  
+
   return savedAccountNumber
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
-  // Navigation State: 'me' | 'settings' | 'public_profile'
   const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile'>('me')
   const [user, setUser] = useState({
     name: "Guest",
@@ -112,7 +110,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     photo: "",
   })
 
-  // Helper function to switch view and notify parent (HomePage)
   const switchView = (view: 'me' | 'settings' | 'public_profile') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
@@ -145,27 +142,26 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   }
 
-  // Check if current user has special golden account number
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // Handle View Switching for Settings Page
   if (currentView === 'settings') {
     return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
   }
 
-  // Handle View Switching for Public Profile Page
   if (currentView === 'public_profile') {
     return <PublicProfile onBack={() => switchView('me')} />
   }
 
   return (
-    <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
-      {/* Profile Header */}
+    <div className="w-full min-h-screen bg-white">
+      {/* Profile Header — HomePage jaisa gradient */}
       <div
-        className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-6 relative"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
+        className="px-4 pb-6 relative"
+        style={{
+          background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)'
+        }}
       >
-
         {/* User Card */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -185,17 +181,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             <div className="flex flex-col">
               {/* Name - Row 1 */}
               <h2 className="text-2xl font-bold text-gray-900 mb-0.5">{user.name}</h2>
-              
+
               {/* Account Number Display - Row 2 */}
               <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
                   <div className="relative inline-block w-22">
-                    <img 
-                      src="/1785138451098~2.jpg" 
+                    <img
+                      src="/1785138451098~2.jpg"
                       alt=""
                       className="absolute inset-0 w-full h-full object-contain rounded-md"
                     />
-                    <p className="relative text-white font-bold px-3 py-1.5 z-10 text-xs"style={{ paddingLeft: '30px' }}>
+                    <p className="relative text-white font-bold px-3 py-1.5 z-10 text-xs" style={{ paddingLeft: '30px' }}>
                       {user.accountNumber}
                     </p>
                   </div>
@@ -204,9 +200,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     ID: {user.displayAccountNumber}
                   </p>
                 )}
-                
+
                 {user.accountNumber !== 'N/A' && (
-                  <button 
+                  <button
                     onClick={handleCopyAccountNumber}
                     className="text-gray-600 hover:text-blue-900 transition-colors p-1"
                     title="Copy ID"
@@ -225,7 +221,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </div>
 
           {/* Top Right Arrow - Click to Open Public Profile */}
-          <button 
+          <button
             onClick={() => switchView('public_profile')}
             className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2"
             title="View Public Profile"
@@ -234,122 +230,122 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </button>
         </div>
 
-        {/* Stats */}  
-        <div className="grid grid-cols-3 gap-4 mb-6">  
-          <div className="text-center">  
-            <div className="text-2xl font-bold text-gray-900">1</div>  
-            <div className="text-xs text-gray-600 mt-1">Followers</div>  
-          </div>  
-          <div className="text-center">  
-            <div className="text-2xl font-bold text-gray-900">0</div>  
-            <div className="text-xs text-gray-600 mt-1">Following</div>  
-          </div>  
-          <div className="text-center">  
-            <div className="text-2xl font-bold text-gray-900">1</div>  
-            <div className="text-xs text-gray-600 mt-1">Visitors</div>  
-          </div>  
-        </div>  
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-900">1</div>
+            <div className="text-xs text-gray-600 mt-1">Followers</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-900">0</div>
+            <div className="text-xs text-gray-600 mt-1">Following</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-900">1</div>
+            <div className="text-xs text-gray-600 mt-1">Visitors</div>
+          </div>
+        </div>
 
-        {/* Banner Images */}  
-        <div className="flex gap-1 mt-6">  
-          <div className="flex-1 rounded-lg overflow-hidden">  
-            <img  
-              src="/1784480382765~2.jpg"  
-              alt="Feature 1"  
-              className="w-full h-14 object-cover"  
-            />  
-          </div>  
-          <div className="flex-1 rounded-lg overflow-hidden">  
-            <img  
-              src="/1784480368941~2.jpg"  
-              alt="Feature 2"  
-              className="w-full h-14 object-cover"  
-            />  
-          </div>  
-        </div>  
-      </div>  
+        {/* Banner Images */}
+        <div className="flex gap-1 mt-6">
+          <div className="flex-1 rounded-lg overflow-hidden">
+            <img
+              src="/1784480382765~2.jpg"
+              alt="Feature 1"
+              className="w-full h-14 object-cover"
+            />
+          </div>
+          <div className="flex-1 rounded-lg overflow-hidden">
+            <img
+              src="/1784480368941~2.jpg"
+              alt="Feature 2"
+              className="w-full h-14 object-cover"
+            />
+          </div>
+        </div>
+      </div>
 
-      {/* Main Menu Items */}  
-      <div className="px-4 mt-1">  
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm">  
-          {menuItems.map((item, index) => (  
-            <div key={item.id}>  
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">  
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">  
-                  <img  
-                    src={item.src}  
-                    alt={item.label}  
-                    className="w-full h-full object-cover"   
-                  />  
-                </div>  
+      {/* Main Menu Items — white background */}
+      <div className="px-4 mt-1">
+        <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+          {menuItems.map((item, index) => (
+            <div key={item.id}>
+              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                  <img
+                    src={item.src}
+                    alt={item.label}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
 
-                <div className="flex-1">  
-                  <p className="font-semibold text-gray-900">{item.label}</p>  
-                </div>  
-                {item.action && (  
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>  
-                )}  
-                {item.badge && (  
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">  
-                    {item.badge}  
-                  </span>  
-                )}  
-                <ChevronRight size={20} className="text-gray-400" />  
-              </div>  
-              {index < menuItems.length - 1 && (  
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>  
-              )}  
-            </div>  
-          ))}  
-        </div>  
-      </div>  
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{item.label}</p>
+                </div>
+                {item.action && (
+                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
+                )}
+                {item.badge && (
+                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
+                    {item.badge}
+                  </span>
+                )}
+                <ChevronRight size={20} className="text-gray-400" />
+              </div>
+              {index < menuItems.length - 1 && (
+                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* Bottom Menu Items */}  
-      <div className="px-4 mt-4 mb-6">  
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm">  
-          {bottomMenuItems.map((item, index) => (  
-            <div 
+      {/* Bottom Menu Items — white background */}
+      <div className="px-4 mt-4 mb-6">
+        <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+          {bottomMenuItems.map((item, index) => (
+            <div
               key={item.id}
               onClick={() => {
                 if (item.id === '8') {
                   switchView('settings')
                 }
               }}
-            >  
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">  
-                <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">  
-                  {item.icon}  
-                </div>  
+            >
+              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">
+                  {item.icon}
+                </div>
 
-                <div className="flex-1">  
-                  <p className="font-semibold text-gray-900">{item.label}</p>  
-                </div>  
-                {item.action && (  
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>  
-                )}  
-                {item.badge && (  
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">  
-                    {item.badge}  
-                  </span>  
-                )}  
-                <ChevronRight size={20} className="text-gray-400" />  
-              </div>  
-              {index < bottomMenuItems.length - 1 && (  
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>  
-              )}  
-            </div>  
-          ))}  
-        </div>  
-      </div>  
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{item.label}</p>
+                </div>
+                {item.action && (
+                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
+                )}
+                {item.badge && (
+                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
+                    {item.badge}
+                  </span>
+                )}
+                <ChevronRight size={20} className="text-gray-400" />
+              </div>
+              {index < bottomMenuItems.length - 1 && (
+                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* Recharge Event Floating Card */}  
-      <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">  
-        <div className="text-center text-sm">  
-          <div className="text-2xl mb-1"></div>  
-          <div className="text-xs font-bold text-blue-800">Recharge</div>  
-          <div className="text-xs font-bold text-blue-800">Event</div>  
-        </div>  
-      </div>  
+      {/* Recharge Event Floating Card */}
+      <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">
+        <div className="text-center text-sm">
+          <div className="text-2xl mb-1"></div>
+          <div className="text-xs font-bold text-blue-800">Recharge</div>
+          <div className="text-xs font-bold text-blue-800">Event</div>
+        </div>
+      </div>
     </div>
   )
-                  }
+      }
