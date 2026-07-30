@@ -55,8 +55,8 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
   // If no chat is selected, show chat list
   if (!activeChat) {
     return (
-      <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
-        {/* Header */}
+      <div className="w-full min-h-screen">
+        {/* Header - Gradient untouched */}
         <div
           className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-4 flex items-center justify-between sticky top-0 z-10"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
@@ -65,13 +65,13 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
           <CheckCircle size={28} className="text-green-500" />
         </div>
 
-        {/* Chat List */}
-        <div className="px-4 pt-4 pb-24 flex flex-col gap-2">
+        {/* Chat List - White Background */}
+        <div className="px-4 pt-4 pb-24 flex flex-col gap-2 bg-white">
           {chats.map((chat) => (
             <div
               key={chat.id}
               onClick={() => setActiveChat(chat)}
-              className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-xl cursor-pointer active:bg-gray-100 transition-colors"
+              className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-100 transition-colors"
             >
               <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                 <Image 
@@ -94,8 +94,8 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
 
   // Chat detail page
   return (
-    <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
-      {/* Chat Header */}
+    <div className="w-full min-h-screen">
+      {/* Chat Header - Gradient untouched */}
       <div
         className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-4 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
@@ -127,11 +127,10 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
         </div>
       </div>
 
-      {/* Chat Messages Area (Empty for now) */}
-      <div className="flex-1 px-4 py-4">
+      {/* Chat Messages Area - White Background */}
+      <div className="flex-1 px-4 py-4 bg-white">
         <p className="text-center text-gray-400 mt-20">No messages yet</p>
       </div>
     </div>
   )
 }
-
