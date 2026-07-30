@@ -4,7 +4,6 @@ import { useState, useEffect, Dispatch, SetStateAction } from 'react'
 import { CheckCircle, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 
-// 1. Types define kar diye hain taaki Vercel par error na aaye
 interface ChatItem {
   id: string
   name: string
@@ -18,11 +17,9 @@ interface MessagePageProps {
 export default function MessagePage({ onChatOpen }: MessagePageProps) {
   const [activeChat, setActiveChat] = useState<ChatItem | null>(null)
 
-  // toggle a body class so other UI (bottom bars) can be hidden
   useEffect(() => {
     if (typeof document === 'undefined') return
 
-    // When activeChat changes, inform parent if needed
     if (onChatOpen) {
       onChatOpen(!!activeChat)
     }
@@ -38,7 +35,6 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
     }
   }, [activeChat, onChatOpen])
 
-  // Chat data
   const chats: ChatItem[] = [
     {
       id: 'hawa-team',
@@ -52,36 +48,35 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
     }
   ]
 
-  // If no chat is selected, show chat list
   if (!activeChat) {
     return (
-      <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
-        {/* Header - Updated to match HomePage exact gradient */}
+      <div className="w-full min-h-screen bg-white">
+        {/* Header — HomePage jaisa gradient */}
         <div
           className="px-4 pb-4 flex items-center justify-between sticky top-0 z-10"
-          style={{ 
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
-            background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)'
+          style={{
+            background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)'
           }}
         >
           <h1 className="text-3xl font-bold text-gray-800">Message</h1>
           <CheckCircle size={28} className="text-green-500" />
         </div>
 
-        {/* Chat List */}
+        {/* Chat List — white background */}
         <div className="px-4 pt-4 pb-24 flex flex-col gap-2">
           {chats.map((chat) => (
             <div
               key={chat.id}
               onClick={() => setActiveChat(chat)}
-              className="flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-100 transition-colors shadow-sm"
+              className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
             >
               <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                <Image 
-                  src={chat.image} 
-                  alt={chat.name} 
-                  width={40} 
-                  height={40} 
+                <Image
+                  src={chat.image}
+                  alt={chat.name}
+                  width={40}
+                  height={40}
                   className="object-cover"
                 />
               </div>
@@ -95,45 +90,41 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
     )
   }
 
-  // Chat detail page
   return (
-    <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
-      {/* Chat Header - Updated to match HomePage exact gradient */}
+    <div className="w-full min-h-screen bg-white">
+      {/* Chat Header — HomePage jaisa gradient */}
       <div
         className="px-4 pb-4 sticky top-0 z-10"
-        style={{ 
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
-          background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)'
+        style={{
+          background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)'
         }}
       >
         <div className="flex items-center gap-3">
-          {/* Back Arrow */}
-          <button 
+          <button
             onClick={() => setActiveChat(null)}
             className="flex-shrink-0 hover:bg-white/30 rounded-full p-1 transition-colors"
           >
             <ArrowLeft size={24} className="text-gray-800" />
           </button>
 
-          {/* Chat Image */}
           <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-            <Image 
-              src={activeChat.image} 
-              alt={activeChat.name} 
-              width={40} 
-              height={40} 
+            <Image
+              src={activeChat.image}
+              alt={activeChat.name}
+              width={40}
+              height={40}
               className="object-cover"
             />
           </div>
 
-          {/* Chat Name */}
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-800">{activeChat.name}</h2>
           </div>
         </div>
       </div>
 
-      {/* Chat Messages Area (Empty for now) */}
+      {/* Messages Area — white background */}
       <div className="flex-1 px-4 py-4">
         <p className="text-center text-gray-400 mt-20">No messages yet</p>
       </div>
