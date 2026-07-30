@@ -4,6 +4,13 @@ const config: CapacitorConfig = {
   appId: 'com.hawa.app',
   appName: 'Hawa',
   webDir: 'out',
+  plugins: {
+    StatusBar: {
+      overlay: true,
+      style: 'DARK',
+      backgroundColor: '#000000'
+    }
+  }
 };
 
 export default config;
