@@ -1,4 +1,4 @@
-'use client'
+'use client' 
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
@@ -363,7 +363,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       <div className="px-5 pt-12">
         <div className="flex items-center gap-0.5">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
-          <span className="bg-white text-black text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 border border-gray-200">
+          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
             {user.gender} {user.age}
           </span>
           <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
@@ -442,12 +442,12 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <button
             onClick={() => setActiveTab("profile")}
             className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
-              activeTab === "profile" ? "text-black" : "text-gray-500"
+              activeTab === "profile" ? "text-blue-500" : "text-gray-500"
             }`}
           >
             Profile
             {activeTab === "profile" && (
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-black rounded-full"></div>
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-blue-500 rounded-full"></div>
             )}
           </button>
         </div>
@@ -662,7 +662,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                       className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-400 outline-none px-2 py-1 w-36"
                       placeholder="Add bio" autoFocus
                     />
-                    <button onClick={handleBioSave} className="text-xs text-gray-700 font-medium">Save</button>
+                    <button onClick={handleBioSave} className="text-xs text-gray-500 font-medium">Save</button>
                   </div>
                 ) : (
                   <button onClick={() => setShowBioInput(true)} className="flex items-center gap-1 text-sm text-gray-400">
@@ -701,7 +701,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     disabled={genderLocked && editGender !== "male"}
                     className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                       editGender === "male"
-                        ? "bg-black text-white"
+                        ? "bg-blue-500 text-white"
                         : genderLocked ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -712,7 +712,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     disabled={genderLocked && editGender !== "female"}
                     className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                       editGender === "female"
-                        ? "bg-black text-white"
+                        ? "bg-pink-500 text-white"
                         : genderLocked ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -727,7 +727,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             <div className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white border-t border-gray-100 shrink-0">
               <button
                 onClick={handleSaveEdit}
-                className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors"
+                className="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors"
               >
                 Save Changes
               </button>
@@ -747,4 +747,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-  }
+          }
