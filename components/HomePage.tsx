@@ -146,6 +146,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const deleteZoneRef = useRef<HTMLDivElement>(null)
   const circleRef = useRef<HTMLDivElement>(null)
 
+  // Add dvh state for dynamic viewport height
+  const [viewportHeight, setViewportHeight] = useState(0)
+
   const bannerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number>(0)
   const touchEndX = useRef<number>(0)
@@ -155,6 +158,24 @@ export default function HomePage({ onLogout }: HomePageProps) {
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
     return () => clearTimeout(id)
+  }, [])
+
+  // Set 100dvh on mount and resize
+  useEffect(() => {
+    const setHeight = () => {
+      const vh = window.innerHeight * 0.01
+      document.documentElement.style.setProperty('--vh', `${vh}px`)
+      setViewportHeight(window.innerHeight)
+    }
+    
+    setHeight()
+    window.addEventListener('resize', setHeight)
+    window.addEventListener('orientationchange', setHeight)
+    
+    return () => {
+      window.removeEventListener('resize', setHeight)
+      window.removeEventListener('orientationchange', setHeight)
+    }
   }, [])
 
   // Firebase Realtime Listener for globalRooms collection
@@ -667,11 +688,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
     const meta = document.createElement('meta')
     meta.name = 'viewport'
-    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
     document.head.appendChild(meta)
     return () => {
       const metaTag = document.querySelector('meta[name="viewport"]')
-      if (metaTag && metaTag.getAttribute('content') === 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no') {
+      if (metaTag && metaTag.getAttribute('content') === 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover') {
         metaTag.remove()
       }
     }
@@ -942,6 +963,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
     <div
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
+        minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',
+        minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
         paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen) ? '0px' : '96px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
@@ -990,13 +1013,50 @@ export default function HomePage({ onLogout }: HomePageProps) {
           0% { transform: translateY(100%); }
           100% { transform: translateY(0); }
         }
+
+        /* Full height utility classes */
+        .h-full-dvh {
+          height: 100vh;
+          height: 100dvh;
+        }
+        
+        .min-h-full-dvh {
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+
+        /* Safe area padding for notched devices */
+        .safe-top {
+          padding-top: env(safe-area-inset-top, 0px);
+        }
+        
+        .safe-bottom {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* Hide scrollbar but allow scrolling */
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
 
       {/* SEARCH OVERLAY SHEET */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[120] bg-white flex flex-col" style={{ animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+        <div 
+          className="fixed inset-0 z-[120] bg-white flex flex-col" 
+          style={{ 
+            animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            height: viewportHeight ? `${viewportHeight}px` : '100vh',
+            height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
+          }}
+        >
           {/* Top Row Header */}
-          <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100 safe-top">
             {/* Back Arrow Button */}
             <button
               onClick={() => setIsSearchOpen(false)}
@@ -1063,7 +1123,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           </div>
 
           {/* Search Results */}
-          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 hide-scrollbar">
             {isSearching ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                 <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -1131,7 +1191,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
       {isSignInModalOpen && (
         <div 
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ animation: 'modalOverlayIn 0.3s ease-out' }}
+          style={{ 
+            animation: 'modalOverlayIn 0.3s ease-out',
+            height: viewportHeight ? `${viewportHeight}px` : '100vh',
+            height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
+          }}
           onClick={handleCloseModal}
         >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -1369,7 +1433,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       <div className="w-full">
         {currentPage === 'home' && (
-          <div className="w-full bg-white min-h-screen">
+          <div 
+            className="w-full bg-white" 
+            style={{
+              minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',
+              minHeight: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
+            }}
+          >
             <div
               className="w-full pt-3 px-4"
               style={{
@@ -1381,7 +1451,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 paddingBottom: activeTab === 'mine' ? '12px' : '0px'
               }}
             >
-              <div className="w-full flex justify-between items-center py-1 box-border mb-4">
+              <div className="w-full flex justify-between items-center py-1 box-border mb-4 safe-top">
                 <button
                   type="button"
                   onClick={handleHouseClick}
@@ -1526,7 +1596,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       {/* BOTTOM NAVIGATION BAR */}
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
-        <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30">
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             <button
               onClick={() => setCurrentPage('home')}
@@ -1604,4 +1674,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-    }
+                                   }
