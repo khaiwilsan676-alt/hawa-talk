@@ -312,9 +312,15 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   }
 
   return (
-    <div className="w-full bg-white min-h-screen text-gray-900 pb-10 relative">
+    <div className="w-full bg-gradient-to-b from-blue-400 via-white to-white min-h-screen text-gray-900 pb-10 relative overflow-hidden">
       {/* Cover Image & Header Section */}
-      <div className="relative w-full h-[340px] bg-gray-800">
+      <div
+        className="relative w-full bg-gray-800"
+        style={{
+          height: 'calc(340px + env(safe-area-inset-top, 0px))',
+          marginTop: 'calc(env(safe-area-inset-top, 0px) * -1)'
+        }}
+      >
         {user.coverPhoto ? (
           <img src={user.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
         ) : user.photo ? (
@@ -325,12 +331,18 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           </div>
         )}
 
-        <div className="absolute top-4 left-0 right-0 px-4 flex items-center justify-between z-10">
+        <div
+          className="absolute left-0 right-0 px-4 flex items-center justify-between z-10"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
+        >
           <button onClick={onBack} className="text-white"><ChevronLeft size={28} /></button>
           <button onClick={handleOpenEditSheet} className="text-white"><Edit3 size={22} /></button>
         </div>
 
-        <div className="absolute top-16 right-4 bg-emerald-500/90 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium shadow-sm">
+        <div
+          className="absolute right-4 bg-emerald-500/90 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium shadow-sm"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}
+        >
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
