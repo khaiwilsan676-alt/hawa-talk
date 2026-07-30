@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { ChevronRight, Copy } from 'lucide-react'
 import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
+import HawaSupport from './HawaSupport' // Import karo HawaSupport ko
 
 interface MenuItem {
   id: string
@@ -100,7 +101,8 @@ const getOrCreateAccountNumber = (uid: string) => {
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
-  const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile'>('me')
+  // 'customer_service' ko bhi add karo currentView mein
+  const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile' | 'customer_service'>('me')
   const [user, setUser] = useState({
     name: "Guest",
     uid: "",
@@ -110,7 +112,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     photo: "",
   })
 
-  const switchView = (view: 'me' | 'settings' | 'public_profile') => {
+  const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
       onPublicProfileChange(view === 'public_profile')
@@ -143,6 +145,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
+
+  // Agar currentView 'customer_service' hai, toh HawaSupport dikhao
+  if (currentView === 'customer_service') {
+    return <HawaSupport />
+  }
 
   if (currentView === 'settings') {
     return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
@@ -310,6 +317,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 if (item.id === '8') {
                   switchView('settings')
                 }
+                // ✅ NAYA CODE: Customer Service (id '9') par click karne par HawaSupport khulega
+                if (item.id === '9') {
+                  switchView('customer_service')
+                }
               }}
             >
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
@@ -348,4 +359,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-      }
+}
