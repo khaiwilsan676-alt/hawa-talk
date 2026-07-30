@@ -56,22 +56,25 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
   if (!activeChat) {
     return (
       <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
-        {/* Header */}
+        {/* Header - Updated to match HomePage exact gradient */}
         <div
-          className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-4 flex items-center justify-between sticky top-0 z-10"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
+          className="px-4 pb-4 flex items-center justify-between sticky top-0 z-10"
+          style={{ 
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
+            background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)'
+          }}
         >
           <h1 className="text-3xl font-bold text-gray-800">Message</h1>
           <CheckCircle size={28} className="text-green-500" />
         </div>
 
         {/* Chat List */}
-        <div className="px-4 pt-4 pb-24 flex flex-col gap-2 bg-white">
+        <div className="px-4 pt-4 pb-24 flex flex-col gap-2">
           {chats.map((chat) => (
             <div
               key={chat.id}
               onClick={() => setActiveChat(chat)}
-              className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+              className="flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-100 transition-colors shadow-sm"
             >
               <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                 <Image 
@@ -95,10 +98,13 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
   // Chat detail page
   return (
     <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
-      {/* Chat Header */}
+      {/* Chat Header - Updated to match HomePage exact gradient */}
       <div
-        className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-4 sticky top-0 z-10"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
+        className="px-4 pb-4 sticky top-0 z-10"
+        style={{ 
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
+          background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)'
+        }}
       >
         <div className="flex items-center gap-3">
           {/* Back Arrow */}
