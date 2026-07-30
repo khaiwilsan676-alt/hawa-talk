@@ -60,6 +60,7 @@ const COUNTRIES = [
   { code: 'UG', name: 'Uganda', flag: '🇺🇬' }
 ]
 
+// Special accounts configuration
 const SPECIAL_ACCOUNTS: { [key: string]: string } = {
   'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
   'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003'
@@ -68,6 +69,7 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
 
+  // Check if this is a special account
   if (SPECIAL_ACCOUNTS[uid]) {
     return SPECIAL_ACCOUNTS[uid]
   }
@@ -108,23 +110,25 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   })
 
   const [albumImages, setAlbumImages] = useState<string[]>([])
-
+  
   const [showEditSheet, setShowEditSheet] = useState(false)
   const [editName, setEditName] = useState("")
   const [editAge, setEditAge] = useState("")
   const [editBio, setEditBio] = useState("")
-
+  
   const [editGender, setEditGender] = useState("")
   const [genderLocked, setGenderLocked] = useState(false)
-
+  
   const [editCountry, setEditCountry] = useState("")
   const [countryLocked, setCountryLocked] = useState(false)
-
+  
   const [showBioInput, setShowBioInput] = useState(false)
   const [activeTab, setActiveTab] = useState("profile")
 
+  // Full image view state
   const [fullImageView, setFullImageView] = useState<string | null>(null)
 
+  // Check if this is a special account for UI modifications
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
   useEffect(() => {
@@ -134,7 +138,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     const coverPhoto = localStorage.getItem("userCoverPhoto") || ""
     const storedBio = localStorage.getItem("userBio") || ""
     const storedCountry = localStorage.getItem("userCountry") || ""
-
+    
     const storedAlbum = localStorage.getItem("userAlbumImages")
     if (storedAlbum) {
       setAlbumImages(JSON.parse(storedAlbum))
@@ -176,8 +180,10 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
   const handleCopyID = () => {
     if (isSpecialAccount) {
+      // Special account - copy full number
       navigator.clipboard.writeText(user.displayAccountNumber)
     } else {
+      // Regular account - copy only first 8 digits
       const first8Digits = user.displayAccountNumber.substring(0, 8)
       navigator.clipboard.writeText(first8Digits)
     }
@@ -269,7 +275,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     localStorage.setItem("userName", editName)
     if (editAge) localStorage.setItem("userAge", editAge)
     if (editBio) localStorage.setItem("userBio", editBio)
-
+    
     if (editCountry) {
       localStorage.setItem("userCountry", editCountry)
       localStorage.setItem("userCountryLocked", "true")
@@ -297,6 +303,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     setShowBioInput(false)
   }
 
+  // Get display ID: first 8 digits for regular, full for special
   const getDisplayID = () => {
     if (isSpecialAccount) {
       return user.displayAccountNumber
@@ -305,10 +312,10 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   }
 
   return (
-    <div className="w-full min-h-screen bg-white text-gray-900 pb-10 relative overflow-hidden">
-      {/* Cover Image & Header Section — User uploaded image as background */}
+    <div className="w-full bg-gradient-to-b from-blue-400 via-white to-white min-h-screen text-gray-900 pb-10 relative overflow-hidden">
+      {/* Cover Image & Header Section */}
       <div
-        className="relative w-full"
+        className="relative w-full bg-gray-800"
         style={{
           height: 'calc(340px + env(safe-area-inset-top, 0px))',
           marginTop: 'calc(env(safe-area-inset-top, 0px) * -1)'
@@ -339,7 +346,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
-        <div className="absolute -bottom-4 left-6 flex items-center">
+        <div className="absolute -bottom-8 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
@@ -352,101 +359,103 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
-      {/* Profile Info Card — White bg with rounded corners */}
+      {/* Profile Info Details Section */}
       <div className="px-5 pt-12">
-        <div className="bg-white rounded-3xl p-5 -mt-6 relative z-10">
-          <div className="flex items-center gap-0.5">
-            <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
-            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
-              {user.gender} {user.age}
-            </span>
-            <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
-            <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
-          </div>
+        <div className="flex items-center gap-0.5">
+          <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
+          <span className="bg-white text-black text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 border border-gray-200">
+            {user.gender} {user.age}
+          </span>
+          <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
+          <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
+        </div>
 
-          <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
-            <div className="flex items-center gap-1">
-              {isSpecialAccount ? (
-                <>
-                  <span
-                    className="relative font-bold rounded text-white -ml-2.5"
-                    style={{
-                      backgroundImage: 'url(/1785137282040.png)',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      backgroundSize: '96%',
-                      minWidth: '90px',
-                      paddingLeft: '0px',
-                      paddingRight: '5px',
-                      paddingTop: '2px',
-                      paddingBottom: '2px',
-                    }}
-                  >
-                    <span className="relative text-xs" style={{ paddingLeft: '32px' }}>
-                      {user.displayAccountNumber}
-                    </span>
+        {/* ID and Followers in one row */}
+        <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
+          <div className="flex items-center gap-1">
+            {isSpecialAccount ? (
+              <>
+                <span 
+                  className="relative font-bold rounded text-white -ml-2.5"
+                  style={{
+                    backgroundImage: 'url(/1785137282040.png)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundSize: '96%',
+                    minWidth: '90px',
+                    paddingLeft: '0px',
+                    paddingRight: '5px',
+                    paddingTop: '2px',
+                    paddingBottom: '2px',
+                  }}
+                >
+                  <span className="relative text-xs" style={{ paddingLeft: '32px' }}>
+                    {user.displayAccountNumber}
                   </span>
-                  <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
-                </>
-              ) : (
-                <>
-                  <span className="text-gray-500">ID:{getDisplayID()}</span>
-                  <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
-                </>
-              )}
-            </div>
-            <span className="text-gray-300">|</span>
-            <span className="text-gray-500">{user.followers} Followers</span>
-          </div>
-
-          <div className="mt-1 flex items-center -ml-2">
-            <div className="relative inline-flex items-center justify-center ml-0.5">
-              <img
-                src="/1785137410522.png"
-                alt="Level Badge"
-                className="h-6 w-auto object-contain"
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm" style={{ paddingLeft: '10px' }}>
-                Lv.1
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
-            <MapPin size={14} className="text-gray-400" />
-            <span className="text-base">{user.flag}</span>
-            <span className="text-gray-500">{user.location || "Select Country"}</span>
-          </div>
-
-          <div className="flex items-start gap-2 mt-2">
-            <button onClick={handleOpenEditSheet} className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0">
-              <Edit3 size={14} />
-            </button>
-            {user.bio ? (
-              <p className="text-xs text-gray-500 italic">{user.bio}</p>
+                </span>
+                <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
+              </>
             ) : (
-              <p className="text-xs text-gray-400 italic">Add bio...</p>
+              <>
+                <span className="text-gray-500">ID:{getDisplayID()}</span>
+                <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600"><Copy size={12} /></button>
+              </>
             )}
           </div>
+          <span className="text-gray-300">|</span>
+          <span className="text-gray-500">{user.followers} Followers</span>
+        </div>
 
-          <div className="flex gap-0 mt-4 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
-                activeTab === "profile" ? "text-blue-500" : "text-gray-500"
-              }`}
-            >
-              Profile
-              {activeTab === "profile" && (
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-blue-500 rounded-full"></div>
-              )}
-            </button>
+        {/* Level Badge - Below ID row */}
+        <div className="mt-1 flex items-center -ml-2">
+          <div className="relative inline-flex items-center justify-center ml-0.5">
+            <img 
+              src="/1785137410522.png" 
+              alt="Level Badge" 
+              className="h-6 w-auto object-contain"
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm" style={{ paddingLeft: '10px' }}>
+              Lv.1
+            </span>
           </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
+          <MapPin size={14} className="text-gray-400" />
+          <span className="text-base">{user.flag}</span>
+          <span className="text-gray-500">{user.location || "Select Country"}</span>
+        </div>
+
+        <div className="flex items-start gap-2 mt-2">
+          <button onClick={handleOpenEditSheet} className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0">
+            <Edit3 size={14} />
+          </button>
+          {user.bio ? (
+            <p className="text-xs text-gray-500 italic">{user.bio}</p>
+          ) : (
+            <p className="text-xs text-gray-400 italic">Add bio...</p>
+          )}
+        </div>
+
+        {/* Profile Tab Only */}
+        <div className="flex gap-0 mt-4 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("profile")}
+            className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
+              activeTab === "profile" ? "text-black" : "text-gray-500"
+            }`}
+          >
+            Profile
+            {activeTab === "profile" && (
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-black rounded-full"></div>
+            )}
+          </button>
         </div>
       </div>
 
       {/* Content Tabs Section */}
       <div className="px-5 mt-6 space-y-4">
+        {/* Albums Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2 flex justify-between items-center">
             Albums
@@ -455,8 +464,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           {albumImages.length > 0 ? (
             <div className="flex gap-2 overflow-x-auto">
               {albumImages.map((img, index) => (
-                <div
-                  key={index}
+                <div 
+                  key={index} 
                   className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setFullImageView(img)}
                 >
@@ -471,6 +480,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           )}
         </div>
 
+        {/* Other Tabs */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -502,19 +512,19 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
       {/* Full Image View Modal */}
       {fullImageView && (
-        <div
+        <div 
           className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setFullImageView(null)}
         >
-          <button
+          <button 
             onClick={() => setFullImageView(null)}
             className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
           >
             <X size={24} />
           </button>
-          <img
-            src={fullImageView}
-            alt="Full view"
+          <img 
+            src={fullImageView} 
+            alt="Full view" 
             className="max-w-full max-h-[90vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />
@@ -534,14 +544,16 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             </div>
 
             <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1 pb-24">
-
+              
+              {/* Hidden Inputs for File Uploads */}
               <input type="file" ref={avatarInputRef} accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               <input type="file" ref={albumInputRef} accept="image/*" onChange={handleAlbumUpload} className="hidden" />
               <input type="file" ref={coverInputRef} accept="image/*" onChange={handleCoverUpload} className="hidden" />
 
+              {/* Avatar */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Avatar</span>
-                <div
+                <div 
                   onClick={() => avatarInputRef.current?.click()}
                   className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 cursor-pointer"
                 >
@@ -555,21 +567,22 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 </div>
               </div>
 
+              {/* Background Cover - Now below Avatar */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Background Cover</span>
                   <div className="flex items-center gap-2">
                     {user.coverPhoto && (
-                      <button
+                      <button 
                         onClick={handleRemoveCoverPhoto}
                         className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-xs font-semibold hover:bg-red-100 transition-colors"
                       >
                         Remove
                       </button>
                     )}
-                    <button
+                    <button 
                       onClick={() => coverInputRef.current?.click()}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
                     >
                       <Camera size={14} /> Add Photo
                     </button>
@@ -582,13 +595,14 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 )}
               </div>
 
+              {/* Album Upload & Management Section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Album Photos ({albumImages.length}/4)</span>
                   {albumImages.length < 4 && (
-                    <button
+                    <button 
                       onClick={() => albumInputRef.current?.click()}
-                      className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold flex items-center gap-1 hover:bg-blue-100 transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold flex items-center gap-1 hover:bg-gray-200 transition-colors"
                     >
                       <Camera size={14} /> Add Photo
                     </button>
@@ -612,28 +626,31 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 )}
               </div>
 
+              {/* Name */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Name</span>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
+                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-400 outline-none px-2 py-1 w-48"
                   placeholder="Enter name"
                 />
               </div>
 
+              {/* Age */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Age</span>
                 <input
                   type="number"
                   value={editAge}
                   onChange={(e) => setEditAge(e.target.value)}
-                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
+                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-400 outline-none px-2 py-1 w-48"
                   placeholder="0" min="0" max="150"
                 />
               </div>
 
+              {/* Bio */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Bio</span>
                 {showBioInput ? (
@@ -642,10 +659,10 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                       type="text"
                       value={editBio}
                       onChange={(e) => setEditBio(e.target.value)}
-                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-36"
+                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-400 outline-none px-2 py-1 w-36"
                       placeholder="Add bio" autoFocus
                     />
-                    <button onClick={handleBioSave} className="text-xs text-blue-500 font-medium">Save</button>
+                    <button onClick={handleBioSave} className="text-xs text-gray-700 font-medium">Save</button>
                   </div>
                 ) : (
                   <button onClick={() => setShowBioInput(true)} className="flex items-center gap-1 text-sm text-gray-400">
@@ -655,6 +672,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 )}
               </div>
 
+              {/* Country Selection */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Country</span>
                 <select
@@ -662,7 +680,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   onChange={handleCountrySelect}
                   disabled={countryLocked}
                   className={`text-sm text-right outline-none px-2 py-1 bg-transparent border-b w-48 ${
-                    countryLocked ? 'text-gray-400 border-transparent cursor-not-allowed' : 'text-gray-900 border-gray-200 focus:border-blue-500'
+                    countryLocked ? 'text-gray-400 border-transparent cursor-not-allowed' : 'text-gray-900 border-gray-200 focus:border-gray-400'
                   }`}
                 >
                   <option value="" disabled>Select Country</option>
@@ -674,6 +692,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 </select>
               </div>
 
+              {/* Gender */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Gender</span>
                 <div className="flex gap-2">
@@ -682,7 +701,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     disabled={genderLocked && editGender !== "male"}
                     className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                       editGender === "male"
-                        ? "bg-blue-500 text-white"
+                        ? "bg-black text-white"
                         : genderLocked ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -693,7 +712,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     disabled={genderLocked && editGender !== "female"}
                     className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                       editGender === "female"
-                        ? "bg-pink-500 text-white"
+                        ? "bg-black text-white"
                         : genderLocked ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -704,10 +723,11 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
             </div>
 
+            {/* Save Button */}
             <div className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white border-t border-gray-100 shrink-0">
               <button
                 onClick={handleSaveEdit}
-                className="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors"
+                className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors"
               >
                 Save Changes
               </button>
@@ -727,4 +747,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-      }
+  }
