@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 import { X } from 'lucide-react'
-import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithCredential, User } from "firebase/auth";
 import { auth, provider } from "../src/lib/firebase"; 
 
 interface LoginPageProps {
@@ -23,28 +25,43 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setShowGoogleSheet(true);
   };
 
+  const saveLoggedInUser = (user: Pick<User, 'displayName' | 'email' | 'photoURL' | 'uid'>, fallbackName = 'Google User') => {
+    localStorage.setItem("userName", user.displayName || fallbackName);
+    localStorage.setItem("userEmail", user.email || "");
+    localStorage.setItem("userPhoto", user.photoURL || "");
+    localStorage.setItem("userUID", user.uid || user.email || fallbackName);
+  };
+
   const handleActualGmailLogin = async () => {
     setShowGoogleSheet(false);
     setLoading(true);
     try {
-      if (provider instanceof GoogleAuthProvider) {
-        provider.setCustomParameters({ prompt: 'select_account' });
+      let user: Pick<User, 'displayName' | 'email' | 'photoURL' | 'uid'>;
+
+      if (Capacitor.isNativePlatform()) {
+        const nativeResult = await FirebaseAuthentication.signInWithGoogle();
+        const credential = GoogleAuthProvider.credential(
+          nativeResult.credential?.idToken,
+          nativeResult.credential?.accessToken
+        );
+        const result = await signInWithCredential(auth, credential);
+        user = result.user;
+      } else {
+        if (provider instanceof GoogleAuthProvider) {
+          provider.setCustomParameters({ prompt: 'select_account' });
+        }
+        const result = await signInWithPopup(auth, provider);
+        user = result.user;
       }
 
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      localStorage.setItem("userName", user.displayName || "Google User");
-      localStorage.setItem("userEmail", user.email || "");
-      localStorage.setItem("userPhoto", user.photoURL || "");
-      localStorage.setItem("userUID", user.uid || "");
+      saveLoggedInUser(user);
 
       if (onLoginSuccess) {
         onLoginSuccess(user);
       }
     } catch (error: any) {
       console.error(error);
-      alert(error.code + "\n" + error.message);
+      alert((error.code || 'auth/google-sign-in-failed') + "\n" + (error.message || 'Google sign in failed.'));
     } finally { 
       setLoading(false);
     }
@@ -79,10 +96,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
       const user = userCredential.user;
 
-      localStorage.setItem("userName", user.displayName || email.split('@')[0]);
-      localStorage.setItem("userEmail", user.email || "");
-      localStorage.setItem("userPhoto", user.photoURL || "");
-      localStorage.setItem("userUID", user.uid || "");
+      saveLoggedInUser(user, email.trim().toLowerCase().split('@')[0]);
 
       if (onLoginSuccess) {
         onLoginSuccess(user);

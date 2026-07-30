@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { ChevronRight, Copy } from 'lucide-react'
 import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
+import { getStableAccountNumber } from '../lib/account'
 
 interface MenuItem {
   id: string
@@ -83,21 +84,11 @@ const getOrCreateAccountNumber = (uid: string) => {
   if (uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1') return '100003'
   
   const storageKey = `user_account_number_${uid}`
-  let savedAccountNumber = localStorage.getItem(storageKey)
-  
-  if (!savedAccountNumber) {
-    const targetLength = uid.length
-    let numericStr = ''
-    
-    for (let i = 0; i < targetLength; i++) {
-      numericStr += Math.floor(Math.random() * 10).toString()
-    }
-    
-    savedAccountNumber = numericStr
-    localStorage.setItem(storageKey, savedAccountNumber)
-  }
-  
-  return savedAccountNumber
+  const savedAccountNumber = localStorage.getItem(storageKey)
+  const stableAccountNumber = savedAccountNumber || getStableAccountNumber(uid, 8)
+  localStorage.setItem(storageKey, stableAccountNumber)
+
+  return stableAccountNumber
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
@@ -159,10 +150,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
+    <div className="w-full min-h-screen" style={{ background: 'linear-gradient(to bottom, #60a5fa 0%, #bfdbfe 55%, #ffffff 100%) top / 100% 30vh no-repeat, #ffffff' }}>
       {/* Profile Header */}
       <div
-        className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-6 relative"
+        className="bg-transparent px-4 pb-6 relative"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
       >
 

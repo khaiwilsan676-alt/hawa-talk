@@ -7,7 +7,11 @@ export const metadata: Metadata = {
   description: 'Connect with friends on Hawa. Chat, share moments, and discover popular content.',
   generator: 'v0.app',
   icons: {
-    icon: '/logo.png',
+    icon: [
+      { url: '/logo.png', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/logo.png',
     apple: '/logo.png',
   },
 }
@@ -28,6 +32,8 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="shortcut icon" href="/logo.png" type="image/png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Hawa" />

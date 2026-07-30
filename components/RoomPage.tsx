@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { getStableAccountNumber } from '../lib/account'
 
 interface RoomPageProps {
   user: {
@@ -21,19 +22,11 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     
     if (uid !== 'N/A') {
       const storageKey = `user_account_number_${uid}`
-      let savedAccountNumber = localStorage.getItem(storageKey)
-      
-      if (!savedAccountNumber) {
-        const targetLength = uid.length
-        let numericStr = ''
-        for (let i = 0; i < targetLength; i++) {
-          numericStr += Math.floor(Math.random() * 10).toString()
-        }
-        savedAccountNumber = numericStr
-        localStorage.setItem(storageKey, savedAccountNumber)
-      }
-      
-      setAccountId(savedAccountNumber.slice(0, 8))
+      const savedAccountNumber = localStorage.getItem(storageKey)
+      const stableAccountNumber = savedAccountNumber || getStableAccountNumber(uid, 8)
+      localStorage.setItem(storageKey, stableAccountNumber)
+
+      setAccountId(stableAccountNumber.slice(0, 8))
     }
   }, [])
 

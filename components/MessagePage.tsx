@@ -55,10 +55,10 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
   // If no chat is selected, show chat list
   if (!activeChat) {
     return (
-      <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
+      <div className="w-full min-h-screen" style={{ background: 'linear-gradient(to bottom, #60a5fa 0%, #bfdbfe 55%, #ffffff 100%) top / 100% 30vh no-repeat, #ffffff' }}>
         {/* Header */}
         <div
-          className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-4 flex items-center justify-between sticky top-0 z-10"
+          className="bg-transparent px-4 pb-4 flex items-center justify-between sticky top-0 z-10"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
         >
           <h1 className="text-3xl font-bold text-gray-800">Message</h1>
@@ -94,10 +94,10 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
 
   // Chat detail page
   return (
-    <div className="w-full bg-gradient-to-b from-blue-400 via-blue-100 to-white min-h-screen">
+    <div className="w-full min-h-screen" style={{ background: 'linear-gradient(to bottom, #60a5fa 0%, #bfdbfe 55%, #ffffff 100%) top / 100% 30vh no-repeat, #ffffff' }}>
       {/* Chat Header */}
       <div
-        className="bg-gradient-to-b from-blue-500 via-blue-400 to-blue-100 px-4 pb-4 sticky top-0 z-10"
+        className="bg-transparent px-4 pb-4 sticky top-0 z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}
       >
         <div className="flex items-center gap-3">
