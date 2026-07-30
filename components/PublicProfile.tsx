@@ -312,15 +312,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   }
 
   return (
-    <div className="w-full bg-gradient-to-b from-blue-400 via-white to-white min-h-screen text-gray-900 pb-10 relative overflow-hidden">
+    <div className="w-full bg-white min-h-screen text-gray-900 pb-10 relative">
       {/* Cover Image & Header Section */}
-      <div
-        className="relative w-full bg-gray-800"
-        style={{
-          height: 'calc(340px + env(safe-area-inset-top, 0px))',
-          marginTop: 'calc(env(safe-area-inset-top, 0px) * -1)'
-        }}
-      >
+      <div className="relative w-full h-[340px] bg-gray-800">
         {user.coverPhoto ? (
           <img src={user.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
         ) : user.photo ? (
@@ -331,18 +325,12 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           </div>
         )}
 
-        <div
-          className="absolute left-0 right-0 px-4 flex items-center justify-between z-10"
-          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
-        >
+        <div className="absolute top-4 left-0 right-0 px-4 flex items-center justify-between z-10">
           <button onClick={onBack} className="text-white"><ChevronLeft size={28} /></button>
           <button onClick={handleOpenEditSheet} className="text-white"><Edit3 size={22} /></button>
         </div>
 
-        <div
-          className="absolute right-4 bg-emerald-500/90 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium shadow-sm"
-          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}
-        >
+        <div className="absolute top-16 right-4 bg-emerald-500/90 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium shadow-sm">
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
@@ -582,7 +570,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     )}
                     <button 
                       onClick={() => coverInputRef.current?.click()}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
                     >
                       <Camera size={14} /> Add Photo
                     </button>
@@ -602,7 +590,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   {albumImages.length < 4 && (
                     <button 
                       onClick={() => albumInputRef.current?.click()}
-                      className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold flex items-center gap-1 hover:bg-gray-200 transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold flex items-center gap-1 hover:bg-blue-100 transition-colors"
                     >
                       <Camera size={14} /> Add Photo
                     </button>
@@ -633,7 +621,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-400 outline-none px-2 py-1 w-48"
+                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
                   placeholder="Enter name"
                 />
               </div>
@@ -645,7 +633,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   type="number"
                   value={editAge}
                   onChange={(e) => setEditAge(e.target.value)}
-                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-400 outline-none px-2 py-1 w-48"
+                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
                   placeholder="0" min="0" max="150"
                 />
               </div>
@@ -659,10 +647,10 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                       type="text"
                       value={editBio}
                       onChange={(e) => setEditBio(e.target.value)}
-                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-gray-400 outline-none px-2 py-1 w-36"
+                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-36"
                       placeholder="Add bio" autoFocus
                     />
-                    <button onClick={handleBioSave} className="text-xs text-gray-500 font-medium">Save</button>
+                    <button onClick={handleBioSave} className="text-xs text-blue-500 font-medium">Save</button>
                   </div>
                 ) : (
                   <button onClick={() => setShowBioInput(true)} className="flex items-center gap-1 text-sm text-gray-400">
@@ -680,7 +668,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                   onChange={handleCountrySelect}
                   disabled={countryLocked}
                   className={`text-sm text-right outline-none px-2 py-1 bg-transparent border-b w-48 ${
-                    countryLocked ? 'text-gray-400 border-transparent cursor-not-allowed' : 'text-gray-900 border-gray-200 focus:border-gray-400'
+                    countryLocked ? 'text-gray-400 border-transparent cursor-not-allowed' : 'text-gray-900 border-gray-200 focus:border-blue-500'
                   }`}
                 >
                   <option value="" disabled>Select Country</option>
@@ -747,4 +735,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-          }
+    }
