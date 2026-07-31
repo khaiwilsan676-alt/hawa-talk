@@ -354,7 +354,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       <div className="px-5 pt-7">
         {/* Name + Gender + ALL Badges - ek hi flex-wrap container mein sab */}
         <div className="flex flex-wrap items-center gap-0.5">
-          <h1 style={{ frontsize: '22px' }} className="font-bold text-black tracking-wide">{user.name}</h1>
+          <h1 className=" text-2×l font-bold text-black tracking-wide">{user.name}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
             {user.gender} {user.age}
           </span>
