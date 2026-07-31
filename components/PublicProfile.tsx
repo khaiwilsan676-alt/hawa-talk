@@ -336,7 +336,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
-        <div className="absolute -bottom-4 left-6 flex items-center">
+        {/* Avatar - ab -bottom-3 */}
+        <div className="absolute -bottom-3 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
@@ -351,20 +352,16 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
       {/* Profile Info Details Section */}
       <div className="px-5 pt-12">
-        {/* Name and Tags - Now wraps properly */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-0.5 flex-wrap">
-            <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
-            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5">
-              {user.gender} {user.age}
-            </span>
-            <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
-            <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
-            <img src="/1785469775751.png" alt="Badge 3" className="h-7 w-auto object-contain" />
-          </div>
-          <div className="flex items-center gap-0.5 flex-wrap">
-            <img src="/1785469365805.png" alt="Badge 4" className="h-7 w-auto object-contain" />
-          </div>
+        {/* Name + Gender + ALL Badges - ek hi flex-wrap container mein sab */}
+        <div className="flex flex-wrap items-center gap-0.5">
+          <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
+          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
+            {user.gender} {user.age}
+          </span>
+          <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
+          <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
+          <img src="/1785469775751.png" alt="Badge 3" className="h-7 w-auto object-contain" />
+          <img src="/1785469365805.png" alt="Badge 4" className="h-7 w-auto object-contain" />
         </div>
 
         {/* ID and Followers in one row */}
@@ -419,7 +416,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <img 
             src="/1785486414756.png" 
             alt="Level Side" 
-            className="h-6 w-auto object-contain"
+            className="h-7 w-auto object-contain"
           />
         </div>
 
@@ -750,4 +747,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-    }
+      }
