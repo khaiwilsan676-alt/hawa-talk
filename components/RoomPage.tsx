@@ -63,7 +63,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   const handleEmojiSelect = (emoji: string) => {
-    console.log("Selected Emoji:", emoji)
     // You can add logic to send emoji as message
   }
 
