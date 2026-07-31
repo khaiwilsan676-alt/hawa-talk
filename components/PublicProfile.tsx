@@ -96,14 +96,14 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   const coverInputRef = useRef<HTMLInputElement>(null)
 
   const [user, setUser] = useState({
-    name: "KāβiR Khān",
+    name: "Hawa User",
     uid: "",
     displayAccountNumber: "100379620",
     photo: "",
     coverPhoto: "",
     gender: "♂",
     age: 24,
-    followers: 862,
+    followers: 0,
     bio: "",
     location: "",
     flag: ""
@@ -163,7 +163,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       age: storedAge ? parseInt(storedAge) : prev.age
     }))
 
-    setEditName(storedName || "KāβiR Khān")
+    setEditName(storedName || "Hawa User")
     setEditAge(storedAge || "24")
     setEditBio(storedBio || "")
     setEditCountry(storedCountry)
@@ -351,10 +351,10 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="px-5 pt-7">
+      <div className="px-5 pt-5">
         {/* Name + Gender + ALL Badges - ek hi flex-wrap container mein sab */}
         <div className="flex flex-wrap items-center gap-0.5">
-          <h1 className=" text-2×l font-bold text-black tracking-wide">{user.name}</h1>
+          <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
             {user.gender} {user.age}
           </span>
@@ -401,7 +401,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
 
         {/* Level Badge - Below ID row */}
-        <div className="mt-1 flex items-center gap-0.5 -ml-2">
+        <div className="mt-1 flex items-center gap-1 -ml-2">
           <div className="relative inline-flex items-center justify-center ml-0.5">
             <img 
               src="/1785137410522.png" 
@@ -416,7 +416,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <img 
             src="/1785486414756.png" 
             alt="Level Side" 
-            className="h-8 w-auto object-contain"
+            className="h-6 w-auto object-contain"
           />
         </div>
 
@@ -747,4 +747,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-      }
+  }
