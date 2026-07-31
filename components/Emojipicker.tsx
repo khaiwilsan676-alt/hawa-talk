@@ -69,7 +69,6 @@ export default function EmojiPicker({ onClose, onSelectEmoji }) {
 
           {/* Send Button */}
           <button
-            onClick={() => console.log("Sent Emoji:", selectedEmoji)}
             className="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs px-5 py-2 rounded-full shadow-lg shadow-blue-600/30 transition-all flex items-center gap-1.5"
           >
             <span>Send</span>
