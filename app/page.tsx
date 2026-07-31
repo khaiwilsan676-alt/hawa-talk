@@ -10,10 +10,10 @@ export default function Page() {
 
   useEffect(() => {
     // Check if user is already logged in
-    const userEmail = localStorage.getItem('userEmail')
+    const userUID = localStorage.getItem('userUID')
     const userPhone = localStorage.getItem('userPhone')
     
-    if (userEmail || userPhone) {
+    if (userUID || userPhone) {
       setIsLoggedIn(true)
     }
     setLoading(false)
@@ -24,7 +24,7 @@ export default function Page() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('userEmail')
+    localStorage.removeItem('userUID')
     localStorage.removeItem('userPhone')
     setIsLoggedIn(false)
   }

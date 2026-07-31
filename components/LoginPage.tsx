@@ -35,7 +35,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const user = result.user;
 
       localStorage.setItem("userName", user.displayName || "Google User");
-      localStorage.setItem("userEmail", user.email || "");
       localStorage.setItem("userPhoto", user.photoURL || "");
       localStorage.setItem("userUID", user.uid || "");
 
@@ -80,7 +79,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const user = userCredential.user;
 
       localStorage.setItem("userName", user.displayName || email.split('@')[0]);
-      localStorage.setItem("userEmail", user.email || "");
       localStorage.setItem("userPhoto", user.photoURL || "");
       localStorage.setItem("userUID", user.uid || "");
 

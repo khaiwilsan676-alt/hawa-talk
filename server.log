@@ -1,0 +1,93 @@
+
+> my-project@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 500ms
+
+○ Compiling / ...
+⨯ Error [FirebaseError]: Firebase: Error (auth/invalid-api-key).
+    at module evaluation (src/lib/firebase.ts:17:28)
+    at module evaluation (components/HomePage.tsx:4:1)
+    at module evaluation (app/page.tsx:4:1)
+  15 | const app = initializeApp(firebaseConfig);
+  16 |
+> 17 | export const auth = getAuth(app);
+     |                            ^
+  18 | export const provider = new GoogleAuthProvider();
+  19 | export const db = getFirestore(app);
+  20 | {
+  code: 'auth/invalid-api-key',
+  customData: { appName: '[DEFAULT]' },
+  digest: '4405645'
+}
+ GET / 500 in 9.7s (next.js: 7.1s, application-code: 2.6s)
+[browser] Uncaught FirebaseError: Firebase: Error (auth/invalid-api-key).
+    at module evaluation (src/lib/firebase.ts:17:28)
+    at module evaluation (components/HomePage.tsx:4:1)
+    at module evaluation (app/page.tsx:4:1)
+  15 | const app = initializeApp(firebaseConfig);
+  16 |
+> 17 | export const auth = getAuth(app);
+     |                            ^
+  18 | export const provider = new GoogleAuthProvider();
+  19 | export const db = getFirestore(app);
+  20 |
+⨯ Error [FirebaseError]: Firebase: Error (auth/invalid-api-key).
+    at module evaluation (src/lib/firebase.ts:17:28)
+    at module evaluation (components/HomePage.tsx:4:1)
+    at module evaluation (app/page.tsx:4:1)
+  15 | const app = initializeApp(firebaseConfig);
+  16 |
+> 17 | export const auth = getAuth(app);
+     |                            ^
+  18 | export const provider = new GoogleAuthProvider();
+  19 | export const db = getFirestore(app);
+  20 | {
+  code: 'auth/invalid-api-key',
+  customData: { appName: '[DEFAULT]' },
+  digest: '4405645'
+}
+ GET / 500 in 725ms (next.js: 6ms, application-code: 719ms)
+[browser] Uncaught FirebaseError: Firebase: Error (auth/invalid-api-key).
+    at module evaluation (src/lib/firebase.ts:17:28)
+    at module evaluation (components/HomePage.tsx:4:1)
+    at module evaluation (app/page.tsx:4:1)
+  15 | const app = initializeApp(firebaseConfig);
+  16 |
+> 17 | export const auth = getAuth(app);
+     |                            ^
+  18 | export const provider = new GoogleAuthProvider();
+  19 | export const db = getFirestore(app);
+  20 |
+⨯ Error [FirebaseError]: Firebase: Error (auth/invalid-api-key).
+    at module evaluation (src/lib/firebase.ts:17:28)
+    at module evaluation (components/HomePage.tsx:4:1)
+    at module evaluation (app/page.tsx:4:1)
+  15 | const app = initializeApp(firebaseConfig);
+  16 |
+> 17 | export const auth = getAuth(app);
+     |                            ^
+  18 | export const provider = new GoogleAuthProvider();
+  19 | export const db = getFirestore(app);
+  20 | {
+  code: 'auth/invalid-api-key',
+  customData: { appName: '[DEFAULT]' },
+  digest: '4405645'
+}
+ GET / 500 in 683ms (next.js: 9ms, application-code: 674ms)
+[browser] Uncaught FirebaseError: Firebase: Error (auth/invalid-api-key).
+    at module evaluation (src/lib/firebase.ts:17:28)
+    at module evaluation (components/HomePage.tsx:4:1)
+    at module evaluation (app/page.tsx:4:1)
+  15 | const app = initializeApp(firebaseConfig);
+  16 |
+> 17 | export const auth = getAuth(app);
+     |                            ^
+  18 | export const provider = new GoogleAuthProvider();
+  19 | export const db = getFirestore(app);
+  20 |
+  Reload env: .env.local
+ GET / 200 in 588ms (next.js: 114ms, application-code: 474ms)
