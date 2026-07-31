@@ -138,7 +138,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     const coverPhoto = localStorage.getItem("userCoverPhoto") || ""
     const storedBio = localStorage.getItem("userBio") || ""
     const storedCountry = localStorage.getItem("userCountry") || ""
-    const storedAge = localStorage.getItem("userAge")
+    const storedAge = localStorage.getItem("userAge") || ""
     
     const storedAlbum = localStorage.getItem("userAlbumImages")
     if (storedAlbum) {
@@ -314,9 +314,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   }
 
   return (
-    <div className="w-full bg-gray-100 min-h-screen text-gray-900 pb-10 relative">
-      {/* Cover Image Section */}
-      <div className="relative w-full h-[280px] bg-gray-800">
+    <div className="w-full bg-white min-h-screen text-gray-900 pb-10 relative">
+      {/* Cover Image & Header Section */}
+      <div className="relative w-full h-[340px] bg-gray-800">
         {user.coverPhoto ? (
           <img src={user.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
         ) : user.photo ? (
@@ -335,12 +335,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         <div className="absolute top-16 right-4 bg-emerald-500/90 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium shadow-sm">
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
-      </div>
 
-      {/* Avatar - Positioned to overlap cover and white section */}
-      <div className="relative px-5">
-        <div className="absolute -top-16 left-6 z-20">
-          <div className="w-28 h-28 rounded-full shadow-lg overflow-hidden border-4 border-white bg-gray-700">
+        <div className="absolute -bottom-4 left-6 flex items-center">
+          <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
@@ -352,41 +349,38 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
-      {/* White Card Section - Starts here with name at top */}
-      <div className="bg-white mx-0 mt-20 rounded-t-3xl pt-16 px-5 pb-5">
-        {/* Name and Tags Row */}
-        <div className="flex flex-wrap items-center gap-1">
-          <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
-          
-          {/* Gender & Age Tag - Single tag with both icon and number */}
-          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
-            {user.gender} {user.age}
-          </span>
-          
-          {/* Badge Tags - First row */}
-          <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
-          <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
-          <img src="/1785469775751.png" alt="Badge 3" className="h-7 w-auto object-contain" />
-        </div>
-        
-        {/* Second Row Tags - Slightly shifted left */}
-        <div className="flex items-center gap-0.5 -ml-0.5">
-          <img src="/1785469365805.png" alt="Badge 4" className="h-7 w-auto object-contain" />
+      {/* Profile Info Details Section */}
+      <div className="px-5 pt-12">
+        {/* Name and Tags - Now wraps properly */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-0.5 flex-wrap">
+            <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
+            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5">
+              {user.gender} {user.age}
+            </span>
+            <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
+            <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
+            <img src="/1785469775751.png" alt="Badge 3" className="h-7 w-auto object-contain" />
+          </div>
+          <div className="flex items-center gap-0.5 flex-wrap">
+            <img src="/1785469365805.png" alt="Badge 4" className="h-7 w-auto object-contain" />
+          </div>
         </div>
 
         {/* ID and Followers in one row */}
-        <div className="flex items-center gap-1 text-xs mt-1 font-medium">
+        <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
           <div className="flex items-center gap-1">
             {isSpecialAccount ? (
               <>
                 <span 
-                  className="relative font-bold rounded text-white"
+                  className="relative font-bold rounded text-white -ml-2.5"
                   style={{
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
+                    backgroundSize: '96%',
                     minWidth: '90px',
-                    paddingLeft: '5px',
+                    paddingLeft: '0px',
                     paddingRight: '5px',
                     paddingTop: '2px',
                     paddingBottom: '2px',
@@ -409,9 +403,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span className="text-gray-500">{user.followers} Followers</span>
         </div>
 
-        {/* Level Badge with new badge next to it */}
-        <div className="mt-1 flex items-center gap-1">
-          <div className="relative inline-flex items-center justify-center">
+        {/* Level Badge - Below ID row */}
+        <div className="mt-1 flex items-center gap-1 -ml-2">
+          <div className="relative inline-flex items-center justify-center ml-0.5">
             <img 
               src="/1785137410522.png" 
               alt="Level Badge" 
@@ -421,11 +415,11 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               Lv.1
             </span>
           </div>
-          {/* New badge next to Lv.1 */}
+          {/* Level side image */}
           <img 
             src="/1785486414756.png" 
-            alt="Badge Next to Level" 
-            className="h-7 w-auto object-contain"
+            alt="Level Side" 
+            className="h-6 w-auto object-contain"
           />
         </div>
 
@@ -462,7 +456,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
       </div>
 
-      {/* Content Tabs Section - Outside white card but within main container */}
+      {/* Content Tabs Section */}
       <div className="px-5 mt-6 space-y-4">
         {/* Albums Tab */}
         <div>
@@ -576,7 +570,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 </div>
               </div>
 
-              {/* Background Cover */}
+              {/* Background Cover - Now below Avatar */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Background Cover</span>
@@ -756,4 +750,4 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-            }
+    }
