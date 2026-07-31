@@ -348,20 +348,22 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="flex flex-col gap-0.5">
-  <div className="flex items-center gap-0.5">
-    <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
-    <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-      {user.gender} {user.age}
-    </span>
-    <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
-    <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
-    <img src="/1785469775751.png" alt="Badge 3" className="h-7 w-auto object-contain" />
-  </div>
-  <div className="flex items-center gap-0.5">
-    <img src="/1785469365805.png" alt="Badge 4" className="h-7 w-auto object-contain" />
-  </div>
-</div>
+      <div className="px-5 pt-12">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-0.5">
+            <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
+            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
+              {user.gender} {user.age}
+            </span>
+            <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
+            <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
+            <img src="/1785469775751.png" alt="Badge 3" className="h-7 w-auto object-contain" />
+          </div>
+          <div className="flex items-center gap-0.5">
+            <img src="/1785469365805.png" alt="Badge 4" className="h-7 w-auto object-contain" />
+          </div>
+        </div>
+
         {/* ID and Followers in one row */}
         <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
           <div className="flex items-center gap-1">
