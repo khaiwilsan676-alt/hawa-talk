@@ -337,7 +337,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
 
         {/* Avatar - ab -bottom-3 */}
-        <div className="absolute -bottom-3 left-6 flex items-center">
+        <div className="absolute -bottom-1 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
@@ -351,7 +351,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="px-5 pt-12">
+      <div className="px-5 pt-7">
         {/* Name + Gender + ALL Badges - ek hi flex-wrap container mein sab */}
         <div className="flex flex-wrap items-center gap-0.5">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
@@ -401,7 +401,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
 
         {/* Level Badge - Below ID row */}
-        <div className="mt-1 flex items-center gap-1 -ml-2">
+        <div className="mt-1 flex items-center gap-0.5 -ml-2">
           <div className="relative inline-flex items-center justify-center ml-0.5">
             <img 
               src="/1785137410522.png" 
