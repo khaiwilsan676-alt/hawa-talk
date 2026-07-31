@@ -356,6 +356,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           </span>
           <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
           <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
+          <img src="/1785469365805.png" alt="Badge 3" className="h-9 w-auto object-contain" />
+          <img src="/1785469775751.png" alt="Badge 4" className="h-9 w-auto object-contain" />
         </div>
 
         {/* ID and Followers in one row */}
