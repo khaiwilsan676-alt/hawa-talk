@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Bot, Send } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 
 export default function HawaSupport() {
   const [message, setMessage] = useState("");
@@ -17,7 +17,7 @@ export default function HawaSupport() {
   // Initial welcome message - Bilingual
   useEffect(() => {
     const welcomeMessage = {
-      text: "Hi, Welcome to Hawa | नमस्ते, हवा में आपका स्वागत है\n\nI'm Kim AI Hawa Customer Support | मैं किम AI हवा कस्टमर सपोर्ट हूँ\n\nI'm glad to see you here! Tell me how we can help you with any suggestions or something related to the App. You can feel free to ask questions, I will assist you 😊\n\nआपको यहाँ देखकर खुशी हुई! ऐप से संबंधित किसी भी सुझाव या किसी भी चीज़ के लिए हम आपकी कैसे मदद कर सकते हैं, हमें बताएं। आप बेझिझक सवाल पूछ सकते हैं, मैं आपकी सहायता करूंगा 😊",
+      text: "Hi, Welcome to Hawa | नमस्ते, हवा में आपका स्वागत है\n\nI'm Daisy AI Hawa Customer Support | मैं Daisy AI हवा कस्टमर सपोर्ट हूँ\n\nI'm glad to see you here! Tell me how we can help you with any suggestions or something related to the App. You can feel free to ask questions, I will assist you 😊\n\nआपको यहाँ देखकर खुशी हुई! ऐप से संबंधित किसी भी सुझाव या किसी भी चीज़ के लिए हम आपकी कैसे मदद कर सकते हैं, हमें बताएं। आप बेझिझक सवाल पूछ सकते हैं, मैं आपकी सहायता करूंगा 😊",
       isBot: true
     };
     setMessages([welcomeMessage]);
@@ -38,6 +38,30 @@ export default function HawaSupport() {
         : "Hi! Welcome to Hawa Support. How can I assist you today? 😊";
     }
     
+    // Seller related
+    if (msg.includes("seller") || msg.includes("लेना") || msg.includes("seller lene") || 
+        msg.includes("बेचना") || msg.includes("earn") || msg.includes("कमाना") || msg.includes("selling")) {
+      return isHindi
+        ? "आप हमारे ऑफिशियल से बात करके Seller ले सकते हैं।\n\nSeller लेने से आपको कई Benefits होंगे:\n• आप Coins Sell करके Earn कर सकते हैं\n• आपको Special Discounts मिलेंगे\n• आप Exclusive Events में Participate कर सकते हैं\n\nक्या आप Seller लेना चाहेंगे? मैं आपको ऑफिशियल से Connect करवा सकता हूँ।"
+        : "You can take Seller by talking to our Official.\n\nBenefits of taking Seller:\n• You can Earn by Selling Coins\n• You'll get Special Discounts\n• You can Participate in Exclusive Events\n\nWould you like to take Seller? I can connect you with our Official.";
+    }
+    
+    // What is Hawa
+    if (msg.includes("hawa kya") || msg.includes("what is hawa") || msg.includes("hawa hai") || 
+        msg.includes("app kya") || msg.includes("what is this app") || msg.includes("about hawa")) {
+      return isHindi
+        ? "Hawa एक Social Dating Live Party App है! 🎉\n\nयहाँ आप कर सकते हैं:\n• Like-minded People से Connect हो सकते हैं\n• Games खेल सकते हैं\n• New Friends बना सकते हैं\n• Interesting Events में Participate कर सकते हैं\n• Rewards और Coins Earn कर सकते हैं\n\n💰 Earning के बारे में:\nHawa Party App है, Earning App नहीं है।\nलेकिन अगर आप Seller लेते हैं तो आप Coins Sell करके Earn कर सकते हैं! 😊"
+        : "Hawa is a Social Dating Live Party App! 🎉\n\nHere you can:\n• Connect with Like-minded People\n• Play Games\n• Make New Friends\n• Participate in Interesting Events\n• Earn Rewards and Coins\n\n💰 About Earning:\nHawa is a Party App, not an Earning App.\nBut if you take Seller, you can Earn by Selling Coins! 😊";
+    }
+    
+    // Earning related
+    if (msg.includes("earning") || msg.includes("earning app") || msg.includes("कमाई") || 
+        msg.includes("पैसा") || msg.includes("money") || msg.includes("earn money")) {
+      return isHindi
+        ? "Hawa Earning App नहीं है, यह एक Party App है! 🎉\n\nलेकिन अगर आप Seller लेते हैं तो आप Coins Sell करके Earn कर सकते हैं।\n\nSeller लेने के लिए आप हमारे Official से बात कर सकते हैं।"
+        : "Hawa is not an Earning App, it's a Party App! 🎉\n\nBut if you take Seller, you can Earn by Selling Coins.\n\nYou can talk to our Official to take Seller.";
+    }
+    
     // Official query
     if (msg.includes("official") || msg.includes("who is") || msg.includes("officer") || 
         msg.includes("अधिकारी") || msg.includes("कौन") || msg.includes("मालिक")) {
@@ -50,8 +74,8 @@ export default function HawaSupport() {
     if (msg.includes("app") || msg.includes("feature") || msg.includes("update") || 
         msg.includes("ऐप") || msg.includes("फीचर") || msg.includes("अपडेट")) {
       return isHindi
-        ? "हवा ऐप में कई शानदार फीचर्स हैं! क्या आप किसी विशेष फीचर के बारे में जानना चाहेंगे? मैं आपको पूरी जानकारी दे सकता हूँ।"
-        : "Hawa app has many amazing features! Would you like to know about any specific feature? I can give you complete information.";
+        ? "हवा ऐप में कई शानदार फीचर्स हैं! 🎉\n\n• Live Party\n• Dating\n• Games\n• Friends\n• Events\n• Rewards\n\nक्या आप किसी विशेष फीचर के बारे में जानना चाहेंगे?"
+        : "Hawa app has many amazing features! 🎉\n\n• Live Party\n• Dating\n• Games\n• Friends\n• Events\n• Rewards\n\nWould you like to know about any specific feature?";
     }
     
     // Problem/Help
@@ -95,14 +119,18 @@ export default function HawaSupport() {
             <ArrowLeft className="w-6 h-6" />
           </button>
 
-          {/* Robot Icon */}
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30 backdrop-blur-sm">
-            <Bot className="w-6 h-6 text-white" />
+          {/* Daisy Avatar - Image from your file */}
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center border-2 border-white/30 shadow-lg overflow-hidden">
+            <img 
+              src="/1785612362650~2.jpg" 
+              alt="Daisy" 
+              className="w-full h-full object-cover"
+            />
           </div>
 
           {/* Title / Name */}
           <div>
-            <h1 className="font-semibold text-lg leading-tight">Hawa Customer support</h1>
+            <h1 className="font-semibold text-lg leading-tight">Daisy</h1>
             <span className="text-xs text-blue-100 flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-green-400 inline-block"></span> Online | ऑनलाइन
             </span>
@@ -115,8 +143,12 @@ export default function HawaSupport() {
         {messages.map((msg, index) => (
           <div key={index} className={`flex items-start gap-2 ${msg.isBot ? '' : 'flex-row-reverse'}`}>
             {msg.isBot && (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-sky-400 flex items-center justify-center flex-shrink-0 shadow-md">
-                <Bot className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-md overflow-hidden">
+                <img 
+                  src="/1785612362650~2.jpg" 
+                  alt="Daisy" 
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
             <div className={`max-w-[85%] ${msg.isBot ? 'bg-white rounded-2xl rounded-tl-none shadow-sm border border-slate-100' : 'bg-blue-500 text-white rounded-2xl rounded-tr-none'} p-3`}>
@@ -128,8 +160,12 @@ export default function HawaSupport() {
         ))}
         {isTyping && (
           <div className="flex items-start gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-sky-400 flex items-center justify-center flex-shrink-0 shadow-md">
-              <Bot className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-md overflow-hidden">
+              <img 
+                src="/1785612362650~2.jpg" 
+                alt="Daisy" 
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="bg-white rounded-2xl rounded-tl-none shadow-sm border border-slate-100 p-3">
               <div className="flex gap-1">
@@ -143,9 +179,9 @@ export default function HawaSupport() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* 3. BOTTOM INPUT BAR - Grey Square */}
-      <div className="p-3 bg-gray-200 border-t border-gray-300 shadow-lg pb-[calc(env(safe-area-inset-bottom)+12px)]">
-        <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-inner">
+      {/* 3. BOTTOM INPUT BAR - White */}
+      <div className="p-3 bg-white border-t border-gray-200 shadow-lg pb-[calc(env(safe-area-inset-bottom)+12px)]">
+        <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 shadow-inner">
           <input
             type="text"
             value={message}
@@ -164,4 +200,4 @@ export default function HawaSupport() {
       </div>
     </div>
   );
-                                                           }
+}
