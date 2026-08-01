@@ -26,21 +26,15 @@ public class MainActivity extends BridgeActivity {
         window.setStatusBarColor(Color.TRANSPARENT);
         window.setNavigationBarColor(Color.TRANSPARENT);
 
-        // Hide the status bar so the webview/content can occupy the very top
-        // of the screen. Use WindowInsetsControllerCompat (modern API).
+        // Ensure system bars are properly managed using WindowInsetsControllerCompat (modern API).
         WindowInsetsControllerCompat insetsController =
             new WindowInsetsControllerCompat(window, window.getDecorView());
-        insetsController.hide(WindowInsetsCompat.Type.statusBars());
 
-        // Optional: keep navigation bar visible. If you want to hide navigation
-        // bar too, uncomment the next line:
-        // insetsController.hide(WindowInsetsCompat.Type.navigationBars());
+        // Ensure status bar is shown and light text is rendered if needed
+        insetsController.show(WindowInsetsCompat.Type.statusBars());
 
-        // Fallback for older Android versions: use FLAG_FULLSCREEN
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }
+        // Fallback for older Android versions: use layout stable to make sure it occupies top space
+        // We remove FLAG_FULLSCREEN to keep status bar visible.
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             WindowManager.LayoutParams attributes = window.getAttributes();
@@ -48,6 +42,10 @@ public class MainActivity extends BridgeActivity {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             window.setAttributes(attributes);
         }
+
+        // Explicitly clear any flags that might prevent drawing under the status bar
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 
         // Keep layout flags so content is laid out edge-to-edge. Do not include
         // SYSTEM_UI_FLAG_FULLSCREEN here because we've chosen the WindowInsets API.

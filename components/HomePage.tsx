@@ -1027,7 +1027,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
         /* Safe area padding for notched devices */
         .safe-top {
-          padding-top: env(safe-area-inset-top, 0px);
+          /* padding-top intentionally removed to ensure edge-to-edge drawing under status bar */
         }
         
         .safe-bottom {

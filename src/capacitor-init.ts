@@ -15,9 +15,8 @@ export async function initializeCapacitor(): Promise<void> {
       // Overlay the web content so pages are full-screen under the status bar
       await StatusBar.setOverlaysWebView({ overlay: true });
 
-      // Hide the status bar entirely so the app header is truly full-screen
-      // (This uses the Capacitor StatusBar plugin at runtime.)
-      await StatusBar.hide();
+      // Show the status bar so time/battery icons are visible, but overlaid on web content
+      await StatusBar.show();
     } catch (error) {
       console.warn('Failed to initialize Capacitor plugins:', error);
     }
