@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   description: 'Connect with friends on Hawa. Chat, share moments, and discover popular content.',
   generator: 'v0.app',
   icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
+    icon: '/logo.png?v=2',
+    apple: '/logo.png?v=2',
   },
 }
 
