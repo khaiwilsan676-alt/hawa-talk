@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/next'
+import { CapacitorInit } from "@/components/CapacitorInit"
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
@@ -35,6 +36,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased">
+        <CapacitorInit />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
