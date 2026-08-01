@@ -1,24 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ArrowLeft, Bot, Send } from "lucide-react"; // Icons ke liye lucide-react (agar installed hai)
 
 export default function HawaSupport() {
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    // Jab HawaSupport mount ho toh bottom bars chhupa do
-    if (typeof document !== "undefined") {
-      document.body.classList.add("hide-bottom-bars");
-    }
-
-    // Cleanup: jab component unmount ho toh class hata do
-    return () => {
-      if (typeof document !== "undefined") {
-        document.body.classList.remove("hide-bottom-bars");
-      }
-    };
-  }, []);
 
   const handleSend = () => {
     if (!message.trim()) return;
