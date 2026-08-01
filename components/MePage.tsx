@@ -115,7 +115,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view === 'public_profile')
+      onPublicProfileChange(view === 'public_profile' || view === 'customer_service')
     }
   }
 
