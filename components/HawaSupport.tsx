@@ -7,6 +7,7 @@ export default function HawaSupport() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Array<{ text: string; isBot: boolean }>>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
@@ -22,6 +23,40 @@ export default function HawaSupport() {
     };
     setMessages([welcomeMessage]);
   }, []);
+
+  // Bad words filter - Complete list with sex related words
+  const containsBadWords = (text: string) => {
+    const badWords = [
+      // Hindi Gaalis
+      "gand", "gandu", "gaand", "gaandu", "chut", "chutiya", "chutiyapa",
+      "bhosdi", "bhonsdi", "bhosdike", "bhonsdike", "madarchod", "behenchod",
+      "bhenchod", "lauda", "lund", "chuch", "chuchi", "chod", "chodu",
+      "maa ka", "maa ki", "bhen ka", "bhen ki", "behen ka", "behen ki",
+      "teri maa", "teri bhen", "bhosdiwala", "bhonsdiwala",
+      "hijda", "hijra", "kutta", "kutiya", "kamina", "harami",
+      "suar", "sawar", "bhak", "bhak cho", "bc", "mc", "bkc",
+      
+      // English Gaalis
+      "fuck", "shit", "asshole", "bitch", "bastard", "cunt",
+      "dick", "pussy", "whore", "slut", "motherfucker",
+      "ass", "damn", "hell", "piss", "cock", "tits", "boobs",
+      "nigger", "nigga", "rape", "pedo", "child porn",
+      
+      // Sex related words
+      "sex", "sexy", "xxx", "porn", "porno", "adult", "nude", "naked",
+      "hot", "horny", "kiss", "makeout", "fingering", "blowjob", "handjob",
+      "cum", "sperm", "orgasm", "erotic", "kamasutra", "position",
+      "lingerie", "strip", "stripper", "escort", "hooker", "prostitute",
+      "rape", "molest", "harass", "pervert", "creep", "stalk",
+      
+      // Hindi sex related
+      "chudai", "chud", "chudwa", "sex karna", "sex kar", "bina kapde",
+      "nanga", "nangi", "kapde utar", "kapde utaro", "hath lagao",
+      "chu", "chumma", "kiss", "romance", "romantic"
+    ];
+    const lowerText = text.toLowerCase();
+    return badWords.some(word => lowerText.includes(word));
+  };
 
   // Language detection and response generation
   const generateBotResponse = (userMsg: string) => {
@@ -42,8 +77,8 @@ export default function HawaSupport() {
     if (msg.includes("seller") || msg.includes("लेना") || msg.includes("seller lene") || 
         msg.includes("बेचना") || msg.includes("earn") || msg.includes("कमाना") || msg.includes("selling")) {
       return isHindi
-        ? "आप हमारे ऑफिशियल से बात करके Seller ले सकते हैं।\n\nSeller लेने से आपको कई Benefits होंगे:\n• आप Coins Sell करके Earn कर सकते हैं\n• आपको Special Discounts मिलेंगे\n• आप Exclusive Events में Participate कर सकते हैं\n\nक्या आप Seller लेना चाहेंगे? मैं आपको ऑफिशियल से Connect करवा सकता हूँ।"
-        : "You can take Seller by talking to our Official.\n\nBenefits of taking Seller:\n• You can Earn by Selling Coins\n• You'll get Special Discounts\n• You can Participate in Exclusive Events\n\nWould you like to take Seller? I can connect you with our Official.";
+        ? "आप हमारे ऑफिशियल से बात करके Seller ले सकते हैं।\n\nSeller लेने से आपको कई Benefits होंगे:\n• आप Coins Sell करके Earn कर सकते हैं\n• आपको Special Discounts मिलेंगे\n\nक्या आप Seller लेना चाहेंगे? मैं आपको ऑफिशियल से Connect करवा सकता हूँ।"
+        : "You can take Seller by talking to our Official.\n\nBenefits of taking Seller:\n• You can Earn by Selling Coins\n• You'll get Special Discounts\n\nWould you like to take Seller? I can connect you with our Official.";
     }
     
     // What is Hawa
@@ -95,6 +130,14 @@ export default function HawaSupport() {
   const handleSend = () => {
     if (!message.trim()) return;
     
+    // Check for bad words before sending
+    if (containsBadWords(message)) {
+      setShowWarning(true);
+      setTimeout(() => setShowWarning(false), 3000);
+      setMessage("");
+      return;
+    }
+    
     // Add user message
     const userMessage = { text: message, isBot: false };
     setMessages(prev => [...prev, userMessage]);
@@ -114,12 +157,12 @@ export default function HawaSupport() {
       {/* 1. TOP HEADER */}
       <header className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-500 to-sky-400 text-white shadow-md pt-[calc(env(safe-area-inset-top)+12px)]">
         <div className="flex items-center gap-3">
-          {/* Back Arrow Icon */}
+          {/* Back Arrow Icon - Goes Back */}
           <button onClick={() => window.history.back()} className="p-1 hover:bg-white/20 rounded-full transition">
             <ArrowLeft className="w-6 h-6" />
           </button>
 
-          {/* Daisy Avatar - Image from your file */}
+          {/* Daisy Avatar */}
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center border-2 border-white/30 shadow-lg overflow-hidden">
             <img 
               src="/1785612362650~2.jpg" 
@@ -132,14 +175,14 @@ export default function HawaSupport() {
           <div>
             <h1 className="font-semibold text-lg leading-tight">Daisy</h1>
             <span className="text-xs text-blue-100 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-400 inline-block"></span> Online | ऑनलाइन
+              <span className="w-2 h-2 rounded-full bg-green-400 inline-block"></span> Online
             </span>
           </div>
         </div>
       </header>
 
       {/* 2. CHAT AREA */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-0 relative">
         {messages.map((msg, index) => (
           <div key={index} className={`flex items-start gap-2 ${msg.isBot ? '' : 'flex-row-reverse'}`}>
             {msg.isBot && (
@@ -176,12 +219,20 @@ export default function HawaSupport() {
             </div>
           </div>
         )}
+        
+        {/* Warning Toast */}
+        {showWarning && (
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg animate-bounce">
+             You can't type wrong words!
+          </div>
+        )}
+        
         <div ref={chatEndRef} />
       </div>
 
-      {/* 3. BOTTOM INPUT BAR - White */}
-      <div className="p-3 bg-white border-t border-gray-200 shadow-lg pb-[calc(env(safe-area-inset-bottom)+12px)]">
-        <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 shadow-inner">
+      {/* 3. BOTTOM INPUT BAR - White with no extra padding */}
+      <div className="bg-white border-t border-gray-200 shadow-lg">
+        <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 m-3 shadow-inner">
           <input
             type="text"
             value={message}
