@@ -14,6 +14,10 @@ export async function initializeCapacitor(): Promise<void> {
       await StatusBar.setBackgroundColor({ color: '#00000000' }); // transparent
       // Overlay the web content so pages are full-screen under the status bar
       await StatusBar.setOverlaysWebView({ overlay: true });
+
+      // Hide the status bar entirely so the app header is truly full-screen
+      // (This uses the Capacitor StatusBar plugin at runtime.)
+      await StatusBar.hide();
     } catch (error) {
       console.warn('Failed to initialize Capacitor plugins:', error);
     }
