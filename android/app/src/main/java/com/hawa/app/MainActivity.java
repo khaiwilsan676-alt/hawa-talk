@@ -43,6 +43,10 @@ public class MainActivity extends BridgeActivity {
             window.setAttributes(attributes);
         }
 
+        // Explicitly clear any flags that might prevent drawing under the status bar
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+
         // Keep layout flags so content is laid out edge-to-edge. Do not include
         // SYSTEM_UI_FLAG_FULLSCREEN here because we've chosen the WindowInsets API.
         window.getDecorView().setSystemUiVisibility(
