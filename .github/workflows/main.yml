@@ -50,8 +50,8 @@ jobs:
       - name: Fresh Generate Android Platform
         run: |
           rm -rf android
-          npx @capacitor/cli add android
-          npx @capacitor/cli sync android
+          npx cap add android
+          npx cap sync android
 
       - name: Copy google-services.json
         run: |
