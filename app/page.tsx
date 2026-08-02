@@ -26,6 +26,9 @@ export default function Page() {
   const handleLogout = () => {
     localStorage.removeItem('userEmail')
     localStorage.removeItem('userPhone')
+    localStorage.removeItem('userName')
+    localStorage.removeItem('userPhoto')
+    localStorage.removeItem('userUID')
     setIsLoggedIn(false)
   }
 

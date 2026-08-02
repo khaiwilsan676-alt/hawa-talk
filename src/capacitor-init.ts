@@ -14,9 +14,6 @@ export async function initializeCapacitor(): Promise<void> {
       await StatusBar.setStyle({ style: Style.Dark });
 
       // Show the status bar so time/battery icons are visible, but overlaid on web content
-      await StatusBar.setStyle({ style: Style.Light });
-      await StatusBar.setBackgroundColor({ color: '#282c34' });
-      await StatusBar.setOverlaysWebView({ overlay: false });
       await StatusBar.show();
     } catch (error) {
       console.warn('Failed to initialize Capacitor plugins:', error);
