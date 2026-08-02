@@ -49,24 +49,23 @@ export default function LanguagePage({ onBack }: LanguagePageProps) {
   const t = translations[selectedLang]
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[100] flex flex-col">
+      {/* Full White Background */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
+        className="absolute inset-0 bg-white transition-opacity duration-300"
         style={{ opacity: isClosing ? 0 : 1 }}
-        onClick={handleClose}
       />
 
-      {/* Bottom Sheet */}
+      {/* Content */}
       <div
-        className="relative bg-white w-full rounded-t-3xl overflow-hidden shadow-2xl transition-transform duration-300 ease-in-out"
+        className="relative bg-white w-full h-full overflow-hidden transition-all duration-300 ease-in-out"
         style={{
-          transform: isClosing ? 'translateY(100%)' : 'translateY(0)',
-          maxHeight: '80vh'
+          opacity: isClosing ? 0 : 1,
+          transform: isClosing ? 'scale(0.95)' : 'scale(1)'
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col h-full max-h-[80vh]">
+        <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
             <button
@@ -80,8 +79,8 @@ export default function LanguagePage({ onBack }: LanguagePageProps) {
           </div>
 
           {/* Language List */}
-          <div className="overflow-y-auto px-4 py-2 bg-gray-50 flex-1 hide-scrollbar">
-            <div className="bg-white rounded-2xl overflow-hidden mt-2 mb-6 border border-gray-100">
+          <div className="overflow-y-auto px-4 py-2 flex-1 hide-scrollbar">
+            <div className="bg-gray-50 rounded-2xl overflow-hidden mt-2 mb-6 border border-gray-100">
               {LANGUAGES.map((lang, index) => (
                 <div key={lang.code}>
                   <div
