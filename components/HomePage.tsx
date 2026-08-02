@@ -18,6 +18,7 @@ import MePage from './MePage';
 import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
 import { generateStableId } from '../lib/hash'
+import { translations, getTranslation, LanguageCode } from '../lib/translations'
 
 interface HomePageProps {
   onLogout?: () => void;
@@ -102,6 +103,27 @@ const SIGN_IN_REWARDS = [
 
 export default function HomePage({ onLogout }: HomePageProps) {
   const [activeTab, setActiveTab] = useState<Tab>('popular')
+  const [appLang, setAppLang] = useState<LanguageCode>('en')
+
+  useEffect(() => {
+    // Initial load
+    const savedLang = localStorage.getItem('appLanguage') as LanguageCode
+    if (savedLang) {
+      setAppLang(savedLang)
+    }
+
+    // Listen for custom event
+    const handleLangChange = (e: CustomEvent) => {
+      if (e.detail && e.detail.lang) {
+        setAppLang(e.detail.lang)
+      }
+    }
+
+    window.addEventListener('languageChange', handleLangChange as EventListener)
+    return () => window.removeEventListener('languageChange', handleLangChange as EventListener)
+  }, [])
+
+  const t = getTranslation(appLang)
   const [activeMineTab, setActiveMineTab] = useState<MineTab>('following')
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [mounted, setMounted] = useState(false)
@@ -1640,7 +1662,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 />
               </svg>
               <span className={`text-[12px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-                Home
+                {t.home}
               </span>
             </button>
 
@@ -1663,7 +1685,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 />
               </svg>
               <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-                Message
+                {t.message}
               </span>
             </button>
 
@@ -1682,7 +1704,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <circle cx="22" cy="15" r="1.6" fill="#1D1D1F" />
               </svg>
               <span className={`text-[12px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-                Me
+                {t.me}
               </span>
             </button>
           </div>
