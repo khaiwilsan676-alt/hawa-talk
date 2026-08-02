@@ -384,7 +384,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    backgroundSize: '96%',
                     minWidth: '90px',
                     paddingLeft: '0px',
                     paddingRight: '5px',
