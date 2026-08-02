@@ -1,0 +1,21 @@
+
+> my-project@0.1.0 dev /app
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 1176ms
+
+○ Compiling / ...
+ GET / 200 in 11.5s (next.js: 10.3s, application-code: 1199ms)
+ GET /owner/ 200 in 1068ms (next.js: 900ms, application-code: 168ms)
+[browser] [2026-08-02T19:31:41.764Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T19:31:41.882Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T19:31:42.798Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T19:31:43.699Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T19:31:44.562Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T19:31:44.641Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T19:31:45.567Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T19:31:45.943Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T19:31:46.675Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.

@@ -19,45 +19,13 @@ export default function Page() {
     setLoading(false)
   }, [])
 
-  useEffect(() => {
-    // Poll for forceLogout from owner panel
-    const intervalId = setInterval(() => {
-      const uid = localStorage.getItem("userUID")
-      if (uid) {
-        const forceLogout = localStorage.getItem(`forceLogout_${uid}`)
-        if (forceLogout) {
-          // Detected a force logout
-          handleLogout()
-        }
-      }
-    }, 1000)
-
-    return () => clearInterval(intervalId)
-  }, [])
-
   const handleLoginSuccess = (credentials?: any) => {
     setIsLoggedIn(true)
   }
 
   const handleLogout = () => {
-    const uid = localStorage.getItem("userUID")
-
     localStorage.removeItem('userEmail')
     localStorage.removeItem('userPhone')
-    localStorage.removeItem("userName")
-    localStorage.removeItem("userUID")
-    localStorage.removeItem("userPhoto")
-
-    if (uid) {
-      localStorage.removeItem(`user_data_${uid}`)
-      localStorage.removeItem(`session_${uid}`)
-      localStorage.removeItem(`forceLogout_${uid}`)
-
-      const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-      delete loggedInSessions[uid]
-      localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
-    }
-
     setIsLoggedIn(false)
   }
 
