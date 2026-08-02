@@ -1,0 +1,25 @@
+
+> my-project@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 683ms
+
+○ Compiling / ...
+ GET / 200 in 8.6s (next.js: 7.6s, application-code: 961ms)
+ GET /owner/ 200 in 654ms (next.js: 551ms, application-code: 103ms)
+ GET /owner/ 200 in 65ms (next.js: 4ms, application-code: 61ms)
+ GET / 200 in 69ms (next.js: 4ms, application-code: 65ms)
+ GET /owner/ 200 in 65ms (next.js: 4ms, application-code: 62ms)
+ GET / 200 in 62ms (next.js: 4ms, application-code: 58ms)
+[browser] Updating a style property during rerender (animation) when a conflicting property is set (animationDelay) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+[browser] Updating a style property during rerender (animation) when a conflicting property is set (animationDelay) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+[browser] Updating a style property during rerender (animation) when a conflicting property is set (animationDelay) can lead to styling bugs. To avoid this, don't mix shorthand and non-shorthand properties for the same value; instead, replace the shorthand with separate values.
+[browser] [2026-08-02T18:33:52.241Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T18:33:52.386Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T18:33:53.269Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T18:33:54.699Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T18:33:57.683Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
+[browser] [2026-08-02T18:34:00.910Z]  @firebase/firestore: Firestore (12.16.0): Database '(default)' not found. Please check your project configuration.
