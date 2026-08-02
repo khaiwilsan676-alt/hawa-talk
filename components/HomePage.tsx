@@ -14,7 +14,8 @@ import {
 } from "firebase/firestore"
 
 import MessagePage from './MessagePage'
-import MePage, { getOrCreateAccountNumber } from './MePage'
+import MePage from './MePage';
+import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
 
 interface HomePageProps {
