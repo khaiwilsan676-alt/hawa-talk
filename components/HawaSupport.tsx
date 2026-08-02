@@ -23,48 +23,55 @@ export default function HawaSupport() {
     setMessages([welcomeMessage]);
   }, []);
 
-  // Bad words filter
+  // Bad words filter - FIXED VERSION
   const containsBadWords = (text: string) => {
     const badWords = [
-      "gand", "gandu", "gaand", "gaandu", "chut", "chutiya", "chutiyapa", "chutiye",
-      "bhosdi", "bhonsdi", "bhosdike", "bhonsdike", "bhosdiwala", "bhonsdiwala",
-      "madarchod", "madar chod", "maadar chod", "mc",
-      "behenchod", "bhenchod", "behanchod", "bahanchod", "bhen chod", "behen chod",
-      "lauda", "lund", "loda", "laude", "lod", "lodu",
-      "chuch", "chuchi", "chuchiya", "chuche",
-      "chod", "chodu", "chodna", "chodne", "choda", "chodi",
-      "maa ka", "maa ki", "ma ka", "ma ki", "teri maa", "teri ma",
-      "bhen ka", "bhen ki", "behen ka", "behen ki", "teri bhen", "teri behen",
+      "gandu", "gaandu", "chutiya", "chutiye", 
+      "bhosdike", "bhonsdike", "bhosdiwala", "bhonsdiwala",
+      "madarchod", "maadar chod", 
+      "behenchod", "bhenchod", "behanchod", "bahanchod",
+      "lauda", "lund", "loda", "laude", "lodu",
+      "chuchi", "chuchiya", "chuche",
+      "chodu", "chodna", "choda", "chodi",
+      "teri maa", "teri ma",
+      "teri bhen", "teri behen",
       "hijda", "hijra", "hijde", "chhakka", "chhakke", "kinnar",
-      "kutta", "kutiya", "kutti", "kamine", "kamina", "kaminey",
+      "kutiya", "kutti", "kamine", "kamina", "kaminey",
       "harami", "haramkhor", "haraami", "haramzaada", "haramzada",
       "suar", "sawar", "suvar", "sowar", "bhains", "bhainsa",
-      "bhak", "bhak cho", "bc", "bkc", "bkl", "bsdk",
+      "bhak cho", 
       "lavda", "lavde", "lwda", "lwde", "lawda", "lawde",
-      "randi", "raand", "rand", "randi khana", "randikhana", "randikhane",
-      "randibaaz", "randibaz", "randi baaz", "randiya", "randiyo",
-      "randi sali", "randi saali", "randi bhen", "randi behen",
-      "randi maa", "randi ma", "teri randi", "teri raand",
+      "randi", "raand", "randikhana", "randikhane",
+      "randibaaz", "randibaz", "randiya", "randiyo",
       "fuck", "fucker", "fucking", "fucked",
       "shit", "shitty", "bullshit",
-      "asshole", "ass", "arse", "arsehole",
+      "asshole", "arsehole",
       "bitch", "bitching", "bitchy", "bastard",
-      "cunt", "dick", "dickhead", "pussy", "whore", "slut", "motherfucker",
+      "cunt", "dickhead", "whore", "slut", "motherfucker",
       "cock", "tits", "boobs", "nigger", "nigga",
-      "sex", "sexy", "xxx", "porn", "porno", "nude", "naked",
+      "porn", "porno", "nude", "naked",
       "horny", "blowjob", "handjob", "cum", "sperm", "orgasm",
-      "rape", "molest", "harass", "pedo", "child porn",
-      "chudai", "chud", "chudwa", "nanga", "nangi",
-      "r4ndi", "r@ndi", "rand1", "f*ck", "f**k", "f u c k",
-      "sh*t", "sh1t", "b*tch", "b1tch", "a$$", "@ss", "d!ck", "p*ssy",
+      "rape", "molest", "pedo",
+      "chudai", "nanga", "nangi",
     ];
     
-    const lowerText = text.toLowerCase();
-    const noSpaceText = lowerText.replace(/\s+/g, '');
+    const lowerText = text.toLowerCase().trim();
     
-    return badWords.some(word => {
-      const cleanWord = word.replace(/[^a-zA-Z0-9]/g, '');
-      return lowerText.includes(word) || noSpaceText.includes(cleanWord);
+    // Split text into words for word-boundary matching
+    const words = lowerText.split(/\s+/);
+    
+    // Check each word against bad words
+    return badWords.some(badWord => {
+      // For multi-word bad phrases
+      if (badWord.includes(' ')) {
+        return lowerText.includes(badWord);
+      }
+      // For single bad words - check word boundaries
+      return words.some(word => {
+        // Remove punctuation for comparison
+        const cleanWord = word.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, '');
+        return cleanWord === badWord;
+      });
     });
   };
 
@@ -427,4 +434,4 @@ export default function HawaSupport() {
       </div>
     </div>
   );
-                                                                             }
+      }
