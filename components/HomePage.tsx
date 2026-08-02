@@ -17,6 +17,7 @@ import MessagePage from './MessagePage'
 import MePage from './MePage';
 import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
+import { generateStableId } from '../lib/hash'
 
 interface HomePageProps {
   onLogout?: () => void;
@@ -514,9 +515,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
       
-      // Get the correct display account ID
-      const fullAccNum = getOrCreateAccountNumber(userUID)
-      const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : userUID
+      const stableId = generateStableId(userUID);
 
       // Save room to Firestore (globalRooms collection)
       await setDoc(doc(db, "globalRooms", userUID), {
@@ -524,7 +523,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: displayAccNum,
+        accountId: stableId,
         createdAt: Date.now()
       });
 
@@ -534,7 +533,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: displayAccNum,
+        accountId: stableId,
         createdAt: Date.now()
       }, { merge: true });
       
@@ -600,22 +599,27 @@ export default function HomePage({ onLogout }: HomePageProps) {
       // 2. Users collection - exact accountId match
       try {
         const usersRef = collection(db, "users")
-        const qSnap = await getDocs(query(usersRef, where("accountId", "==", query_text)))
+        const q2 = query(usersRef, where("accountId", ">=", query_text), where("accountId", "<=", query_text + '\uf8ff'));
+        const snap2 = await getDocs(q2);
         
-        qSnap.docs.forEach((doc) => {
-          const uData = doc.data()
-          if (!addedIds.has(uData.accountId)) {
-            addedIds.add(uData.accountId)
-            foundList.push({
-              id: doc.id,
-              name: uData.name || 'User',
-              country: uData.country || '🇮🇳',
-              image: uData.image || '/default-avatar.png',
-              accountId: uData.accountId || doc.id,
-              createdAt: uData.createdAt || Date.now()
-            })
-          }
-        })
+        const processDocs = (snap: any) => {
+          snap.docs.forEach((doc: any) => {
+            const uData = doc.data()
+            const accId = uData.accountId || doc.id
+            if (!addedIds.has(accId)) {
+              addedIds.add(accId)
+              foundList.push({
+                id: doc.id,
+                name: uData.name || 'User',
+                country: uData.country || '🇮🇳',
+                image: uData.image || '/default-avatar.png',
+                accountId: accId,
+                createdAt: uData.createdAt || Date.now()
+              })
+            }
+          })
+        };
+        processDocs(snap2);
       } catch (err) {
         console.warn("Users search failed:", err)
       }
@@ -623,22 +627,27 @@ export default function HomePage({ onLogout }: HomePageProps) {
       // 3. globalRooms collection - exact accountId match
       try {
         const roomsRef = collection(db, "globalRooms")
-        const rSnap = await getDocs(query(roomsRef, where("accountId", "==", query_text)))
+        const q2 = query(roomsRef, where("accountId", ">=", query_text), where("accountId", "<=", query_text + '\uf8ff'));
+        const snap2 = await getDocs(q2);
         
-        rSnap.docs.forEach((doc) => {
-          const rData = doc.data()
-          if (!addedIds.has(rData.accountId)) {
-            addedIds.add(rData.accountId)
-            foundList.push({
-              id: doc.id,
-              name: rData.name || 'User',
-              country: rData.country || '🇮🇳',
-              image: rData.image || '/default-avatar.png',
-              accountId: rData.accountId || doc.id,
-              createdAt: rData.createdAt || Date.now()
-            })
-          }
-        })
+        const processDocs = (snap: any) => {
+          snap.docs.forEach((doc: any) => {
+            const rData = doc.data()
+            const accId = rData.accountId || doc.id
+            if (!addedIds.has(accId)) {
+              addedIds.add(accId)
+              foundList.push({
+                id: doc.id,
+                name: rData.name || 'User',
+                country: rData.country || '🇮🇳',
+                image: rData.image || '/default-avatar.png',
+                accountId: accId,
+                createdAt: rData.createdAt || Date.now()
+              })
+            }
+          })
+        };
+        processDocs(snap2);
       } catch (err) {
         console.warn("globalRooms search failed:", err)
       }
@@ -1032,7 +1041,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
         /* Safe area padding for notched devices */
         .safe-top {
-          /* padding-top intentionally removed to ensure edge-to-edge drawing under status bar */
+          padding-top: env(safe-area-inset-top, 24px);
         }
         
         .safe-bottom {
