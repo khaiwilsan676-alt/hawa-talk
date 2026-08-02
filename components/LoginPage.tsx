@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState } from 'react'
@@ -85,7 +84,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const officialCred = checkOfficialCredentials(email, password);
       
       if (officialCred) {
-        // Login as official/admin ID
+        // Login as official/admin ID - account number wahi rahega jo original hai
         const userData = {
           id: officialCred.id,
           email: officialCred.email,
@@ -337,4 +336,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-          }
+        }
