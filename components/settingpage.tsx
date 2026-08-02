@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface SettingPageProps {
@@ -8,6 +8,7 @@ interface SettingPageProps {
   onLogout?: () => void
   onBlocklistPress?: () => void
   onAboutPress?: () => void
+  currentUserId?: string // Add current user ID prop
 }
 
 export default function SettingPage({
@@ -15,11 +16,32 @@ export default function SettingPage({
   onLogout,
   onBlocklistPress,
   onAboutPress,
+  currentUserId, // Receive current logged-in user ID
 }: SettingPageProps) {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true)
 
   const toggleSwitch = () => {
     setIsNotificationsEnabled((prev) => !prev)
+  }
+
+  const handleLogout = () => {
+    // If there's a current user ID, handle ID-specific logout
+    if (currentUserId) {
+      // Clear the specific ID session from localStorage
+      const savedSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+      delete savedSessions[currentUserId]
+      localStorage.setItem('loggedInSessions', JSON.stringify(savedSessions))
+      
+      // Remove specific device session
+      localStorage.removeItem(`session_${currentUserId}`)
+      
+      console.log(`ID ${currentUserId} logged out from device`)
+    }
+    
+    // Call the original onLogout function
+    if (onLogout) {
+      onLogout()
+    }
   }
 
   return (
@@ -81,7 +103,7 @@ export default function SettingPage({
       {/* Logout Button */}
       <div className="px-6 mt-10">
         <button
-          onClick={onLogout}
+          onClick={handleLogout}
           className="w-full border border-slate-300 rounded-full py-3.5 text-center bg-white hover:bg-slate-50 transition-colors shadow-sm"
         >
           <span className="text-base font-medium text-slate-700">Logout</span>
