@@ -76,7 +76,7 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
-const getOrCreateAccountNumber = (uid: string) => {
+export const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return 'N/A'
 
   if (uid === 'HUSxSvQnabgU029dWYt1TUV04hd2') return '100002'
@@ -86,14 +86,23 @@ const getOrCreateAccountNumber = (uid: string) => {
   let savedAccountNumber = localStorage.getItem(storageKey)
 
   if (!savedAccountNumber) {
-    const targetLength = uid.length
-    let numericStr = ''
-
-    for (let i = 0; i < targetLength; i++) {
-      numericStr += Math.floor(Math.random() * 10).toString()
+    // Generate deterministic numeric hash from the UID string
+    let hash = 0;
+    for (let i = 0; i < uid.length; i++) {
+      const char = uid.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
     }
 
-    savedAccountNumber = numericStr
+    // Ensure positive number and pad to at least 8 digits
+    let numericStr = Math.abs(hash).toString();
+    while (numericStr.length < 8) {
+      // Use another hash round for padding if needed, but simple duplication works for determinism
+      numericStr += numericStr;
+    }
+
+    // Take exactly 8 digits to keep the length consistent
+    savedAccountNumber = numericStr.slice(0, 8);
     localStorage.setItem(storageKey, savedAccountNumber)
   }
 
@@ -115,7 +124,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view === 'public_profile' || view === 'customer_service')
+      onPublicProfileChange(view === 'public_profile' || view === 'customer_service' || view === 'settings')
     }
   }
 

@@ -7,13 +7,11 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 export async function initializeCapacitor(): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     try {
-      // Ensure the status bar overlays the webview and is transparent so the
-      // app's header reaches the very top (full-screen look).
-      // Keep Style.Light so icons/text are light (white) for dark header backgrounds.
-      await StatusBar.setStyle({ style: Style.Light });
-      await StatusBar.setBackgroundColor({ color: '#00000000' }); // transparent
+      // The user wants edge-to-edge layout (icons on top of page content)
+      // but without forcing an explicit transparent background color, which might be crashing.
       // Overlay the web content so pages are full-screen under the status bar
       await StatusBar.setOverlaysWebView({ overlay: true });
+      await StatusBar.setStyle({ style: Style.Dark });
 
       // Show the status bar so time/battery icons are visible, but overlaid on web content
       await StatusBar.show();

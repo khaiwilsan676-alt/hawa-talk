@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore"
 
 import MessagePage from './MessagePage'
-import MePage from './MePage'
+import MePage, { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
 
 interface HomePageProps {
@@ -513,13 +513,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
       
+      // Get the correct display account ID
+      const fullAccNum = getOrCreateAccountNumber(userUID)
+      const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : userUID
+
       // Save room to Firestore (globalRooms collection)
       await setDoc(doc(db, "globalRooms", userUID), {
         id: userUID,
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: userUID,
+        accountId: displayAccNum,
         createdAt: Date.now()
       });
 
@@ -529,7 +533,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: userUID,
+        accountId: displayAccNum,
         createdAt: Date.now()
       }, { merge: true });
       
