@@ -80,7 +80,7 @@ const bottomMenuItems: MenuItem[] = [
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-const getOrCreateAccountNumber = (uid: string) => {
+export const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return { fullAccNum: 'N/A', displayAccNum: 'N/A' }
 
   // Check if it's an official or admin ID
