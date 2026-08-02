@@ -538,8 +538,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setMyRoom(createdRoomCard)
       
       // Get the correct display account ID
-      const fullAccNum = getOrCreateAccountNumber(userUID)
-      const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : userUID
+      const accountNums = getOrCreateAccountNumber(userUID)
+      const displayAccNum = accountNums.displayAccNum !== 'N/A' ? accountNums.displayAccNum : userUID
 
       // Save room to Firestore (globalRooms collection)
       await setDoc(doc(db, "globalRooms", userUID), {
@@ -611,75 +611,76 @@ export default function HomePage({ onLogout }: HomePageProps) {
       const foundList: GlobalRoom[] = []
       const addedIds = new Set<string>()
 
-      // 1. Local globalRooms se filter
-      const localMatches = globalRooms.filter(r => {
-        const matches = r.accountId.includes(query_text) || 
-                       r.name.toLowerCase().includes(query_text.toLowerCase())
-        if (matches) addedIds.add(r.accountId)
-        return matches
-      })
-      foundList.push(...localMatches)
+      if (activeSearchTab === 'room') {
+        // 1. Local globalRooms se filter (exact ID match only)
+        const localMatches = globalRooms.filter(r => {
+          const matches = r.accountId.toLowerCase() === query_text
+          if (matches) addedIds.add(r.accountId)
+          return matches
+        })
+        foundList.push(...localMatches)
 
-      // 2. Users collection - exact accountId match
-      try {
-        const usersRef = collection(db, "users")
-        const q2 = query(usersRef, where("accountId", ">=", query_text), where("accountId", "<=", query_text + '\uf8ff'));
-        const snap2 = await getDocs(q2);
-        
-        const processDocs = (snap: any) => {
-          snap.docs.forEach((doc: any) => {
-            const uData = doc.data()
-            const accId = uData.accountId || doc.id
-            if (!addedIds.has(accId)) {
-              addedIds.add(accId)
-              foundList.push({
-                id: doc.id,
-                name: uData.name || 'User',
-                country: uData.country || '🇮🇳',
-                image: uData.image || '/default-avatar.png',
-                accountId: accId,
-                createdAt: uData.createdAt || Date.now()
-              })
-            }
-          })
-        };
-        processDocs(snap2);
-      } catch (err) {
-        console.warn("Users search failed:", err)
-      }
+        // 2. globalRooms collection - exact accountId match
+        try {
+          const roomsRef = collection(db, "globalRooms")
+          const q2 = query(roomsRef, where("accountId", "==", query_text));
+          const snap2 = await getDocs(q2);
 
-      // 3. globalRooms collection - exact accountId match
-      try {
-        const roomsRef = collection(db, "globalRooms")
-        const q2 = query(roomsRef, where("accountId", ">=", query_text), where("accountId", "<=", query_text + '\uf8ff'));
-        const snap2 = await getDocs(q2);
-        
-        const processDocs = (snap: any) => {
-          snap.docs.forEach((doc: any) => {
-            const rData = doc.data()
-            const accId = rData.accountId || doc.id
-            if (!addedIds.has(accId)) {
-              addedIds.add(accId)
-              foundList.push({
-                id: doc.id,
-                name: rData.name || 'User',
-                country: rData.country || '🇮🇳',
-                image: rData.image || '/default-avatar.png',
-                accountId: accId,
-                createdAt: rData.createdAt || Date.now()
-              })
-            }
-          })
-        };
-        processDocs(snap2);
-      } catch (err) {
-        console.warn("globalRooms search failed:", err)
+          const processDocs = (snap: any) => {
+            snap.docs.forEach((doc: any) => {
+              const rData = doc.data()
+              const accId = rData.accountId || doc.id
+              if (!addedIds.has(accId)) {
+                addedIds.add(accId)
+                foundList.push({
+                  id: doc.id,
+                  name: rData.name || 'Room',
+                  country: rData.country || '🇮🇳',
+                  image: rData.image || '/default-avatar.png',
+                  accountId: accId,
+                  createdAt: rData.createdAt || Date.now()
+                })
+              }
+            })
+          };
+          processDocs(snap2);
+        } catch (err) {
+          console.warn("globalRooms search failed:", err)
+        }
+      } else if (activeSearchTab === 'user') {
+        // 3. Users collection - exact accountId match
+        try {
+          const usersRef = collection(db, "users")
+          const q2 = query(usersRef, where("accountId", "==", query_text));
+          const snap2 = await getDocs(q2);
+
+          const processDocs = (snap: any) => {
+            snap.docs.forEach((doc: any) => {
+              const uData = doc.data()
+              const accId = uData.accountId || doc.id
+              if (!addedIds.has(accId)) {
+                addedIds.add(accId)
+                foundList.push({
+                  id: doc.id,
+                  name: uData.name || 'User',
+                  country: uData.country || '🇮🇳',
+                  image: uData.image || '/default-avatar.png',
+                  accountId: accId,
+                  createdAt: uData.createdAt || Date.now()
+                })
+              }
+            })
+          };
+          processDocs(snap2);
+        } catch (err) {
+          console.warn("Users search failed:", err)
+        }
       }
 
       // Sort: exact match pehle
       foundList.sort((a, b) => {
-        const aExact = a.accountId === query_text
-        const bExact = b.accountId === query_text
+        const aExact = a.accountId.toLowerCase() === query_text
+        const bExact = b.accountId.toLowerCase() === query_text
         if (aExact && !bExact) return -1
         if (!aExact && bExact) return 1
         return (b.createdAt || 0) - (a.createdAt || 0)
@@ -691,16 +692,34 @@ export default function HomePage({ onLogout }: HomePageProps) {
     } catch (err) {
       console.error("Search error:", err)
       // Fallback to local search
-      const localMatches = globalRooms.filter(r => 
-        r.accountId.includes(query_text) || 
-        r.name.toLowerCase().includes(query_text.toLowerCase())
-      )
-      setSearchResults(localMatches.slice(0, 20))
+      if (activeSearchTab === 'room') {
+        const localMatches = globalRooms.filter(r =>
+          r.accountId.toLowerCase() === query_text
+        )
+        setSearchResults(localMatches.slice(0, 20))
+      } else {
+        setSearchResults([])
+      }
       setHasSearched(true)
     } finally {
       setIsSearching(false)
     }
   }
+
+  // Effect for real-time search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isSearchOpen && searchQuery.trim().length > 0) {
+        handlePerformSearch()
+      } else if (isSearchOpen && searchQuery.trim().length === 0) {
+        setSearchResults([])
+        setHasSearched(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, activeSearchTab, isSearchOpen])
 
   // Sign-in modal handlers
   const handleImageClick = () => {
