@@ -1,10 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
-import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut } from "lucide-react";
 
 export default function OwnerPanel() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Check localStorage for existing login session
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ownerPanelLoggedIn') === 'true';
+    }
+    return false;
+  });
+  
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState("official_id");
   const [saveMessage, setSaveMessage] = useState("");
@@ -39,9 +46,19 @@ export default function OwnerPanel() {
     if (loginUsername === "HAWA.IN" && loginPassword === "HAWA.OWNER/CEO" && loginKey === "25/7/2026") {
       setIsLoggedIn(true);
       setLoginError("");
+      // Save login state to localStorage
+      localStorage.setItem('ownerPanelLoggedIn', 'true');
     } else {
       setLoginError("Invalid credentials. Please try again.");
     }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('ownerPanelLoggedIn');
+    setLoginUsername("");
+    setLoginPassword("");
+    setLoginKey("");
   };
 
   const handleChange = (id, field, value) => {
@@ -70,6 +87,32 @@ export default function OwnerPanel() {
     setSaveMessage("Credentials saved successfully!");
     setTimeout(() => setSaveMessage(""), 3000);
     console.log("Saved Data:", idsData);
+  };
+
+  const handleIDLogout = (id) => {
+    // Clear the specific ID from localStorage
+    const savedSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
+    delete savedSessions[id];
+    localStorage.setItem('loggedInSessions', JSON.stringify(savedSessions));
+    
+    // Also remove specific device session
+    localStorage.removeItem(`session_${id}`);
+    
+    setSaveMessage(`ID ${id} logged out from device!`);
+    setTimeout(() => setSaveMessage(""), 3000);
+  };
+
+  const handleLogoutAllIDs = () => {
+    // Clear all ID sessions
+    localStorage.removeItem('loggedInSessions');
+    
+    // Clear individual sessions
+    Object.keys(idsData).forEach(id => {
+      localStorage.removeItem(`session_${id}`);
+    });
+    
+    setSaveMessage("All IDs logged out from devices!");
+    setTimeout(() => setSaveMessage(""), 3000);
   };
 
   // LOGIN PAGE
@@ -169,6 +212,13 @@ export default function OwnerPanel() {
             {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             {showPasswords ? "Hide Passwords" : "Show Passwords"}
           </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-sm font-medium text-red-700 transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+            Logout
+          </button>
           {saveMessage && (
             <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-medium">
               {saveMessage}
@@ -220,9 +270,23 @@ export default function OwnerPanel() {
             
             {/* OFFICIAL IDs SECTION */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
-              <h2 className="text-base font-bold text-blue-600 tracking-wider uppercase mb-4 flex items-center gap-2">
-                <Lock className="w-5 h-5" /> Official IDs (500001-500005)
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-blue-600 tracking-wider uppercase flex items-center gap-2">
+                  <Lock className="w-5 h-5" /> Official IDs (500001-500005)
+                </h2>
+                <button
+                  onClick={() => {
+                    ["500001", "500002", "500003", "500004", "500005"].forEach(id => {
+                      localStorage.removeItem(`session_${id}`);
+                    });
+                    setSaveMessage("All Official IDs logged out!");
+                    setTimeout(() => setSaveMessage(""), 3000);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition cursor-pointer border border-red-200"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Logout All Official
+                </button>
+              </div>
 
               <div className="space-y-3">
                 {["500001", "500002", "500003", "500004", "500005"].map((id) => (
@@ -244,7 +308,7 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* Password Input - Always visible */}
+                    {/* Password Input */}
                     <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
                       <Lock className="w-4 h-4 text-gray-400" />
                       <input
@@ -255,6 +319,14 @@ export default function OwnerPanel() {
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
                     </div>
+
+                    {/* Individual Logout Button */}
+                    <button
+                      onClick={() => handleIDLogout(id)}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition cursor-pointer border border-red-200 whitespace-nowrap"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Logout
+                    </button>
                   </div>
                 ))}
               </div>
@@ -262,9 +334,23 @@ export default function OwnerPanel() {
 
             {/* ADMIN IDs SECTION */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
-              <h2 className="text-base font-bold text-purple-600 tracking-wider uppercase mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5" /> Admin IDs (700001-700003)
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-purple-600 tracking-wider uppercase flex items-center gap-2">
+                  <Shield className="w-5 h-5" /> Admin IDs (700001-700003)
+                </h2>
+                <button
+                  onClick={() => {
+                    ["700001", "700002", "700003"].forEach(id => {
+                      localStorage.removeItem(`session_${id}`);
+                    });
+                    setSaveMessage("All Admin IDs logged out!");
+                    setTimeout(() => setSaveMessage(""), 3000);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition cursor-pointer border border-red-200"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Logout All Admin
+                </button>
+              </div>
 
               <div className="space-y-3">
                 {["700001", "700002", "700003"].map((id) => (
@@ -286,7 +372,7 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* Password Input - Always visible */}
+                    {/* Password Input */}
                     <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
                       <Lock className="w-4 h-4 text-gray-400" />
                       <input
@@ -297,6 +383,14 @@ export default function OwnerPanel() {
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
                     </div>
+
+                    {/* Individual Logout Button */}
+                    <button
+                      onClick={() => handleIDLogout(id)}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition cursor-pointer border border-red-200 whitespace-nowrap"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Logout
+                    </button>
                   </div>
                 ))}
               </div>
@@ -315,4 +409,4 @@ export default function OwnerPanel() {
       </main>
     </div>
   );
-            }
+              }
