@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut } from "lucide-react";
 import { db } from "../../src/lib/firebase";
-import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, onSnapshot } from "firebase/firestore";
 
 export default function OwnerPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -36,28 +36,30 @@ export default function OwnerPanel() {
 
   const [idsData, setIdsData] = useState<Record<string, any>>(defaultIdsData);
 
-  // Load from firestore
+  // Load from firestore (Real-time sync)
   useEffect(() => {
-    const fetchCreds = async () => {
-      try {
-        const docRef = doc(db, "adminSettings", "credentials");
-        const docSnap = await getDoc(docRef);
+    const docRef = doc(db, "adminSettings", "credentials");
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
         if (docSnap.exists()) {
           setIdsData(docSnap.data().ownerPanelCredentials || defaultIdsData);
         } else {
           // If doc doesn't exist, try localstorage for backward compatibility or use default
-          if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem('ownerPanelCredentials');
+          if (typeof window !== "undefined") {
+            const saved = localStorage.getItem("ownerPanelCredentials");
             if (saved) {
               setIdsData(JSON.parse(saved));
             }
           }
         }
-      } catch (error) {
+      },
+      (error) => {
         console.error("Error fetching credentials:", error);
       }
-    };
-    fetchCreds();
+    );
+
+    return () => unsubscribe();
   }, []);
 
   // Track online status
