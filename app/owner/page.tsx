@@ -135,10 +135,10 @@ export default function OwnerPanel() {
     setLoginKey("");
   };
 
-  const handleSave = useCallback(async (dataToSave = idsData) => {
+  const handleSave = useCallback(async () => {
     try {
       const credentials: any[] = [];
-      Object.entries(dataToSave).forEach(([id, data]: [string, any]) => {
+      Object.entries(idsData).forEach(([id, data]: [string, any]) => {
         const email = (data.email || "").trim();
         const password = (data.password || "").trim();
         if (email && password) {
@@ -153,12 +153,12 @@ export default function OwnerPanel() {
 
       const docRef = doc(db, "adminSettings", "credentials");
       await setDoc(docRef, {
-        ownerPanelCredentials: dataToSave,
+        ownerPanelCredentials: idsData,
         officialCredentials: credentials
       }, { merge: true });
 
       // Also set to localstorage for backward compatibility just in case
-      localStorage.setItem('ownerPanelCredentials', JSON.stringify(dataToSave));
+      localStorage.setItem('ownerPanelCredentials', JSON.stringify(idsData));
       localStorage.setItem('officialCredentials', JSON.stringify(credentials));
 
       setSaveMessage("Credentials saved successfully!");
@@ -175,7 +175,7 @@ export default function OwnerPanel() {
     if (!isLocalUpdate.current) return;
 
     const timeoutId = setTimeout(() => {
-      handleSave(idsData);
+      handleSave();
     }, 1000);
 
     return () => clearTimeout(timeoutId);
@@ -529,7 +529,7 @@ export default function OwnerPanel() {
 
             {/* Save Button */}
             <button
-              onClick={handleSave}
+              onClick={() => handleSave()}
               className="w-full py-4 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white font-bold text-base rounded-xl shadow-lg shadow-blue-200 transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <Save className="w-5 h-5" /> Save All Credentials
