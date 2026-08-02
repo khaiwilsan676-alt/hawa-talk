@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut } from "lucide-react";
 import { db } from "../../src/lib/firebase";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
@@ -35,6 +35,7 @@ export default function OwnerPanel() {
   };
 
   const [idsData, setIdsData] = useState<Record<string, any>>(defaultIdsData);
+  const isLocalUpdate = useRef(false);
 
   // Load from firestore (Real-time sync)
   useEffect(() => {
@@ -42,14 +43,41 @@ export default function OwnerPanel() {
     const unsubscribe = onSnapshot(
       docRef,
       (docSnap) => {
+        if (isLocalUpdate.current) {
+          // Skip updating state if the change originated locally
+          isLocalUpdate.current = false;
+          return;
+        }
+
         if (docSnap.exists()) {
-          setIdsData(docSnap.data().ownerPanelCredentials || defaultIdsData);
+          const serverData = docSnap.data().ownerPanelCredentials || {};
+          // Merge with defaults to ensure all IDs exist
+          const mergedData = { ...defaultIdsData };
+          Object.keys(defaultIdsData).forEach(id => {
+            if (serverData[id]) {
+              mergedData[id as keyof typeof mergedData] = {
+                email: serverData[id].email || "",
+                password: serverData[id].password || ""
+              };
+            }
+          });
+          setIdsData(mergedData);
         } else {
           // If doc doesn't exist, try localstorage for backward compatibility or use default
           if (typeof window !== "undefined") {
             const saved = localStorage.getItem("ownerPanelCredentials");
             if (saved) {
-              setIdsData(JSON.parse(saved));
+              const localData = JSON.parse(saved);
+              const mergedData = { ...defaultIdsData };
+              Object.keys(defaultIdsData).forEach(id => {
+                if (localData[id]) {
+                  mergedData[id as keyof typeof mergedData] = {
+                    email: localData[id].email || "",
+                    password: localData[id].password || ""
+                  };
+                }
+              });
+              setIdsData(mergedData);
             }
           }
         }
@@ -107,22 +135,17 @@ export default function OwnerPanel() {
     setLoginKey("");
   };
 
-  const handleChange = (id: string, field: string, value: string) => {
-    setIdsData((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value },
-    }));
-  };
-
-  const handleSave = async () => {
+  const handleSave = useCallback(async (dataToSave = idsData) => {
     try {
       const credentials: any[] = [];
-      Object.entries(idsData).forEach(([id, data]) => {
-        if (data.email && data.password) {
+      Object.entries(dataToSave).forEach(([id, data]: [string, any]) => {
+        const email = (data.email || "").trim();
+        const password = (data.password || "").trim();
+        if (email && password) {
           credentials.push({
             id: id,
-            email: data.email,
-            password: data.password,
+            email: email,
+            password: password,
             type: id.startsWith('5') ? 'official' : 'admin'
           });
         }
@@ -130,12 +153,12 @@ export default function OwnerPanel() {
 
       const docRef = doc(db, "adminSettings", "credentials");
       await setDoc(docRef, {
-        ownerPanelCredentials: idsData,
+        ownerPanelCredentials: dataToSave,
         officialCredentials: credentials
       }, { merge: true });
 
       // Also set to localstorage for backward compatibility just in case
-      localStorage.setItem('ownerPanelCredentials', JSON.stringify(idsData));
+      localStorage.setItem('ownerPanelCredentials', JSON.stringify(dataToSave));
       localStorage.setItem('officialCredentials', JSON.stringify(credentials));
 
       setSaveMessage("Credentials saved successfully!");
@@ -145,7 +168,27 @@ export default function OwnerPanel() {
       setSaveMessage("Error saving credentials!");
       setTimeout(() => setSaveMessage(""), 3000);
     }
+  }, [idsData]);
+
+  // Real-time debounced auto-save
+  useEffect(() => {
+    if (!isLocalUpdate.current) return;
+
+    const timeoutId = setTimeout(() => {
+      handleSave(idsData);
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [idsData, handleSave]);
+
+  const handleChange = (id: string, field: string, value: string) => {
+    isLocalUpdate.current = true;
+    setIdsData((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value },
+    }));
   };
+
 
   // ✅ Individual ID Logout
   const handleIDLogout = async (id: string) => {
@@ -376,7 +419,7 @@ export default function OwnerPanel() {
                       <input
                         type="text"
                         placeholder="Email"
-                        value={idsData[id]?.email}
+                        value={idsData[id]?.email || ""}
                         onChange={(e) => handleChange(id, "email", e.target.value)}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
@@ -388,7 +431,7 @@ export default function OwnerPanel() {
                       <input
                         type={showPasswords ? "text" : "password"}
                         placeholder="Password"
-                        value={idsData[id]?.password}
+                        value={idsData[id]?.password || ""}
                         onChange={(e) => handleChange(id, "password", e.target.value)}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
@@ -444,7 +487,7 @@ export default function OwnerPanel() {
                       <input
                         type="text"
                         placeholder="Email"
-                        value={idsData[id]?.email}
+                        value={idsData[id]?.email || ""}
                         onChange={(e) => handleChange(id, "email", e.target.value)}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
@@ -456,7 +499,7 @@ export default function OwnerPanel() {
                       <input
                         type={showPasswords ? "text" : "password"}
                         placeholder="Password"
-                        value={idsData[id]?.password}
+                        value={idsData[id]?.password || ""}
                         onChange={(e) => handleChange(id, "password", e.target.value)}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
