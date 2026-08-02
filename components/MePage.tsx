@@ -155,65 +155,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   }
 
-  // ✅ FIXED: Sirf tab logout hoga jab Owner Panel se force logout ho
-  useEffect(() => {
-    const uid = localStorage.getItem("userUID")
-    if (!uid) return
-
-    // Check if user is Official or Admin
-    const isOfficialOrAdmin = OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)
-    
-    // Sirf Official/Admin IDs ke liye force logout check karo
-    if (!isOfficialOrAdmin) return
-
-    const performLogout = () => {
-      console.log(`Force logout detected for ID: ${uid}`)
-
-      // Clear user data
-      localStorage.removeItem("userName")
-      localStorage.removeItem("userUID")
-      localStorage.removeItem("userPhone")
-      localStorage.removeItem("userPhoto")
-      localStorage.removeItem(`user_data_${uid}`)
-      localStorage.removeItem(`session_${uid}`)
-
-      // Remove from logged in sessions
-      const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-      delete loggedInSessions[uid]
-      localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
-
-      // Logout
-      if (onLogout) {
-        onLogout()
-      }
-    }
-
-    // Listen for force logout event from local storage / custom event (backward compat)
-    const handleForceLogout = (e: CustomEvent) => {
-      if (e.detail && e.detail.id === uid) {
-        performLogout()
-      }
-    }
-
-    window.addEventListener('forceLogout', handleForceLogout as EventListener)
-    
-    // Listen for force logout from Firestore
-    const docRef = doc(db, "adminSettings", `sessions_${uid}`);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.isLoggedIn === false) {
-          performLogout();
-        }
-      }
-    });
-
-    return () => {
-      window.removeEventListener('forceLogout', handleForceLogout as EventListener)
-      unsubscribe();
-    }
-  }, [onLogout])
-
   useEffect(() => {
     const fetchUserData = () => {
       const name = localStorage.getItem("userName") || "Guest"
