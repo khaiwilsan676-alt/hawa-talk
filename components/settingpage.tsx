@@ -22,6 +22,33 @@ export default function SettingPage({
     setIsNotificationsEnabled((prev) => !prev)
   }
 
+  const handleLogout = () => {
+    // Clear user session data
+    const uid = localStorage.getItem("userUID")
+    
+    // Remove logged in session
+    const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+    if (uid && loggedInSessions[uid]) {
+      delete loggedInSessions[uid]
+      localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
+    }
+    
+    // Clear user data from localStorage
+    localStorage.removeItem("userName")
+    localStorage.removeItem("userUID")
+    localStorage.removeItem("userPhone")
+    localStorage.removeItem("userPhoto")
+    localStorage.removeItem(`session_${uid}`)
+    
+    // Call the onLogout callback
+    if (onLogout) {
+      onLogout()
+    }
+    
+    // Reload to show login screen
+    window.location.reload()
+  }
+
   return (
     <div className="w-full min-h-screen bg-white">
       {/* Header — White */}
@@ -81,7 +108,7 @@ export default function SettingPage({
       {/* Logout Button */}
       <div className="px-6 mt-10">
         <button
-          onClick={onLogout}
+          onClick={handleLogout}
           className="w-full border border-slate-300 rounded-full py-3.5 text-center bg-white hover:bg-slate-50 transition-colors shadow-sm"
         >
           <span className="text-base font-medium text-slate-700">Logout</span>
