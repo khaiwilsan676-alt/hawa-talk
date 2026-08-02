@@ -67,18 +67,9 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
   'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003'
 }
 
-// ✅ Official/Admin IDs list
-const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
-const ADMIN_IDS = ['700001', '700002', '700003']
-
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
   return generateStableId(uid)
-
-  // ✅ Check if it's an official or admin ID - return the ID itself
-  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
-    return uid
-  }
 
   // Check if this is a special account
   if (SPECIAL_ACCOUNTS[uid]) {
@@ -347,7 +338,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
-        {/* Avatar */}
+        {/* Avatar - ab -bottom-3 */}
         <div className="absolute -bottom-1 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
@@ -363,7 +354,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
       {/* Profile Info Details Section */}
       <div className="px-5 pt-5">
-        {/* Name + Gender + ALL Badges */}
+        {/* Name + Gender + ALL Badges - ek hi flex-wrap container mein sab */}
         <div className="flex flex-wrap items-center gap-0.5">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
@@ -411,7 +402,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <span className="text-gray-500">{user.followers} Followers</span>
         </div>
 
-        {/* Level Badge */}
+        {/* Level Badge - Below ID row */}
         <div className="mt-1 flex items-center gap-1 -ml-2">
           <div className="relative inline-flex items-center justify-center ml-0.5">
             <img 
@@ -423,6 +414,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
               Lv.1
             </span>
           </div>
+          {/* Level side image */}
           <img 
             src="/1785486414756.png" 
             alt="Level Side" 
@@ -577,7 +569,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 </div>
               </div>
 
-              {/* Background Cover */}
+              {/* Background Cover - Now below Avatar */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Background Cover</span>
@@ -605,7 +597,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                 )}
               </div>
 
-              {/* Album Upload */}
+              {/* Album Upload & Management Section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Album Photos ({albumImages.length}/4)</span>
