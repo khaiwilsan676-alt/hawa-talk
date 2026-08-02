@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState } from 'react'
@@ -50,6 +51,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   };
 
+  // Check if credentials match official/admin IDs
+  const checkOfficialCredentials = (email: string, password: string) => {
+    const savedCredentials = localStorage.getItem('officialCredentials');
+    if (savedCredentials) {
+      const credentials = JSON.parse(savedCredentials);
+      const matched = credentials.find(
+        (cred: any) => cred.email === email && cred.password === password
+      );
+      return matched || null;
+    }
+    return null;
+  };
+
   // Email/Password Authentication
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +81,32 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
 
     try {
+      // First check if it's an official/admin ID
+      const officialCred = checkOfficialCredentials(email, password);
+      
+      if (officialCred) {
+        // Login as official/admin ID
+        const userData = {
+          id: officialCred.id,
+          email: officialCred.email,
+          type: officialCred.type,
+          isOfficial: true
+        };
+
+        localStorage.setItem("userName", `${officialCred.type.toUpperCase()} - ${officialCred.id}`);
+        localStorage.setItem("userEmail", officialCred.email);
+        localStorage.setItem("userUID", officialCred.id);
+        localStorage.setItem("userType", officialCred.type);
+        localStorage.setItem("userPhoto", "");
+
+        if (onLoginSuccess) {
+          onLoginSuccess(userData);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // If not official, try Firebase auth
       let userCredential;
       
       if (isSignUp) {
@@ -297,4 +337,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-            }
+          }
