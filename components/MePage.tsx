@@ -5,10 +5,12 @@ import { ChevronRight, Copy } from 'lucide-react'
 import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
 import HawaSupport from './HawaSupport'
+import LanguagePage from './LanguagePage'
+import { translations, getTranslation, LanguageCode } from '../lib/translations'
 
 interface MenuItem {
   id: string
-  label: string
+  labelKey: keyof typeof translations['en']
   src?: string
   icon?: React.ReactNode
   action?: string
@@ -21,18 +23,18 @@ interface MePageProps {
 }
 
 const menuItems: MenuItem[] = [
-  { id: '1', label: 'Invite Friends', src: '/1784562849790.png' },
-  { id: '2', label: 'Family', src: '/IMG_20260720_142354.png' },
-  { id: '3', label: 'Level', src: '/IMG_20260720_211413.png' },
-  { id: '4', label: 'Medal', src: '/1784621763019.png' },
-  { id: '5', label: 'Store', src: '/IMG_20260720_142332.png' },
-  { id: '6', label: 'Bag', src: '/IMG_20260720_142227.png' }
+  { id: '1', labelKey: 'inviteFriends', src: '/1784562849790.png' },
+  { id: '2', labelKey: 'family', src: '/IMG_20260720_142354.png' },
+  { id: '3', labelKey: 'level', src: '/IMG_20260720_211413.png' },
+  { id: '4', labelKey: 'medal', src: '/1784621763019.png' },
+  { id: '5', labelKey: 'store', src: '/IMG_20260720_142332.png' },
+  { id: '6', labelKey: 'bag', src: '/IMG_20260720_142227.png' }
 ]
 
 const bottomMenuItems: MenuItem[] = [
   {
     id: '7',
-    label: 'Language',
+    labelKey: 'languageSetting',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
@@ -43,7 +45,7 @@ const bottomMenuItems: MenuItem[] = [
   },
   {
     id: '8',
-    label: 'Settings',
+    labelKey: 'settings',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2l8 4.67v9.33L12 22l-8-4.67V6.67L12 2z"></path>
@@ -53,7 +55,7 @@ const bottomMenuItems: MenuItem[] = [
   },
   {
     id: '9',
-    label: 'Customer Service',
+    labelKey: 'customerService',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1E1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M5.5 11 V8.5 C5.5 5 8.2 3 12 3 C15.8 3 18.5 5 18.5 8.5 V15.2 C18.5 18.5 16.2 21 12 21"/>
@@ -65,7 +67,7 @@ const bottomMenuItems: MenuItem[] = [
   },
   {
     id: '10',
-    label: 'Help & Feedback',
+    labelKey: 'helpFeedback',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
@@ -112,7 +114,29 @@ export const getOrCreateAccountNumber = (uid: string) => {
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
-  const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile' | 'customer_service'>('me')
+  const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile' | 'customer_service' | 'language'>('me')
+  const [appLang, setAppLang] = useState<LanguageCode>('en')
+
+  useEffect(() => {
+    // Initial load
+    const savedLang = localStorage.getItem('appLanguage') as LanguageCode
+    if (savedLang) {
+      setAppLang(savedLang)
+    }
+
+    // Listen for custom event
+    const handleLangChange = (e: CustomEvent) => {
+      if (e.detail && e.detail.lang) {
+        setAppLang(e.detail.lang)
+      }
+    }
+
+    window.addEventListener('languageChange', handleLangChange as EventListener)
+    return () => window.removeEventListener('languageChange', handleLangChange as EventListener)
+  }, [])
+
+  const t = getTranslation(appLang)
+
   const [user, setUser] = useState({
     name: "Guest",
     uid: "",
@@ -122,7 +146,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     photo: "",
   })
 
-  const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service') => {
+  const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
       onPublicProfileChange(view === 'public_profile' || view === 'customer_service')
@@ -206,6 +230,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
   // Agar currentView 'customer_service' hai, toh HawaSupport dikhao
+  if (currentView === 'language') {
+    return <LanguagePage onBack={() => switchView('me')} />
+  }
+
   if (currentView === 'customer_service') {
     return <HawaSupport />
   }
@@ -300,15 +328,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">1</div>
-            <div className="text-xs text-gray-600 mt-1">Followers</div>
+            <div className="text-xs text-gray-600 mt-1">{t.followers}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">0</div>
-            <div className="text-xs text-gray-600 mt-1">Following</div>
+            <div className="text-xs text-gray-600 mt-1">{t.following}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">1</div>
-            <div className="text-xs text-gray-600 mt-1">Visitors</div>
+            <div className="text-xs text-gray-600 mt-1">{t.visitors}</div>
           </div>
         </div>
 
@@ -340,13 +368,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
-                    alt={item.label}
+                    alt={t[item.labelKey]}
                     className="w-full h-full object-cover"
                   />
                 </div>
 
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{item.label}</p>
+                  <p className="font-semibold text-gray-900">{t[item.labelKey]}</p>
                 </div>
                 {item.action && (
                   <span className="text-sm font-medium text-gray-500">{item.action}</span>
@@ -373,6 +401,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             <div
               key={item.id}
               onClick={() => {
+                if (item.id === '7') {
+                  switchView('language')
+                }
                 if (item.id === '8') {
                   switchView('settings')
                 }
@@ -387,7 +418,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 </div>
 
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{item.label}</p>
+                  <p className="font-semibold text-gray-900">{t[item.labelKey]}</p>
                 </div>
                 {item.action && (
                   <span className="text-sm font-medium text-gray-500">{item.action}</span>
