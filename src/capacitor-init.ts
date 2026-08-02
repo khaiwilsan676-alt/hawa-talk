@@ -11,12 +11,9 @@ export async function initializeCapacitor(): Promise<void> {
       // but without forcing an explicit transparent background color, which might be crashing.
       // Overlay the web content so pages are full-screen under the status bar
       await StatusBar.setOverlaysWebView({ overlay: true });
-      await StatusBar.setStyle({ style: Style.Dark });
 
       // Show the status bar so time/battery icons are visible, but overlaid on web content
-      await StatusBar.setStyle({ style: Style.Light });
-      await StatusBar.setBackgroundColor({ color: '#282c34' });
-      await StatusBar.setOverlaysWebView({ overlay: false });
+      await StatusBar.setStyle({ style: Style.Dark });
       await StatusBar.show();
     } catch (error) {
       console.warn('Failed to initialize Capacitor plugins:', error);
