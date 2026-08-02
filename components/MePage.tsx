@@ -235,7 +235,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   if (currentView === 'customer_service') {
-    return <HawaSupport />
+    return <HawaSupport onBack={() => switchView('me')} />
   }
 
   if (currentView === 'settings') {
