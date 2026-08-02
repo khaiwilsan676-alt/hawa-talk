@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut } from "lucide-react";
+import { db } from "../../src/lib/firebase";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 
 export default function OwnerPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -21,45 +23,68 @@ export default function OwnerPanel() {
   const [loginKey, setLoginKey] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  const [idsData, setIdsData] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ownerPanelCredentials');
-      if (saved) {
-        return JSON.parse(saved);
+  const defaultIdsData = {
+    "500001": { email: "", password: "" },
+    "500002": { email: "", password: "" },
+    "500003": { email: "", password: "" },
+    "500004": { email: "", password: "" },
+    "500005": { email: "", password: "" },
+    "700001": { email: "", password: "" },
+    "700002": { email: "", password: "" },
+    "700003": { email: "", password: "" },
+  };
+
+  const [idsData, setIdsData] = useState<Record<string, any>>(defaultIdsData);
+
+  // Load from firestore
+  useEffect(() => {
+    const fetchCreds = async () => {
+      try {
+        const docRef = doc(db, "adminSettings", "credentials");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setIdsData(docSnap.data().ownerPanelCredentials || defaultIdsData);
+        } else {
+          // If doc doesn't exist, try localstorage for backward compatibility or use default
+          if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('ownerPanelCredentials');
+            if (saved) {
+              setIdsData(JSON.parse(saved));
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching credentials:", error);
       }
-    }
-    return {
-      "500001": { email: "", password: "" },
-      "500002": { email: "", password: "" },
-      "500003": { email: "", password: "" },
-      "500004": { email: "", password: "" },
-      "500005": { email: "", password: "" },
-      "700001": { email: "", password: "" },
-      "700002": { email: "", password: "" },
-      "700003": { email: "", password: "" },
     };
-  });
+    fetchCreds();
+  }, []);
 
   // Track online status
-  const [onlineStatus, setOnlineStatus] = useState({});
+  const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const checkOnlineStatus = () => {
-      const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
-      const status = {};
-      
-      Object.keys(idsData).forEach(id => {
-        const session = JSON.parse(localStorage.getItem(`session_${id}`) || 'null');
-        status[id] = !!(loggedInSessions[id] || session);
+    // Listen to sessions collection to get real-time online status
+    const unsubscribes = Object.keys(idsData).map(id => {
+      const docRef = doc(db, "adminSettings", `sessions_${id}`);
+      return onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setOnlineStatus(prev => ({
+            ...prev,
+            [id]: docSnap.data().isLoggedIn === true
+          }));
+        } else {
+          setOnlineStatus(prev => ({
+            ...prev,
+            [id]: false
+          }));
+        }
       });
-      
-      setOnlineStatus(status);
+    });
+
+    return () => {
+      unsubscribes.forEach(unsub => unsub());
     };
-    
-    checkOnlineStatus();
-    
-    window.addEventListener('storage', checkOnlineStatus);
-    return () => window.removeEventListener('storage', checkOnlineStatus);
   }, [idsData]);
 
   const handleLogin = () => {
@@ -80,74 +105,95 @@ export default function OwnerPanel() {
     setLoginKey("");
   };
 
-  const handleChange = (id, field, value) => {
+  const handleChange = (id: string, field: string, value: string) => {
     setIdsData((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
     }));
   };
 
-  const handleSave = () => {
-    localStorage.setItem('ownerPanelCredentials', JSON.stringify(idsData));
-    
-    const credentials = [];
-    Object.entries(idsData).forEach(([id, data]) => {
-      if (data.email && data.password) {
-        credentials.push({
-          id: id,
-          email: data.email,
-          password: data.password,
-          type: id.startsWith('5') ? 'official' : 'admin'
-        });
-      }
-    });
-    localStorage.setItem('officialCredentials', JSON.stringify(credentials));
-    
-    setSaveMessage("Credentials saved successfully!");
-    setTimeout(() => setSaveMessage(""), 3000);
+  const handleSave = async () => {
+    try {
+      const credentials: any[] = [];
+      Object.entries(idsData).forEach(([id, data]) => {
+        if (data.email && data.password) {
+          credentials.push({
+            id: id,
+            email: data.email,
+            password: data.password,
+            type: id.startsWith('5') ? 'official' : 'admin'
+          });
+        }
+      });
+
+      const docRef = doc(db, "adminSettings", "credentials");
+      await setDoc(docRef, {
+        ownerPanelCredentials: idsData,
+        officialCredentials: credentials
+      }, { merge: true });
+
+      // Also set to localstorage for backward compatibility just in case
+      localStorage.setItem('ownerPanelCredentials', JSON.stringify(idsData));
+      localStorage.setItem('officialCredentials', JSON.stringify(credentials));
+
+      setSaveMessage("Credentials saved successfully!");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error("Error saving credentials:", error);
+      setSaveMessage("Error saving credentials!");
+      setTimeout(() => setSaveMessage(""), 3000);
+    }
   };
 
   // ✅ Individual ID Logout
-  const handleIDLogout = (id) => {
-    const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-    delete loggedInSessions[id]
-    localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
-    
-    localStorage.removeItem(`session_${id}`)
-    localStorage.removeItem(`user_data_${id}`)
-    
-    // ✅ Set forceLogout key - MePage detect karega
-    localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
-    
-    setOnlineStatus(prev => ({
-      ...prev,
-      [id]: false
-    }))
-    
-    setSaveMessage(`ID ${id} logged out successfully!`)
-    setTimeout(() => setSaveMessage(""), 3000)
+  const handleIDLogout = async (id: string) => {
+    try {
+      const docRef = doc(db, "adminSettings", `sessions_${id}`);
+      await setDoc(docRef, {
+        isLoggedIn: false,
+        forceLogoutTimestamp: Date.now()
+      }, { merge: true });
+
+      // Clean local storage too just for good measure if we're on the same device
+      const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+      delete loggedInSessions[id]
+      localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
+      localStorage.removeItem(`session_${id}`)
+      localStorage.removeItem(`user_data_${id}`)
+      localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
+
+      setSaveMessage(`ID ${id} logged out successfully!`)
+      setTimeout(() => setSaveMessage(""), 3000)
+    } catch (error) {
+      console.error(`Error logging out ID ${id}:`, error);
+    }
   }
 
   // ✅ Group Logout
-  const handleLogoutGroup = (ids) => {
-    const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-    const newStatus = { ...onlineStatus }
-    
-    ids.forEach(id => {
-      delete loggedInSessions[id]
-      localStorage.removeItem(`session_${id}`)
-      localStorage.removeItem(`user_data_${id}`)
-      newStatus[id] = false
-      
-      localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
-    })
-    
-    localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
-    setOnlineStatus(newStatus)
-    
-    const groupName = ids[0].startsWith('5') ? 'Official' : 'Admin'
-    setSaveMessage(`All ${groupName} IDs logged out successfully!`)
-    setTimeout(() => setSaveMessage(""), 3000)
+  const handleLogoutGroup = async (ids: string[]) => {
+    try {
+      for (const id of ids) {
+        const docRef = doc(db, "adminSettings", `sessions_${id}`);
+        await setDoc(docRef, {
+          isLoggedIn: false,
+          forceLogoutTimestamp: Date.now()
+        }, { merge: true });
+
+        // Clean local storage too just for good measure
+        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+        delete loggedInSessions[id]
+        localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
+        localStorage.removeItem(`session_${id}`)
+        localStorage.removeItem(`user_data_${id}`)
+        localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
+      }
+
+      const groupName = ids[0].startsWith('5') ? 'Official' : 'Admin'
+      setSaveMessage(`All ${groupName} IDs logged out successfully!`)
+      setTimeout(() => setSaveMessage(""), 3000)
+    } catch (error) {
+      console.error(`Error logging out group:`, error);
+    }
   }
 
   // LOGIN PAGE

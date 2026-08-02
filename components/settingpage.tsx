@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { db } from "../src/lib/firebase"
+import { doc, setDoc } from "firebase/firestore"
 
 interface SettingPageProps {
   onBack?: () => void
@@ -25,13 +27,24 @@ export default function SettingPage({
     setIsNotificationsEnabled((prev) => !prev)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const uid = localStorage.getItem("userUID")
     
     // ✅ Check if Official or Admin ID
     const isOfficialOrAdmin = OFFICIAL_IDS.includes(uid || '') || ADMIN_IDS.includes(uid || '')
     
     if (isOfficialOrAdmin && uid) {
+      // Update firestore session to false
+      try {
+        const docRef = doc(db, "adminSettings", `sessions_${uid}`);
+        await setDoc(docRef, {
+          isLoggedIn: false,
+          forceLogoutTimestamp: Date.now() // Record force logout to disconnect everywhere
+        }, { merge: true });
+      } catch (error) {
+        console.error("Error updating logout status:", error);
+      }
+
       // ✅ Official/Admin ID - Owner Panel se connected logout
       const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
       delete loggedInSessions[uid]

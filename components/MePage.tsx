@@ -7,6 +7,8 @@ import PublicProfile from './PublicProfile'
 import HawaSupport from './HawaSupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
+import { db } from "../src/lib/firebase"
+import { doc, onSnapshot } from "firebase/firestore"
 
 interface MenuItem {
   id: string
