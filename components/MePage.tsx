@@ -129,66 +129,45 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   }
 
-  // Check for force logout from Owner Panel
+  // ✅ FIXED: Sirf tab logout hoga jab Owner Panel se force logout ho
   useEffect(() => {
-    const checkForceLogout = () => {
-      const uid = localStorage.getItem("userUID")
-      if (!uid) return
-      
-      // Check if this user is an Official or Admin ID
-      const isOfficialOrAdmin = OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)
-      
-      if (isOfficialOrAdmin) {
-        // Check if logged in sessions still has this ID
-        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-        const session = JSON.parse(localStorage.getItem(`session_${uid}`) || 'null')
-        
-        // If no valid session exists, force logout
-        if (!loggedInSessions[uid] && !session) {
-          localStorage.removeItem("userName")
-          localStorage.removeItem("userUID")
-          localStorage.removeItem("userPhone")
-          localStorage.removeItem("userPhoto")
-          localStorage.removeItem(`user_data_${uid}`)
-          
-          if (onLogout) {
-            onLogout()
-          }
-        }
-      }
-    }
+    const uid = localStorage.getItem("userUID")
+    if (!uid) return
+
+    // Check if user is Official or Admin
+    const isOfficialOrAdmin = OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)
     
-    checkForceLogout()
-    
-    // Listen for storage changes (when Owner Panel logs out an ID)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'loggedInSessions' || e.key?.startsWith('session_')) {
-        checkForceLogout()
-      }
-    }
-    
-    window.addEventListener('storage', handleStorageChange)
-    
-    // Listen for custom force logout events
+    // Sirf Official/Admin IDs ke liye force logout check karo
+    if (!isOfficialOrAdmin) return
+
+    // Listen for force logout event from Owner Panel
     const handleForceLogout = (e: CustomEvent) => {
-      const uid = localStorage.getItem("userUID")
-      if (uid && e.detail.id === uid) {
+      if (e.detail && e.detail.id === uid) {
+        console.log(`Force logout detected for ID: ${uid}`)
+        
+        // Clear user data
         localStorage.removeItem("userName")
         localStorage.removeItem("userUID")
         localStorage.removeItem("userPhone")
         localStorage.removeItem("userPhoto")
         localStorage.removeItem(`user_data_${uid}`)
+        localStorage.removeItem(`session_${uid}`)
         
+        // Remove from logged in sessions
+        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+        delete loggedInSessions[uid]
+        localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
+        
+        // Logout
         if (onLogout) {
           onLogout()
         }
       }
     }
-    
+
     window.addEventListener('forceLogout', handleForceLogout as EventListener)
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('forceLogout', handleForceLogout as EventListener)
     }
   }, [onLogout])
@@ -438,4 +417,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-            }
+                      }
