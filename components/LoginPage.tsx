@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { X, ArrowLeft } from 'lucide-react'
 import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { auth, provider } from "../src/lib/firebase"; 
+import { auth, provider, db } from "../src/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -52,14 +53,29 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   };
 
   // Check if credentials match official/admin IDs
-  const checkOfficialCredentials = (email: string, password: string) => {
-    const savedCredentials = localStorage.getItem('officialCredentials');
-    if (savedCredentials) {
-      const credentials = JSON.parse(savedCredentials);
-      const matched = credentials.find(
-        (cred: any) => cred.email === email && cred.password === password
-      );
-      return matched || null;
+  const checkOfficialCredentials = async (email: string, password: string) => {
+    try {
+      const docRef = doc(db, "adminSettings", "credentials");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().officialCredentials) {
+        const credentials = docSnap.data().officialCredentials;
+        const matched = credentials.find(
+          (cred: any) => cred.email === email && cred.password === password
+        );
+        if (matched) return matched;
+      }
+
+      // Fallback to local storage just in case
+      const savedCredentials = localStorage.getItem('officialCredentials');
+      if (savedCredentials) {
+        const credentials = JSON.parse(savedCredentials);
+        const matched = credentials.find(
+          (cred: any) => cred.email === email && cred.password === password
+        );
+        return matched || null;
+      }
+    } catch (error) {
+      console.error("Error checking official credentials:", error);
     }
     return null;
   };
@@ -80,9 +96,20 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
     try {
       // First check if it's an official/admin ID
-      const officialCred = checkOfficialCredentials(email, password);
+      const officialCred = await checkOfficialCredentials(email, password);
       
       if (officialCred) {
+        // Set online status in firestore
+        try {
+          const sessionRef = doc(db, "adminSettings", `sessions_${officialCred.id}`);
+          await setDoc(sessionRef, {
+            isLoggedIn: true,
+            lastLogin: Date.now()
+          }, { merge: true });
+        } catch (err) {
+          console.error("Error updating session status:", err);
+        }
+
         const userData = {
           id: officialCred.id,
           email: officialCred.email,
@@ -95,6 +122,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         localStorage.setItem("userUID", officialCred.id);
         localStorage.setItem("userType", officialCred.type);
         localStorage.setItem("userPhoto", "");
+
+        // Also add to loggedInSessions for local device tracking
+        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
+        loggedInSessions[officialCred.id] = true;
+        localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions));
 
         if (onLoginSuccess) {
           onLoginSuccess(userData);
