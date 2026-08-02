@@ -41,12 +41,12 @@ export default function OwnerPanel() {
   });
 
   // Track online status
-  const [onlineStatus, setOnlineStatus] = useState({});
+  const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const checkOnlineStatus = () => {
       const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
-      const status = {};
+      const status: Record<string, boolean> = {};
       
       Object.keys(idsData).forEach(id => {
         const session = JSON.parse(localStorage.getItem(`session_${id}`) || 'null');
@@ -80,8 +80,8 @@ export default function OwnerPanel() {
     setLoginKey("");
   };
 
-  const handleChange = (id, field, value) => {
-    setIdsData((prev) => ({
+  const handleChange = (id: string, field: string, value: string) => {
+    setIdsData((prev: Record<string, any>) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
     }));
@@ -90,8 +90,8 @@ export default function OwnerPanel() {
   const handleSave = () => {
     localStorage.setItem('ownerPanelCredentials', JSON.stringify(idsData));
     
-    const credentials = [];
-    Object.entries(idsData).forEach(([id, data]) => {
+    const credentials: any[] = [];
+    Object.entries(idsData).forEach(([id, data]: [string, any]) => {
       if (data.email && data.password) {
         credentials.push({
           id: id,
@@ -108,7 +108,7 @@ export default function OwnerPanel() {
   };
 
   // ✅ Individual ID Logout
-  const handleIDLogout = (id) => {
+  const handleIDLogout = (id: string) => {
     const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
     delete loggedInSessions[id]
     localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
@@ -129,7 +129,7 @@ export default function OwnerPanel() {
   }
 
   // ✅ Group Logout
-  const handleLogoutGroup = (ids) => {
+  const handleLogoutGroup = (ids: string[]) => {
     const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
     const newStatus = { ...onlineStatus }
     

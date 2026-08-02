@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Smile, Send } from "lucide-react";
 
-export default function EmojiPicker({ onClose, onSelectEmoji }) {
+export default function EmojiPicker({ onClose, onSelectEmoji }: { onClose: () => void, onSelectEmoji: (emoji: string) => void }) {
   const [selectedEmoji, setSelectedEmoji] = useState("😊");
 
   // Frequently used emojis

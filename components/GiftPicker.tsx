@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Mic, Coins, ChevronUp } from "lucide-react";
 
-export default function GiftPicker({ onClose }) {
+export default function GiftPicker({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState("Hot");
   const [selectedMultiplier, setSelectedMultiplier] = useState("1×");
   const [showMultipliers, setShowMultipliers] = useState(false);
@@ -61,7 +61,7 @@ export default function GiftPicker({ onClose }) {
           {sampleGifts.map((gift) => (
             <div
               key={gift.id}
-              onClick={() => setSelectedGift(gift.id)}
+              onClick={() => setSelectedGift(gift.id as any)}
               className={`flex flex-col items-center justify-center p-2 rounded-xl bg-white/5 border transition cursor-pointer active:scale-95 ${
                 selectedGift === gift.id
                   ? "border-blue-500 bg-blue-500/10"
