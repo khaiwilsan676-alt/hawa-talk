@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key } from "lucide-react";
 
 export default function OwnerPanel() {
@@ -16,14 +16,6 @@ export default function OwnerPanel() {
   const [loginKey, setLoginKey] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  // Check if already logged in
-  useEffect(() => {
-    const loggedIn = localStorage.getItem('ownerPanelLoggedIn');
-    if (loggedIn === 'true') {
-      setIsLoggedIn(true);
-    }
-  }, []);
-
   const [idsData, setIdsData] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ownerPanelCredentials');
@@ -32,14 +24,14 @@ export default function OwnerPanel() {
       }
     }
     return {
-      "500001": { email: "", password: "", idKey: "" },
-      "500002": { email: "", password: "", idKey: "" },
-      "500003": { email: "", password: "", idKey: "" },
-      "500004": { email: "", password: "", idKey: "" },
-      "500005": { email: "", password: "", idKey: "" },
-      "700001": { email: "", password: "", idKey: "" },
-      "700002": { email: "", password: "", idKey: "" },
-      "700003": { email: "", password: "", idKey: "" },
+      "500001": { email: "", password: "" },
+      "500002": { email: "", password: "" },
+      "500003": { email: "", password: "" },
+      "500004": { email: "", password: "" },
+      "500005": { email: "", password: "" },
+      "700001": { email: "", password: "" },
+      "700002": { email: "", password: "" },
+      "700003": { email: "", password: "" },
     };
   });
 
@@ -47,16 +39,9 @@ export default function OwnerPanel() {
     if (loginUsername === "HAWA.IN" && loginPassword === "HAWA.OWNER/CEO" && loginKey === "25/7/2026") {
       setIsLoggedIn(true);
       setLoginError("");
-      // Save login state to localStorage
-      localStorage.setItem('ownerPanelLoggedIn', 'true');
     } else {
       setLoginError("Invalid credentials. Please try again.");
     }
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem('ownerPanelLoggedIn');
   };
 
   const handleChange = (id, field, value) => {
@@ -76,7 +61,6 @@ export default function OwnerPanel() {
           id: id,
           email: data.email,
           password: data.password,
-          idKey: data.idKey,
           type: id.startsWith('5') ? 'official' : 'admin'
         });
       }
@@ -185,12 +169,6 @@ export default function OwnerPanel() {
             {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             {showPasswords ? "Hide Passwords" : "Show Passwords"}
           </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-sm font-medium text-red-700 transition cursor-pointer"
-          >
-            <X className="w-4 h-4" /> Logout
-          </button>
           {saveMessage && (
             <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-medium">
               {saveMessage}
@@ -236,7 +214,7 @@ export default function OwnerPanel() {
       )}
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-8 w-full max-w-7xl mx-auto overflow-y-auto bg-white">
+      <main className="flex-1 p-8 w-full max-w-5xl mx-auto overflow-y-auto bg-white">
         {activeView === "official_id" && (
           <div className="space-y-8">
             
@@ -266,7 +244,7 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* Password Input */}
+                    {/* Password Input - Always visible */}
                     <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
                       <Lock className="w-4 h-4 text-gray-400" />
                       <input
@@ -274,18 +252,6 @@ export default function OwnerPanel() {
                         placeholder="Password"
                         value={idsData[id]?.password}
                         onChange={(e) => handleChange(id, "password", e.target.value)}
-                        className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
-                      />
-                    </div>
-
-                    {/* ID Key Input - NEW */}
-                    <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
-                      <Key className="w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="ID Key (100002 or 100003)"
-                        value={idsData[id]?.idKey}
-                        onChange={(e) => handleChange(id, "idKey", e.target.value)}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
                     </div>
@@ -320,7 +286,7 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* Password Input */}
+                    {/* Password Input - Always visible */}
                     <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
                       <Lock className="w-4 h-4 text-gray-400" />
                       <input
@@ -328,18 +294,6 @@ export default function OwnerPanel() {
                         placeholder="Password"
                         value={idsData[id]?.password}
                         onChange={(e) => handleChange(id, "password", e.target.value)}
-                        className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
-                      />
-                    </div>
-
-                    {/* ID Key Input - NEW */}
-                    <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
-                      <Key className="w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="ID Key (100002 or 100003)"
-                        value={idsData[id]?.idKey}
-                        onChange={(e) => handleChange(id, "idKey", e.target.value)}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
                     </div>
@@ -361,4 +315,4 @@ export default function OwnerPanel() {
       </main>
     </div>
   );
-                        }
+            }
