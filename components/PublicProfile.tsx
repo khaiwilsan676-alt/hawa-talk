@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
+import { generateStableId } from '../lib/hash'
 
 interface PublicProfileProps {
   onBack?: () => void
@@ -68,26 +69,7 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
-
-  // Check if this is a special account
-  if (SPECIAL_ACCOUNTS[uid]) {
-    return SPECIAL_ACCOUNTS[uid]
-  }
-
-  const storageKey = `user_account_number_${uid}`
-  let savedAccountNumber = localStorage.getItem(storageKey)
-
-  if (!savedAccountNumber) {
-    const targetLength = uid.length
-    let numericStr = ''
-    for (let i = 0; i < targetLength; i++) {
-      numericStr += Math.floor(Math.random() * 10).toString()
-    }
-    savedAccountNumber = numericStr
-    localStorage.setItem(storageKey, savedAccountNumber)
-  }
-
-  return savedAccountNumber
+  return generateStableId(uid)
 }
 
 export default function PublicProfile({ onBack }: PublicProfileProps) {

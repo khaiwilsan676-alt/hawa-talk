@@ -5,6 +5,7 @@ import { ChevronRight, Copy } from 'lucide-react'
 import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
 import HawaSupport from './HawaSupport' // Import karo HawaSupport ko
+import { generateStableId } from '../lib/hash'
 
 interface MenuItem {
   id: string
@@ -77,27 +78,7 @@ const bottomMenuItems: MenuItem[] = [
 ]
 
 const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid || uid === 'N/A') return 'N/A'
-
-  if (uid === 'HUSxSvQnabgU029dWYt1TUV04hd2') return '100002'
-  if (uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1') return '100003'
-
-  const storageKey = `user_account_number_${uid}`
-  let savedAccountNumber = localStorage.getItem(storageKey)
-
-  if (!savedAccountNumber) {
-    const targetLength = uid.length
-    let numericStr = ''
-
-    for (let i = 0; i < targetLength; i++) {
-      numericStr += Math.floor(Math.random() * 10).toString()
-    }
-
-    savedAccountNumber = numericStr
-    localStorage.setItem(storageKey, savedAccountNumber)
-  }
-
-  return savedAccountNumber
+  return generateStableId(uid)
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
@@ -115,7 +96,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view === 'public_profile' || view === 'customer_service')
+      onPublicProfileChange(view !== 'me')
     }
   }
 
