@@ -10,6 +10,9 @@ interface SettingPageProps {
   onAboutPress?: () => void
 }
 
+const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
+const ADMIN_IDS = ['700001', '700002', '700003']
+
 export default function SettingPage({
   onBack,
   onLogout,
@@ -23,35 +26,40 @@ export default function SettingPage({
   }
 
   const handleLogout = () => {
-    // Clear user session data
     const uid = localStorage.getItem("userUID")
     
-    // Remove logged in session
-    const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-    if (uid && loggedInSessions[uid]) {
+    // ✅ Check if Official or Admin ID
+    const isOfficialOrAdmin = OFFICIAL_IDS.includes(uid || '') || ADMIN_IDS.includes(uid || '')
+    
+    if (isOfficialOrAdmin && uid) {
+      // ✅ Official/Admin ID - Owner Panel se connected logout
+      const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
       delete loggedInSessions[uid]
       localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
+      
+      localStorage.removeItem(`session_${uid}`)
+      localStorage.removeItem(`user_data_${uid}`)
+      
+      // ✅ Set forceLogout key - Owner Panel track karega
+      localStorage.setItem(`forceLogout_${uid}`, Date.now().toString())
     }
     
-    // Clear user data from localStorage
+    // Clear user session data (sabke liye)
     localStorage.removeItem("userName")
     localStorage.removeItem("userUID")
     localStorage.removeItem("userPhone")
     localStorage.removeItem("userPhoto")
-    localStorage.removeItem(`session_${uid}`)
     
     // Call the onLogout callback
     if (onLogout) {
       onLogout()
     }
     
-    // Reload to show login screen
     window.location.reload()
   }
 
   return (
     <div className="w-full min-h-screen bg-white">
-      {/* Header — White */}
       <div
         className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200"
         style={{
@@ -65,12 +73,9 @@ export default function SettingPage({
         <div className="w-6" />
       </div>
 
-      {/* Settings Options List */}
       <div className="bg-white mt-4 border-t border-b border-slate-200">
-        {/* Message Notifications */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <span className="text-base text-slate-800">Message Notifications</span>
-
           <button
             type="button"
             onClick={toggleSwitch}
@@ -86,7 +91,6 @@ export default function SettingPage({
           </button>
         </div>
 
-        {/* Blocklist */}
         <div
           onClick={onBlocklistPress}
           className="flex items-center justify-between px-5 py-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors"
@@ -95,7 +99,6 @@ export default function SettingPage({
           <ChevronRight size={20} className="text-slate-400" />
         </div>
 
-        {/* About */}
         <div
           onClick={onAboutPress}
           className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
@@ -105,7 +108,6 @@ export default function SettingPage({
         </div>
       </div>
 
-      {/* Logout Button */}
       <div className="px-6 mt-10">
         <button
           onClick={handleLogout}
