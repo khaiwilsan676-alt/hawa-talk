@@ -89,7 +89,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      
+
       // Handle specific Firebase auth errors
       switch (error.code) {
         case 'auth/email-already-in-use':
@@ -259,7 +259,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   </svg>
                   <h3 className="font-bold text-gray-800 text-lg">Choose an account</h3>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowGoogleSheet(false)}
                   className="p-1 rounded-full hover:bg-gray-100 text-gray-500 cursor-pointer"
                 >

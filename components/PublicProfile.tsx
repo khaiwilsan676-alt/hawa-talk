@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
+import { generateStableId } from '../lib/hash'
 
 interface PublicProfileProps {
   onBack?: () => void
@@ -68,6 +69,7 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
+  return generateStableId(uid)
 
   // Check if this is a special account
   if (SPECIAL_ACCOUNTS[uid]) {
