@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, UserX } from "lucide-react";
+import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut } from "lucide-react";
 
 export default function OwnerPanel() {
-  // Check localStorage for existing login session
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('ownerPanelLoggedIn') === 'true';
@@ -17,7 +16,6 @@ export default function OwnerPanel() {
   const [saveMessage, setSaveMessage] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
 
-  // Login states
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginKey, setLoginKey] = useState("");
@@ -42,11 +40,10 @@ export default function OwnerPanel() {
     };
   });
 
-  // Track online status of IDs
+  // Track online status
   const [onlineStatus, setOnlineStatus] = useState({});
 
   useEffect(() => {
-    // Check which IDs are currently logged in
     const checkOnlineStatus = () => {
       const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
       const status = {};
@@ -61,7 +58,6 @@ export default function OwnerPanel() {
     
     checkOnlineStatus();
     
-    // Listen for storage changes
     window.addEventListener('storage', checkOnlineStatus);
     return () => window.removeEventListener('storage', checkOnlineStatus);
   }, [idsData]);
@@ -70,7 +66,6 @@ export default function OwnerPanel() {
     if (loginUsername === "HAWA.IN" && loginPassword === "HAWA.OWNER/CEO" && loginKey === "25/7/2026") {
       setIsLoggedIn(true);
       setLoginError("");
-      // Save login state to localStorage
       localStorage.setItem('ownerPanelLoggedIn', 'true');
     } else {
       setLoginError("Invalid credentials. Please try again.");
@@ -110,55 +105,50 @@ export default function OwnerPanel() {
     
     setSaveMessage("Credentials saved successfully!");
     setTimeout(() => setSaveMessage(""), 3000);
-    console.log("Saved Data:", idsData);
   };
 
+  // ✅ Individual ID Logout
   const handleIDLogout = (id) => {
-    // Clear the specific ID session from localStorage
-    const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
-    delete loggedInSessions[id];
-    localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions));
+    const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+    delete loggedInSessions[id]
+    localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
     
-    // Remove specific device session
-    localStorage.removeItem(`session_${id}`);
+    localStorage.removeItem(`session_${id}`)
+    localStorage.removeItem(`user_data_${id}`)
     
-    // Clear user data for this ID
-    localStorage.removeItem(`user_data_${id}`);
+    // ✅ Set forceLogout key - MePage detect karega
+    localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
     
-    // Update online status
     setOnlineStatus(prev => ({
       ...prev,
       [id]: false
-    }));
+    }))
     
-    // Dispatch custom event for real-time logout
-    window.dispatchEvent(new CustomEvent('forceLogout', { detail: { id } }));
-    
-    setSaveMessage(`ID ${id} has been logged out successfully!`);
-    setTimeout(() => setSaveMessage(""), 3000);
-  };
+    setSaveMessage(`ID ${id} logged out successfully!`)
+    setTimeout(() => setSaveMessage(""), 3000)
+  }
 
+  // ✅ Group Logout
   const handleLogoutGroup = (ids) => {
-    const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
-    const newStatus = { ...onlineStatus };
+    const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+    const newStatus = { ...onlineStatus }
     
     ids.forEach(id => {
-      delete loggedInSessions[id];
-      localStorage.removeItem(`session_${id}`);
-      localStorage.removeItem(`user_data_${id}`);
-      newStatus[id] = false;
+      delete loggedInSessions[id]
+      localStorage.removeItem(`session_${id}`)
+      localStorage.removeItem(`user_data_${id}`)
+      newStatus[id] = false
       
-      // Dispatch event for each ID
-      window.dispatchEvent(new CustomEvent('forceLogout', { detail: { id } }));
-    });
+      localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
+    })
     
-    localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions));
-    setOnlineStatus(newStatus);
+    localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
+    setOnlineStatus(newStatus)
     
-    const groupName = ids[0].startsWith('5') ? 'Official' : 'Admin';
-    setSaveMessage(`All ${groupName} IDs logged out successfully!`);
-    setTimeout(() => setSaveMessage(""), 3000);
-  };
+    const groupName = ids[0].startsWith('5') ? 'Official' : 'Admin'
+    setSaveMessage(`All ${groupName} IDs logged out successfully!`)
+    setTimeout(() => setSaveMessage(""), 3000)
+  }
 
   // LOGIN PAGE
   if (!isLoggedIn) {
@@ -247,7 +237,7 @@ export default function OwnerPanel() {
           >
             <Menu className="w-7 h-7 text-white" />
           </button>
-          <h1 className="text-xl font-bold tracking-wide text-gray-900">Owner Control Panel (Desktop View)</h1>
+          <h1 className="text-xl font-bold tracking-wide text-gray-900">Owner Control Panel</h1>
         </div>
         <div className="flex items-center gap-4">
           <button
@@ -255,7 +245,7 @@ export default function OwnerPanel() {
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition cursor-pointer"
           >
             {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {showPasswords ? "Hide Passwords" : "Show Passwords"}
+            {showPasswords ? "Hide" : "Show"}
           </button>
           <button
             onClick={handleLogout}
@@ -272,21 +262,19 @@ export default function OwnerPanel() {
         </div>
       </header>
 
-      {/* LEFT SIDE DARK BLUE DRAWER */}
+      {/* DRAWER */}
       {isDrawerOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div
             onClick={() => setIsDrawerOpen(false)}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
           />
-
           <div className="relative w-80 h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-2xl p-6 flex flex-col justify-between z-10 border-r border-slate-700">
             <div>
               <div className="flex items-center gap-3 pb-4 border-b border-slate-700 mb-6">
                 <Shield className="w-6 h-6 text-yellow-400" />
                 <span className="font-bold text-lg text-white">Owner Menu</span>
               </div>
-
               <button
                 onClick={() => {
                   setActiveView("official_id");
@@ -300,30 +288,29 @@ export default function OwnerPanel() {
                 </span>
               </button>
             </div>
-
             <div className="text-xs text-slate-500 text-center pb-2">
-              Owner Panel Desktop Scale
+              Owner Panel
             </div>
           </div>
         </div>
       )}
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 p-8 w-full max-w-5xl mx-auto overflow-y-auto bg-white">
         {activeView === "official_id" && (
           <div className="space-y-8">
             
-            {/* OFFICIAL IDs SECTION */}
+            {/* OFFICIAL IDs */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-blue-600 tracking-wider uppercase flex items-center gap-2">
-                  <Lock className="w-5 h-5" /> Official IDs (500001-500005)
+                  <Lock className="w-5 h-5" /> Official IDs
                 </h2>
                 <button
                   onClick={() => handleLogoutGroup(["500001", "500002", "500003", "500004", "500005"])}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition cursor-pointer border border-red-200"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
                 >
-                  <UserX className="w-3.5 h-3.5" /> Force Logout All Official
+                  <LogOut className="w-4 h-4" /> Logout All Official
                 </button>
               </div>
 
@@ -333,13 +320,9 @@ export default function OwnerPanel() {
                     key={id}
                     className="flex items-center gap-4 bg-gray-50 p-3.5 rounded-xl border border-gray-200"
                   >
-                    <div className="flex items-center gap-2 w-36">
-                      <span className="text-sm font-bold text-blue-600">ID: {id}</span>
-                      <span className={`w-2 h-2 rounded-full ${onlineStatus[id] ? 'bg-green-500' : 'bg-gray-300'}`} 
-                            title={onlineStatus[id] ? 'Online' : 'Offline'} />
-                    </div>
+                    <span className="w-24 text-sm font-bold text-blue-600">ID: {id}</span>
                     
-                    {/* Email Input */}
+                    {/* Email */}
                     <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
                       <Mail className="w-4 h-4 text-gray-400" />
                       <input
@@ -351,7 +334,7 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* Password Input */}
+                    {/* Password */}
                     <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
                       <Lock className="w-4 h-4 text-gray-400" />
                       <input
@@ -363,35 +346,39 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* Individual Force Logout Button */}
-                    <button
-                      onClick={() => handleIDLogout(id)}
-                      disabled={!onlineStatus[id]}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition cursor-pointer border whitespace-nowrap ${
+                    {/* ✅ STATUS + LOGOUT BUTTON */}
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
                         onlineStatus[id] 
-                          ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200' 
-                          : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                      }`}
-                    >
-                      <LogOut className="w-3.5 h-3.5" /> 
-                      {onlineStatus[id] ? 'Force Logout' : 'Offline'}
-                    </button>
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {onlineStatus[id] ? 'Logined' : 'Offline'}
+                      </span>
+                      
+                      <button
+                        onClick={() => handleIDLogout(id)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" /> LOGOUT
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* ADMIN IDs SECTION */}
+            {/* ADMIN IDs */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-purple-600 tracking-wider uppercase flex items-center gap-2">
-                  <Shield className="w-5 h-5" /> Admin IDs (700001-700003)
+                  <Shield className="w-5 h-5" /> Admin IDs
                 </h2>
                 <button
                   onClick={() => handleLogoutGroup(["700001", "700002", "700003"])}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition cursor-pointer border border-red-200"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
                 >
-                  <UserX className="w-3.5 h-3.5" /> Force Logout All Admin
+                  <LogOut className="w-4 h-4" /> Logout All Admin
                 </button>
               </div>
 
@@ -401,13 +388,9 @@ export default function OwnerPanel() {
                     key={id}
                     className="flex items-center gap-4 bg-gray-50 p-3.5 rounded-xl border border-gray-200"
                   >
-                    <div className="flex items-center gap-2 w-36">
-                      <span className="text-sm font-bold text-purple-600">ID: {id}</span>
-                      <span className={`w-2 h-2 rounded-full ${onlineStatus[id] ? 'bg-green-500' : 'bg-gray-300'}`} 
-                            title={onlineStatus[id] ? 'Online' : 'Offline'} />
-                    </div>
+                    <span className="w-24 text-sm font-bold text-purple-600">ID: {id}</span>
                     
-                    {/* Email Input */}
+                    {/* Email */}
                     <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
                       <Mail className="w-4 h-4 text-gray-400" />
                       <input
@@ -419,7 +402,7 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* Password Input */}
+                    {/* Password */}
                     <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-lg border border-gray-300">
                       <Lock className="w-4 h-4 text-gray-400" />
                       <input
@@ -431,19 +414,23 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* Individual Force Logout Button */}
-                    <button
-                      onClick={() => handleIDLogout(id)}
-                      disabled={!onlineStatus[id]}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition cursor-pointer border whitespace-nowrap ${
+                    {/* ✅ STATUS + LOGOUT BUTTON */}
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
                         onlineStatus[id] 
-                          ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200' 
-                          : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                      }`}
-                    >
-                      <LogOut className="w-3.5 h-3.5" /> 
-                      {onlineStatus[id] ? 'Force Logout' : 'Offline'}
-                    </button>
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {onlineStatus[id] ? 'Logined' : 'Offline'}
+                      </span>
+                      
+                      <button
+                        onClick={() => handleIDLogout(id)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" /> LOGOUT
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -462,4 +449,5 @@ export default function OwnerPanel() {
       </main>
     </div>
   );
-      }
+}
+
