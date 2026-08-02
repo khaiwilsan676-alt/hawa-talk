@@ -515,7 +515,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
       
-      const stableId = generateStableId(userUID);
+      // Get the correct display account ID
+      const fullAccNum = getOrCreateAccountNumber(userUID)
+      const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : userUID
 
       // Save room to Firestore (globalRooms collection)
       await setDoc(doc(db, "globalRooms", userUID), {
@@ -523,7 +525,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: stableId,
+        accountId: displayAccNum,
         createdAt: Date.now()
       });
 
@@ -533,7 +535,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: stableId,
+        accountId: displayAccNum,
         createdAt: Date.now()
       }, { merge: true });
       
