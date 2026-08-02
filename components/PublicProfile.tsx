@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
+import { generateStableId } from '../lib/hash'
 
 interface PublicProfileProps {
   onBack?: () => void
@@ -72,6 +73,7 @@ const ADMIN_IDS = ['700001', '700002', '700003']
 
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
+  return generateStableId(uid)
 
   // ✅ Check if it's an official or admin ID - return the ID itself
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {

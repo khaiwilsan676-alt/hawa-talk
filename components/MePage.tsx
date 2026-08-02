@@ -81,6 +81,7 @@ const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
 const getOrCreateAccountNumber = (uid: string) => {
+  return generateStableId(uid)
   if (!uid || uid === 'N/A') return { fullAccNum: 'N/A', displayAccNum: 'N/A' }
 
   // Check if it's an official or admin ID
@@ -125,7 +126,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view === 'public_profile' || view === 'customer_service')
+      onPublicProfileChange(view !== 'me')
     }
   }
 
