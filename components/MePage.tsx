@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { ChevronRight, Copy } from 'lucide-react'
 import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
-import HawaSupport from './HawaSupport' // Import karo HawaSupport ko
+import HawaSupport from './HawaSupport'
 
 interface MenuItem {
   id: string
@@ -76,41 +76,42 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
-export const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid || uid === 'N/A') return 'N/A'
+// Official/Admin IDs list
+const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
+const ADMIN_IDS = ['700001', '700002', '700003']
 
-  if (uid === 'HUSxSvQnabgU029dWYt1TUV04hd2') return '100002'
-  if (uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1') return '100003'
+const getOrCreateAccountNumber = (uid: string) => {
+  if (!uid || uid === 'N/A') return { fullAccNum: 'N/A', displayAccNum: 'N/A' }
 
+  // Check if it's an official or admin ID
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
+    return { fullAccNum: uid, displayAccNum: uid }
+  }
+
+  // Special UIDs for specific users
+  if (uid === 'HUSxSvQnabgU029dWYt1TUV04hd2') return { fullAccNum: '100002', displayAccNum: '100002' }
+  if (uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1') return { fullAccNum: '100003', displayAccNum: '100003' }
+
+  // For regular users, generate random account number
   const storageKey = `user_account_number_${uid}`
   let savedAccountNumber = localStorage.getItem(storageKey)
 
   if (!savedAccountNumber) {
-    // Generate deterministic numeric hash from the UID string
-    let hash = 0;
-    for (let i = 0; i < uid.length; i++) {
-      const char = uid.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+    const targetLength = uid.length
+    let numericStr = ''
+
+    for (let i = 0; i < targetLength; i++) {
+      numericStr += Math.floor(Math.random() * 10).toString()
     }
 
-    // Ensure positive number and pad to at least 8 digits
-    let numericStr = Math.abs(hash).toString();
-    while (numericStr.length < 8) {
-      // Use another hash round for padding if needed, but simple duplication works for determinism
-      numericStr += numericStr;
-    }
-
-    // Take exactly 8 digits to keep the length consistent
-    savedAccountNumber = numericStr.slice(0, 8);
+    savedAccountNumber = numericStr
     localStorage.setItem(storageKey, savedAccountNumber)
   }
 
-  return savedAccountNumber
+  return { fullAccNum: savedAccountNumber, displayAccNum: savedAccountNumber.slice(0, 8) }
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
-  // 'customer_service' ko bhi add karo currentView mein
   const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile' | 'customer_service'>('me')
   const [user, setUser] = useState({
     name: "Guest",
@@ -124,7 +125,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-     onPublicProfileChange(view === 'public_profile' || view === 'customer_service' || view === 'settings')
+      onPublicProfileChange(view === 'public_profile' || view === 'customer_service')
     }
   }
 
@@ -135,10 +136,16 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       const phone = localStorage.getItem("userPhone") || ""
       const photo = localStorage.getItem("userPhoto") || ""
 
-      const fullAccNum = getOrCreateAccountNumber(uid)
-      const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : 'N/A'
+      const { fullAccNum, displayAccNum } = getOrCreateAccountNumber(uid)
 
-      setUser({ name, uid, accountNumber: fullAccNum, displayAccountNumber: displayAccNum, phone, photo })
+      setUser({ 
+        name, 
+        uid, 
+        accountNumber: fullAccNum, 
+        displayAccountNumber: displayAccNum, 
+        phone, 
+        photo
+      })
     }
 
     fetchUserData()
@@ -326,7 +333,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 if (item.id === '8') {
                   switchView('settings')
                 }
-                // ✅ NAYA CODE: Customer Service (id '9') par click karne par HawaSupport khulega
                 if (item.id === '9') {
                   switchView('customer_service')
                 }
@@ -368,4 +374,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-}
+  }
