@@ -47,11 +47,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Fresh Generate Android Platform
+      - name: Sync Capacitor
         run: |
           rm -rf android
-          npx --no-install cap add android
-          npx --no-install cap sync android
+          npx cap sync android
+          
 
       - name: Copy google-services.json
         run: |
