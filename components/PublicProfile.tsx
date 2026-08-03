@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X, Heart, MessageCircle } from 'lucide-react'
 import { db } from "../src/lib/firebase"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc } from "firebase/firestore"
 
 export interface TargetUser {
   id?: string
@@ -60,7 +60,7 @@ const COUNTRIES = [
   { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
   { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
   { code: 'CL', name: 'Chile', flag: '🇨🇱' },
-  { code: 'CO', name: 'Colombia', font: '🇨🇴' },
+  { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
   { code: 'NZ', name: 'New Zealand', flag: '🇳🇿' },
   { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
   { code: 'NO', name: 'Norway', flag: '🇳🇴' },
@@ -172,6 +172,19 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   // Check if this is a special account for UI modifications
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
+  // Helper function: Direct Firestore "users" collection save
+  const saveToFirestore = async (updateData: Record<string, any>) => {
+    const currentUid = user.uid || localStorage.getItem("userUID") || localStorage.getItem("userPhone")
+    if (currentUid && currentUid !== "N/A") {
+      try {
+        const userDocRef = doc(db, "users", currentUid)
+        await setDoc(userDocRef, updateData, { merge: true })
+      } catch (err) {
+        console.error("Error saving data to Firestore users collection:", err)
+      }
+    }
+  }
+
   useEffect(() => {
     const loadProfileData = async () => {
       // -------------------------------------------------------------
@@ -180,7 +193,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       if (isOtherUser && targetUser) {
         const targetUid = targetUser.uid || targetUser.id || 'N/A'
         
-        // Default initial values from passed props if available
         let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
         let name = targetUser.name || "User"
         let photo = targetUser.photo || targetUser.image || ""
@@ -201,7 +213,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
             if (docSnap.exists()) {
               const data = docSnap.data()
               
-              // Direct fields override from Firestore collection
               displayAccNum = data.accountId ? String(data.accountId) : (data.displayAccountNumber || displayAccNum)
               name = data.name || data.displayName || data.userName || name
               photo = data.photo || data.photoURL || data.image || data.avatar || photo
@@ -249,13 +260,14 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       // -------------------------------------------------------------
       // 2. IF VIEWING OWN PUBLIC PROFILE
       // -------------------------------------------------------------
-      const storedName = localStorage.getItem("userName")
+      let storedName = localStorage.getItem("userName") || ""
       const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
-      const photo = localStorage.getItem("userPhoto") || ""
-      const coverPhoto = localStorage.getItem("userCoverPhoto") || ""
-      const storedBio = localStorage.getItem("userBio") || ""
-      const storedCountry = localStorage.getItem("userCountry") || ""
-      const storedAge = localStorage.getItem("userAge") || ""
+      let photo = localStorage.getItem("userPhoto") || ""
+      let coverPhoto = localStorage.getItem("userCoverPhoto") || ""
+      let storedBio = localStorage.getItem("userBio") || ""
+      let storedCountry = localStorage.getItem("userCountry") || ""
+      let storedAge = localStorage.getItem("userAge") || ""
+      let storedGender = localStorage.getItem("userGenderLocked") || ""
       
       const storedAlbum = localStorage.getItem("userAlbumImages")
       if (storedAlbum) {
@@ -268,9 +280,26 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         try {
           const userDocRef = doc(db, "users", uid)
           const docSnap = await getDoc(userDocRef)
-          if (docSnap.exists() && docSnap.data().accountId) {
-            displayAccNum = String(docSnap.data().accountId)
-            localStorage.setItem("accountNumber", displayAccNum)
+          if (docSnap.exists()) {
+            const data = docSnap.data()
+            if (data.accountId) {
+              displayAccNum = String(data.accountId)
+              localStorage.setItem("accountNumber", displayAccNum)
+            }
+            if (data.name) storedName = data.name
+            if (data.photo || data.photoURL || data.image) {
+              photo = data.photo || data.photoURL || data.image || photo
+            }
+            if (data.coverPhoto || data.coverImage) {
+              coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
+            }
+            if (data.bio) storedBio = data.bio
+            if (data.country || data.location) storedCountry = data.country || data.location
+            if (data.gender) storedGender = data.gender
+            if (data.age) storedAge = String(data.age)
+            if (data.albumImages && Array.isArray(data.albumImages)) {
+              setAlbumImages(data.albumImages)
+            }
           }
         } catch (err) {
           console.warn("Firestore fetch error in PublicProfile:", err)
@@ -293,6 +322,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         bio: storedBio || prev.bio,
         location: storedCountry,
         flag: matchedCountry ? matchedCountry.flag : "",
+        gender: storedGender === "female" || storedGender === "♀" ? "♀" : "♂",
         age: storedAge ? parseInt(storedAge) : prev.age
       }))
 
@@ -301,9 +331,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       setEditBio(storedBio || "")
       setEditCountry(storedCountry)
 
-      const lockedGender = localStorage.getItem("userGenderLocked")
-      if (lockedGender) {
-        setEditGender(lockedGender)
+      if (storedGender) {
+        setEditGender(storedGender === "female" || storedGender === "♀" ? "female" : "male")
         setGenderLocked(true)
       }
 
@@ -337,12 +366,16 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     setShowBioInput(false)
   }
 
-  const handleGenderSelect = (gender: string) => {
+  const handleGenderSelect = async (gender: string) => {
     if (genderLocked) return
     setEditGender(gender)
     setGenderLocked(true)
+    const formattedGender = gender === "male" ? "♂" : "♀"
     localStorage.setItem("userGenderLocked", gender)
-    setUser(prev => ({ ...prev, gender: gender === "male" ? "♂" : "♀" }))
+    setUser(prev => ({ ...prev, gender: formattedGender }))
+    
+    // Save to Firestore "users" collection
+    await saveToFirestore({ gender: formattedGender })
   }
 
   const handleCountrySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -355,10 +388,13 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64String = reader.result as string
         localStorage.setItem("userPhoto", base64String)
         setUser(prev => ({ ...prev, photo: base64String }))
+        
+        // Save to Firestore "users" collection
+        await saveToFirestore({ photo: base64String, image: base64String, photoURL: base64String })
       }
       reader.readAsDataURL(file)
     }
@@ -368,18 +404,24 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64String = reader.result as string
         localStorage.setItem("userCoverPhoto", base64String)
         setUser(prev => ({ ...prev, coverPhoto: base64String }))
+        
+        // Save to Firestore "users" collection
+        await saveToFirestore({ coverPhoto: base64String, coverImage: base64String })
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const handleRemoveCoverPhoto = () => {
+  const handleRemoveCoverPhoto = async () => {
     localStorage.removeItem("userCoverPhoto")
     setUser(prev => ({ ...prev, coverPhoto: "" }))
+    
+    // Save to Firestore "users" collection
+    await saveToFirestore({ coverPhoto: "", coverImage: "" })
   }
 
   const handleAlbumUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -390,23 +432,29 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         return
       }
       const reader = new FileReader()
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64String = reader.result as string
         const updatedAlbum = [...albumImages, base64String]
         setAlbumImages(updatedAlbum)
         localStorage.setItem("userAlbumImages", JSON.stringify(updatedAlbum))
+        
+        // Save to Firestore "users" collection
+        await saveToFirestore({ albumImages: updatedAlbum, album: updatedAlbum })
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const handleRemoveAlbumImage = (indexToRemove: number) => {
+  const handleRemoveAlbumImage = async (indexToRemove: number) => {
     const updated = albumImages.filter((_, index) => index !== indexToRemove)
     setAlbumImages(updated)
     localStorage.setItem("userAlbumImages", JSON.stringify(updated))
+    
+    // Save to Firestore "users" collection
+    await saveToFirestore({ albumImages: updated, album: updated })
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     localStorage.setItem("userName", editName)
     if (editAge) localStorage.setItem("userAge", editAge)
     if (editBio) localStorage.setItem("userBio", editBio)
@@ -428,14 +476,29 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       flag: matchedCountry ? matchedCountry.flag : prev.flag
     }))
 
+    // ALL DETAILS SAVE TO FIRESTORE "users" COLLECTION
+    await saveToFirestore({
+      name: editName,
+      displayName: editName,
+      userName: editName,
+      age: parseInt(editAge) || user.age,
+      bio: editBio,
+      about: editBio,
+      country: editCountry,
+      location: editCountry
+    })
+
     setShowEditSheet(false)
     setShowBioInput(false)
   }
 
-  const handleBioSave = () => {
+  const handleBioSave = async () => {
     localStorage.setItem("userBio", editBio)
     setUser(prev => ({ ...prev, bio: editBio }))
     setShowBioInput(false)
+    
+    // Save to Firestore "users" collection
+    await saveToFirestore({ bio: editBio, about: editBio })
   }
 
   const getDisplayID = () => {
