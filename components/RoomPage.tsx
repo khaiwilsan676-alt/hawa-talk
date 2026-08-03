@@ -18,6 +18,31 @@ interface RoomPageProps {
   onKeepRoom?: (roomData: { name: string; image: string; accountId: string }) => void
 }
 
+// Special Accounts Mapping
+const SPECIAL_ACCOUNTS: { [key: string]: string } = {
+  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
+  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
+  '100002': '100002',
+  '100003': '100003'
+}
+
+const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
+const ADMIN_IDS = ['700001', '700002', '700003']
+
+const getOrCreateAccountNumber = (uid: string) => {
+  if (!uid || uid === 'N/A') return '100379620'
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) return uid
+  if (SPECIAL_ACCOUNTS[uid]) return SPECIAL_ACCOUNTS[uid]
+
+  let hash = 0
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash << 5) - hash + uid.charCodeAt(i)
+    hash |= 0
+  }
+  const positiveHash = Math.abs(hash)
+  return String(10000000 + (positiveHash % 90000000))
+}
+
 export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -26,18 +51,24 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   useEffect(() => {
     const fetchRoomOwnerID = async () => {
-      // 1. Agar user prop mein direct accountId hai
+      // 1. Agar user prop mein direct accountId available hai
       if (user.accountId) {
         setAccountId(user.accountId)
         return
       }
 
-      // 2. Target UID dhoondo (Prop ID ya Local storage UID)
-      const targetUID = user.id || localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
+      // 2. Room owner ki UID (Do NOT fallback to my loggedIn localStorage userUID)
+      const targetUID = user.id
 
-      if (targetUID !== 'N/A') {
+      if (targetUID) {
+        // Special / Official IDs check
+        if (OFFICIAL_IDS.includes(targetUID) || ADMIN_IDS.includes(targetUID) || SPECIAL_ACCOUNTS[targetUID]) {
+          setAccountId(SPECIAL_ACCOUNTS[targetUID] || targetUID)
+          return
+        }
+
         try {
-          // Firestore se exact accountId fetch karo
+          // Firestore se exact room owner ki ID query karo
           const userDocRef = doc(db, "users", targetUID)
           const docSnap = await getDoc(userDocRef)
 
@@ -49,18 +80,11 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           console.warn("Firestore fetch error in RoomPage:", err)
         }
 
-        // Fallback local memory ID
-        const savedAcc = localStorage.getItem("accountNumber")
-        if (savedAcc) {
-          setAccountId(savedAcc)
-          return
-        }
-
-        const storageKey = `user_account_number_${targetUID}`
-        let savedAccountNumber = localStorage.getItem(storageKey)
-        if (savedAccountNumber) {
-          setAccountId(savedAccountNumber.slice(0, 8))
-        }
+        // Target UID ke hash se Owner ki ID generate karo
+        setAccountId(getOrCreateAccountNumber(targetUID))
+      } else {
+        // Safe fallback only if room user object has no ID passed
+        setAccountId("100379620")
       }
     }
 
@@ -215,7 +239,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                 className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 1 1-18 0 9 9 0 0118 0z" />
                 </svg>
               </button>
 
