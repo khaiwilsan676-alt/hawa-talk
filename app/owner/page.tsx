@@ -45,7 +45,7 @@ export default function OwnerPanel() {
       (docSnap) => {
         if (isLocalUpdate.current) {
           // Skip updating state if the change originated locally
-          isLocalUpdate.current = false;
+          // DO NOT reset isLocalUpdate.current here, wait for the actual save to complete
           return;
         }
 
@@ -61,7 +61,13 @@ export default function OwnerPanel() {
               };
             }
           });
-          setIdsData(mergedData);
+
+          setIdsData(currentData => {
+            if (JSON.stringify(currentData) === JSON.stringify(mergedData)) {
+              return currentData; // Deep equal, do not trigger a state update
+            }
+            return mergedData;
+          });
         } else {
           // If doc doesn't exist, try localstorage for backward compatibility or use default
           if (typeof window !== "undefined") {
@@ -175,6 +181,7 @@ export default function OwnerPanel() {
     if (!isLocalUpdate.current) return;
 
     const timeoutId = setTimeout(() => {
+      isLocalUpdate.current = false;
       handleSave();
     }, 1000);
 
