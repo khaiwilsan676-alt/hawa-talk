@@ -595,7 +595,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Handle User Search Item Click -> Opens Public Profile
+  // Handle User Search Item Click -> Opens Target User's Public Profile
   const handleUserProfileClick = (user: UserCard) => {
     setSelectedUser(user)
     setIsPublicProfileActive(true)
@@ -646,7 +646,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             id: docId,
             name: uData.name || 'User',
             country: uData.country || '🇮🇳',
-            image: uData.image || '/default-avatar.png',
+            image: uData.image || uData.photo || '/default-avatar.png',
             accountId: accId,
             createdAt: uData.createdAt || Date.now()
           })
@@ -1171,7 +1171,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <div className="flex flex-col gap-3">    
                   {searchResults.map((user) => (    
                     activeSearchTab === 'user' ? (
-                      /* USER TAB CARD: NO ENTER BUTTON -> OPENS PUBLIC PROFILE */
+                      /* USER TAB CARD: NO ENTER BUTTON -> OPENS PUBLIC PROFILE OF TARGET USER */
                       <div    
                         key={user.accountId}    
                         onClick={() => handleUserProfileClick({    
@@ -1665,6 +1665,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <PublicProfile 
             onBack={handleBackFromPublicProfile}
             isOtherUser={true}
+            targetUser={selectedUser ? {
+              id: selectedUser.id,
+              uid: selectedUser.id,
+              accountId: selectedUser.accountId,
+              displayAccountNumber: selectedUser.accountId,
+              name: selectedUser.name,
+              country: selectedUser.country,
+              photo: selectedUser.image,
+              image: selectedUser.image
+            } : null}
           />
         )}
       </div>    
