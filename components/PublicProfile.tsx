@@ -5,9 +5,28 @@ import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X, Heart, Messa
 import { db } from "../src/lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
 
+export interface TargetUser {
+  id?: string
+  uid?: string
+  name?: string
+  displayAccountNumber?: string
+  accountId?: string
+  photo?: string
+  image?: string
+  coverPhoto?: string
+  gender?: string
+  age?: number | string
+  followers?: number
+  bio?: string
+  location?: string
+  country?: string
+  flag?: string
+}
+
 interface PublicProfileProps {
   onBack?: () => void
   isOtherUser?: boolean // Set to true when viewing someone else's profile
+  targetUser?: TargetUser | null // Passed target user data from Search or User card
 }
 
 const COUNTRIES = [
@@ -85,13 +104,13 @@ const getOrCreateAccountNumber = (uid: string) => {
   }
 
   // Check stored account number first
-  const savedAcc = localStorage.getItem('accountNumber')
+  const savedAcc = typeof window !== 'undefined' ? localStorage.getItem('accountNumber') : null
   if (savedAcc) {
     return savedAcc
   }
 
   const storageKey = `user_account_number_${uid}`
-  let savedAccountNumber = localStorage.getItem(storageKey)
+  let savedAccountNumber = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
 
   if (!savedAccountNumber) {
     let hash = 0
@@ -101,13 +120,15 @@ const getOrCreateAccountNumber = (uid: string) => {
     }
     const positiveHash = Math.abs(hash)
     savedAccountNumber = String(10000000 + (positiveHash % 90000000))
-    localStorage.setItem(storageKey, savedAccountNumber)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(storageKey, savedAccountNumber)
+    }
   }
 
   return savedAccountNumber
 }
 
-export default function PublicProfile({ onBack, isOtherUser = true }: PublicProfileProps) {
+export default function PublicProfile({ onBack, isOtherUser = false, targetUser = null }: PublicProfileProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const albumInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -153,6 +174,71 @@ export default function PublicProfile({ onBack, isOtherUser = true }: PublicProf
 
   useEffect(() => {
     const loadProfileData = async () => {
+      // -------------------------------------------------------------
+      // 1. IF VIEWING ANOTHER USER PROFILE (OTHER USER)
+      // -------------------------------------------------------------
+      if (isOtherUser && targetUser) {
+        const targetUid = targetUser.uid || targetUser.id || 'N/A'
+        let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
+        let name = targetUser.name || "User"
+        let photo = targetUser.photo || targetUser.image || ""
+        let coverPhoto = targetUser.coverPhoto || ""
+        let bio = targetUser.bio || ""
+        let country = targetUser.location || targetUser.country || ""
+        let gender = targetUser.gender || "♂"
+        let age = targetUser.age ? (typeof targetUser.age === 'number' ? targetUser.age : parseInt(targetUser.age)) : 22
+        let followers = targetUser.followers || 0
+
+        // Fetch details from Firestore if available
+        if (targetUid && targetUid !== "N/A") {
+          try {
+            const userDocRef = doc(db, "users", targetUid)
+            const docSnap = await getDoc(userDocRef)
+            if (docSnap.exists()) {
+              const data = docSnap.data()
+              displayAccNum = data.accountId ? String(data.accountId) : displayAccNum
+              name = data.name || name
+              photo = data.photo || data.image || photo
+              coverPhoto = data.coverPhoto || coverPhoto
+              bio = data.bio || bio
+              country = data.country || data.location || country
+              gender = data.gender || gender
+              age = data.age ? parseInt(data.age) : age
+              followers = data.followers || followers
+              if (data.albumImages && Array.isArray(data.albumImages)) {
+                setAlbumImages(data.albumImages)
+              }
+            }
+          } catch (err) {
+            console.warn("Firestore fetch error for Target User:", err)
+          }
+        }
+
+        if (!displayAccNum) {
+          displayAccNum = getOrCreateAccountNumber(targetUid)
+        }
+
+        const matchedCountry = COUNTRIES.find(c => c.name === country || c.flag === country)
+
+        setUser({
+          name,
+          uid: targetUid,
+          displayAccountNumber: displayAccNum,
+          photo,
+          coverPhoto,
+          gender: gender === "female" || gender === "♀" ? "♀" : "♂",
+          age,
+          followers,
+          bio,
+          location: matchedCountry ? matchedCountry.name : country,
+          flag: matchedCountry ? matchedCountry.flag : (country.length <= 4 ? country : "🇮🇳")
+        })
+        return
+      }
+
+      // -------------------------------------------------------------
+      // 2. IF VIEWING OWN PUBLIC PROFILE
+      // -------------------------------------------------------------
       const storedName = localStorage.getItem("userName")
       const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
       const photo = localStorage.getItem("userPhoto") || ""
@@ -168,7 +254,6 @@ export default function PublicProfile({ onBack, isOtherUser = true }: PublicProf
 
       let displayAccNum = localStorage.getItem("accountNumber") || ""
 
-      // 1. Fetch exact accountId directly from Firestore 'users' collection
       if (uid && uid !== "N/A") {
         try {
           const userDocRef = doc(db, "users", uid)
@@ -182,7 +267,6 @@ export default function PublicProfile({ onBack, isOtherUser = true }: PublicProf
         }
       }
 
-      // Fallback calculation if no Firestore accountId exists
       if (!displayAccNum) {
         displayAccNum = getOrCreateAccountNumber(uid)
       }
@@ -220,7 +304,7 @@ export default function PublicProfile({ onBack, isOtherUser = true }: PublicProf
     }
 
     loadProfileData()
-  }, [])
+  }, [isOtherUser, targetUser])
 
   const handleCopyID = () => {
     if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
@@ -230,6 +314,7 @@ export default function PublicProfile({ onBack, isOtherUser = true }: PublicProf
   }
 
   const handleOpenEditSheet = () => {
+    if (isOtherUser) return
     setEditName(user.name)
     setEditAge(user.age.toString())
     setEditBio(user.bio)
@@ -481,7 +566,7 @@ export default function PublicProfile({ onBack, isOtherUser = true }: PublicProf
           {user.bio ? (
             <p className="text-xs text-gray-500 italic">{user.bio}</p>
           ) : (
-            <p className="text-xs text-gray-400 italic">Add bio...</p>
+            <p className="text-xs text-gray-400 italic">{isOtherUser ? "No bio added yet" : "Add bio..."}</p>
           )}
         </div>
 
@@ -561,7 +646,7 @@ export default function PublicProfile({ onBack, isOtherUser = true }: PublicProf
         </div>
       </div>
 
-      {/* FULL MATCHING BOTTOM ACTION BAR (Shows only on Other User Profile) */}
+      {/* FULL MATCHING BOTTOM ACTION BAR (Shows only when viewing another user's profile) */}
       {isOtherUser && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md px-6 py-3.5 border-t border-gray-100 flex items-center justify-between gap-4 max-w-md mx-auto shadow-lg">
           {/* Follow / Following Button */}
@@ -605,8 +690,8 @@ export default function PublicProfile({ onBack, isOtherUser = true }: PublicProf
         </div>
       )}
 
-      {/* Edit Profile Bottom Sheet */}
-      {showEditSheet && (
+      {/* Edit Profile Bottom Sheet (Only rendered when viewing OWN profile) */}
+      {!isOtherUser && showEditSheet && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={handleCloseEditSheet}></div>
 
