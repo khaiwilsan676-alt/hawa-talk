@@ -1,4 +1,4 @@
-'use client' 
+'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X, Heart, MessageCircle } from 'lucide-react'
@@ -25,8 +25,8 @@ export interface TargetUser {
 
 interface PublicProfileProps {
   onBack?: () => void
-  isOtherUser?: boolean // Set to true when viewing someone else's profile
-  targetUser?: TargetUser | null // Passed target user data from Search or User card
+  isOtherUser?: boolean
+  targetUser?: TargetUser | null
 }
 
 const COUNTRIES = [
@@ -127,7 +127,7 @@ const getOrCreateAccountNumber = (uid: string) => {
   return savedAccountNumber
 }
 
-// Client-side image canvas compressor (prevents broken payload strings)
+// Client-side image canvas compressor
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -209,14 +209,20 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   // Check if this is a special account for UI modifications
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
+  // ✅ HELPER: Save/Merge profile directly to Firestore 'users' & 'globalRooms'
   const saveToFirestore = async (updateData: Record<string, any>) => {
     const currentUid = user.uid || localStorage.getItem("userUID") || localStorage.getItem("userPhone")
     if (currentUid && currentUid !== "N/A") {
       try {
+        // Save in 'users' collection
         const userDocRef = doc(db, "users", currentUid)
         await setDoc(userDocRef, updateData, { merge: true })
+
+        // Save in 'globalRooms' collection for search and room cards
+        const globalRoomRef = doc(db, "globalRooms", currentUid)
+        await setDoc(globalRoomRef, updateData, { merge: true })
       } catch (err) {
-        console.error("Error saving data to Firestore users collection:", err)
+        console.error("Error saving data to Firestore collections:", err)
       }
     }
   }
@@ -246,13 +252,12 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           try {
             const userDocRef = doc(db, "users", targetUid)
             
-            // Real-time Listener: Live fetching target profile changes
+            // Real-time Listener: Fetching live updates saved by other user
             unsubscribe = onSnapshot(userDocRef, (docSnap) => {
               if (docSnap.exists()) {
                 const data = docSnap.data()
                 
                 displayAccNum = data.accountId ? String(data.accountId) : (data.displayAccountNumber || displayAccNum)
-                // Strict Name priority from Firestore
                 const docName = data.name || data.displayName || data.userName || data.fullName
                 const finalName = docName || initialName
                 
@@ -300,15 +305,15 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       }
 
       // -------------------------------------------------------------
-      // 2. IF VIEWING OWN PUBLIC PROFILE
+      // 2. IF VIEWING OWN PUBLIC PROFILE (REALTIME LISTEN)
       // -------------------------------------------------------------
-      let storedName = localStorage.getItem("userName") || ""
       const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
+      let storedName = localStorage.getItem("userName") || ""
       let photo = localStorage.getItem("userPhoto") || ""
       let coverPhoto = localStorage.getItem("userCoverPhoto") || ""
       let storedBio = localStorage.getItem("userBio") || ""
       let storedCountry = localStorage.getItem("userCountry") || "India"
-      let storedAge = localStorage.getItem("userAge") || ""
+      let storedAge = localStorage.getItem("userAge") || "24"
       let storedGender = localStorage.getItem("userGenderLocked") || ""
       let isCountryLockedInStorage = localStorage.getItem("userCountryLocked") === "true"
       
@@ -322,68 +327,86 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       if (uid && uid !== "N/A") {
         try {
           const userDocRef = doc(db, "users", uid)
-          const docSnap = await getDoc(userDocRef)
-          if (docSnap.exists()) {
-            const data = docSnap.data()
-            if (data.accountId) {
-              displayAccNum = String(data.accountId)
-              localStorage.setItem("accountNumber", displayAccNum)
+          
+          unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data()
+              if (data.accountId) {
+                displayAccNum = String(data.accountId)
+                localStorage.setItem("accountNumber", displayAccNum)
+              }
+              if (data.name || data.displayName || data.userName) {
+                storedName = data.name || data.displayName || data.userName
+                localStorage.setItem("userName", storedName)
+              }
+              if (data.photo || data.photoURL || data.image) {
+                photo = data.photo || data.photoURL || data.image || photo
+                localStorage.setItem("userPhoto", photo)
+              }
+              if (data.coverPhoto || data.coverImage) {
+                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
+                localStorage.setItem("userCoverPhoto", coverPhoto)
+              }
+              if (data.bio) {
+                storedBio = data.bio
+                localStorage.setItem("userBio", storedBio)
+              }
+              if (data.country || data.location) {
+                storedCountry = data.country || data.location
+                localStorage.setItem("userCountry", storedCountry)
+              }
+              if (data.countryLocked !== undefined) {
+                isCountryLockedInStorage = data.countryLocked
+                if (data.countryLocked) localStorage.setItem("userCountryLocked", "true")
+              }
+              if (data.gender) {
+                storedGender = data.gender
+                localStorage.setItem("userGenderLocked", storedGender)
+              }
+              if (data.age) {
+                storedAge = String(data.age)
+                localStorage.setItem("userAge", storedAge)
+              }
+              if (data.albumImages && Array.isArray(data.albumImages)) {
+                setAlbumImages(data.albumImages)
+                localStorage.setItem("userAlbumImages", JSON.stringify(data.albumImages))
+              }
+
+              if (!displayAccNum) {
+                displayAccNum = getOrCreateAccountNumber(uid)
+              }
+
+              const matchedCountry = COUNTRIES.find(c => c.name === storedCountry) || { name: 'India', flag: '🇮🇳' }
+
+              setUser({
+                name: storedName || "Hawa User",
+                uid: uid,
+                displayAccountNumber: displayAccNum,
+                photo,
+                coverPhoto,
+                bio: storedBio,
+                location: matchedCountry.name,
+                flag: matchedCountry.flag,
+                gender: storedGender === "female" || storedGender === "♀" ? "♀" : "♂",
+                age: storedAge ? parseInt(storedAge) : 24,
+                followers: data.followers || 0
+              })
+
+              setEditName(storedName || "Hawa User")
+              setEditAge(storedAge || "24")
+              setEditBio(storedBio || "")
+              setEditCountry(matchedCountry.name)
+              setCountryLocked(isCountryLockedInStorage)
+
+              if (storedGender) {
+                setEditGender(storedGender === "female" || storedGender === "♀" ? "female" : "male")
+                setGenderLocked(true)
+              }
             }
-            if (data.name || data.displayName || data.userName) {
-              storedName = data.name || data.displayName || data.userName
-            }
-            if (data.photo || data.photoURL || data.image) {
-              photo = data.photo || data.photoURL || data.image || photo
-            }
-            if (data.coverPhoto || data.coverImage) {
-              coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
-            }
-            if (data.bio) storedBio = data.bio
-            if (data.country || data.location) storedCountry = data.country || data.location
-            if (data.countryLocked !== undefined) {
-              isCountryLockedInStorage = data.countryLocked
-              if (data.countryLocked) localStorage.setItem("userCountryLocked", "true")
-            }
-            if (data.gender) storedGender = data.gender
-            if (data.age) storedAge = String(data.age)
-            if (data.albumImages && Array.isArray(data.albumImages)) {
-              setAlbumImages(data.albumImages)
-            }
-          }
+          })
         } catch (err) {
           console.warn("Firestore fetch error in PublicProfile:", err)
         }
-      }
-
-      if (!displayAccNum) {
-        displayAccNum = getOrCreateAccountNumber(uid)
-      }
-
-      const matchedCountry = COUNTRIES.find(c => c.name === storedCountry) || { name: 'India', flag: '🇮🇳' }
-
-      setUser(prev => ({
-        ...prev,
-        name: storedName || prev.name,
-        uid: uid,
-        displayAccountNumber: displayAccNum,
-        photo: photo || prev.photo,
-        coverPhoto: coverPhoto || prev.coverPhoto,
-        bio: storedBio || prev.bio,
-        location: matchedCountry.name,
-        flag: matchedCountry.flag,
-        gender: storedGender === "female" || storedGender === "♀" ? "♀" : "♂",
-        age: storedAge ? parseInt(storedAge) : prev.age
-      }))
-
-      setEditName(storedName || "Hawa User")
-      setEditAge(storedAge || "24")
-      setEditBio(storedBio || "")
-      setEditCountry(matchedCountry.name)
-      setCountryLocked(isCountryLockedInStorage)
-
-      if (storedGender) {
-        setEditGender(storedGender === "female" || storedGender === "♀" ? "female" : "male")
-        setGenderLocked(true)
       }
     }
 
@@ -524,6 +547,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       flag: matchedCountry.flag
     }))
 
+    // Save Changes Directly to Firestore Collections
     await saveToFirestore({
       name: editName,
       displayName: editName,
