@@ -34,9 +34,24 @@ export default function OwnerPanel() {
     "700003": { email: "", password: "" },
   });
 
-  const [idsData, setIdsData] = useState<Record<string, any>>(getDefaultIdsData());
+  // Load initial state safely from localStorage if available to prevent empty reset on restart
+  const [idsData, setIdsData] = useState<Record<string, any>>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ownerPanelCredentials");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return getDefaultIdsData();
+  });
+
   const focusedField = useRef<string | null>(null);
-  const skipNextSave = useRef(false);
+  const skipNextSave = useRef(true); // Default true on mount to prevent auto-overwriting
+  const isLoadedFromFirestore = useRef(false);
 
   // Load from firestore (Real-time sync)
   useEffect(() => {
@@ -47,6 +62,7 @@ export default function OwnerPanel() {
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
           const mergedData = getDefaultIdsData();
+          
           Object.keys(getDefaultIdsData()).forEach(id => {
             if (serverData[id]) {
               mergedData[id as keyof typeof mergedData] = {
@@ -70,30 +86,22 @@ export default function OwnerPanel() {
             if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
               return currentData;
             }
+
+            // Lock next save tick so snapshot loading doesn't trigger a re-save
             skipNextSave.current = true;
+            isLoadedFromFirestore.current = true;
+            
+            // Save to localstorage as fallback
+            localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
           });
         } else {
-          if (typeof window !== "undefined") {
-            const saved = localStorage.getItem("ownerPanelCredentials");
-            if (saved) {
-              const localData = JSON.parse(saved);
-              const mergedData = getDefaultIdsData();
-              Object.keys(getDefaultIdsData()).forEach(id => {
-                if (localData[id]) {
-                  mergedData[id as keyof typeof mergedData] = {
-                    email: localData[id].email || "",
-                    password: localData[id].password || ""
-                  };
-                }
-              });
-              setIdsData(mergedData);
-            }
-          }
+          isLoadedFromFirestore.current = true;
         }
       },
       (error) => {
         console.error("Error fetching credentials:", error);
+        isLoadedFromFirestore.current = true;
       }
     );
 
@@ -144,7 +152,7 @@ export default function OwnerPanel() {
     setLoginKey("");
   };
 
-  // ✅ FIRBESTORE SAVE & SYNC FUNCTION
+  // ✅ FIRESTORE SAVE & SYNC FUNCTION
   const handleSave = useCallback(async (customData?: Record<string, any>) => {
     try {
       const targetData = customData || idsData;
@@ -172,7 +180,7 @@ export default function OwnerPanel() {
       localStorage.setItem('ownerPanelCredentials', JSON.stringify(targetData));
       localStorage.setItem('officialCredentials', JSON.stringify(credentials));
 
-      setSaveMessage("Credentials synced & saved!");
+      setSaveMessage("Credentials saved!");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
       console.error("Error saving credentials:", error);
@@ -181,29 +189,30 @@ export default function OwnerPanel() {
     }
   }, [idsData]);
 
-  // Real-time debounced auto-save on change
+  // Real-time debounced auto-save ONLY after initial Firestore load
   useEffect(() => {
     if (skipNextSave.current) {
       skipNextSave.current = false;
       return;
     }
 
+    if (!isLoadedFromFirestore.current) {
+      return; // Do not auto-save before first snapshot arrives
+    }
+
     const timeoutId = setTimeout(() => {
       handleSave();
-    }, 800);
+    }, 1000);
 
     return () => clearTimeout(timeoutId);
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
     skipNextSave.current = false;
-    setIdsData((prev) => {
-      const updated = {
-        ...prev,
-        [id]: { ...prev[id], [field]: value },
-      };
-      return updated;
-    });
+    setIdsData((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value },
+    }));
   };
 
   // ✅ Individual ID Logout
