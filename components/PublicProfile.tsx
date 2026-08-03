@@ -1,12 +1,13 @@
 'use client' 
 
 import React, { useEffect, useState, useRef } from 'react'
-import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
+import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X, Heart, MessageCircle } from 'lucide-react'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
 
 interface PublicProfileProps {
   onBack?: () => void
+  isOtherUser?: boolean // Set to true when viewing someone else's profile
 }
 
 const COUNTRIES = [
@@ -106,7 +107,7 @@ const getOrCreateAccountNumber = (uid: string) => {
   return savedAccountNumber
 }
 
-export default function PublicProfile({ onBack }: PublicProfileProps) {
+export default function PublicProfile({ onBack, isOtherUser = true }: PublicProfileProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const albumInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -143,6 +144,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
   // Full image view state
   const [fullImageView, setFullImageView] = useState<string | null>(null)
+
+  // Follow State for Other User Profile
+  const [isFollowing, setIsFollowing] = useState(false)
 
   // Check if this is a special account for UI modifications
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
@@ -343,8 +347,20 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     return user.displayAccountNumber
   }
 
+  // Follow Toggle Logic for target profile
+  const handleToggleFollow = () => {
+    setIsFollowing(prev => {
+      const nextState = !prev
+      setUser(u => ({
+        ...u,
+        followers: nextState ? u.followers + 1 : Math.max(0, u.followers - 1)
+      }))
+      return nextState
+    })
+  }
+
   return (
-    <div className="w-full bg-white min-h-screen text-gray-900 pb-10 relative">
+    <div className={`w-full bg-white min-h-screen text-gray-900 relative ${isOtherUser ? 'pb-24' : 'pb-10'}`}>
       {/* Cover Image & Header Section */}
       <div className="relative w-full h-[340px] bg-gray-800">
         {user.coverPhoto ? (
@@ -359,7 +375,9 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
         <div className="absolute top-4 left-0 right-0 px-4 flex items-center justify-between z-10">
           <button onClick={onBack} className="text-white"><ChevronLeft size={28} /></button>
-          <button onClick={handleOpenEditSheet} className="text-white"><Edit3 size={22} /></button>
+          {!isOtherUser && (
+            <button onClick={handleOpenEditSheet} className="text-white"><Edit3 size={22} /></button>
+          )}
         </div>
 
         <div className="absolute top-16 right-4 bg-emerald-500/90 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium shadow-sm">
@@ -405,7 +423,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
                     backgroundImage: 'url(/1785137282040.png)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    backgroundSize: '96%',
                     minWidth: '90px',
                     paddingLeft: '0px',
                     paddingRight: '5px',
@@ -427,7 +444,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
             )}
           </div>
           <span className="text-gray-300">|</span>
-          <span className="text-gray-500">{user.followers} Followers</span>
+          <span className="text-gray-500">{user.followers} Fans</span>
         </div>
 
         {/* Level Badge */}
@@ -456,9 +473,11 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
         </div>
 
         <div className="flex items-start gap-2 mt-2">
-          <button onClick={handleOpenEditSheet} className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0">
-            <Edit3 size={14} />
-          </button>
+          {!isOtherUser && (
+            <button onClick={handleOpenEditSheet} className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0">
+              <Edit3 size={14} />
+            </button>
+          )}
           {user.bio ? (
             <p className="text-xs text-gray-500 italic">{user.bio}</p>
           ) : (
@@ -541,6 +560,29 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           </div>
         </div>
       </div>
+
+      {/* FULL MATCHING BOTTOM ACTION BAR (Shows only on Other User Profile) */}
+      {isOtherUser && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md px-6 py-3.5 border-t border-gray-100 flex items-center justify-between gap-4 max-w-md mx-auto shadow-lg">
+          {/* Follow / Following Button */}
+          <button
+            onClick={handleToggleFollow}
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff5874] to-[#ff6b8b] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-pink-200"
+          >
+            <Heart className="w-6 h-6 fill-white stroke-none" />
+            <span>{isFollowing ? 'Following' : 'Follow'}</span>
+          </button>
+
+          {/* Chat Button */}
+          <button
+            onClick={() => alert("Chat opened!")}
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#1dc4e9] to-[#1de9b6] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-cyan-200"
+          >
+            <MessageCircle className="w-6 h-6 fill-white stroke-none" />
+            <span>Chat</span>
+          </button>
+        </div>
+      )}
 
       {/* Full Image View Modal */}
       {fullImageView && (
