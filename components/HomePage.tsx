@@ -607,6 +607,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setIsSearching(true)
     const query_text = searchQuery.trim().toLowerCase()
     
+    // Helper to prevent infinite hanging
+    const withTimeout = (promise: Promise<any>, ms: number): Promise<any> => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+      ]);
+    };
+
     try {
       const foundList: GlobalRoom[] = []
       const addedIds = new Set<string>()
@@ -624,7 +632,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         try {
           const roomsRef = collection(db, "globalRooms")
           const q2 = query(roomsRef, where("accountId", "==", query_text));
-          const snap2 = await getDocs(q2);
+          const snap2 = await withTimeout(getDocs(q2), 5000) as any;
 
           const processDocs = (snap: any) => {
             snap.docs.forEach((doc: any) => {
@@ -652,7 +660,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         try {
           const usersRef = collection(db, "users")
           const q2 = query(usersRef, where("accountId", "==", query_text));
-          const snap2 = await getDocs(q2);
+          const snap2 = await withTimeout(getDocs(q2), 5000) as any;
 
           const processDocs = (snap: any) => {
             snap.docs.forEach((doc: any) => {
@@ -691,15 +699,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
       
     } catch (err) {
       console.error("Search error:", err)
-      // Fallback to local search
-      if (activeSearchTab === 'room') {
-        const localMatches = globalRooms.filter(r =>
-          r.accountId.toLowerCase() === query_text
-        )
-        setSearchResults(localMatches.slice(0, 20))
-      } else {
-        setSearchResults([])
-      }
+      // Fallback to local search for both if network fails
+      const localMatches = globalRooms.filter(r =>
+        r.accountId.toLowerCase() === query_text
+      )
+      setSearchResults(localMatches.slice(0, 20))
       setHasSearched(true)
     } finally {
       setIsSearching(false)
