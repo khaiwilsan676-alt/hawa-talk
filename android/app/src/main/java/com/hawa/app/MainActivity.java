@@ -8,7 +8,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        FullScreenManager.enableEdgeToEdge(this);
+        // FullScreenManager.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
     }
 }
