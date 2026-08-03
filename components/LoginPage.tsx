@@ -1,13 +1,53 @@
 'use client'
 
 import { useState } from 'react'
-import { X, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, provider, db } from "../src/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
+}
+
+// HELPER: Account number ya Unique Short ID Generator
+const getOrCreateAccountNumber = (uid: string) => {
+  if (!uid) return '100001'
+  // Generates an 8-digit numeric string based on UID
+  let hash = 0
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash << 5) - hash + uid.charCodeAt(i)
+    hash |= 0
+  }
+  const positiveHash = Math.abs(hash)
+  return String(10000000 + (positiveHash % 90000000))
+}
+
+// HELPER: Save user profile to Firestore for Global Searchability
+const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
+  try {
+    const displayAccNum = getOrCreateAccountNumber(uid)
+    const userData = {
+      id: uid,
+      name: name || email.split('@')[0] || 'User',
+      country: '🇮🇳',
+      image: photo || '/default-avatar.png',
+      accountId: displayAccNum,
+      createdAt: Date.now()
+    }
+
+    // Save in 'users' collection for ID/Name Search
+    await setDoc(doc(db, "users", uid), userData, { merge: true })
+
+    // Save in 'globalRooms' collection for Popular/Rooms Search
+    await setDoc(doc(db, "globalRooms", uid), userData, { merge: true })
+
+    console.log("User successfully synced to search database!")
+    return displayAccNum
+  } catch (err) {
+    console.error("Error syncing user to Firestore:", err)
+    return uid
+  }
 }
 
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
@@ -36,41 +76,49 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      localStorage.setItem("userName", user.displayName || "Google User");
-      localStorage.setItem("userEmail", user.email || "");
-      localStorage.setItem("userPhoto", user.photoURL || "");
-      localStorage.setItem("userUID", user.uid || "");
+      const userName = user.displayName || "Google User"
+      const userEmail = user.email || ""
+      const userPhoto = user.photoURL || "/default-avatar.png"
+      const userUID = user.uid
+
+      // SYNC TO FIRESTORE SO THIS USER BECOMES SEARCHABLE
+      const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
+
+      localStorage.setItem("userName", userName);
+      localStorage.setItem("userEmail", userEmail);
+      localStorage.setItem("userPhoto", userPhoto);
+      localStorage.setItem("userUID", userUID);
+      localStorage.setItem("accountNumber", accNum);
 
       if (onLoginSuccess) {
         onLoginSuccess(user);
       }
     } catch (error: any) {
       console.error(error);
-      // Silent error - no alert
     } finally { 
       setLoading(false);
     }
   };
 
   // Check if credentials match official/admin IDs
-  const checkOfficialCredentials = async (email: string, password: string) => {
+  const checkOfficialCredentials = async (emailStr: string, passwordStr: string) => {
     try {
       const docRef = doc(db, "adminSettings", "credentials");
       const docSnap = await getDoc(docRef);
       if (docSnap.exists() && docSnap.data().officialCredentials) {
         const credentials = docSnap.data().officialCredentials;
         const matched = credentials.find(
-          (cred: any) => cred.email === email && cred.password === password
+          (cred: any) => cred.email === emailStr && cred.password === passwordStr
         );
         if (matched) return matched;
       }
 
-      // Fallback to local storage just in case
+      // Fallback to local storage
       const savedCredentials = localStorage.getItem('officialCredentials');
       if (savedCredentials) {
         const credentials = JSON.parse(savedCredentials);
         const matched = credentials.find(
-          (cred: any) => cred.email === email && cred.password === password
+          (cred: any) => cred.email === emailStr && cred.password === passwordStr
         );
         return matched || null;
       }
@@ -84,12 +132,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      return; // Silent - no error message
-    }
-    
-    if (password.length < 6) {
-      return; // Silent - no error message
+    if (!email || !password || password.length < 6) {
+      return;
     }
 
     setLoading(true);
@@ -99,7 +143,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const officialCred = await checkOfficialCredentials(email, password);
       
       if (officialCred) {
-        // Set online status in firestore
         try {
           const sessionRef = doc(db, "adminSettings", `sessions_${officialCred.id}`);
           await setDoc(sessionRef, {
@@ -110,6 +153,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           console.error("Error updating session status:", err);
         }
 
+        const userName = `${officialCred.type.toUpperCase()} - ${officialCred.id}`
+        await syncUserToFirestore(officialCred.id, userName, officialCred.email, "")
+
         const userData = {
           id: officialCred.id,
           email: officialCred.email,
@@ -117,13 +163,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           isOfficial: true
         };
 
-        localStorage.setItem("userName", `${officialCred.type.toUpperCase()} - ${officialCred.id}`);
+        localStorage.setItem("userName", userName);
         localStorage.setItem("userEmail", officialCred.email);
         localStorage.setItem("userUID", officialCred.id);
         localStorage.setItem("userType", officialCred.type);
         localStorage.setItem("userPhoto", "");
 
-        // Also add to loggedInSessions for local device tracking
         const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
         loggedInSessions[officialCred.id] = true;
         localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions));
@@ -136,9 +181,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return;
       }
 
-      // If not official, try Firebase auth
+      // Standard Firebase Auth
       let userCredential;
-      
       if (isSignUp) {
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
       } else {
@@ -146,11 +190,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       }
 
       const user = userCredential.user;
+      const userName = user.displayName || email.split('@')[0]
+      const userEmail = user.email || ""
+      const userPhoto = user.photoURL || "/default-avatar.png"
+      const userUID = user.uid
 
-      localStorage.setItem("userName", user.displayName || email.split('@')[0]);
-      localStorage.setItem("userEmail", user.email || "");
-      localStorage.setItem("userPhoto", user.photoURL || "");
-      localStorage.setItem("userUID", user.uid || "");
+      // SYNC TO FIRESTORE FOR SEARCH
+      const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
+
+      localStorage.setItem("userName", userName);
+      localStorage.setItem("userEmail", userEmail);
+      localStorage.setItem("userPhoto", userPhoto);
+      localStorage.setItem("userUID", userUID);
+      localStorage.setItem("accountNumber", accNum);
 
       if (onLoginSuccess) {
         onLoginSuccess(user);
@@ -158,14 +210,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       setShowEmailSheet(false);
     } catch (error: any) {
       console.error('Auth error:', error);
-      // Silent - no error messages shown to user
     } finally {
       setLoading(false);
     }
   };
 
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidEmail = (emailStr: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
   return (
@@ -263,7 +314,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </div>
             </div>
 
-            {/* Bottom action within sheet */}
             <button
               onClick={handleActualGmailLogin}
               className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-sm transition-all hover:bg-blue-700 shadow-md cursor-pointer flex items-center justify-center gap-2"
@@ -293,7 +343,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <h2 className="text-lg font-semibold text-gray-900">
               {isSignUp ? 'Create Account' : 'Sign In'}
             </h2>
-            <div className="w-10"></div> {/* Spacer for centering */}
+            <div className="w-10"></div>
           </div>
 
           {/* Form Content */}
@@ -369,4 +419,5 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-        }
+}
+
