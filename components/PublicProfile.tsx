@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X, Heart, MessageCircle } from 'lucide-react'
 import { db } from "../src/lib/firebase"
-import { doc, getDoc, setDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore"
 
 export interface TargetUser {
   id?: string
@@ -143,8 +143,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     age: 24,
     followers: 0,
     bio: "",
-    location: "",
-    flag: ""
+    location: "India",
+    flag: "🇮🇳"
   })
 
   const [albumImages, setAlbumImages] = useState<string[]>([])
@@ -157,7 +157,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   const [editGender, setEditGender] = useState("")
   const [genderLocked, setGenderLocked] = useState(false)
   
-  const [editCountry, setEditCountry] = useState("")
+  const [editCountry, setEditCountry] = useState("India")
   const [countryLocked, setCountryLocked] = useState(false)
   
   const [showBioInput, setShowBioInput] = useState(false)
@@ -186,9 +186,11 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   }
 
   useEffect(() => {
+    let unsubscribe: () => void;
+
     const loadProfileData = async () => {
       // -------------------------------------------------------------
-      // 1. IF VIEWING ANOTHER USER PROFILE (OTHER USER)
+      // 1. IF VIEWING ANOTHER USER PROFILE (OTHER USER - REALTIME LISTEN)
       // -------------------------------------------------------------
       if (isOtherUser && targetUser) {
         const targetUid = targetUser.uid || targetUser.id || 'N/A'
@@ -198,62 +200,63 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         let photo = targetUser.photo || targetUser.image || ""
         let coverPhoto = targetUser.coverPhoto || ""
         let bio = targetUser.bio || ""
-        let country = targetUser.location || targetUser.country || ""
+        let country = targetUser.location || targetUser.country || "India"
         let gender = targetUser.gender || "♂"
         let age = targetUser.age ? (typeof targetUser.age === 'number' ? targetUser.age : parseInt(targetUser.age)) : 22
         let followers = targetUser.followers || 0
         let album: string[] = []
 
-        // DIRECT FIRESTORE FETCH (users collection s live details pulling)
         if (targetUid && targetUid !== "N/A") {
           try {
             const userDocRef = doc(db, "users", targetUid)
-            const docSnap = await getDoc(userDocRef)
             
-            if (docSnap.exists()) {
-              const data = docSnap.data()
-              
-              displayAccNum = data.accountId ? String(data.accountId) : (data.displayAccountNumber || displayAccNum)
-              name = data.name || data.displayName || data.userName || name
-              photo = data.photo || data.photoURL || data.image || data.avatar || photo
-              coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
-              bio = data.bio || data.about || bio
-              country = data.country || data.location || country
-              gender = data.gender || gender
-              age = data.age ? parseInt(data.age) : age
-              followers = data.followers !== undefined ? data.followers : followers
-              
-              if (data.albumImages && Array.isArray(data.albumImages)) {
-                album = data.albumImages
-              } else if (data.album && Array.isArray(data.album)) {
-                album = data.album
+            // Real-time Listener so changes made by User B show instantly to User A
+            unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+              if (docSnap.exists()) {
+                const data = docSnap.data()
+                
+                displayAccNum = data.accountId ? String(data.accountId) : (data.displayAccountNumber || displayAccNum)
+                name = data.name || data.displayName || data.userName || name
+                photo = data.photo || data.photoURL || data.image || data.avatar || photo
+                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
+                bio = data.bio || data.about || bio
+                country = data.country || data.location || country
+                gender = data.gender || gender
+                age = data.age ? parseInt(data.age) : age
+                followers = data.followers !== undefined ? data.followers : followers
+                
+                if (data.albumImages && Array.isArray(data.albumImages)) {
+                  album = data.albumImages
+                } else if (data.album && Array.isArray(data.album)) {
+                  album = data.album
+                }
+
+                if (!displayAccNum) {
+                  displayAccNum = getOrCreateAccountNumber(targetUid)
+                }
+
+                const matchedCountry = COUNTRIES.find(c => c.name === country || c.flag === country) || { name: 'India', flag: '🇮🇳' }
+
+                setAlbumImages(album)
+                setUser({
+                  name,
+                  uid: targetUid,
+                  displayAccountNumber: displayAccNum,
+                  photo,
+                  coverPhoto,
+                  gender: gender === "female" || gender === "♀" ? "♀" : "♂",
+                  age,
+                  followers,
+                  bio,
+                  location: matchedCountry.name,
+                  flag: matchedCountry.flag
+                })
               }
-            }
+            })
           } catch (err) {
             console.warn("Firestore fetch error for Target User:", err)
           }
         }
-
-        if (!displayAccNum) {
-          displayAccNum = getOrCreateAccountNumber(targetUid)
-        }
-
-        const matchedCountry = COUNTRIES.find(c => c.name === country || c.flag === country)
-
-        setAlbumImages(album)
-        setUser({
-          name,
-          uid: targetUid,
-          displayAccountNumber: displayAccNum,
-          photo,
-          coverPhoto,
-          gender: gender === "female" || gender === "♀" ? "♀" : "♂",
-          age,
-          followers,
-          bio,
-          location: matchedCountry ? matchedCountry.name : country,
-          flag: matchedCountry ? matchedCountry.flag : (country.length <= 4 ? country : "🇮🇳")
-        })
         return
       }
 
@@ -265,9 +268,10 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       let photo = localStorage.getItem("userPhoto") || ""
       let coverPhoto = localStorage.getItem("userCoverPhoto") || ""
       let storedBio = localStorage.getItem("userBio") || ""
-      let storedCountry = localStorage.getItem("userCountry") || ""
+      let storedCountry = localStorage.getItem("userCountry") || "India"
       let storedAge = localStorage.getItem("userAge") || ""
       let storedGender = localStorage.getItem("userGenderLocked") || ""
+      let isCountryLockedInStorage = localStorage.getItem("userCountryLocked") === "true"
       
       const storedAlbum = localStorage.getItem("userAlbumImages")
       if (storedAlbum) {
@@ -295,6 +299,10 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
             }
             if (data.bio) storedBio = data.bio
             if (data.country || data.location) storedCountry = data.country || data.location
+            if (data.countryLocked !== undefined) {
+              isCountryLockedInStorage = data.countryLocked
+              if (data.countryLocked) localStorage.setItem("userCountryLocked", "true")
+            }
             if (data.gender) storedGender = data.gender
             if (data.age) storedAge = String(data.age)
             if (data.albumImages && Array.isArray(data.albumImages)) {
@@ -310,7 +318,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         displayAccNum = getOrCreateAccountNumber(uid)
       }
 
-      const matchedCountry = COUNTRIES.find(c => c.name === storedCountry)
+      const matchedCountry = COUNTRIES.find(c => c.name === storedCountry) || { name: 'India', flag: '🇮🇳' }
 
       setUser(prev => ({
         ...prev,
@@ -320,8 +328,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         photo: photo || prev.photo,
         coverPhoto: coverPhoto || prev.coverPhoto,
         bio: storedBio || prev.bio,
-        location: storedCountry,
-        flag: matchedCountry ? matchedCountry.flag : "",
+        location: matchedCountry.name,
+        flag: matchedCountry.flag,
         gender: storedGender === "female" || storedGender === "♀" ? "♀" : "♂",
         age: storedAge ? parseInt(storedAge) : prev.age
       }))
@@ -329,20 +337,20 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       setEditName(storedName || "Hawa User")
       setEditAge(storedAge || "24")
       setEditBio(storedBio || "")
-      setEditCountry(storedCountry)
+      setEditCountry(matchedCountry.name)
+      setCountryLocked(isCountryLockedInStorage)
 
       if (storedGender) {
         setEditGender(storedGender === "female" || storedGender === "♀" ? "female" : "male")
         setGenderLocked(true)
       }
-
-      const lockedCountryStatus = localStorage.getItem("userCountryLocked")
-      if (lockedCountryStatus === "true") {
-        setCountryLocked(true)
-      }
     }
 
     loadProfileData()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [isOtherUser, targetUser])
 
   const handleCopyID = () => {
@@ -357,7 +365,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     setEditName(user.name)
     setEditAge(user.age.toString())
     setEditBio(user.bio)
-    setEditCountry(user.location)
+    setEditCountry(user.location || "India")
     setShowEditSheet(true)
   }
 
@@ -459,21 +467,22 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     if (editAge) localStorage.setItem("userAge", editAge)
     if (editBio) localStorage.setItem("userBio", editBio)
     
+    // Lock country ONE TIME permanently on Save
     if (editCountry) {
       localStorage.setItem("userCountry", editCountry)
       localStorage.setItem("userCountryLocked", "true")
       setCountryLocked(true)
     }
 
-    const matchedCountry = COUNTRIES.find(c => c.name === editCountry)
+    const matchedCountry = COUNTRIES.find(c => c.name === editCountry) || { name: 'India', flag: '🇮🇳' }
 
     setUser(prev => ({
       ...prev,
       name: editName,
       age: parseInt(editAge) || prev.age,
       bio: editBio,
-      location: editCountry,
-      flag: matchedCountry ? matchedCountry.flag : prev.flag
+      location: matchedCountry.name,
+      flag: matchedCountry.flag
     }))
 
     // ALL DETAILS SAVE TO FIRESTORE "users" COLLECTION
@@ -484,8 +493,9 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       age: parseInt(editAge) || user.age,
       bio: editBio,
       about: editBio,
-      country: editCountry,
-      location: editCountry
+      country: matchedCountry.name,
+      location: matchedCountry.name,
+      countryLocked: true // Locked permanently in Firestore
     })
 
     setShowEditSheet(false)
@@ -627,7 +637,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
           <MapPin size={14} className="text-gray-400" />
           <span className="text-base">{user.flag}</span>
-          <span className="text-gray-500">{user.location || "Select Country"}</span>
+          <span className="text-gray-500">{user.location || "India"}</span>
         </div>
 
         <div className="flex items-start gap-2 mt-2">
@@ -903,7 +913,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 )}
               </div>
 
-              {/* Country Selection */}
+              {/* Country Selection (Default: India, Lock on first Save) */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Country</span>
                 <select
@@ -914,7 +924,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                     countryLocked ? 'text-gray-400 border-transparent cursor-not-allowed' : 'text-gray-900 border-gray-200 focus:border-blue-500'
                   }`}
                 >
-                  <option value="" disabled>Select Country</option>
                   {COUNTRIES.map((c) => (
                     <option key={c.code} value={c.name}>
                       {c.flag} {c.name}
