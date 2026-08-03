@@ -1,4 +1,4 @@
-'use client' 
+'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { db } from "../src/lib/firebase"
@@ -10,7 +10,8 @@ import {
   onSnapshot,
   query,
   where,
-  getDocs
+  getDocs,
+  getDoc
 } from "firebase/firestore"
 
 import MessagePage from './MessagePage'
@@ -148,10 +149,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [userName, setUserName] = useState('Guest')
   const [userPhoto, setUserPhoto] = useState('')
   const [userUID, setUserUID] = useState('')
-  
+
   // Global rooms state - stores all rooms from Firestore
   const [globalRooms, setGlobalRooms] = useState<GlobalRoom[]>([])
-  
+
   // Kept room state
   const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
   const [enteredFromKept, setEnteredFromKept] = useState(false)
@@ -191,11 +192,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
       document.documentElement.style.setProperty('--vh', `${vh}px`)
       setViewportHeight(window.innerHeight)
     }
-    
+
     setHeight()
     window.addEventListener('resize', setHeight)
     window.addEventListener('orientationchange', setHeight)
-    
+
     return () => {
       window.removeEventListener('resize', setHeight)
       window.removeEventListener('orientationchange', setHeight)
@@ -216,7 +217,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // Calculate initial position
   useEffect(() => {
-    circleStartPos.current = { 
+    circleStartPos.current = {
       x: window.innerWidth - 16 - 48,
       y: window.innerHeight * 0.6
     }
@@ -226,25 +227,25 @@ export default function HomePage({ onLogout }: HomePageProps) {
   // Check if dragged circle is over delete zone
   const checkOverlap = useCallback((circleX: number, circleY: number) => {
     if (!deleteZoneRef.current) return false
-    
+
     const deleteRect = deleteZoneRef.current.getBoundingClientRect()
     const circleSize = 48
-    
+
     const circleCenter = {
       x: circleX + circleSize / 2,
       y: circleY + circleSize / 2
     }
-    
+
     const deleteCenter = {
       x: deleteRect.left + deleteRect.width / 2,
       y: deleteRect.top + deleteRect.height / 2
     }
-    
+
     const distance = Math.sqrt(
-      Math.pow(circleCenter.x - deleteCenter.x, 2) + 
+      Math.pow(circleCenter.x - deleteCenter.x, 2) +
       Math.pow(circleCenter.y - deleteCenter.y, 2)
     )
-    
+
     return distance < 60
   }, [])
 
@@ -257,10 +258,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setUserName(name)
       setUserPhoto(photo)
       setUserUID(uid)
-      
+
       const roomCreated = localStorage.getItem('isRoomCreated')
       const roomData = localStorage.getItem('myRoom')
-      
+
       if (roomCreated === 'true' && roomData) {
         setIsRoomCreated(true)
         try {
@@ -273,7 +274,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         setIsRoomCreated(false)
         setMyRoom(null)
       }
-      
+
       const keptRoomData = localStorage.getItem('keptRoom')
       if (keptRoomData) {
         try {
@@ -283,13 +284,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       }
     }
-    
+
     loadProfile()
     window.addEventListener('storage', loadProfile)
     return () => window.removeEventListener('storage', loadProfile)
   }, [])
 
-  // Listen for storage changes (cross-tab communication fallback for keptRoom)
+  // Listen for storage changes
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'keptRoom') {
@@ -324,7 +325,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // Mouse drag handlers for kept room circle
+  // Mouse & Touch drag handlers for kept room circle
   const handleCircleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -346,24 +347,24 @@ export default function HomePage({ onLogout }: HomePageProps) {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return
-      
+
       const deltaX = e.clientX - dragStartPos.current.x
       const deltaY = e.clientY - dragStartPos.current.y
-      
+
       const newX = circleStartPos.current.x + deltaX
       const newY = circleStartPos.current.y + deltaY
-      
+
       setDragPosition({ x: newX, y: newY })
-      
+
       const isOverlap = checkOverlap(newX, newY)
       setIsOverDeleteZone(isOverlap)
     }
 
     const handleMouseUp = () => {
       if (!isDragging) return
-      
+
       const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
-      
+
       if (isOverlap) {
         localStorage.removeItem('keptRoom')
         setKeptRoom(null)
@@ -371,7 +372,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       } else {
         setDragPosition(circleStartPos.current)
       }
-      
+
       setIsDragging(false)
       setShowDeleteZone(false)
       setIsOverDeleteZone(false)
@@ -379,25 +380,25 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isDragging) return
-      
+
       const touch = e.touches[0]
       const deltaX = touch.clientX - dragStartPos.current.x
       const deltaY = touch.clientY - dragStartPos.current.y
-      
+
       const newX = circleStartPos.current.x + deltaX
       const newY = circleStartPos.current.y + deltaY
-      
+
       setDragPosition({ x: newX, y: newY })
-      
+
       const isOverlap = checkOverlap(newX, newY)
       setIsOverDeleteZone(isOverlap)
     }
 
     const handleTouchEnd = () => {
       if (!isDragging) return
-      
+
       const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
-      
+
       if (isOverlap) {
         localStorage.removeItem('keptRoom')
         setKeptRoom(null)
@@ -405,7 +406,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       } else {
         setDragPosition(circleStartPos.current)
       }
-      
+
       setIsDragging(false)
       setShowDeleteZone(false)
       setIsOverDeleteZone(false)
@@ -501,9 +502,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setKeptRoom(roomData)
     setEnteredFromKept(false)
     localStorage.setItem('keptRoom', JSON.stringify(roomData))
-    circleStartPos.current = { 
-      x: window.innerWidth - 16 - 48, 
-      y: window.innerHeight * 0.6 
+    circleStartPos.current = {
+      x: window.innerWidth - 16 - 48,
+      y: window.innerHeight * 0.6
     }
     setDragPosition(circleStartPos.current)
   }
@@ -536,7 +537,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
-      
+
       // Get the correct display account ID
       const fullAccNum = getOrCreateAccountNumber(userUID)
       const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : userUID
@@ -560,7 +561,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         accountId: displayAccNum,
         createdAt: Date.now()
       }, { merge: true });
-      
+
       setSelectedUser(createdRoomCard)
       setCurrentPage('room')
     } else if (myRoom) {
@@ -596,7 +597,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setSelectedUser(null)
   }
 
-  // SIMPLE WORKING SEARCH FUNCTION
+  // ROBUST SEARCH FUNCTION FOR FIRESTORE
   const handlePerformSearch = async () => {
     if (!searchQuery.trim()) {
       setSearchResults([])
@@ -605,81 +606,87 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
 
     setIsSearching(true)
-    const query_text = searchQuery.trim().toLowerCase()
-    
+    const queryRaw = searchQuery.trim()
+    const queryLower = queryRaw.toLowerCase()
+
     try {
       const foundList: GlobalRoom[] = []
       const addedIds = new Set<string>()
 
-      // 1. Local globalRooms se filter
-      const localMatches = globalRooms.filter(r => {
-        const matches = r.accountId.includes(query_text) || 
-                       r.name.toLowerCase().includes(query_text.toLowerCase())
-        if (matches) addedIds.add(r.accountId)
-        return matches
-      })
-      foundList.push(...localMatches)
+      const addResult = (docId: string, uData: any) => {
+        const accId = String(uData.accountId || uData.id || docId)
+        if (!addedIds.has(docId) && !addedIds.has(accId)) {
+          addedIds.add(docId)
+          addedIds.add(accId)
+          foundList.push({
+            id: docId,
+            name: uData.name || 'User',
+            country: uData.country || '🇮🇳',
+            image: uData.image || '/default-avatar.png',
+            accountId: accId,
+            createdAt: uData.createdAt || Date.now()
+          })
+        }
+      }
 
-      // 2. Users collection - exact accountId match
+      // 1. Local globalRooms search (case-insensitive)
+      globalRooms.forEach((r) => {
+        const accId = String(r.accountId || r.id || '')
+        const rName = String(r.name || '')
+        if (
+          accId.toLowerCase().includes(queryLower) ||
+          rName.toLowerCase().includes(queryLower)
+        ) {
+          if (!addedIds.has(accId)) {
+            addedIds.add(accId)
+            foundList.push(r)
+          }
+        }
+      })
+
+      // 2. Direct Document ID Search in 'users'
+      try {
+        const userDocRef = doc(db, "users", queryRaw)
+        const userDocSnap = await getDoc(userDocRef)
+        if (userDocSnap.exists()) {
+          addResult(userDocSnap.id, userDocSnap.data())
+        }
+      } catch (e) {
+        console.warn("Direct doc search skipped:", e)
+      }
+
+      // 3. 'users' collection accountId query
       try {
         const usersRef = collection(db, "users")
-        const q2 = query(usersRef, where("accountId", ">=", query_text), where("accountId", "<=", query_text + '\uf8ff'));
-        const snap2 = await getDocs(q2);
-        
-        const processDocs = (snap: any) => {
-          snap.docs.forEach((doc: any) => {
-            const uData = doc.data()
-            const accId = uData.accountId || doc.id
-            if (!addedIds.has(accId)) {
-              addedIds.add(accId)
-              foundList.push({
-                id: doc.id,
-                name: uData.name || 'User',
-                country: uData.country || '🇮🇳',
-                image: uData.image || '/default-avatar.png',
-                accountId: accId,
-                createdAt: uData.createdAt || Date.now()
-              })
-            }
-          })
-        };
-        processDocs(snap2);
+        const qRange = query(
+          usersRef,
+          where("accountId", ">=", queryRaw),
+          where("accountId", "<=", queryRaw + '\uf8ff')
+        )
+        const snapRange = await getDocs(qRange)
+        snapRange.docs.forEach((d) => addResult(d.id, d.data()))
       } catch (err) {
-        console.warn("Users search failed:", err)
+        console.warn("Users query error:", err)
       }
 
-      // 3. globalRooms collection - exact accountId match
+      // 4. 'globalRooms' collection query
       try {
         const roomsRef = collection(db, "globalRooms")
-        const q2 = query(roomsRef, where("accountId", ">=", query_text), where("accountId", "<=", query_text + '\uf8ff'));
-        const snap2 = await getDocs(q2);
-        
-        const processDocs = (snap: any) => {
-          snap.docs.forEach((doc: any) => {
-            const rData = doc.data()
-            const accId = rData.accountId || doc.id
-            if (!addedIds.has(accId)) {
-              addedIds.add(accId)
-              foundList.push({
-                id: doc.id,
-                name: rData.name || 'User',
-                country: rData.country || '🇮🇳',
-                image: rData.image || '/default-avatar.png',
-                accountId: accId,
-                createdAt: rData.createdAt || Date.now()
-              })
-            }
-          })
-        };
-        processDocs(snap2);
+        const qRooms = query(
+          roomsRef,
+          where("accountId", ">=", queryRaw),
+          where("accountId", "<=", queryRaw + '\uf8ff')
+        )
+        const snapRooms = await getDocs(qRooms)
+        snapRooms.docs.forEach((d) => addResult(d.id, d.data()))
       } catch (err) {
-        console.warn("globalRooms search failed:", err)
+        console.warn("globalRooms query error:", err)
       }
 
-      // Sort: exact match pehle
+      // Sort exact match first
       foundList.sort((a, b) => {
-        const aExact = a.accountId === query_text
-        const bExact = b.accountId === query_text
+        const aExact = String(a.accountId).toLowerCase() === queryLower || a.id.toLowerCase() === queryLower
+        const bExact = String(b.accountId).toLowerCase() === queryLower || b.id.toLowerCase() === queryLower
         if (aExact && !bExact) return -1
         if (!aExact && bExact) return 1
         return (b.createdAt || 0) - (a.createdAt || 0)
@@ -687,16 +694,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       setSearchResults(foundList.slice(0, 20))
       setHasSearched(true)
-      
+
     } catch (err) {
       console.error("Search error:", err)
-      // Fallback to local search
-      const localMatches = globalRooms.filter(r => 
-        r.accountId.includes(query_text) || 
-        r.name.toLowerCase().includes(query_text.toLowerCase())
-      )
-      setSearchResults(localMatches.slice(0, 20))
-      setHasSearched(true)
     } finally {
       setIsSearching(false)
     }
@@ -749,218 +749,214 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
-  // All rooms including own room from Firestore
   const allRooms = globalRooms
 
   const renderMineTab = () => (
-    <div className="px-4 mt-6">
-      <div
-        onClick={handleCardClick}
-        className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
-        style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
-        }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.transform = 'translateY(-2px)';
-          el.style.boxShadow = '0 12px 40px rgba(102, 126, 234, 0.6)';
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.transform = 'translateY(0)';
-          el.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.4)';
-        }}
-      >
-        {!isRoomCreated ? (
-          <>
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <path
-                  d="M16 8V24M8 16H24"
-                  stroke="white"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <h3 className="text-white font-bold text-xl leading-tight">
-                Create your Room
-              </h3>
-              <p className="text-white/80 text-sm mt-1 font-medium">
-                Embark Your Hawa journey!
-              </p>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {userPhoto ? (
-                <img
-                  src={userPhoto}
-                  alt="Profile Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white font-bold text-xl">
-                  {userName.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <h3 className="text-white font-bold text-xl leading-tight">
-                {userName}
-              </h3>
-              <p className="text-white/80 text-sm mt-1 font-medium">
-                Tap to enter your room
-              </p>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="flex gap-4 mb-4">
-        <button
-          type="button"
-          onClick={() => setActiveMineTab('following')}
-          className={`relative pb-1.5 text-xs font-medium transition-colors ${
-            activeMineTab === 'following'
-              ? 'text-gray-900'
-              : 'text-gray-400 hover:text-gray-600'
-          }`}
-        >
-          Following
-          {activeMineTab === 'following' && (
-            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveMineTab('recent')}
-          className={`relative pb-1.5 text-sm font-medium transition-colors ${
-            activeMineTab === 'recent'
-              ? 'text-gray-900'
-              : 'text-gray-400 hover:text-gray-600'
-          }`}
-        >
-          Recent
-          {activeMineTab === 'recent' && (
-            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
-          )}
-        </button>
-      </div>
-
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-        {activeMineTab === 'following' ? (
-          <div className="text-center">
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
-              <path
-                d="M32 8C45.2 8 56 18.8 56 32C56 45.2 45.2 56 32 56C18.8 56 8 45.2 8 32C8 18.8 18.8 8 32 8Z"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-              <path
-                d="M24 32H40M32 24V40"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-            <p className="text-sm">No following yet</p>
-          </div>
-        ) : (
-          <div className="text-center">
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
-              <path
-                d="M16 20H48M16 32H48M16 44H32"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-            <p className="text-sm">No recent activity</p>
-          </div>
-        )}
-      </div>
-    </div>
+    <div className="px-4 mt-6">  
+      <div  
+        onClick={handleCardClick}  
+        className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"  
+        style={{  
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',  
+          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',  
+        }}  
+        onMouseEnter={(e) => {  
+          const el = e.currentTarget as HTMLDivElement;  
+          el.style.transform = 'translateY(-2px)';  
+          el.style.boxShadow = '0 12px 40px rgba(102, 126, 234, 0.6)';  
+        }}  
+        onMouseLeave={(e) => {  
+          const el = e.currentTarget as HTMLDivElement;  
+          el.style.transform = 'translateY(0)';  
+          el.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.4)';  
+        }}  
+      >  
+        {!isRoomCreated ? (  
+          <>  
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">  
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">  
+                <path    
+                  d="M16 8V24M8 16H24"    
+                  stroke="white"    
+                  strokeWidth="3"    
+                  strokeLinecap="round"    
+                  strokeLinejoin="round"    
+                />  
+              </svg>  
+            </div>  
+            <div className="flex flex-col">  
+              <h3 className="text-white font-bold text-xl leading-tight">  
+                Create your Room  
+              </h3>  
+              <p className="text-white/80 text-sm mt-1 font-medium">  
+                Embark Your Hawa journey!  
+              </p>  
+            </div>  
+          </>  
+        ) : (  
+          <>  
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden">  
+              {userPhoto ? (  
+                <img    
+                  src={userPhoto}    
+                  alt="Profile Avatar"    
+                  className="w-full h-full object-cover"    
+                />  
+              ) : (  
+                <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white font-bold text-xl">  
+                  {userName.charAt(0).toUpperCase()}  
+                </div>  
+              )}  
+            </div>  
+            <div className="flex flex-col">  
+              <h3 className="text-white font-bold text-xl leading-tight">  
+                {userName}  
+              </h3>  
+              <p className="text-white/80 text-sm mt-1 font-medium">  
+                Tap to enter your room  
+              </p>  
+            </div>  
+          </>  
+        )}  
+      </div>  
+      <div className="flex gap-4 mb-4">    
+        <button    
+          type="button"    
+          onClick={() => setActiveMineTab('following')}    
+          className={`relative pb-1.5 text-xs font-medium transition-colors ${    
+            activeMineTab === 'following'    
+              ? 'text-gray-900'    
+              : 'text-gray-400 hover:text-gray-600'    
+          }`}    
+        >    
+          Following    
+          {activeMineTab === 'following' && (    
+            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />    
+          )}    
+        </button>    
+        <button    
+          type="button"    
+          onClick={() => setActiveMineTab('recent')}    
+          className={`relative pb-1.5 text-sm font-medium transition-colors ${    
+            activeMineTab === 'recent'    
+              ? 'text-gray-900'    
+              : 'text-gray-400 hover:text-gray-600'    
+          }`}    
+        >    
+          Recent    
+          {activeMineTab === 'recent' && (    
+            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />    
+          )}    
+        </button>    
+      </div>      
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400">    
+        {activeMineTab === 'following' ? (    
+          <div className="text-center">    
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">    
+              <path    
+                d="M32 8C45.2 8 56 18.8 56 32C56 45.2 45.2 56 32 56C18.8 56 8 45.2 8 32C8 18.8 18.8 8 32 8Z"    
+                stroke="currentColor"    
+                strokeWidth="2"    
+              />    
+              <path    
+                d="M24 32H40M32 24V40"    
+                stroke="currentColor"    
+                strokeWidth="2"    
+                strokeLinecap="round"    
+              />    
+            </svg>    
+            <p className="text-sm">No following yet</p>    
+          </div>    
+        ) : (    
+          <div className="text-center">    
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">    
+              <path    
+                d="M16 20H48M16 32H48M16 44H32"    
+                stroke="currentColor"    
+                strokeWidth="2"    
+                strokeLinecap="round"    
+              />    
+            </svg>    
+            <p className="text-sm">No recent activity</p>    
+          </div>    
+        )}    
+      </div>    
+    </div>  
   );
 
   const renderPopularTab = () => (
     <>
-      <div className="px-4" style={{ marginTop: '-85px', position: 'relative', zIndex: 10 }}>
-        <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
-          {CATEGORY_CARDS.map((card, i) => (
-            <div
-              key={card.label}
-              className="group flex-1"
-              style={{
-                height: '90px',
-                borderRadius: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '8px 6px 6px 6px',
-                border: '1.5px solid rgba(0,0,0,0.06)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
-                opacity: mounted ? 1 : 0,
-                transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
-                transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
-                animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
-                animationDelay: `${i * 100}ms`,
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.transform = 'translateY(-3px) scale(1.02)';
-                el.style.boxShadow = '0 10px 20px rgba(0,0,0,0.14), 0 3px 8px rgba(0,0,0,0.06)';
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.transform = 'translateY(0) scale(1)';
-                el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
-              }}
-            >
-              <div
-                style={{
-                  textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: card.textColor,
-                  marginBottom: '4px',
-                  textShadow: '0 1px 0 rgba(255,255,255,0.7)',
-                }}
-              >
-                {card.label}
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  borderRadius: '10px',
-                  backgroundColor: card.innerBg,
-                  border: `1.5px solid ${card.innerBorder}`,
-                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 58%)',
-                  }}
-                />
-                <span className="text-xl relative z-10">{card.icon}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
+      <div className="px-4" style={{ marginTop: '-85px', position: 'relative', zIndex: 10 }}>  
+        <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>  
+          {CATEGORY_CARDS.map((card, i) => (  
+            <div  
+              key={card.label}  
+              className="group flex-1"  
+              style={{  
+                height: '90px',  
+                borderRadius: '16px',  
+                display: 'flex',  
+                flexDirection: 'column',  
+                padding: '8px 6px 6px 6px',  
+                border: '1.5px solid rgba(0,0,0,0.06)',  
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',  
+                background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,  
+                opacity: mounted ? 1 : 0,  
+                transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',  
+                transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',  
+                animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',  
+                animationDelay: `${i * 100}ms`,  
+              }}  
+              onMouseEnter={(e) => {  
+                const el = e.currentTarget as HTMLDivElement;  
+                el.style.transform = 'translateY(-3px) scale(1.02)';  
+                el.style.boxShadow = '0 10px 20px rgba(0,0,0,0.14), 0 3px 8px rgba(0,0,0,0.06)';  
+              }}  
+              onMouseLeave={(e) => {  
+                const el = e.currentTarget as HTMLDivElement;  
+                el.style.transform = 'translateY(0) scale(1)';  
+                el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';  
+              }}  
+            >  
+              <div  
+                style={{  
+                  textAlign: 'center',  
+                  fontSize: '14px',  
+                  fontWeight: 700,  
+                  color: card.textColor,  
+                  marginBottom: '4px',  
+                  textShadow: '0 1px 0 rgba(255,255,255,0.7)',  
+                }}  
+              >  
+                {card.label}  
+              </div>  
+              <div  
+                style={{  
+                  flex: 1,  
+                  borderRadius: '10px',  
+                  backgroundColor: card.innerBg,  
+                  border: `1.5px solid ${card.innerBorder}`,  
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',  
+                  position: 'relative',  
+                  overflow: 'hidden',  
+                  display: 'flex',  
+                  alignItems: 'center',  
+                  justifyContent: 'center'  
+                }}  
+              >  
+                <div  
+                  style={{  
+                    position: 'absolute',  
+                    inset: 0,  
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 58%)',  
+                  }}  
+                />  
+                <span className="text-xl relative z-10">{card.icon}</span>  
+              </div>  
+            </div>  
+          ))}  
+        </div>  
+      </div>  
       {allRooms.length > 0 && (
         <div className="px-4">
           <div className="grid grid-cols-2 gap-2.5">
@@ -976,10 +972,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
                 style={{ height: '180px' }}
               >
-                <img
-                  src={room.image}
-                  alt={room.name}
-                  className="w-full h-full object-cover"
+                <img    
+                  src={room.image}    
+                  alt={room.name}    
+                  className="w-full h-full object-cover"    
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                   <div className="flex items-center gap-1.5">
@@ -998,42 +994,41 @@ export default function HomePage({ onLogout }: HomePageProps) {
   );
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
-      style={{
-        minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',
-        minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
-        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen) ? '0px' : '96px',
-        touchAction: 'manipulation',
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
-        WebkitTouchCallout: 'none'
-      }}
-    >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
+    <div  
+      className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"  
+      style={{  
+        minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',  
+        minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',  
+        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen) ? '0px' : '96px',  
+        touchAction: 'manipulation',  
+        WebkitUserSelect: 'none',  
+        userSelect: 'none',  
+        WebkitTouchCallout: 'none'  
+      }}  
+    >  
+      <style>{`  
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');  
+        * {
+          -webkit-text-size-adjust: 100%;
+          -ms-text-size-adjust: 100%;
+          touch-action: manipulation;
+        }
 
-        * {  
-          -webkit-text-size-adjust: 100%;  
-          -ms-text-size-adjust: 100%;  
-          touch-action: manipulation;  
-        }  
-          
-        button, a, div, span {  
-          touch-action: manipulation;  
-        }  
-          
-        @keyframes cardIn {  
-          0% { opacity: 0; transform: translateY(14px) scale(0.96); }  
-          100% { opacity: 1; transform: translateY(0) scale(1); }  
-        }  
-        @keyframes fadeInBanner {  
-          0% { opacity: 0; }  
-          100% { opacity: 1; }  
-        }  
-        @keyframes pulseGlow {  
-          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }  
-          50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }  
+        button, a, div, span {
+          touch-action: manipulation;
+        }
+
+        @keyframes cardIn {
+          0% { opacity: 0; transform: translateY(14px) scale(0.96); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeInBanner {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
         }
         @keyframes deletePulse {
           0%, 100% { transform: scale(1); }
@@ -1052,32 +1047,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
           100% { transform: translateY(0); }
         }
 
-        /* Full height utility classes */
-        .h-full-dvh {
-          height: 100vh;
-          height: 100dvh;
-        }
-        
-        .min-h-full-dvh {
-          min-height: 100vh;
-          min-height: 100dvh;
-        }
-
-        /* Safe area padding for notched devices */
-        .safe-top {
-          padding-top: env(safe-area-inset-top, 24px);
-        }
-        
-        .safe-bottom {
-          padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-
-        /* Hide scrollbar but allow scrolling */
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-        
+
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -1085,631 +1059,630 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       {/* SEARCH OVERLAY SHEET */}
       {isSearchOpen && (
-        <div 
-          className="fixed inset-0 z-[120] bg-white flex flex-col" 
-          style={{ 
-            animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-            height: viewportHeight ? `${viewportHeight}px` : '100vh',
-            height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
-          }}
-        >
-          {/* Top Row Header */}
-          <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100 safe-top">
-            {/* Back Arrow Button */}
-            <button
-              onClick={() => setIsSearchOpen(false)}
-              className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D2D2D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
-            </button>
+        <div     
+          className="fixed inset-0 z-[120] bg-white flex flex-col"     
+          style={{     
+            animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)',    
+            height: viewportHeight ? `${viewportHeight}px` : '100vh',    
+            height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'    
+          }}    
+        >    
+          {/* Top Row Header */}    
+          <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100 safe-top">    
+            {/* Back Arrow Button */}    
+            <button    
+              onClick={() => setIsSearchOpen(false)}    
+              className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"    
+            >    
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D2D2D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">    
+                <line x1="19" y1="12" x2="5" y2="12" />    
+                <polyline points="12 19 5 12 12 5" />    
+              </svg>    
+            </button>    
 
-            {/* Glossy Search Bar */}
-            <div className="flex-1 flex items-center bg-gradient-to-r from-gray-100/90 to-blue-50/70 border border-white/60 shadow-inner rounded-full px-4 py-2 backdrop-blur-md">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by ID or name..."
-                className="w-full bg-transparent text-sm font-semibold text-gray-800 placeholder-gray-400 outline-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handlePerformSearch()
-                }}
-              />
-            </div>
+            {/* Glossy Search Bar */}    
+            <div className="flex-1 flex items-center bg-gradient-to-r from-gray-100/90 to-blue-50/70 border border-white/60 shadow-inner rounded-full px-4 py-2 backdrop-blur-md">    
+              <input    
+                type="text"    
+                value={searchQuery}    
+                onChange={(e) => setSearchQuery(e.target.value)}    
+                placeholder="Search by ID or name..."    
+                className="w-full bg-transparent text-sm font-semibold text-gray-800 placeholder-gray-400 outline-none"    
+                onKeyDown={(e) => {    
+                  if (e.key === 'Enter') handlePerformSearch()    
+                }}    
+              />    
+            </div>    
 
-            {/* Search Button */}
-            <button
-              onClick={handlePerformSearch}
-              className="p-2.5 bg-gradient-to-tr from-blue-500 to-indigo-500 text-white rounded-full shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </button>
+            {/* Search Button */}    
+            <button    
+              onClick={handlePerformSearch}    
+              className="p-2.5 bg-gradient-to-tr from-blue-500 to-indigo-500 text-white rounded-full shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"    
+            >    
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">    
+                <circle cx="11" cy="11" r="8" />    
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />    
+              </svg>    
+            </button>    
+          </div>    
+
+          {/* User / Room Tabs */}    
+          <div className="flex px-4 border-b border-gray-100 mt-1">    
+            <button    
+              type="button"    
+              onClick={() => setActiveSearchTab('user')}    
+              className={`py-3 px-6 text-sm font-bold relative transition-colors ${    
+                activeSearchTab === 'user' ? 'text-blue-600' : 'text-gray-400'    
+              }`}    
+            >    
+              User    
+              {activeSearchTab === 'user' && (    
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />    
+              )}    
+            </button>    
+            <button    
+              type="button"    
+              onClick={() => setActiveSearchTab('room')}    
+              className={`py-3 px-6 text-sm font-bold relative transition-colors ${    
+                activeSearchTab === 'room' ? 'text-blue-600' : 'text-gray-400'    
+              }`}    
+            >    
+              Room    
+              {activeSearchTab === 'room' && (    
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />    
+              )}    
+            </button>    
+          </div>    
+
+          {/* Search Results */}    
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 hide-scrollbar">    
+            {isSearching ? (    
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400">    
+                <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>    
+                <p className="text-xs font-semibold">Searching...</p>    
+              </div>    
+            ) : hasSearched ? (    
+              searchResults.length > 0 ? (    
+                <div className="flex flex-col gap-3">    
+                  {searchResults.map((user) => (    
+                    <div    
+                      key={user.accountId}    
+                      onClick={() => handleUserCardClick({    
+                        id: user.accountId,    
+                        name: user.name,    
+                        country: user.country,    
+                        image: user.image    
+                      })}    
+                      className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"    
+                    >    
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">    
+                        <img    
+                          src={user.image}    
+                          alt={user.name}    
+                          className="w-full h-full object-cover"    
+                        />    
+                      </div>    
+                      <div className="flex flex-col flex-1 min-w-0">    
+                        <div className="flex items-center gap-1.5">    
+                          <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>    
+                          <span className="text-xs">{user.country}</span>    
+                        </div>    
+                        <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>    
+                      </div>    
+                      <div className="px-3.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-sm">    
+                        Enter    
+                      </div>    
+                    </div>    
+                  ))}    
+                </div>    
+              ) : (    
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400">    
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-40">    
+                    <circle cx="11" cy="11" r="8" />    
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />    
+                  </svg>    
+                  <p className="text-sm font-semibold">No user found</p>    
+                  <p className="text-xs text-gray-400 mt-1">Try different ID or name</p>    
+                </div>    
+              )    
+            ) : (    
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400">    
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-3 opacity-40">    
+                  <circle cx="11" cy="11" r="8" />    
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />    
+                </svg>    
+                <p className="text-sm font-semibold mb-1">Search Users</p>    
+                <p className="text-xs font-medium text-gray-400">Enter ID or name to find people</p>    
+              </div>    
+            )}    
           </div>
-
-          {/* User / Room Tabs */}
-          <div className="flex px-4 border-b border-gray-100 mt-1">
-            <button
-              type="button"
-              onClick={() => setActiveSearchTab('user')}
-              className={`py-3 px-6 text-sm font-bold relative transition-colors ${
-                activeSearchTab === 'user' ? 'text-blue-600' : 'text-gray-400'
-              }`}
-            >
-              User
-              {activeSearchTab === 'user' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveSearchTab('room')}
-              className={`py-3 px-6 text-sm font-bold relative transition-colors ${
-                activeSearchTab === 'room' ? 'text-blue-600' : 'text-gray-400'
-              }`}
-            >
-              Room
-              {activeSearchTab === 'room' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-              )}
-            </button>
-          </div>
-
-          {/* Search Results */}
-          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 hide-scrollbar">
-            {isSearching ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                <p className="text-xs font-semibold">Searching...</p>
-              </div>
-            ) : hasSearched ? (
-              searchResults.length > 0 ? (
-                <div className="flex flex-col gap-3">
-                  {searchResults.map((user) => (
-                    <div
-                      key={user.accountId}
-                      onClick={() => handleUserCardClick({
-                        id: user.accountId,
-                        name: user.name,
-                        country: user.country,
-                        image: user.image
-                      })}
-                      className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"
-                    >
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">
-                        <img
-                          src={user.image}
-                          alt={user.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex flex-col flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>
-                          <span className="text-xs">{user.country}</span>
-                        </div>
-                        <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>
-                      </div>
-                      <div className="px-3.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-sm">
-                        Enter
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-40">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                  <p className="text-sm font-semibold">No user found</p>
-                  <p className="text-xs text-gray-400 mt-1">Try different ID or name</p>
-                </div>
-              )
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-3 opacity-40">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <p className="text-sm font-semibold mb-1">Search Users</p>
-                <p className="text-xs font-medium text-gray-400">Enter ID or name to find people</p>
-              </div>
-            )}
-          </div>
-        </div>
+        </div>    
       )}
 
       {/* Sign-in Modal */}
       {isSignInModalOpen && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ 
-            animation: 'modalOverlayIn 0.3s ease-out',
-            height: viewportHeight ? `${viewportHeight}px` : '100vh',
-            height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
-          }}
-          onClick={handleCloseModal}
-        >
+        <div     
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"    
+          style={{     
+            animation: 'modalOverlayIn 0.3s ease-out',    
+            height: viewportHeight ? `${viewportHeight}px` : '100vh',    
+            height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'    
+          }}    
+          onClick={handleCloseModal}    
+        >    
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          
-          <div 
-            className="relative bg-white rounded-3xl w-full max-w-sm overflow-hidden"
-            style={{ 
-              animation: 'modalFadeIn 0.3s ease-out',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/40 transition-all"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+          <div     
+            className="relative bg-white rounded-3xl w-full max-w-sm overflow-hidden"    
+            style={{     
+              animation: 'modalFadeIn 0.3s ease-out',    
+              boxShadow: '0 25px 50px rgba(0,0,0,0.3)'    
+            }}    
+            onClick={(e) => e.stopPropagation()}    
+          >    
+            <button    
+              onClick={handleCloseModal}    
+              className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/40 transition-all"    
+            >    
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">    
+                <line x1="18" y1="6" x2="6" y2="18" />    
+                <line x1="6" y1="6" x2="18" y2="18" />    
+              </svg>    
+            </button>    
 
-            <div 
-              className="relative px-6 pt-8 pb-6 text-center"
-              style={{
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              }}
-            >
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full" />
-                <div className="absolute -bottom-2 -left-2 w-16 h-16 bg-white/10 rounded-full" />
-              </div>
-              <h2 className="text-2xl font-bold text-white relative z-10">
-                Daily Sign-in
-              </h2>
-              <p className="text-blue-100 text-sm mt-1 relative z-10">
-                Day {currentSignInDay} of 7
-              </p>
-            </div>
+            <div     
+              className="relative px-6 pt-8 pb-6 text-center"    
+              style={{    
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',    
+              }}    
+            >    
+              <div className="absolute inset-0 overflow-hidden">    
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full" />    
+                <div className="absolute -bottom-2 -left-2 w-16 h-16 bg-white/10 rounded-full" />    
+              </div>    
+              <h2 className="text-2xl font-bold text-white relative z-10">    
+                Daily Sign-in    
+              </h2>    
+              <p className="text-blue-100 text-sm mt-1 relative z-10">    
+                Day {currentSignInDay} of 7    
+              </p>    
+            </div>    
 
-            <div className="px-6 pt-6 pb-4">
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {SIGN_IN_REWARDS.slice(0, 4).map((item, index) => (
-                  <div
-                    key={item.day}
-                    className={`relative rounded-xl p-2 text-center transition-all ${
-                      index + 1 < currentSignInDay 
-                        ? 'bg-green-50 border-2 border-green-400' 
-                        : index + 1 === currentSignInDay
-                        ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'
-                        : 'bg-gray-50 border-2 border-gray-200 opacity-60'
-                    }`}
-                    style={{ minHeight: '80px' }}
-                  >
-                    <div className="text-2xl mb-1">{item.icon}</div>
-                    <div className="text-xs font-semibold text-gray-700">
-                      Day {item.day}
-                    </div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">
-                      {item.reward}
-                    </div>
-                    {index + 1 < currentSignInDay && (
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+            <div className="px-6 pt-6 pb-4">    
+              <div className="grid grid-cols-4 gap-2 mb-2">    
+                {SIGN_IN_REWARDS.slice(0, 4).map((item, index) => (    
+                  <div    
+                    key={item.day}    
+                    className={`relative rounded-xl p-2 text-center transition-all ${    
+                      index + 1 < currentSignInDay     
+                        ? 'bg-green-50 border-2 border-green-400'     
+                        : index + 1 === currentSignInDay    
+                        ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'    
+                        : 'bg-gray-50 border-2 border-gray-200 opacity-60'    
+                    }`}    
+                    style={{ minHeight: '80px' }}    
+                  >    
+                    <div className="text-2xl mb-1">{item.icon}</div>    
+                    <div className="text-xs font-semibold text-gray-700">    
+                      Day {item.day}    
+                    </div>    
+                    <div className="text-[10px] text-gray-500 mt-0.5">    
+                      {item.reward}    
+                    </div>    
+                    {index + 1 < currentSignInDay && (    
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">    
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">    
+                          <polyline points="20 6 9 17 4 12" />    
+                        </svg>    
+                      </div>    
+                    )}    
+                  </div>    
+                ))}    
+              </div>    
 
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                {SIGN_IN_REWARDS.slice(4, 6).map((item, index) => (
-                  <div
-                    key={item.day}
-                    className={`relative rounded-xl p-3 text-center transition-all ${
-                      index + 5 < currentSignInDay 
-                        ? 'bg-green-50 border-2 border-green-400' 
-                        : index + 5 === currentSignInDay
-                        ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'
-                        : 'bg-gray-50 border-2 border-gray-200 opacity-60'
-                    }`}
-                    style={{ minHeight: '70px' }}
-                  >
-                    <div className="text-2xl mb-1">{item.icon}</div>
-                    <div className="text-xs font-semibold text-gray-700">
-                      Day {item.day}
-                    </div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">
-                      {item.reward}
-                    </div>
-                    {index + 5 < currentSignInDay && (
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <div className="grid grid-cols-2 gap-2 mb-2">    
+                {SIGN_IN_REWARDS.slice(4, 6).map((item, index) => (    
+                  <div    
+                    key={item.day}    
+                    className={`relative rounded-xl p-3 text-center transition-all ${    
+                      index + 5 < currentSignInDay     
+                        ? 'bg-green-50 border-2 border-green-400'     
+                        : index + 5 === currentSignInDay    
+                        ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'    
+                        : 'bg-gray-50 border-2 border-gray-200 opacity-60'    
+                    }`}    
+                    style={{ minHeight: '70px' }}    
+                  >    
+                    <div className="text-2xl mb-1">{item.icon}</div>    
+                    <div className="text-xs font-semibold text-gray-700">    
+                      Day {item.day}    
+                    </div>    
+                    <div className="text-[10px] text-gray-500 mt-0.5">    
+                      {item.reward}    
+                    </div>    
+                    {index + 5 < currentSignInDay && (    
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">    
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">    
+                          <polyline points="20 6 9 17 4 12" />    
+                        </svg>    
+                      </div>    
+                    )}    
+                  </div>    
+                ))}    
+              </div>    
 
-              <div className="mb-4">
-                <div
-                  className={`relative rounded-xl p-4 text-center transition-all ${
-                    7 < currentSignInDay 
-                      ? 'bg-green-50 border-2 border-green-400' 
-                      : 7 === currentSignInDay
-                      ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'
-                      : 'bg-gray-50 border-2 border-gray-200 opacity-60'
-                  }`}
-                  style={{ minHeight: '100px' }}
-                >
-                  <div className="text-4xl mb-2">🎁</div>
-                  <div className="text-sm font-bold text-gray-800">
-                    Day 7 - Big Reward!
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    500 🪙 + Special Frame
-                  </div>
-                  {7 < currentSignInDay && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <div className="mb-4">    
+                <div    
+                  className={`relative rounded-xl p-4 text-center transition-all ${    
+                    7 < currentSignInDay     
+                      ? 'bg-green-50 border-2 border-green-400'     
+                      : 7 === currentSignInDay    
+                      ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'    
+                      : 'bg-gray-50 border-2 border-gray-200 opacity-60'    
+                  }`}    
+                  style={{ minHeight: '100px' }}    
+                >    
+                  <div className="text-4xl mb-2">🎁</div>    
+                  <div className="text-sm font-bold text-gray-800">    
+                    Day 7 - Big Reward!    
+                  </div>    
+                  <div className="text-xs text-gray-500 mt-1">    
+                    500 🪙 + Special Frame    
+                  </div>    
+                  {7 < currentSignInDay && (    
+                    <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">    
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">    
+                        <polyline points="20 6 9 17 4 12" />    
+                      </svg>    
+                    </div>    
+                  )}    
+                </div>    
+              </div>    
 
-              <button
-                onClick={handleSignIn}
-                disabled={currentSignInDay > 7}
-                className={`w-full py-3.5 rounded-xl font-bold text-white text-base transition-all transform active:scale-95 ${
-                  currentSignInDay > 7 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50'
-                }`}
-              >
-                {currentSignInDay > 7 ? 'All Rewards Claimed! 🎉' : 'Sign In'}
-              </button>
-            </div>
+              <button    
+                onClick={handleSignIn}    
+                disabled={currentSignInDay > 7}    
+                className={`w-full py-3.5 rounded-xl font-bold text-white text-base transition-all transform active:scale-95 ${    
+                  currentSignInDay > 7     
+                    ? 'bg-gray-400 cursor-not-allowed'     
+                    : 'bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50'    
+                }`}    
+              >    
+                {currentSignInDay > 7 ? 'All Rewards Claimed! 🎉' : 'Sign In'}    
+              </button>    
+            </div>    
           </div>
-        </div>
+        </div>    
       )}
 
       {/* Delete Zone */}
       {showDeleteZone && keptRoom && (
-        <div 
-          ref={deleteZoneRef}
-          className="fixed bottom-4 right-4 z-[60] transition-all duration-300"
-          style={{
-            animation: isOverDeleteZone ? 'deletePulse 0.5s ease-in-out infinite' : 'none'
-          }}
-        >
-          <div 
-            className={`flex items-center justify-center rounded-full transition-all duration-300 ${
-              isOverDeleteZone 
-                ? 'w-16 h-16 bg-red-600 shadow-lg shadow-red-500/50 scale-110' 
-                : 'w-14 h-14 bg-red-500/60'
-            }`}
-          >
-            <svg 
-              viewBox="0 0 24 24" 
-              className={`transition-all duration-300 ${isOverDeleteZone ? 'w-8 h-8' : 'w-6 h-6'}`}
-              fill="none" 
-              stroke="white" 
-              strokeWidth="2.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <path d="M3 6h18" />
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-              <line x1="10" y1="11" x2="10" y2="17" />
-              <line x1="14" y1="11" x2="14" y2="17" />
-            </svg>
-          </div>
-        </div>
+        <div     
+          ref={deleteZoneRef}    
+          className="fixed bottom-4 right-4 z-[60] transition-all duration-300"    
+          style={{    
+            animation: isOverDeleteZone ? 'deletePulse 0.5s ease-in-out infinite' : 'none'    
+          }}    
+        >    
+          <div     
+            className={`flex items-center justify-center rounded-full transition-all duration-300 ${    
+              isOverDeleteZone     
+                ? 'w-16 h-16 bg-red-600 shadow-lg shadow-red-500/50 scale-110'     
+                : 'w-14 h-14 bg-red-500/60'    
+            }`}    
+          >    
+            <svg     
+              viewBox="0 0 24 24"     
+              className={`transition-all duration-300 ${isOverDeleteZone ? 'w-8 h-8' : 'w-6 h-6'}`}    
+              fill="none"     
+              stroke="white"     
+              strokeWidth="2.5"     
+              strokeLinecap="round"     
+              strokeLinejoin="round"    
+            >    
+              <path d="M3 6h18" />    
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />    
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />    
+              <line x1="10" y1="11" x2="10" y2="17" />    
+              <line x1="14" y1="11" x2="14" y2="17" />    
+            </svg>    
+          </div>    
+        </div>    
       )}
 
       {/* Kept Room Floating Circle */}
       {keptRoom && currentPage === 'home' && !isSearchOpen && (
-        <div 
-          ref={circleRef}
-          className={`fixed z-50 cursor-grab active:cursor-grabbing group ${
-            isDragging ? 'transition-none' : 'transition-all duration-300'
-          } ${isOverDeleteZone ? 'opacity-50 scale-75' : 'opacity-100'}`}
-          style={{
-            left: `${dragPosition.x}px`,
-            top: `${dragPosition.y}px`,
-            touchAction: 'none'
-          }}
-          onClick={handleKeptRoomClick}
-          onMouseDown={handleCircleMouseDown}
-          onTouchStart={handleCircleTouchStart}
-        >
-          <div className="relative">
-            <div 
-              className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg bg-white"
-              style={{ animation: isDragging ? 'none' : 'pulseGlow 2s infinite' }}
-            >
-              <img 
-                src={keptRoom.image} 
-                alt={keptRoom.name}
-                className="w-full h-full object-cover pointer-events-none"
-                draggable="false"
-              />
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white pointer-events-none"></div>
-          </div>
-          {!isDragging && (
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              {keptRoom.name}
-            </div>
-          )}
-        </div>
+        <div     
+          ref={circleRef}    
+          className={`fixed z-50 cursor-grab active:cursor-grabbing group ${    
+            isDragging ? 'transition-none' : 'transition-all duration-300'    
+          } ${isOverDeleteZone ? 'opacity-50 scale-75' : 'opacity-100'}`}    
+          style={{    
+            left: `${dragPosition.x}px`,    
+            top: `${dragPosition.y}px`,    
+            touchAction: 'none'    
+          }}    
+          onClick={handleKeptRoomClick}    
+          onMouseDown={handleCircleMouseDown}    
+          onTouchStart={handleCircleTouchStart}    
+        >    
+          <div className="relative">    
+            <div     
+              className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg bg-white"    
+              style={{ animation: isDragging ? 'none' : 'pulseGlow 2s infinite' }}    
+            >    
+              <img     
+                src={keptRoom.image}     
+                alt={keptRoom.name}    
+                className="w-full h-full object-cover pointer-events-none"    
+                draggable="false"    
+              />    
+            </div>    
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white pointer-events-none"></div>    
+          </div>    
+          {!isDragging && (    
+            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">    
+              {keptRoom.name}    
+            </div>    
+          )}    
+        </div>    
       )}
 
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
-        <div className="fixed bottom-24 right-4 z-40">
-          <img
-            src="/IMG_20260719_203213.png"
-            alt="Corner decoration"
-            className="rounded-2xl object-cover cursor-pointer hover:scale-105 transition-transform active:scale-95"
-            style={{
-              width: '70px',
-              height: '70px',
-            }}
-            onClick={handleImageClick}
-          />
-        </div>
+        <div className="fixed bottom-24 right-4 z-40">    
+          <img    
+            src="/IMG_20260719_203213.png"    
+            alt="Corner decoration"    
+            className="rounded-2xl object-cover cursor-pointer hover:scale-105 transition-transform active:scale-95"    
+            style={{    
+              width: '70px',    
+              height: '70px',    
+            }}    
+            onClick={handleImageClick}    
+          />    
+        </div>    
       )}
 
-      <div className="w-full">
-        {currentPage === 'home' && (
-          <div 
-            className="w-full bg-white" 
-            style={{
-              minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',
-              minHeight: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
-            }}
-          >
-            <div
-              className="w-full pt-3 px-4"
-              style={{
-                height: activeTab === 'mine' ? 'auto' : '34vh',
-                minHeight: activeTab === 'mine' ? 'auto' : '34vh',
-                background: activeTab === 'mine'
-                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
-                  : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-                paddingBottom: activeTab === 'mine' ? '12px' : '0px'
-              }}
-            >
-              <div className="w-full flex justify-between items-center py-1 box-border mb-4 safe-top">
-                <button
-                  type="button"
-                  onClick={handleHouseClick}
-                  className="flex items-center justify-center cursor-pointer"
-                  aria-label="Home"
-                >
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                    <path
-                      d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"
-                      stroke="#2D2D2D"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <rect x="9" y="14.5" width="3.5" height="6" rx="1.5" fill="#2D2D2D" />
-                    <rect x="14.2" y="11.5" width="3.5" height="9" rx="1.5" fill="#2D2D2D" />
-                    <rect x="19.5" y="14" width="3.5" height="6.5" rx="1.5" fill="#2D2D2D" />
-                  </svg>
-                </button>
+      <div className="w-full">    
+        {currentPage === 'home' && (    
+          <div     
+            className="w-full bg-white"     
+            style={{    
+              minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',    
+              minHeight: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'    
+            }}    
+          >    
+            <div    
+              className="w-full pt-3 px-4"    
+              style={{    
+                height: activeTab === 'mine' ? 'auto' : '34vh',    
+                minHeight: activeTab === 'mine' ? 'auto' : '34vh',    
+                background: activeTab === 'mine'    
+                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'    
+                  : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',    
+                paddingBottom: activeTab === 'mine' ? '12px' : '0px'    
+              }}    
+            >    
+              <div className="w-full flex justify-between items-center py-1 box-border mb-4 safe-top">    
+                <button    
+                  type="button"    
+                  onClick={handleHouseClick}    
+                  className="flex items-center justify-center cursor-pointer"    
+                  aria-label="Home"    
+                >    
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">    
+                    <path    
+                      d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"    
+                      stroke="#2D2D2D"    
+                      strokeWidth="2.2"    
+                      strokeLinecap="round"    
+                      strokeLinejoin="round"    
+                    />    
+                    <rect x="9" y="14.5" width="3.5" height="6" rx="1.5" fill="#2D2D2D" />    
+                    <rect x="14.2" y="11.5" width="3.5" height="9" rx="1.5" fill="#2D2D2D" />    
+                    <rect x="19.5" y="14" width="3.5" height="6.5" rx="1.5" fill="#2D2D2D" />    
+                  </svg>    
+                </button>    
 
-                <div className="flex items-center gap-8">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('mine')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
-                      activeTab === 'mine'
-                        ? 'font-bold text-[#1E1E1E]'
-                        : 'font-medium text-[#6E6E6E]'
-                    }`}
-                  >
-                    Mine
-                    {activeTab === 'mine' && (
-                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
-                    )}
-                  </button>
+                <div className="flex items-center gap-8">    
+                  <button    
+                    type="button"    
+                    onClick={() => setActiveTab('mine')}    
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${    
+                      activeTab === 'mine'    
+                        ? 'font-bold text-[#1E1E1E]'    
+                        : 'font-medium text-[#6E6E6E]'    
+                    }`}    
+                  >    
+                    Mine    
+                    {activeTab === 'mine' && (    
+                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />    
+                    )}    
+                  </button>    
 
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('popular')}
-                    className={`font-[#Inter] tracking-[0.2px] transition-colors relative pb-1 ${
-                      activeTab === 'popular'
-                        ? 'font-bold text-[#1E1E1E]'
-                        : 'font-medium text-[#6E6E6E]'
-                    }`}
-                  >
-                    Popular
-                    {activeTab === 'popular' && (
-                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
-                    )}
-                  </button>
-                </div>
+                  <button    
+                    type="button"    
+                    onClick={() => setActiveTab('popular')}    
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${    
+                      activeTab === 'popular'    
+                        ? 'font-bold text-[#1E1E1E]'    
+                        : 'font-medium text-[#6E6E6E]'    
+                    }`}    
+                  >    
+                    Popular    
+                    {activeTab === 'popular' && (    
+                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />    
+                    )}    
+                  </button>    
+                </div>    
 
-                {/* SEARCH ICON BUTTON */}
-                <button
-                  type="button"
-                  onClick={() => setIsSearchOpen(true)}
-                  className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-                  aria-label="Search"
-                >
-                  <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-                    <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
+                {/* SEARCH ICON BUTTON */}    
+                <button    
+                  type="button"    
+                  onClick={() => setIsSearchOpen(true)}    
+                  className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"    
+                  aria-label="Search"    
+                >    
+                  <svg width="26" height="26" viewBox="0 0 28 28" fill="none">    
+                    <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />    
+                    <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />    
+                  </svg>    
+                </button>    
+              </div>    
 
-              {activeTab === 'popular' && (
-                <>
-                  <div
-                    ref={bannerRef}
-                    className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
-                    style={{
-                      height: '90px',
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-                      transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
-                    }}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    <div
-                      key={currentBanner}
-                      className="w-full h-full"
-                      style={{
-                        animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',
-                      }}
-                    >
-                      <img
-                        src={BANNERS[currentBanner].image}
-                        alt="Banner"
-                        className="w-full h-full object-cover rounded-2xl"
-                        draggable="false"
-                      />
-                    </div>
-                  </div>
+              {activeTab === 'popular' && (    
+                <>    
+                  <div    
+                    ref={bannerRef}    
+                    className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"    
+                    style={{    
+                      height: '90px',    
+                      width: '100%',    
+                      display: 'flex',    
+                      alignItems: 'center',    
+                      justifyContent: 'center',    
+                      transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',    
+                      transition: isSwiping ? 'none' : 'transform 0.3s ease-out',    
+                    }}    
+                    onTouchStart={handleTouchStart}    
+                    onTouchMove={handleTouchMove}    
+                    onTouchEnd={handleTouchEnd}    
+                    onMouseDown={handleMouseDown}    
+                    onMouseMove={handleMouseMove}    
+                    onMouseUp={handleMouseUp}    
+                    onMouseLeave={handleMouseLeave}    
+                  >    
+                    <div    
+                      key={currentBanner}    
+                      className="w-full h-full"    
+                      style={{    
+                        animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',    
+                      }}    
+                    >    
+                      <img    
+                        src={BANNERS[currentBanner].image}    
+                        alt="Banner"    
+                        className="w-full h-full object-cover rounded-2xl"    
+                        draggable="false"    
+                      />    
+                    </div>    
+                  </div>    
 
-                  <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>
-                    {BANNERS.map((_, index) => (
-                      <div
-                        key={index}
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${
-                          index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+                  <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>    
+                    {BANNERS.map((_, index) => (    
+                      <div    
+                        key={index}    
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${    
+                          index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'    
+                        }`}    
+                      />    
+                    ))}    
+                  </div>    
+                </>    
+              )}    
+            </div>    
 
-            {activeTab === 'mine' ? renderMineTab() : renderPopularTab()}
+            {activeTab === 'mine' ? renderMineTab() : renderPopularTab()}    
           </div>
         )}
 
         {currentPage === 'message' && (
           <MessagePage onChatOpen={setIsChatOpen} />
         )}
-        
+
         {currentPage === 'me' && (
-          <MePage 
-            onLogout={onLogout} 
-            onPublicProfileChange={(active: boolean) => setIsPublicProfileActive(active)} 
+          <MePage
+            onLogout={onLogout}
+            onPublicProfileChange={(active: boolean) => setIsPublicProfileActive(active)}
           />
         )}
 
         {currentPage === 'room' && selectedUser && (
-          <RoomPage
-            user={selectedUser}
-            onBack={handleBackFromRoom}
-            onKeepRoom={handleKeepRoom}
+          <RoomPage    
+            user={selectedUser}    
+            onBack={handleBackFromRoom}    
+            onKeepRoom={handleKeepRoom}    
           />
         )}
-      </div>
+      </div>    
 
       {/* BOTTOM NAVIGATION BAR */}
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
-        <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom">
-          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
-            <button
-              onClick={() => setCurrentPage('home')}
-              className="flex flex-col items-center gap-1 transition-all active:scale-95"
-            >
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-                <path
-                  d="M18 2.8C20.2 2.8 30.2 8.2 30.2 12.6V23.2C30.2 27.8 28 31 18 31C8 31 5.8 27.8 5.8 23.2V12.6C5.8 8.2 15.8 2.8 18 2.8Z"
-                  fill={currentPage === 'home' ? '#3b82f6' : 'white'}
-                  stroke="#1D1D1F"
-                  strokeWidth="2.4"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M12.2 14.2C13.3 12.6 14.9 12.1 16.8 13.4"
-                  stroke="#1D1D1F"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M11.2 20.8C12.5 24.2 21 25.6 24.3 20.2"
-                  stroke="#1D1D1F"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className={`text-[12px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-                {t.home}
-              </span>
-            </button>
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom">    
+          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">    
+            <button    
+              onClick={() => setCurrentPage('home')}    
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"    
+            >    
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">    
+                <path    
+                  d="M18 2.8C20.2 2.8 30.2 8.2 30.2 12.6V23.2C30.2 27.8 28 31 18 31C8 31 5.8 27.8 5.8 23.2V12.6C5.8 8.2 15.8 2.8 18 2.8Z"    
+                  fill={currentPage === 'home' ? '#3b82f6' : 'white'}    
+                  stroke="#1D1D1F"    
+                  strokeWidth="2.4"    
+                  strokeLinejoin="round"    
+                />    
+                <path    
+                  d="M12.2 14.2C13.3 12.6 14.9 12.1 16.8 13.4"    
+                  stroke="#1D1D1F"    
+                  strokeWidth="1.8"    
+                  strokeLinecap="round"    
+                />    
+                <path    
+                  d="M11.2 20.8C12.5 24.2 21 25.6 24.3 20.2"    
+                  stroke="#1D1D1F"    
+                  strokeWidth="1.8"    
+                  strokeLinecap="round"    
+                />    
+              </svg>    
+              <span className={`text-[12px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>    
+                {t.home}    
+              </span>    
+            </button>    
 
-            <button
-              onClick={() => setCurrentPage('message')}
-              className="flex flex-col items-center gap-1 transition-all active:scale-95"
-            >
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-                <path
-                  d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
-                  fill={currentPage === 'message' ? '#3b82f6' : 'white'}
-                  stroke="#1D1D1F"
-                  strokeWidth="2.4"
-                />
-                <path
-                  d="M12 14.5C13.5 12.5 15.5 14.5 19.5 12.5C21.5 14.5 24 14.5 24 14.5"
-                  stroke="#1D1D1F"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-                {t.message}
-              </span>
-            </button>
+            <button    
+              onClick={() => setCurrentPage('message')}    
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"    
+            >    
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">    
+                <path    
+                  d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"    
+                  fill={currentPage === 'message' ? '#3b82f6' : 'white'}    
+                  stroke="#1D1D1F"    
+                  strokeWidth="2.4"    
+                />    
+                <path    
+                  d="M12 14.5C13.5 12.5 15.5 14.5 19.5 12.5C21.5 14.5 24 14.5 24 14.5"    
+                  stroke="#1D1D1F"    
+                  strokeWidth="1.8"    
+                  strokeLinecap="round"    
+                />    
+              </svg>    
+              <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>    
+                {t.message}    
+              </span>    
+            </button>    
 
-            <button
-              onClick={() => setCurrentPage('me')}
-              className="flex flex-col items-center gap-1 transition-all active:scale-95"
-            >
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-                <path
-                  d="M18 4.5C23.5 4.5 28 8.5 27.2 13.8L26.2 19.8C26 21.2 27.2 22.5 28.6 23.1C30.6 24 31 26.2 29 27.5C27.5 28.5 25 28.8 22 28.8H14C11 28.8 8.5 28.5 7 27.5C5 26.2 5.4 24 7.4 23.1C8.8 22.5 10 21.2 9.8 19.8L8.8 13.8C8 8.5 12.5 4.5 18 4.5Z"
-                  fill={currentPage === 'me' ? '#3b82f6' : 'white'}
-                  stroke="#1D1D1F"
-                  strokeWidth="2.4"
-                />
-                <circle cx="14" cy="15" r="1.6" fill="#1D1D1F" />
-                <circle cx="22" cy="15" r="1.6" fill="#1D1D1F" />
-              </svg>
-              <span className={`text-[12px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>
-                {t.me}
-              </span>
-            </button>
+            <button    
+              onClick={() => setCurrentPage('me')}    
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"    
+            >    
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">    
+                <path    
+                  d="M18 4.5C23.5 4.5 28 8.5 27.2 13.8L26.2 19.8C26 21.2 27.2 22.5 28.6 23.1C30.6 24 31 26.2 29 27.5C27.5 28.5 25 28.8 22 28.8H14C11 28.8 8.5 28.5 7 27.5C5 26.2 5.4 24 7.4 23.1C8.8 22.5 10 21.2 9.8 19.8L8.8 13.8C8 8.5 12.5 4.5 18 4.5Z"    
+                  fill={currentPage === 'me' ? '#3b82f6' : 'white'}    
+                  stroke="#1D1D1F"    
+                  strokeWidth="2.4"    
+                />    
+                <circle cx="14" cy="15" r="1.6" fill="#1D1D1F" />    
+                <circle cx="22" cy="15" r="1.6" fill="#1D1D1F" />    
+              </svg>    
+              <span className={`text-[12px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>    
+                {t.me}    
+              </span>    
+            </button>    
           </div>
-        </div>
-      )}
-    </div>
+        </div>    
+      )}    
+    </div>  
   )
-                                   }
+}
