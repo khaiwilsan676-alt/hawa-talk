@@ -17,6 +17,7 @@ export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#3b82f6' },
   ],
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -34,7 +35,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="antialiased">
+      <body className="antialiased safe-top">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
