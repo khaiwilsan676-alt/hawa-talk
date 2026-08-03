@@ -9,6 +9,7 @@ import { doc, getDoc } from "firebase/firestore"
 interface RoomPageProps {
   user: {
     id?: string
+    uid?: string
     accountId?: string
     name: string
     image: string
@@ -29,46 +30,32 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid || uid === 'N/A') return '100379620'
-  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) return uid
-  if (SPECIAL_ACCOUNTS[uid]) return SPECIAL_ACCOUNTS[uid]
-
-  let hash = 0
-  for (let i = 0; i < uid.length; i++) {
-    hash = (hash << 5) - hash + uid.charCodeAt(i)
-    hash |= 0
-  }
-  const positiveHash = Math.abs(hash)
-  return String(10000000 + (positiveHash % 90000000))
-}
-
 export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGiftPicker, setShowGiftPicker] = useState(false)
-  const [accountId, setAccountId] = useState<string>("N/A")
+  const [accountId, setAccountId] = useState<string>("Loading...")
 
   useEffect(() => {
     const fetchRoomOwnerID = async () => {
-      // 1. Agar user prop mein direct accountId available hai
-      if (user.accountId) {
-        setAccountId(user.accountId)
+      // 1. Agar Direct accountId milli hai (Promoted/Search Card se)
+      if (user?.accountId) {
+        setAccountId(String(user.accountId))
         return
       }
 
-      // 2. Room owner ki UID (Do NOT fallback to my loggedIn localStorage userUID)
-      const targetUID = user.id
+      // 2. Room owner ki Target UID find karo
+      const targetUID = user?.id || user?.uid
 
       if (targetUID) {
-        // Special / Official IDs check
+        // Direct Official/Admin/Special ID check
         if (OFFICIAL_IDS.includes(targetUID) || ADMIN_IDS.includes(targetUID) || SPECIAL_ACCOUNTS[targetUID]) {
           setAccountId(SPECIAL_ACCOUNTS[targetUID] || targetUID)
           return
         }
 
         try {
-          // Firestore se exact room owner ki ID query karo
+          // 3. Firestore 'users' collection se Real ID Read karo
           const userDocRef = doc(db, "users", targetUID)
           const docSnap = await getDoc(userDocRef)
 
@@ -79,13 +66,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         } catch (err) {
           console.warn("Firestore fetch error in RoomPage:", err)
         }
-
-        // Target UID ke hash se Owner ki ID generate karo
-        setAccountId(getOrCreateAccountNumber(targetUID))
-      } else {
-        // Safe fallback only if room user object has no ID passed
-        setAccountId("100379620")
       }
+
+      // Safe Fallback agar UID bhi na ho
+      setAccountId(user?.accountId || "100379620")
     }
 
     fetchRoomOwnerID()
@@ -164,7 +148,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
             <button 
               aria-label="Settings"
-              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
@@ -174,7 +158,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
             <button 
               aria-label="Share"
-              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors"
+              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
@@ -239,7 +223,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                 className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 1 1-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </button>
 
