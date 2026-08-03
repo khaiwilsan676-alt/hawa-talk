@@ -60,7 +60,7 @@ const COUNTRIES = [
   { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
   { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
   { code: 'CL', name: 'Chile', flag: '🇨🇱' },
-  { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
+  { code: 'CO', name: 'Colombia', font: '🇨🇴' },
   { code: 'NZ', name: 'New Zealand', flag: '🇳🇿' },
   { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
   { code: 'NO', name: 'Norway', flag: '🇳🇴' },
@@ -179,6 +179,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       // -------------------------------------------------------------
       if (isOtherUser && targetUser) {
         const targetUid = targetUser.uid || targetUser.id || 'N/A'
+        
+        // Default initial values from passed props if available
         let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
         let name = targetUser.name || "User"
         let photo = targetUser.photo || targetUser.image || ""
@@ -188,25 +190,32 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         let gender = targetUser.gender || "♂"
         let age = targetUser.age ? (typeof targetUser.age === 'number' ? targetUser.age : parseInt(targetUser.age)) : 22
         let followers = targetUser.followers || 0
+        let album: string[] = []
 
-        // Fetch details from Firestore if available
+        // DIRECT FIRESTORE FETCH (users collection s live details pulling)
         if (targetUid && targetUid !== "N/A") {
           try {
             const userDocRef = doc(db, "users", targetUid)
             const docSnap = await getDoc(userDocRef)
+            
             if (docSnap.exists()) {
               const data = docSnap.data()
-              displayAccNum = data.accountId ? String(data.accountId) : displayAccNum
-              name = data.name || name
-              photo = data.photo || data.image || photo
-              coverPhoto = data.coverPhoto || coverPhoto
-              bio = data.bio || bio
+              
+              // Direct fields override from Firestore collection
+              displayAccNum = data.accountId ? String(data.accountId) : (data.displayAccountNumber || displayAccNum)
+              name = data.name || data.displayName || data.userName || name
+              photo = data.photo || data.photoURL || data.image || data.avatar || photo
+              coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
+              bio = data.bio || data.about || bio
               country = data.country || data.location || country
               gender = data.gender || gender
               age = data.age ? parseInt(data.age) : age
-              followers = data.followers || followers
+              followers = data.followers !== undefined ? data.followers : followers
+              
               if (data.albumImages && Array.isArray(data.albumImages)) {
-                setAlbumImages(data.albumImages)
+                album = data.albumImages
+              } else if (data.album && Array.isArray(data.album)) {
+                album = data.album
               }
             }
           } catch (err) {
@@ -220,6 +229,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
 
         const matchedCountry = COUNTRIES.find(c => c.name === country || c.flag === country)
 
+        setAlbumImages(album)
         setUser({
           name,
           uid: targetUid,
