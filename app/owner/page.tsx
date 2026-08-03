@@ -6,12 +6,12 @@ import { db } from "../../src/lib/firebase";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
 
 export default function OwnerPanel() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('ownerPanelLoggedIn') === 'true';
+      setIsLoggedIn(localStorage.getItem('ownerPanelLoggedIn') === 'true');
     }
-    return false;
-  });
+  }, []);
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState("official_id");
@@ -23,7 +23,7 @@ export default function OwnerPanel() {
   const [loginKey, setLoginKey] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  const defaultIdsData = {
+  const getDefaultIdsData = () => ({
     "500001": { email: "", password: "" },
     "500002": { email: "", password: "" },
     "500003": { email: "", password: "" },
@@ -32,10 +32,11 @@ export default function OwnerPanel() {
     "700001": { email: "", password: "" },
     "700002": { email: "", password: "" },
     "700003": { email: "", password: "" },
-  };
+  });
 
-  const [idsData, setIdsData] = useState<Record<string, any>>(defaultIdsData);
-  const isLocalUpdate = useRef(false);
+  const [idsData, setIdsData] = useState<Record<string, any>>(getDefaultIdsData());
+  const focusedField = useRef<string | null>(null);
+  const skipNextSave = useRef(false);
 
   // Load from firestore (Real-time sync)
   useEffect(() => {
@@ -43,17 +44,13 @@ export default function OwnerPanel() {
     const unsubscribe = onSnapshot(
       docRef,
       (docSnap) => {
-        if (isLocalUpdate.current) {
-          // Skip updating state if the change originated locally
-          // DO NOT reset isLocalUpdate.current here, wait for the actual save to complete
-          return;
-        }
+        // Removed isLocalUpdate check to allow continuous real-time sync
 
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
           // Merge with defaults to ensure all IDs exist
-          const mergedData = { ...defaultIdsData };
-          Object.keys(defaultIdsData).forEach(id => {
+          const mergedData = getDefaultIdsData();
+          Object.keys(getDefaultIdsData()).forEach(id => {
             if (serverData[id]) {
               mergedData[id as keyof typeof mergedData] = {
                 email: serverData[id].email || "",
@@ -63,10 +60,21 @@ export default function OwnerPanel() {
           });
 
           setIdsData(currentData => {
-            if (JSON.stringify(currentData) === JSON.stringify(mergedData)) {
+            const finalData = JSON.parse(JSON.stringify(mergedData));
+
+            // Preserve the currently focused field's value to prevent dropped keystrokes
+            if (focusedField.current) {
+              const [focusedId, focusedKey] = focusedField.current.split('-');
+              if (finalData[focusedId] && currentData[focusedId]) {
+                finalData[focusedId][focusedKey] = currentData[focusedId][focusedKey];
+              }
+            }
+
+            if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
               return currentData; // Deep equal, do not trigger a state update
             }
-            return mergedData;
+            skipNextSave.current = true;
+            return finalData;
           });
         } else {
           // If doc doesn't exist, try localstorage for backward compatibility or use default
@@ -74,8 +82,8 @@ export default function OwnerPanel() {
             const saved = localStorage.getItem("ownerPanelCredentials");
             if (saved) {
               const localData = JSON.parse(saved);
-              const mergedData = { ...defaultIdsData };
-              Object.keys(defaultIdsData).forEach(id => {
+              const mergedData = getDefaultIdsData();
+              Object.keys(getDefaultIdsData()).forEach(id => {
                 if (localData[id]) {
                   mergedData[id as keyof typeof mergedData] = {
                     email: localData[id].email || "",
@@ -178,10 +186,12 @@ export default function OwnerPanel() {
 
   // Real-time debounced auto-save
   useEffect(() => {
-    if (!isLocalUpdate.current) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
 
     const timeoutId = setTimeout(() => {
-      isLocalUpdate.current = false;
       handleSave();
     }, 1000);
 
@@ -189,7 +199,7 @@ export default function OwnerPanel() {
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
-    isLocalUpdate.current = true;
+    skipNextSave.current = false;
     setIdsData((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
@@ -428,6 +438,8 @@ export default function OwnerPanel() {
                         placeholder="Email"
                         value={idsData[id]?.email || ""}
                         onChange={(e) => handleChange(id, "email", e.target.value)}
+                        onFocus={() => focusedField.current = `${id}-email`}
+                        onBlur={() => focusedField.current = null}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
                     </div>
@@ -440,6 +452,8 @@ export default function OwnerPanel() {
                         placeholder="Password"
                         value={idsData[id]?.password || ""}
                         onChange={(e) => handleChange(id, "password", e.target.value)}
+                        onFocus={() => focusedField.current = `${id}-password`}
+                        onBlur={() => focusedField.current = null}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
                     </div>
@@ -496,6 +510,8 @@ export default function OwnerPanel() {
                         placeholder="Email"
                         value={idsData[id]?.email || ""}
                         onChange={(e) => handleChange(id, "email", e.target.value)}
+                        onFocus={() => focusedField.current = `${id}-email`}
+                        onBlur={() => focusedField.current = null}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
                     </div>
@@ -508,6 +524,8 @@ export default function OwnerPanel() {
                         placeholder="Password"
                         value={idsData[id]?.password || ""}
                         onChange={(e) => handleChange(id, "password", e.target.value)}
+                        onFocus={() => focusedField.current = `${id}-password`}
+                        onBlur={() => focusedField.current = null}
                         className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
                       />
                     </div>
