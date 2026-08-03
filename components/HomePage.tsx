@@ -27,6 +27,7 @@ interface HomePageProps {
 
 interface UserCard {
   id: string
+  accountId?: string
   name: string
   country: string
   image: string
@@ -167,7 +168,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [showDeleteZone, setShowDeleteZone] = useState(false)
   const [isOverDeleteZone, setIsOverDeleteZone] = useState(false)
   const dragStartPos = useRef({ x: 0, y: 0 })
-  const circleStartPos = useRef({ x: 16, y: window.innerHeight * 0.4 })
+  const circleStartPos = useRef({ x: 16, y: typeof window !== 'undefined' ? window.innerHeight * 0.4 : 300 })
   const deleteZoneRef = useRef<HTMLDivElement>(null)
   const circleRef = useRef<HTMLDivElement>(null)
 
@@ -217,11 +218,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // Calculate initial position
   useEffect(() => {
-    circleStartPos.current = {
-      x: window.innerWidth - 16 - 48,
-      y: window.innerHeight * 0.6
+    if (typeof window !== 'undefined') {
+      circleStartPos.current = {
+        x: window.innerWidth - 16 - 48,
+        y: window.innerHeight * 0.6
+      }
+      setDragPosition(circleStartPos.current)
     }
-    setDragPosition(circleStartPos.current)
   }, [])
 
   // Check if dragged circle is over delete zone
@@ -254,7 +257,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
     const loadProfile = () => {
       const name = localStorage.getItem('userName') || 'JIYA'
       const photo = localStorage.getItem('userPhoto') || '/1784466691241~2.jpg'
-      const uid = localStorage.getItem('userUID') || '742918'
+      const uid = localStorage.getItem('userUID') || localStorage.getItem('userPhone') || '742918'
+      const storedAccNum = localStorage.getItem('accountNumber') || ''
+
       setUserName(name)
       setUserPhoto(photo)
       setUserUID(uid)
@@ -265,7 +270,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
       if (roomCreated === 'true' && roomData) {
         setIsRoomCreated(true)
         try {
-          setMyRoom(JSON.parse(roomData))
+          const parsed = JSON.parse(roomData)
+          setMyRoom({
+            ...parsed,
+            id: uid,
+            accountId: storedAccNum || parsed.accountId || getOrCreateAccountNumber(uid)
+          })
         } catch (e) {
           setIsRoomCreated(false)
           setMyRoom(null)
@@ -502,11 +512,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setKeptRoom(roomData)
     setEnteredFromKept(false)
     localStorage.setItem('keptRoom', JSON.stringify(roomData))
-    circleStartPos.current = {
-      x: window.innerWidth - 16 - 48,
-      y: window.innerHeight * 0.6
+    if (typeof window !== 'undefined') {
+      circleStartPos.current = {
+        x: window.innerWidth - 16 - 48,
+        y: window.innerHeight * 0.6
+      }
+      setDragPosition(circleStartPos.current)
     }
-    setDragPosition(circleStartPos.current)
   }
 
   const handleKeptRoomClick = () => {
@@ -515,6 +527,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setEnteredFromKept(true)
       const roomUser: UserCard = {
         id: keptRoom.accountId,
+        accountId: keptRoom.accountId,
         name: keptRoom.name,
         country: '🇮🇳',
         image: keptRoom.image
@@ -524,58 +537,51 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
+  // ✅ STRICT BINDING: Mine Tab Card click strictly opens logged-in user's room
   const handleCardClick = async () => {
     setEnteredFromKept(false)
+    
+    const storedAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+
+    const createdRoomCard: UserCard = {
+      id: userUID,
+      accountId: storedAccNum,
+      name: userName,
+      country: '🇮🇳',
+      image: userPhoto
+    }
+
     if (!isRoomCreated) {
-      const createdRoomCard: UserCard = {
-        id: userUID,
-        name: userName,
-        country: '🇮🇳',
-        image: userPhoto
-      }
       localStorage.setItem('isRoomCreated', 'true')
       localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
 
-      // Get the correct display account ID
-      const fullAccNum = getOrCreateAccountNumber(userUID)
-      const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum.slice(0, 8) : userUID
-
-      // Save room to Firestore (globalRooms collection)
       await setDoc(doc(db, "globalRooms", userUID), {
         id: userUID,
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: displayAccNum,
+        accountId: storedAccNum,
         createdAt: Date.now()
-      });
+      }, { merge: true });
 
-      // Also ensure user is in users collection
       await setDoc(doc(db, "users", userUID), {
         id: userUID,
         name: userName,
         country: "🇮🇳",
         image: userPhoto,
-        accountId: displayAccNum,
+        accountId: storedAccNum,
         createdAt: Date.now()
       }, { merge: true });
-
-      setSelectedUser(createdRoomCard)
-      setCurrentPage('room')
-    } else if (myRoom) {
-      setSelectedUser(myRoom)
-      setCurrentPage('room')
     }
+
+    setSelectedUser(createdRoomCard)
+    setCurrentPage('room')
   }
 
   const handleHouseClick = () => {
-    setEnteredFromKept(false)
-    if (isRoomCreated && myRoom) {
-      setSelectedUser(myRoom)
-      setCurrentPage('room')
-    }
+    handleCardClick()
   }
 
   const handleUserCardClick = (user: UserCard) => {
@@ -964,7 +970,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
               <div
                 key={room.accountId}
                 onClick={() => handleUserCardClick({
-                  id: room.accountId,
+                  id: room.id || room.accountId,
+                  accountId: room.accountId,
                   name: room.name,
                   country: room.country,
                   image: room.image
@@ -1148,7 +1155,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     <div    
                       key={user.accountId}    
                       onClick={() => handleUserCardClick({    
-                        id: user.accountId,    
+                        id: user.id || user.accountId,    
+                        accountId: user.accountId,    
                         name: user.name,    
                         country: user.country,    
                         image: user.image    
@@ -1686,3 +1694,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
     </div>  
   )
 }
+
