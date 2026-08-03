@@ -96,6 +96,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [password, setPassword] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
   
   const [showGoogleSheet, setShowGoogleSheet] = useState(false)
   const [showEmailSheet, setShowEmailSheet] = useState(false)
@@ -166,8 +167,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError(null);
     
     if (!email || !password || password.length < 6) {
+      setAuthError("Password must be at least 6 characters long.");
       return;
     }
 
@@ -245,6 +248,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       setShowEmailSheet(false);
     } catch (error: any) {
       console.error('Auth error:', error);
+      let errorMessage = "Authentication failed. Please check your credentials.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "An account already exists with this email address.";
+      } else if (error.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid email or password.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password should be at least 6 characters.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      setAuthError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -375,6 +389,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <div className="flex-1 flex items-center justify-center px-6">
             <div className="w-full max-w-sm">
               <form onSubmit={handleEmailAuth} className="space-y-5">
+                {authError && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                    {authError}
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address
@@ -428,10 +448,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
               <div className="mt-6 text-center">
                 <button
+                  type="button"
                   onClick={() => {
                     setIsSignUp(!isSignUp);
                     setEmail('');
                     setPassword('');
+                    setAuthError(null);
                   }}
                   className="text-blue-600 hover:text-blue-700 font-medium text-sm cursor-pointer"
                 >
