@@ -18,6 +18,7 @@ import MessagePage from './MessagePage'
 import MePage from './MePage';
 import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
+import PublicProfile from './PublicProfile'
 import { generateStableId } from '../lib/hash'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 
@@ -59,7 +60,7 @@ const BANNERS = [
 
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
-type Page = 'home' | 'message' | 'me' | 'room'
+type Page = 'home' | 'message' | 'me' | 'room' | 'public_profile'
 type SearchTab = 'user' | 'room'
 
 const CATEGORY_CARDS = [
@@ -584,10 +585,21 @@ export default function HomePage({ onLogout }: HomePageProps) {
     handleCardClick()
   }
 
+  // Handle Room Card Click from Search Overlay or Home Grid
   const handleUserCardClick = (user: UserCard) => {
     setEnteredFromKept(false)
     setSelectedUser(user)
     setCurrentPage('room')
+    if (isSearchOpen) {
+      setIsSearchOpen(false)
+    }
+  }
+
+  // Handle User Search Item Click -> Opens Public Profile
+  const handleUserProfileClick = (user: UserCard) => {
+    setSelectedUser(user)
+    setIsPublicProfileActive(true)
+    setCurrentPage('public_profile')
     if (isSearchOpen) {
       setIsSearchOpen(false)
     }
@@ -599,6 +611,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setKeptRoom(null)
       setEnteredFromKept(false)
     }
+    setCurrentPage('home')
+    setSelectedUser(null)
+  }
+
+  const handleBackFromPublicProfile = () => {
+    setIsPublicProfileActive(false)
     setCurrentPage('home')
     setSelectedUser(null)
   }
@@ -750,7 +768,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // Reset public profile active state when page changes
   useEffect(() => {
-    if (currentPage !== 'me') {
+    if (currentPage !== 'me' && currentPage !== 'public_profile') {
       setIsPublicProfileActive(false)
     }
   }, [currentPage])
@@ -1152,35 +1170,66 @@ export default function HomePage({ onLogout }: HomePageProps) {
               searchResults.length > 0 ? (    
                 <div className="flex flex-col gap-3">    
                   {searchResults.map((user) => (    
-                    <div    
-                      key={user.accountId}    
-                      onClick={() => handleUserCardClick({    
-                        id: user.id || user.accountId,    
-                        accountId: user.accountId,    
-                        name: user.name,    
-                        country: user.country,    
-                        image: user.image    
-                      })}    
-                      className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"    
-                    >    
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">    
-                        <img    
-                          src={user.image}    
-                          alt={user.name}    
-                          className="w-full h-full object-cover"    
-                        />    
-                      </div>    
-                      <div className="flex flex-col flex-1 min-w-0">    
-                        <div className="flex items-center gap-1.5">    
-                          <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>    
-                          <span className="text-xs">{user.country}</span>    
+                    activeSearchTab === 'user' ? (
+                      /* USER TAB CARD: NO ENTER BUTTON -> OPENS PUBLIC PROFILE */
+                      <div    
+                        key={user.accountId}    
+                        onClick={() => handleUserProfileClick({    
+                          id: user.id || user.accountId,    
+                          accountId: user.accountId,    
+                          name: user.name,    
+                          country: user.country,    
+                          image: user.image    
+                        })}    
+                        className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"    
+                      >    
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">    
+                          <img    
+                            src={user.image}    
+                            alt={user.name}    
+                            className="w-full h-full object-cover"    
+                          />    
                         </div>    
-                        <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>    
-                      </div>    
-                      <div className="px-3.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-sm">    
-                        Enter    
-                      </div>    
-                    </div>    
+                        <div className="flex flex-col flex-1 min-w-0">    
+                          <div className="flex items-center gap-1.5">    
+                            <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>    
+                            <span className="text-xs">{user.country}</span>    
+                          </div>    
+                          <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>    
+                        </div>    
+                      </div>
+                    ) : (
+                      /* ROOM TAB CARD: WITH ENTER BUTTON -> ENTERS ROOM */
+                      <div    
+                        key={user.accountId}    
+                        onClick={() => handleUserCardClick({    
+                          id: user.id || user.accountId,    
+                          accountId: user.accountId,    
+                          name: user.name,    
+                          country: user.country,    
+                          image: user.image    
+                        })}    
+                        className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"    
+                      >    
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">    
+                          <img    
+                            src={user.image}    
+                            alt={user.name}    
+                            className="w-full h-full object-cover"    
+                          />    
+                        </div>    
+                        <div className="flex flex-col flex-1 min-w-0">    
+                          <div className="flex items-center gap-1.5">    
+                            <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>    
+                            <span className="text-xs">{user.country}</span>    
+                          </div>    
+                          <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>    
+                        </div>    
+                        <div className="px-3.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-sm">    
+                          Enter    
+                        </div>    
+                      </div>
+                    )
                   ))}    
                 </div>    
               ) : (    
@@ -1189,7 +1238,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     <circle cx="11" cy="11" r="8" />    
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />    
                   </svg>    
-                  <p className="text-sm font-semibold">No user found</p>    
+                  <p className="text-sm font-semibold">No result found</p>    
                   <p className="text-xs text-gray-400 mt-1">Try different ID or name</p>    
                 </div>    
               )    
@@ -1199,7 +1248,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <circle cx="11" cy="11" r="8" />    
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />    
                 </svg>    
-                <p className="text-sm font-semibold mb-1">Search Users</p>    
+                <p className="text-sm font-semibold mb-1">Search {activeSearchTab === 'user' ? 'Users' : 'Rooms'}</p>    
                 <p className="text-xs font-medium text-gray-400">Enter ID or name to find people</p>    
               </div>    
             )}    
@@ -1609,6 +1658,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
             user={selectedUser}    
             onBack={handleBackFromRoom}    
             onKeepRoom={handleKeepRoom}    
+          />
+        )}
+
+        {currentPage === 'public_profile' && (
+          <PublicProfile 
+            onBack={handleBackFromPublicProfile}
+            isOtherUser={true}
           />
         )}
       </div>    
