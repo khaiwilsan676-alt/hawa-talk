@@ -44,11 +44,8 @@ export default function OwnerPanel() {
     const unsubscribe = onSnapshot(
       docRef,
       (docSnap) => {
-        // Removed isLocalUpdate check to allow continuous real-time sync
-
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
-          // Merge with defaults to ensure all IDs exist
           const mergedData = getDefaultIdsData();
           Object.keys(getDefaultIdsData()).forEach(id => {
             if (serverData[id]) {
@@ -62,7 +59,7 @@ export default function OwnerPanel() {
           setIdsData(currentData => {
             const finalData = JSON.parse(JSON.stringify(mergedData));
 
-            // Preserve the currently focused field's value to prevent dropped keystrokes
+            // Preserve currently focused field value to prevent keystroke loss
             if (focusedField.current) {
               const [focusedId, focusedKey] = focusedField.current.split('-');
               if (finalData[focusedId] && currentData[focusedId]) {
@@ -71,13 +68,12 @@ export default function OwnerPanel() {
             }
 
             if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
-              return currentData; // Deep equal, do not trigger a state update
+              return currentData;
             }
             skipNextSave.current = true;
             return finalData;
           });
         } else {
-          // If doc doesn't exist, try localstorage for backward compatibility or use default
           if (typeof window !== "undefined") {
             const saved = localStorage.getItem("ownerPanelCredentials");
             if (saved) {
@@ -108,7 +104,6 @@ export default function OwnerPanel() {
   const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    // Listen to sessions collection to get real-time online status
     const unsubscribes = Object.keys(idsData).map(id => {
       const docRef = doc(db, "adminSettings", `sessions_${id}`);
       return onSnapshot(docRef, (docSnap) => {
@@ -149,10 +144,13 @@ export default function OwnerPanel() {
     setLoginKey("");
   };
 
-  const handleSave = useCallback(async () => {
+  // ✅ FIRBESTORE SAVE & SYNC FUNCTION
+  const handleSave = useCallback(async (customData?: Record<string, any>) => {
     try {
+      const targetData = customData || idsData;
       const credentials: any[] = [];
-      Object.entries(idsData).forEach(([id, data]: [string, any]) => {
+      
+      Object.entries(targetData).forEach(([id, data]: [string, any]) => {
         const email = (data.email || "").trim();
         const password = (data.password || "").trim();
         if (email && password) {
@@ -167,15 +165,14 @@ export default function OwnerPanel() {
 
       const docRef = doc(db, "adminSettings", "credentials");
       await setDoc(docRef, {
-        ownerPanelCredentials: idsData,
+        ownerPanelCredentials: targetData,
         officialCredentials: credentials
       }, { merge: true });
 
-      // Also set to localstorage for backward compatibility just in case
-      localStorage.setItem('ownerPanelCredentials', JSON.stringify(idsData));
+      localStorage.setItem('ownerPanelCredentials', JSON.stringify(targetData));
       localStorage.setItem('officialCredentials', JSON.stringify(credentials));
 
-      setSaveMessage("Credentials saved successfully!");
+      setSaveMessage("Credentials synced & saved!");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
       console.error("Error saving credentials:", error);
@@ -184,7 +181,7 @@ export default function OwnerPanel() {
     }
   }, [idsData]);
 
-  // Real-time debounced auto-save
+  // Real-time debounced auto-save on change
   useEffect(() => {
     if (skipNextSave.current) {
       skipNextSave.current = false;
@@ -193,19 +190,21 @@ export default function OwnerPanel() {
 
     const timeoutId = setTimeout(() => {
       handleSave();
-    }, 1000);
+    }, 800);
 
     return () => clearTimeout(timeoutId);
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
     skipNextSave.current = false;
-    setIdsData((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value },
-    }));
+    setIdsData((prev) => {
+      const updated = {
+        ...prev,
+        [id]: { ...prev[id], [field]: value },
+      };
+      return updated;
+    });
   };
-
 
   // ✅ Individual ID Logout
   const handleIDLogout = async (id: string) => {
@@ -216,7 +215,6 @@ export default function OwnerPanel() {
         forceLogoutTimestamp: Date.now()
       }, { merge: true });
 
-      // Clean local storage too just for good measure if we're on the same device
       const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
       delete loggedInSessions[id]
       localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
@@ -241,7 +239,6 @@ export default function OwnerPanel() {
           forceLogoutTimestamp: Date.now()
         }, { merge: true });
 
-        // Clean local storage too just for good measure
         const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
         delete loggedInSessions[id]
         localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
@@ -290,7 +287,7 @@ export default function OwnerPanel() {
                 Password
               </label>
               <input
-                type="text"
+                type="password"
                 placeholder="Enter password"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
@@ -303,7 +300,7 @@ export default function OwnerPanel() {
                 <Key className="w-4 h-4" /> Key
               </label>
               <input
-                type="text"
+                type="password"
                 placeholder="Enter key"
                 value={loginKey}
                 onChange={(e) => setLoginKey(e.target.value)}
@@ -458,7 +455,7 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* ✅ STATUS + LOGOUT BUTTON */}
+                    {/* STATUS + LOGOUT BUTTON */}
                     <div className="flex items-center gap-2">
                       <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
                         onlineStatus[id] 
@@ -530,7 +527,7 @@ export default function OwnerPanel() {
                       />
                     </div>
 
-                    {/* ✅ STATUS + LOGOUT BUTTON */}
+                    {/* STATUS + LOGOUT BUTTON */}
                     <div className="flex items-center gap-2">
                       <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
                         onlineStatus[id] 
