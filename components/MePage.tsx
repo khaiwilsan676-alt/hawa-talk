@@ -1,4 +1,4 @@
-'use client'
+'use client' 
 
 import React, { useEffect, useState } from 'react'
 import { ChevronRight, Copy } from 'lucide-react'
@@ -8,7 +8,7 @@ import HawaSupport from './HawaSupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
-import { doc, onSnapshot } from "firebase/firestore"
+import { doc, getDoc, onSnapshot } from "firebase/firestore"
 
 interface MenuItem {
   id: string
@@ -92,27 +92,22 @@ export const getOrCreateAccountNumber = (uid: string) => {
     return { fullAccNum: uid, displayAccNum: uid }
   }
 
-  // Special UIDs for specific users
-  if (uid === 'HUSxSvQnabgU029dWYt1TUV04hd2') return { fullAccNum: '100002', displayAccNum: '100002' }
-  if (uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1') return { fullAccNum: '100003', displayAccNum: '100003' }
-
-  // For regular users, generate random account number
-  const storageKey = `user_account_number_${uid}`
-  let savedAccountNumber = localStorage.getItem(storageKey)
-
-  if (!savedAccountNumber) {
-    const targetLength = uid.length
-    let numericStr = ''
-
-    for (let i = 0; i < targetLength; i++) {
-      numericStr += Math.floor(Math.random() * 10).toString()
-    }
-
-    savedAccountNumber = numericStr
-    localStorage.setItem(storageKey, savedAccountNumber)
+  // Check stored account number first
+  const savedAcc = localStorage.getItem('accountNumber')
+  if (savedAcc) {
+    return { fullAccNum: savedAcc, displayAccNum: savedAcc }
   }
 
-  return { fullAccNum: savedAccountNumber, displayAccNum: savedAccountNumber.slice(0, 8) }
+  // Consistent 8-digit calculation based on UID
+  let hash = 0
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash << 5) - hash + uid.charCodeAt(i)
+    hash |= 0
+  }
+  const positiveHash = Math.abs(hash)
+  const generated = String(10000000 + (positiveHash % 90000000))
+  
+  return { fullAccNum: generated, displayAccNum: generated }
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
@@ -120,13 +115,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [appLang, setAppLang] = useState<LanguageCode>('en')
 
   useEffect(() => {
-    // Initial load
     const savedLang = localStorage.getItem('appLanguage') as LanguageCode
     if (savedLang) {
       setAppLang(savedLang)
     }
 
-    // Listen for custom event
     const handleLangChange = (e: CustomEvent) => {
       if (e.detail && e.detail.lang) {
         setAppLang(e.detail.lang)
@@ -156,19 +149,39 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   useEffect(() => {
-    const fetchUserData = () => {
+    const fetchUserData = async () => {
       const name = localStorage.getItem("userName") || "Guest"
       const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
       const phone = localStorage.getItem("userPhone") || ""
       const photo = localStorage.getItem("userPhoto") || ""
 
-      const { fullAccNum, displayAccNum } = getOrCreateAccountNumber(uid)
+      let finalAccNum = localStorage.getItem("accountNumber") || ""
+
+      // 1. Fetch exact accountId directly from Firestore 'users' collection
+      if (uid && uid !== "N/A") {
+        try {
+          const userDocRef = doc(db, "users", uid)
+          const docSnap = await getDoc(userDocRef)
+          if (docSnap.exists() && docSnap.data().accountId) {
+            finalAccNum = String(docSnap.data().accountId)
+            localStorage.setItem("accountNumber", finalAccNum)
+          }
+        } catch (err) {
+          console.warn("Firestore user fetch error in MePage:", err)
+        }
+      }
+
+      // Fallback calculation if no Firestore accountId exists
+      if (!finalAccNum) {
+        const { fullAccNum } = getOrCreateAccountNumber(uid)
+        finalAccNum = fullAccNum
+      }
 
       setUser({ 
         name, 
         uid, 
-        accountNumber: fullAccNum, 
-        displayAccountNumber: displayAccNum, 
+        accountNumber: finalAccNum, 
+        displayAccountNumber: finalAccNum, 
         phone, 
         photo
       })
@@ -183,12 +196,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const handleCopyAccountNumber = () => {
     if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
       navigator.clipboard.writeText(user.displayAccountNumber)
+      alert("ID Copied to clipboard!")
     }
   }
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // Agar currentView 'customer_service' hai, toh HawaSupport dikhao
   if (currentView === 'language') {
     return <LanguagePage onBack={() => switchView('me')} />
   }
@@ -207,7 +220,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   return (
     <div className="w-full min-h-screen bg-white">
-      {/* Profile Header — HomePage jaisa gradient */}
+      {/* Profile Header */}
       <div
         className="px-4 pb-6 relative"
         style={{
@@ -232,10 +245,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             )}
 
             <div className="flex flex-col">
-              {/* Name - Row 1 */}
+              {/* Name */}
               <h2 className="text-2xl font-bold text-gray-900 mb-0.5">{user.name}</h2>
 
-              {/* Account Number Display - Row 2 */}
+              {/* Account Number Display */}
               <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
                   <div className="relative inline-block w-22">
@@ -249,7 +262,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     </p>
                   </div>
                 ) : (
-                  <p className="text-gray-700 text-xs font-middum">
+                  <p className="text-gray-700 text-xs font-semibold">
                     ID: {user.displayAccountNumber}
                   </p>
                 )}
@@ -257,7 +270,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 {user.accountNumber !== 'N/A' && (
                   <button
                     onClick={handleCopyAccountNumber}
-                    className="text-gray-600 hover:text-blue-900 transition-colors p-1"
+                    className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
                     title="Copy ID"
                   >
                     <Copy size={14} />
@@ -273,10 +286,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             </div>
           </div>
 
-          {/* Top Right Arrow - Click to Open Public Profile */}
+          {/* Top Right Arrow - View Public Profile */}
           <button
             onClick={() => switchView('public_profile')}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2 cursor-pointer"
             title="View Public Profile"
           >
             <ChevronRight className="text-gray-700" size={24} />
@@ -318,7 +331,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Main Menu Items — white background */}
+      {/* Main Menu Items */}
       <div className="px-4 mt-1">
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {menuItems.map((item, index) => (
@@ -353,22 +366,16 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Bottom Menu Items — white background */}
+      {/* Bottom Menu Items */}
       <div className="px-4 mt-4 mb-6">
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {bottomMenuItems.map((item, index) => (
             <div
               key={item.id}
               onClick={() => {
-                if (item.id === '7') {
-                  switchView('language')
-                }
-                if (item.id === '8') {
-                  switchView('settings')
-                }
-                if (item.id === '9') {
-                  switchView('customer_service')
-                }
+                if (item.id === '7') switchView('language')
+                if (item.id === '8') switchView('settings')
+                if (item.id === '9') switchView('customer_service')
               }}
             >
               <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
@@ -407,4 +414,5 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-                      }
+}
+
