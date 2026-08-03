@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut } from "lucide-react";
+import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star } from "lucide-react";
 import { db } from "../../src/lib/firebase";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
 
@@ -24,6 +24,8 @@ export default function OwnerPanel() {
   const [loginError, setLoginError] = useState("");
 
   const getDefaultIdsData = () => ({
+    "100002": { email: "", password: "" },
+    "100003": { email: "", password: "" },
     "500001": { email: "", password: "" },
     "500002": { email: "", password: "" },
     "500003": { email: "", password: "" },
@@ -34,7 +36,7 @@ export default function OwnerPanel() {
     "700003": { email: "", password: "" },
   });
 
-  // Load initial state safely from localStorage if available to prevent empty reset on restart
+  // Load initial state safely from localStorage if available
   const [idsData, setIdsData] = useState<Record<string, any>>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("ownerPanelCredentials");
@@ -50,7 +52,7 @@ export default function OwnerPanel() {
   });
 
   const focusedField = useRef<string | null>(null);
-  const skipNextSave = useRef(true); // Default true on mount to prevent auto-overwriting
+  const skipNextSave = useRef(true);
   const isLoadedFromFirestore = useRef(false);
 
   // Load from firestore (Real-time sync)
@@ -75,7 +77,6 @@ export default function OwnerPanel() {
           setIdsData(currentData => {
             const finalData = JSON.parse(JSON.stringify(mergedData));
 
-            // Preserve currently focused field value to prevent keystroke loss
             if (focusedField.current) {
               const [focusedId, focusedKey] = focusedField.current.split('-');
               if (finalData[focusedId] && currentData[focusedId]) {
@@ -87,11 +88,9 @@ export default function OwnerPanel() {
               return currentData;
             }
 
-            // Lock next save tick so snapshot loading doesn't trigger a re-save
             skipNextSave.current = true;
             isLoadedFromFirestore.current = true;
             
-            // Save to localstorage as fallback
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
           });
@@ -166,7 +165,7 @@ export default function OwnerPanel() {
             id: id,
             email: email,
             password: password,
-            type: id.startsWith('5') ? 'official' : 'admin'
+            type: id.startsWith('5') ? 'official' : id.startsWith('7') ? 'admin' : 'special'
           });
         }
       });
@@ -189,7 +188,6 @@ export default function OwnerPanel() {
     }
   }, [idsData]);
 
-  // Real-time debounced auto-save ONLY after initial Firestore load
   useEffect(() => {
     if (skipNextSave.current) {
       skipNextSave.current = false;
@@ -197,7 +195,7 @@ export default function OwnerPanel() {
     }
 
     if (!isLoadedFromFirestore.current) {
-      return; // Do not auto-save before first snapshot arrives
+      return;
     }
 
     const timeoutId = setTimeout(() => {
@@ -215,7 +213,6 @@ export default function OwnerPanel() {
     }));
   };
 
-  // ✅ Individual ID Logout
   const handleIDLogout = async (id: string) => {
     try {
       const docRef = doc(db, "adminSettings", `sessions_${id}`);
@@ -238,7 +235,6 @@ export default function OwnerPanel() {
     }
   }
 
-  // ✅ Group Logout
   const handleLogoutGroup = async (ids: string[]) => {
     try {
       for (const id of ids) {
@@ -256,8 +252,7 @@ export default function OwnerPanel() {
         localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
       }
 
-      const groupName = ids[0].startsWith('5') ? 'Official' : 'Admin'
-      setSaveMessage(`All ${groupName} IDs logged out successfully!`)
+      setSaveMessage(`Selected IDs logged out successfully!`)
       setTimeout(() => setSaveMessage(""), 3000)
     } catch (error) {
       console.error(`Error logging out group:`, error);
@@ -398,7 +393,7 @@ export default function OwnerPanel() {
               >
                 <span>MANAGE IDs</span>
                 <span className="text-xs bg-yellow-400 text-black px-2.5 py-1 rounded-full font-bold">
-                  Official/Admin
+                  Official/Admin/Special
                 </span>
               </button>
             </div>
@@ -413,8 +408,80 @@ export default function OwnerPanel() {
       <main className="flex-1 p-8 w-full max-w-5xl mx-auto overflow-y-auto bg-white">
         {activeView === "official_id" && (
           <div className="space-y-8">
+
+            {/* SPECIAL OFFICIAL IDs (100002, 100003) */}
+            <div className="bg-white border border-amber-200 rounded-2xl p-6 shadow-lg bg-amber-50/20">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-amber-600 tracking-wider uppercase flex items-center gap-2">
+                  <Star className="w-5 h-5 text-amber-500 fill-amber-500" /> Special Official IDs
+                </h2>
+                <button
+                  onClick={() => handleLogoutGroup(["100002", "100003"])}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" /> Logout All Special
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {["100002", "100003"].map((id) => (
+                  <div
+                    key={id}
+                    className="flex items-center gap-4 bg-white p-3.5 rounded-xl border border-amber-200 shadow-sm"
+                  >
+                    <span className="w-24 text-sm font-bold text-amber-600">ID: {id}</span>
+                    
+                    {/* Email */}
+                    <div className="flex-1 flex items-center gap-2 bg-gray-50 px-3.5 py-2 rounded-lg border border-gray-300">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Email"
+                        value={idsData[id]?.email || ""}
+                        onChange={(e) => handleChange(id, "email", e.target.value)}
+                        onFocus={() => focusedField.current = `${id}-email`}
+                        onBlur={() => focusedField.current = null}
+                        className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
+                      />
+                    </div>
+
+                    {/* Password */}
+                    <div className="flex-1 flex items-center gap-2 bg-gray-50 px-3.5 py-2 rounded-lg border border-gray-300">
+                      <Lock className="w-4 h-4 text-gray-400" />
+                      <input
+                        type={showPasswords ? "text" : "password"}
+                        placeholder="Password"
+                        value={idsData[id]?.password || ""}
+                        onChange={(e) => handleChange(id, "password", e.target.value)}
+                        onFocus={() => focusedField.current = `${id}-password`}
+                        onBlur={() => focusedField.current = null}
+                        className="w-full bg-transparent text-sm outline-none text-gray-900 placeholder-gray-400"
+                      />
+                    </div>
+
+                    {/* STATUS + LOGOUT BUTTON */}
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                        onlineStatus[id] 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {onlineStatus[id] ? 'Logined' : 'Offline'}
+                      </span>
+                      
+                      <button
+                        onClick={() => handleIDLogout(id)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" /> LOGOUT
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
             
-            {/* OFFICIAL IDs */}
+            {/* OFFICIAL IDs (500001 - 500005) */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-blue-600 tracking-wider uppercase flex items-center gap-2">
@@ -486,7 +553,7 @@ export default function OwnerPanel() {
               </div>
             </div>
 
-            {/* ADMIN IDs */}
+            {/* ADMIN IDs (700001 - 700003) */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-purple-600 tracking-wider uppercase flex items-center gap-2">
