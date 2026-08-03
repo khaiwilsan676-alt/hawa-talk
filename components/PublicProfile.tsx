@@ -103,11 +103,6 @@ const getOrCreateAccountNumber = (uid: string) => {
     return SPECIAL_ACCOUNTS[uid]
   }
 
-  const savedAcc = typeof window !== 'undefined' ? localStorage.getItem('accountNumber') : null
-  if (savedAcc) {
-    return savedAcc
-  }
-
   const storageKey = `user_account_number_${uid}`
   let savedAccountNumber = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
 

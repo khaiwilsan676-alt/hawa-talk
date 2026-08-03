@@ -272,10 +272,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
         setIsRoomCreated(true)
         try {
           const parsed = JSON.parse(roomData)
+          let finalAccNum = storedAccNum || parsed.accountId;
+          if (!finalAccNum) {
+            const accObj = getOrCreateAccountNumber(uid);
+            finalAccNum = accObj.fullAccNum;
+          }
           setMyRoom({
             ...parsed,
             id: uid,
-            accountId: storedAccNum || parsed.accountId || getOrCreateAccountNumber(uid)
+            accountId: finalAccNum
           })
         } catch (e) {
           setIsRoomCreated(false)
@@ -542,7 +547,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const handleCardClick = async () => {
     setEnteredFromKept(false)
     
-    const storedAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+    const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+    const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
 
     const createdRoomCard: UserCard = {
       id: userUID,
@@ -1022,7 +1028,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     <div  
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"  
       style={{  
-        minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',  
         minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',  
         paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen) ? '0px' : '96px',  
         touchAction: 'manipulation',  
@@ -1088,7 +1093,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           className="fixed inset-0 z-[120] bg-white flex flex-col"     
           style={{     
             animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)',    
-            height: viewportHeight ? `${viewportHeight}px` : '100vh',    
             height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'    
           }}    
         >    
@@ -1262,7 +1266,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"    
           style={{     
             animation: 'modalOverlayIn 0.3s ease-out',    
-            height: viewportHeight ? `${viewportHeight}px` : '100vh',    
             height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'    
           }}    
           onClick={handleCloseModal}    
@@ -1504,7 +1507,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <div     
             className="w-full bg-white"     
             style={{    
-              minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',    
               minHeight: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'    
             }}    
           >    
