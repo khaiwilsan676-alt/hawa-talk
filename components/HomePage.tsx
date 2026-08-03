@@ -14,7 +14,8 @@ import {
 } from "firebase/firestore"
 
 import MessagePage from './MessagePage'
-import MePage from './MePage';
+import MePage from './MePage'
+import PublicProfile from './PublicProfile';
 import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
 import { generateStableId } from '../lib/hash'
@@ -130,6 +131,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
+  const [selectedProfileUser, setSelectedProfileUser] = useState<UserCard | null>(null)
 
   // Search Sheet State & Results
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -767,10 +769,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // Reset public profile active state when page changes
   useEffect(() => {
-    if (currentPage !== 'me') {
+    if (currentPage !== 'me' && !selectedProfileUser) {
       setIsPublicProfileActive(false)
     }
-  }, [currentPage])
+  }, [currentPage, selectedProfileUser])
 
   // All rooms including own room from Firestore
   const allRooms = globalRooms
@@ -1201,7 +1203,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         name: user.name,
                         country: user.country,
                         image: user.image
-                      })}
+                      }, activeSearchTab === 'user')}
                       className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"
                     >
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">
@@ -1652,6 +1654,24 @@ export default function HomePage({ onLogout }: HomePageProps) {
             onBack={handleBackFromRoom}
             onKeepRoom={handleKeepRoom}
           />
+        )}
+
+        {isPublicProfileActive && selectedProfileUser && (
+          <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
+            <PublicProfile
+              profileData={{
+                uid: selectedProfileUser.id,
+                name: selectedProfileUser.name,
+                photo: selectedProfileUser.image,
+                country: selectedProfileUser.country,
+                displayAccountNumber: selectedProfileUser.id
+              }}
+              onBack={() => {
+                setIsPublicProfileActive(false)
+                setSelectedProfileUser(null)
+              }}
+            />
+          </div>
         )}
       </div>
 

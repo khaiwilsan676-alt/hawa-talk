@@ -5,6 +5,13 @@ import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucid
 
 interface PublicProfileProps {
   onBack?: () => void
+  profileData?: {
+    uid: string
+    name: string
+    photo: string
+    country?: string
+    displayAccountNumber?: string
+  }
 }
 
 const COUNTRIES = [
@@ -99,7 +106,7 @@ const getOrCreateAccountNumber = (uid: string) => {
   return savedAccountNumber
 }
 
-export default function PublicProfile({ onBack }: PublicProfileProps) {
+export default function PublicProfile({ onBack, profileData }: PublicProfileProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const albumInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
