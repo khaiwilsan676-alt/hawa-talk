@@ -10,10 +10,33 @@ interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
 }
 
-// HELPER: Account number ya Unique Short ID Generator
-const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid) return '100001'
-  // Generates an 8-digit numeric string based on UID
+// Special Accounts Mapping
+const SPECIAL_ACCOUNTS: { [key: string]: string } = {
+  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
+  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
+  '100002': '100002',
+  '100003': '100003'
+}
+
+// Official & Admin IDs List
+const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
+const ADMIN_IDS = ['700001', '700002', '700003']
+
+// HELPER: Account ID Generator (Official/Admin Same + Deterministic for Normal Users)
+export const getOrCreateAccountNumber = (uid: string) => {
+  if (!uid || uid === 'N/A') return '100379620'
+
+  // 1. Official IDs (500001 - 500005) & Admin IDs (700001 - 700003)
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
+    return uid
+  }
+
+  // 2. Special Accounts (100002, 100003)
+  if (SPECIAL_ACCOUNTS[uid]) {
+    return SPECIAL_ACCOUNTS[uid]
+  }
+
+  // 3. Regular users pure Math/Hash based ID generation (Same UID = Always Same ID)
   let hash = 0
   for (let i = 0; i < uid.length; i++) {
     hash = (hash << 5) - hash + uid.charCodeAt(i)
@@ -23,30 +46,48 @@ const getOrCreateAccountNumber = (uid: string) => {
   return String(10000000 + (positiveHash % 90000000))
 }
 
-// HELPER: Save user profile to Firestore for Global Searchability
+// HELPER: Sync and Lock User Profile in Firestore
 const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
   try {
-    const displayAccNum = getOrCreateAccountNumber(uid)
+    let finalAccountId = ""
+
+    // Official/Admin ID check
+    if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
+      finalAccountId = SPECIAL_ACCOUNTS[uid] || uid
+    } else {
+      // Pehle Firestore 'users' collection me check karo ki ID pehle se exist karti hai ya nahi
+      const userDocRef = doc(db, "users", uid)
+      const userDocSnap = await getDoc(userDocRef)
+
+      if (userDocSnap.exists() && userDocSnap.data().accountId) {
+        finalAccountId = String(userDocSnap.data().accountId)
+      } else {
+        finalAccountId = getOrCreateAccountNumber(uid)
+      }
+    }
+
     const userData = {
       id: uid,
       name: name || email.split('@')[0] || 'User',
       country: '🇮🇳',
       image: photo || '/default-avatar.png',
-      accountId: displayAccNum,
+      accountId: finalAccountId,
       createdAt: Date.now()
     }
 
-    // Save in 'users' collection for ID/Name Search
+    // Save/Merge in 'users' & 'globalRooms'
     await setDoc(doc(db, "users", uid), userData, { merge: true })
-
-    // Save in 'globalRooms' collection for Popular/Rooms Search
     await setDoc(doc(db, "globalRooms", uid), userData, { merge: true })
 
-    console.log("User successfully synced to search database!")
-    return displayAccNum
+    // LocalStorage Locks
+    localStorage.setItem("accountNumber", finalAccountId)
+    localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
+
+    console.log("User synced successfully with ID:", finalAccountId)
+    return finalAccountId
   } catch (err) {
     console.error("Error syncing user to Firestore:", err)
-    return uid
+    return getOrCreateAccountNumber(uid)
   }
 }
 
@@ -56,9 +97,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   
-  // State for the 40vh Google Account Bottom Sheet
   const [showGoogleSheet, setShowGoogleSheet] = useState(false)
-  // State for email password full sheet
   const [showEmailSheet, setShowEmailSheet] = useState(false)
 
   const handleGoogleClick = () => {
@@ -81,7 +120,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const userPhoto = user.photoURL || "/default-avatar.png"
       const userUID = user.uid
 
-      // SYNC TO FIRESTORE SO THIS USER BECOMES SEARCHABLE
       const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
 
       localStorage.setItem("userName", userName);
@@ -100,7 +138,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   };
 
-  // Check if credentials match official/admin IDs
   const checkOfficialCredentials = async (emailStr: string, passwordStr: string) => {
     try {
       const docRef = doc(db, "adminSettings", "credentials");
@@ -113,7 +150,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         if (matched) return matched;
       }
 
-      // Fallback to local storage
       const savedCredentials = localStorage.getItem('officialCredentials');
       if (savedCredentials) {
         const credentials = JSON.parse(savedCredentials);
@@ -128,7 +164,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     return null;
   };
 
-  // Email/Password Authentication
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -139,7 +174,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
 
     try {
-      // First check if it's an official/admin ID
       const officialCred = await checkOfficialCredentials(email, password);
       
       if (officialCred) {
@@ -154,10 +188,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         }
 
         const userName = `${officialCred.type.toUpperCase()} - ${officialCred.id}`
-        await syncUserToFirestore(officialCred.id, userName, officialCred.email, "")
+        const officialID = officialCred.id
+
+        await syncUserToFirestore(officialID, userName, officialCred.email, "")
 
         const userData = {
-          id: officialCred.id,
+          id: officialID,
           email: officialCred.email,
           type: officialCred.type,
           isOfficial: true
@@ -165,12 +201,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
         localStorage.setItem("userName", userName);
         localStorage.setItem("userEmail", officialCred.email);
-        localStorage.setItem("userUID", officialCred.id);
+        localStorage.setItem("userUID", officialID);
+        localStorage.setItem("accountNumber", officialID);
         localStorage.setItem("userType", officialCred.type);
         localStorage.setItem("userPhoto", "");
 
-        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}');
-        loggedInSessions[officialCred.id] = true;
+        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+        loggedInSessions[officialID] = true
         localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions));
 
         if (onLoginSuccess) {
@@ -181,7 +218,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return;
       }
 
-      // Standard Firebase Auth
       let userCredential;
       if (isSignUp) {
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -195,7 +231,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const userPhoto = user.photoURL || "/default-avatar.png"
       const userUID = user.uid
 
-      // SYNC TO FIRESTORE FOR SEARCH
       const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
 
       localStorage.setItem("userName", userName);
@@ -222,7 +257,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex items-center justify-center px-4 relative overflow-hidden">
       <div className="w-full max-w-md">
-        {/* Logo Section */}
         <div className="text-center mb-8">
           <img 
             src="/logo.png" 
@@ -233,9 +267,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <p className="text-gray-600">Welcome to Hawa - Chat & Connect</p>
         </div>
 
-        {/* Login Buttons */}
         <div className="space-y-4">
-          {/* Google Login Button */}
           <button
             onClick={handleGoogleClick}
             className="w-full bg-white/80 backdrop-blur-md border border-white/40 shadow-md rounded-2xl p-4 flex items-center justify-center gap-3 transition-all hover:bg-white hover:shadow-lg cursor-pointer"
@@ -252,7 +284,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </span>
           </button>
 
-          {/* Email Login Button */}
           <button
             onClick={() => setShowEmailSheet(true)}
             className="w-full bg-white/80 backdrop-blur-md border border-white/40 shadow-md rounded-2xl p-4 flex items-center justify-center gap-3 transition-all hover:bg-white hover:shadow-lg cursor-pointer"
@@ -265,13 +296,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </button>
         </div>
 
-        {/* Footer */}
         <p className="text-center text-sm text-gray-600 mt-8">
           By signing in, you agree to our Terms of Service
         </p>
       </div>
 
-      {/* 40vh Glossy White Bottom Sheet for Google Account Picker */}
       {showGoogleSheet && (
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50 transition-all">
           <div className="w-full max-w-md h-[40vh] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl p-6 flex flex-col justify-between border-t border-white animate-in slide-in-from-bottom duration-300">
@@ -297,7 +326,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </div>
               <p className="text-xs text-gray-500 mb-3">to continue to Hawa</p>
 
-              {/* Account Selection Box */}
               <div className="space-y-2 overflow-y-auto max-h-[16vh]">
                 <div
                   onClick={handleActualGmailLogin}
@@ -324,10 +352,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
       )}
 
-      {/* Full Sheet for Email/Password Login */}
       {showEmailSheet && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col">
-          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <button
               onClick={() => {
@@ -346,7 +372,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <div className="w-10"></div>
           </div>
 
-          {/* Form Content */}
           <div className="flex-1 flex items-center justify-center px-6">
             <div className="w-full max-w-sm">
               <form onSubmit={handleEmailAuth} className="space-y-5">
