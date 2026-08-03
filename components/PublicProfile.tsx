@@ -103,7 +103,6 @@ const getOrCreateAccountNumber = (uid: string) => {
     return SPECIAL_ACCOUNTS[uid]
   }
 
-  // Check stored account number first
   const savedAcc = typeof window !== 'undefined' ? localStorage.getItem('accountNumber') : null
   if (savedAcc) {
     return savedAcc
@@ -127,6 +126,44 @@ const getOrCreateAccountNumber = (uid: string) => {
 
   return savedAccountNumber
 }
+
+// Client-side image canvas compressor (prevents broken payload strings)
+const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = (error) => reject(error);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
 
 export default function PublicProfile({ onBack, isOtherUser = false, targetUser = null }: PublicProfileProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null)
@@ -172,7 +209,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   // Check if this is a special account for UI modifications
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
-  // Helper function: Direct Firestore "users" collection save
   const saveToFirestore = async (updateData: Record<string, any>) => {
     const currentUid = user.uid || localStorage.getItem("userUID") || localStorage.getItem("userPhone")
     if (currentUid && currentUid !== "N/A") {
@@ -196,7 +232,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         const targetUid = targetUser.uid || targetUser.id || 'N/A'
         
         let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
-        let name = targetUser.name || "User"
+        let initialName = targetUser.name || "User"
         let photo = targetUser.photo || targetUser.image || ""
         let coverPhoto = targetUser.coverPhoto || ""
         let bio = targetUser.bio || ""
@@ -210,13 +246,16 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           try {
             const userDocRef = doc(db, "users", targetUid)
             
-            // Real-time Listener so changes made by User B show instantly to User A
+            // Real-time Listener: Live fetching target profile changes
             unsubscribe = onSnapshot(userDocRef, (docSnap) => {
               if (docSnap.exists()) {
                 const data = docSnap.data()
                 
                 displayAccNum = data.accountId ? String(data.accountId) : (data.displayAccountNumber || displayAccNum)
-                name = data.name || data.displayName || data.userName || name
+                // Strict Name priority from Firestore
+                const docName = data.name || data.displayName || data.userName || data.fullName
+                const finalName = docName || initialName
+                
                 photo = data.photo || data.photoURL || data.image || data.avatar || photo
                 coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
                 bio = data.bio || data.about || bio
@@ -239,7 +278,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
 
                 setAlbumImages(album)
                 setUser({
-                  name,
+                  name: finalName,
                   uid: targetUid,
                   displayAccountNumber: displayAccNum,
                   photo,
@@ -290,7 +329,9 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
               displayAccNum = String(data.accountId)
               localStorage.setItem("accountNumber", displayAccNum)
             }
-            if (data.name) storedName = data.name
+            if (data.name || data.displayName || data.userName) {
+              storedName = data.name || data.displayName || data.userName
+            }
             if (data.photo || data.photoURL || data.image) {
               photo = data.photo || data.photoURL || data.image || photo
             }
@@ -382,7 +423,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     localStorage.setItem("userGenderLocked", gender)
     setUser(prev => ({ ...prev, gender: formattedGender }))
     
-    // Save to Firestore "users" collection
     await saveToFirestore({ gender: formattedGender })
   }
 
@@ -392,64 +432,66 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     setEditCountry(selectedCountry)
   }
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64String = reader.result as string
-        localStorage.setItem("userPhoto", base64String)
-        setUser(prev => ({ ...prev, photo: base64String }))
+      try {
+        const compressedBase64 = await compressImage(file, 300, 300, 0.7);
+        localStorage.setItem("userPhoto", compressedBase64)
+        setUser(prev => ({ ...prev, photo: compressedBase64 }))
         
-        // Save to Firestore "users" collection
-        await saveToFirestore({ photo: base64String, image: base64String, photoURL: base64String })
+        await saveToFirestore({ 
+          photo: compressedBase64, 
+          image: compressedBase64, 
+          photoURL: compressedBase64 
+        })
+      } catch (err) {
+        console.error("Avatar compression error:", err)
       }
-      reader.readAsDataURL(file)
     }
   }
 
-  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64String = reader.result as string
-        localStorage.setItem("userCoverPhoto", base64String)
-        setUser(prev => ({ ...prev, coverPhoto: base64String }))
+      try {
+        const compressedBase64 = await compressImage(file, 800, 400, 0.7);
+        localStorage.setItem("userCoverPhoto", compressedBase64)
+        setUser(prev => ({ ...prev, coverPhoto: compressedBase64 }))
         
-        // Save to Firestore "users" collection
-        await saveToFirestore({ coverPhoto: base64String, coverImage: base64String })
+        await saveToFirestore({ 
+          coverPhoto: compressedBase64, 
+          coverImage: compressedBase64 
+        })
+      } catch (err) {
+        console.error("Cover compression error:", err)
       }
-      reader.readAsDataURL(file)
     }
   }
 
   const handleRemoveCoverPhoto = async () => {
     localStorage.removeItem("userCoverPhoto")
     setUser(prev => ({ ...prev, coverPhoto: "" }))
-    
-    // Save to Firestore "users" collection
     await saveToFirestore({ coverPhoto: "", coverImage: "" })
   }
 
-  const handleAlbumUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAlbumUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       if (albumImages.length >= 4) {
         alert("You can only upload up to 4 images in the album.")
         return
       }
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64String = reader.result as string
-        const updatedAlbum = [...albumImages, base64String]
+      try {
+        const compressedBase64 = await compressImage(file, 600, 600, 0.7);
+        const updatedAlbum = [...albumImages, compressedBase64]
         setAlbumImages(updatedAlbum)
         localStorage.setItem("userAlbumImages", JSON.stringify(updatedAlbum))
         
-        // Save to Firestore "users" collection
         await saveToFirestore({ albumImages: updatedAlbum, album: updatedAlbum })
+      } catch (err) {
+        console.error("Album image compression error:", err)
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -457,8 +499,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     const updated = albumImages.filter((_, index) => index !== indexToRemove)
     setAlbumImages(updated)
     localStorage.setItem("userAlbumImages", JSON.stringify(updated))
-    
-    // Save to Firestore "users" collection
     await saveToFirestore({ albumImages: updated, album: updated })
   }
 
@@ -467,7 +507,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     if (editAge) localStorage.setItem("userAge", editAge)
     if (editBio) localStorage.setItem("userBio", editBio)
     
-    // Lock country ONE TIME permanently on Save
     if (editCountry) {
       localStorage.setItem("userCountry", editCountry)
       localStorage.setItem("userCountryLocked", "true")
@@ -485,7 +524,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       flag: matchedCountry.flag
     }))
 
-    // ALL DETAILS SAVE TO FIRESTORE "users" COLLECTION
     await saveToFirestore({
       name: editName,
       displayName: editName,
@@ -495,7 +533,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       about: editBio,
       country: matchedCountry.name,
       location: matchedCountry.name,
-      countryLocked: true // Locked permanently in Firestore
+      countryLocked: true
     })
 
     setShowEditSheet(false)
@@ -506,8 +544,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     localStorage.setItem("userBio", editBio)
     setUser(prev => ({ ...prev, bio: editBio }))
     setShowBioInput(false)
-    
-    // Save to Firestore "users" collection
     await saveToFirestore({ bio: editBio, about: editBio })
   }
 
@@ -515,7 +551,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     return user.displayAccountNumber
   }
 
-  // Follow Toggle Logic for target profile
   const handleToggleFollow = () => {
     setIsFollowing(prev => {
       const nextState = !prev
@@ -532,9 +567,9 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       {/* Cover Image & Header Section */}
       <div className="relative w-full h-[340px] bg-gray-800">
         {user.coverPhoto ? (
-          <img src={user.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+          <img src={user.coverPhoto} alt="" className="w-full h-full object-cover" />
         ) : user.photo ? (
-          <img src={user.photo} alt="Cover" className="w-full h-full object-cover" />
+          <img src={user.photo} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white text-4xl font-bold">
             {user.name.charAt(0).toUpperCase()}
@@ -556,7 +591,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         <div className="absolute -bottom-1 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
-              <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={user.photo} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
                 {user.name.charAt(0).toUpperCase()}
@@ -574,10 +609,10 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
             {user.gender} {user.age}
           </span>
-          <img src="/1785131462125.png" alt="Badge 1" className="h-9 w-auto object-contain" />
-          <img src="/1785131792693.png" alt="Badge 2" className="h-9 w-auto object-contain" />
-          <img src="/1785469775751.png" alt="Badge 3" className="h-7 w-auto object-contain" />
-          <img src="/1785469365805.png" alt="Badge 4" className="h-7 w-auto object-contain" />
+          <img src="/1785131462125.png" alt="" className="h-9 w-auto object-contain" />
+          <img src="/1785131792693.png" alt="" className="h-9 w-auto object-contain" />
+          <img src="/1785469775751.png" alt="" className="h-7 w-auto object-contain" />
+          <img src="/1785469365805.png" alt="" className="h-7 w-auto object-contain" />
         </div>
 
         {/* ID and Followers */}
@@ -620,7 +655,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           <div className="relative inline-flex items-center justify-center ml-0.5">
             <img 
               src="/1785137410522.png" 
-              alt="Level Badge" 
+              alt="" 
               className="h-6 w-auto object-contain"
             />
             <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm" style={{ paddingLeft: '10px' }}>
@@ -629,7 +664,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           </div>
           <img 
             src="/1785486414756.png" 
-            alt="Level Side" 
+            alt="" 
             className="h-6 w-auto object-contain"
           />
         </div>
@@ -685,13 +720,13 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                   className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setFullImageView(img)}
                 >
-                  <img src={img} alt={`Album ${index + 1}`} className="w-full h-full object-cover" />
+                  <img src={img} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
           ) : (
             <div className="w-full h-28 rounded-2xl overflow-hidden bg-gray-100">
-              <img src="/IMG_20260726_225835.jpg" alt="Default Album" className="w-full h-full object-cover" />
+              <img src="/IMG_20260726_225835.jpg" alt="" className="w-full h-full object-cover" />
             </div>
           )}
         </div>
@@ -700,7 +735,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
-            <img src="/1785091443553.png" alt="Vehicle" className="w-full h-full object-cover" />
+            <img src="/1785091443553.png" alt="" className="w-full h-full object-cover" />
           </div>
         </div>
 
@@ -708,7 +743,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
-            <img src="/1785091431545.png" alt="Medal" className="w-full h-full object-cover" />
+            <img src="/1785091431545.png" alt="" className="w-full h-full object-cover" />
           </div>
         </div>
 
@@ -716,7 +751,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
-            <img src="/1785091457562.png" alt="Frame" className="w-full h-full object-cover" />
+            <img src="/1785091457562.png" alt="" className="w-full h-full object-cover" />
           </div>
         </div>
 
@@ -724,15 +759,14 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
-            <img src="/1785091520912.png" alt="Gift" className="w-full h-full object-cover" />
+            <img src="/1785091520912.png" alt="" className="w-full h-full object-cover" />
           </div>
         </div>
       </div>
 
-      {/* FULL MATCHING BOTTOM ACTION BAR (Shows only when viewing another user's profile) */}
+      {/* FULL MATCHING BOTTOM ACTION BAR */}
       {isOtherUser && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md px-6 py-3.5 border-t border-gray-100 flex items-center justify-between gap-4 max-w-md mx-auto shadow-lg">
-          {/* Follow / Following Button */}
           <button
             onClick={handleToggleFollow}
             className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff5874] to-[#ff6b8b] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-pink-200"
@@ -741,7 +775,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
             <span>{isFollowing ? 'Following' : 'Follow'}</span>
           </button>
 
-          {/* Chat Button */}
           <button
             onClick={() => alert("Chat opened!")}
             className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#1dc4e9] to-[#1de9b6] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-cyan-200"
@@ -766,14 +799,14 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           </button>
           <img 
             src={fullImageView} 
-            alt="Full view" 
+            alt="" 
             className="max-w-full max-h-[90vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
 
-      {/* Edit Profile Bottom Sheet (Only rendered when viewing OWN profile) */}
+      {/* Edit Profile Bottom Sheet */}
       {!isOtherUser && showEditSheet && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={handleCloseEditSheet}></div>
@@ -799,7 +832,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                   className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 cursor-pointer"
                 >
                   {user.photo ? (
-                    <img src={user.photo} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={user.photo} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-500">
                       {user.name.charAt(0).toUpperCase()}
@@ -831,7 +864,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 </div>
                 {user.coverPhoto && (
                   <div className="w-full h-20 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={user.coverPhoto} alt="Cover Preview" className="w-full h-full object-cover" />
+                    <img src={user.coverPhoto} alt="" className="w-full h-full object-cover" />
                   </div>
                 )}
               </div>
@@ -854,7 +887,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                   <div className="grid grid-cols-4 gap-2 pt-1">
                     {albumImages.map((img, idx) => (
                       <div key={idx} className="relative w-full h-16 rounded-xl overflow-hidden border border-gray-200 group">
-                        <img src={img} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
+                        <img src={img} alt="" className="w-full h-full object-cover" />
                         <button
                           onClick={() => handleRemoveAlbumImage(idx)}
                           className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow"
@@ -913,7 +946,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 )}
               </div>
 
-              {/* Country Selection (Default: India, Lock on first Save) */}
+              {/* Country Selection */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Country</span>
                 <select
