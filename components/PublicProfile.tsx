@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X } from 'lucide-react'
+import { db } from "../src/lib/firebase"
+import { doc, getDoc } from "firebase/firestore"
 
 interface PublicProfileProps {
   onBack?: () => void
@@ -66,33 +68,38 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
   'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003'
 }
 
-// ✅ Official/Admin IDs list
+// Official/Admin IDs list
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
 
-  // ✅ Check if it's an official or admin ID - return the ID itself
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return uid
   }
 
-  // Check if this is a special account
   if (SPECIAL_ACCOUNTS[uid]) {
     return SPECIAL_ACCOUNTS[uid]
+  }
+
+  // Check stored account number first
+  const savedAcc = localStorage.getItem('accountNumber')
+  if (savedAcc) {
+    return savedAcc
   }
 
   const storageKey = `user_account_number_${uid}`
   let savedAccountNumber = localStorage.getItem(storageKey)
 
   if (!savedAccountNumber) {
-    const targetLength = uid.length
-    let numericStr = ''
-    for (let i = 0; i < targetLength; i++) {
-      numericStr += Math.floor(Math.random() * 10).toString()
+    let hash = 0
+    for (let i = 0; i < uid.length; i++) {
+      hash = (hash << 5) - hash + uid.charCodeAt(i)
+      hash |= 0
     }
-    savedAccountNumber = numericStr
+    const positiveHash = Math.abs(hash)
+    savedAccountNumber = String(10000000 + (positiveHash % 90000000))
     localStorage.setItem(storageKey, savedAccountNumber)
   }
 
@@ -141,62 +148,80 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
   useEffect(() => {
-    const storedName = localStorage.getItem("userName")
-    const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
-    const photo = localStorage.getItem("userPhoto") || ""
-    const coverPhoto = localStorage.getItem("userCoverPhoto") || ""
-    const storedBio = localStorage.getItem("userBio") || ""
-    const storedCountry = localStorage.getItem("userCountry") || ""
-    const storedAge = localStorage.getItem("userAge") || ""
-    
-    const storedAlbum = localStorage.getItem("userAlbumImages")
-    if (storedAlbum) {
-      setAlbumImages(JSON.parse(storedAlbum))
+    const loadProfileData = async () => {
+      const storedName = localStorage.getItem("userName")
+      const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
+      const photo = localStorage.getItem("userPhoto") || ""
+      const coverPhoto = localStorage.getItem("userCoverPhoto") || ""
+      const storedBio = localStorage.getItem("userBio") || ""
+      const storedCountry = localStorage.getItem("userCountry") || ""
+      const storedAge = localStorage.getItem("userAge") || ""
+      
+      const storedAlbum = localStorage.getItem("userAlbumImages")
+      if (storedAlbum) {
+        setAlbumImages(JSON.parse(storedAlbum))
+      }
+
+      let displayAccNum = localStorage.getItem("accountNumber") || ""
+
+      // 1. Fetch exact accountId directly from Firestore 'users' collection
+      if (uid && uid !== "N/A") {
+        try {
+          const userDocRef = doc(db, "users", uid)
+          const docSnap = await getDoc(userDocRef)
+          if (docSnap.exists() && docSnap.data().accountId) {
+            displayAccNum = String(docSnap.data().accountId)
+            localStorage.setItem("accountNumber", displayAccNum)
+          }
+        } catch (err) {
+          console.warn("Firestore fetch error in PublicProfile:", err)
+        }
+      }
+
+      // Fallback calculation if no Firestore accountId exists
+      if (!displayAccNum) {
+        displayAccNum = getOrCreateAccountNumber(uid)
+      }
+
+      const matchedCountry = COUNTRIES.find(c => c.name === storedCountry)
+
+      setUser(prev => ({
+        ...prev,
+        name: storedName || prev.name,
+        uid: uid,
+        displayAccountNumber: displayAccNum,
+        photo: photo || prev.photo,
+        coverPhoto: coverPhoto || prev.coverPhoto,
+        bio: storedBio || prev.bio,
+        location: storedCountry,
+        flag: matchedCountry ? matchedCountry.flag : "",
+        age: storedAge ? parseInt(storedAge) : prev.age
+      }))
+
+      setEditName(storedName || "Hawa User")
+      setEditAge(storedAge || "24")
+      setEditBio(storedBio || "")
+      setEditCountry(storedCountry)
+
+      const lockedGender = localStorage.getItem("userGenderLocked")
+      if (lockedGender) {
+        setEditGender(lockedGender)
+        setGenderLocked(true)
+      }
+
+      const lockedCountryStatus = localStorage.getItem("userCountryLocked")
+      if (lockedCountryStatus === "true") {
+        setCountryLocked(true)
+      }
     }
 
-    const fullAccNum = getOrCreateAccountNumber(uid)
-    const displayAccNum = fullAccNum !== 'N/A' ? fullAccNum : '100379620'
-
-    const matchedCountry = COUNTRIES.find(c => c.name === storedCountry)
-
-    setUser(prev => ({
-      ...prev,
-      name: storedName || prev.name,
-      uid: uid,
-      displayAccountNumber: displayAccNum,
-      photo: photo || prev.photo,
-      coverPhoto: coverPhoto || prev.coverPhoto,
-      bio: storedBio || prev.bio,
-      location: storedCountry,
-      flag: matchedCountry ? matchedCountry.flag : "",
-      age: storedAge ? parseInt(storedAge) : prev.age
-    }))
-
-    setEditName(storedName || "Hawa User")
-    setEditAge(storedAge || "24")
-    setEditBio(storedBio || "")
-    setEditCountry(storedCountry)
-
-    const lockedGender = localStorage.getItem("userGenderLocked")
-    if (lockedGender) {
-      setEditGender(lockedGender)
-      setGenderLocked(true)
-    }
-
-    const lockedCountryStatus = localStorage.getItem("userCountryLocked")
-    if (lockedCountryStatus === "true") {
-      setCountryLocked(true)
-    }
+    loadProfileData()
   }, [])
 
   const handleCopyID = () => {
-    if (isSpecialAccount) {
-      // Special account - copy full number
+    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
       navigator.clipboard.writeText(user.displayAccountNumber)
-    } else {
-      // Regular account - copy only first 8 digits
-      const first8Digits = user.displayAccountNumber.substring(0, 8)
-      navigator.clipboard.writeText(first8Digits)
+      alert("ID Copied!")
     }
   }
 
@@ -314,12 +339,8 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
     setShowBioInput(false)
   }
 
-  // Get display ID: first 8 digits for regular, full for special
   const getDisplayID = () => {
-    if (isSpecialAccount) {
-      return user.displayAccountNumber
-    }
-    return user.displayAccountNumber.substring(0, 8)
+    return user.displayAccountNumber
   }
 
   return (
@@ -361,7 +382,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
       {/* Profile Info Details Section */}
       <div className="px-5 pt-5">
-        {/* Name + Gender + ALL Badges */}
+        {/* Name + Gender + Badges */}
         <div className="flex flex-wrap items-center gap-0.5">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
@@ -373,7 +394,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           <img src="/1785469365805.png" alt="Badge 4" className="h-7 w-auto object-contain" />
         </div>
 
-        {/* ID and Followers in one row */}
+        {/* ID and Followers */}
         <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
           <div className="flex items-center gap-1">
             {isSpecialAccount ? (
@@ -488,7 +509,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           )}
         </div>
 
-        {/* Other Tabs */}
+        {/* Vehicle */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -496,6 +517,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           </div>
         </div>
 
+        {/* Medal */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -503,6 +525,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           </div>
         </div>
 
+        {/* Frame */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -510,6 +533,7 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
           </div>
         </div>
 
+        {/* Gift */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -553,7 +577,6 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
 
             <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1 pb-24">
               
-              {/* Hidden Inputs for File Uploads */}
               <input type="file" ref={avatarInputRef} accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               <input type="file" ref={albumInputRef} accept="image/*" onChange={handleAlbumUpload} className="hidden" />
               <input type="file" ref={coverInputRef} accept="image/*" onChange={handleCoverUpload} className="hidden" />
@@ -755,4 +778,5 @@ export default function PublicProfile({ onBack }: PublicProfileProps) {
       `}</style>
     </div>
   )
-    }
+}
+
