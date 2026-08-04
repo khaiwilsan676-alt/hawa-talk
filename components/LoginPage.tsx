@@ -498,8 +498,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* 10VH Spacer + Middle Logo + Hawa Text (No Card) */}
-        <div className="flex flex-col items-center" style={{ marginTop: '10vh' }}>
-          <div className="mb-4">
+        <div className="flex flex-col items-center" style={{ marginTop: '7vh' }}>
+          <div className="mb-1">
             <img 
               src="/logo.png" 
               alt="Hawa" 
@@ -510,7 +510,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* Buttons Section */}
-        <div className="w-full max-w-sm space-y-3 mb-6">
+        <div className="w-full max-w-sm space-y-3 mb-6"> style={{ marginTop: '10vh' }}>
           {/* 3D Glossy White Google Button */}
           <button
             onClick={handleGoogleClick}
