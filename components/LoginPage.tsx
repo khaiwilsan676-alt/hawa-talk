@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Eye, EyeOff, User } from 'lucide-react'
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, provider, db } from "../src/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -21,6 +21,14 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 // Official & Admin IDs List
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
+
+// Feedback Types
+const FEEDBACK_TYPES = [
+  { id: 'app_bug', label: 'App Bug', icon: '🐛' },
+  { id: 'suggestion', label: 'Suggestion', icon: '💡' },
+  { id: 'recharge', label: 'Recharge', icon: '💰' },
+  { id: 'others', label: 'Others', icon: '📝' }
+]
 
 // HELPER: Account ID Generator
 export const getOrCreateAccountNumber = (uid: string) => {
@@ -92,9 +100,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showLoginPage, setShowLoginPage] = useState(false)
+  const [showFeedbackPage, setShowFeedbackPage] = useState(false)
   const [videoLoaded, setVideoLoaded] = useState(false)
   
   const [showGoogleSheet, setShowGoogleSheet] = useState(false)
+
+  // Feedback States
+  const [selectedType, setSelectedType] = useState<string>('')
+  const [problemDescription, setProblemDescription] = useState('')
+  const [contactInfo, setContactInfo] = useState('')
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
+  const [feedbackSuccess, setFeedbackSuccess] = useState(false)
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
 
   // Preload video
   useEffect(() => {
@@ -263,6 +280,184 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const isValidEmail = (emailStr: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
+
+  // Handle Feedback Submit
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFeedbackError(null);
+
+    if (!selectedType) {
+      setFeedbackError("Please select a type of issue");
+      return;
+    }
+    if (!problemDescription.trim()) {
+      setFeedbackError("Please describe your problem");
+      return;
+    }
+    if (!contactInfo.trim()) {
+      setFeedbackError("Please enter your contact information");
+      return;
+    }
+
+    setFeedbackSubmitting(true);
+
+    try {
+      const feedbackData = {
+        type: selectedType,
+        typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
+        description: problemDescription.trim(),
+        contactInfo: contactInfo.trim(),
+        createdAt: new Date().toISOString(),
+        timestamp: Date.now(),
+        status: 'pending'
+      };
+
+      await addDoc(collection(db, "feedbacks"), feedbackData);
+      
+      setFeedbackSuccess(true);
+      setSelectedType('');
+      setProblemDescription('');
+      setContactInfo('');
+      
+      // Auto close after 2 seconds
+      setTimeout(() => {
+        setShowFeedbackPage(false);
+        setFeedbackSuccess(false);
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      setFeedbackError("Failed to submit feedback. Please try again.");
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+
+  // Feedback Page
+  if (showFeedbackPage) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center p-4 bg-white border-b border-gray-200">
+          <button
+            onClick={() => {
+              setShowFeedbackPage(false);
+              setFeedbackSuccess(false);
+              setFeedbackError(null);
+              setSelectedType('');
+              setProblemDescription('');
+              setContactInfo('');
+            }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={24} className="text-gray-700" />
+          </button>
+          <h1 className="text-lg font-semibold text-gray-900 ml-3">Feedback</h1>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="max-w-md mx-auto">
+            {feedbackSuccess ? (
+              <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
+                <div className="text-4xl mb-4">✅</div>
+                <h2 className="text-xl font-bold text-green-700 mb-2">Thank You!</h2>
+                <p className="text-green-600">Your feedback has been submitted successfully.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleFeedbackSubmit} className="space-y-6">
+                {/* Type of Issue */}
+                <div>
+                  <h2 className="text-base font-semibold text-gray-800 mb-3">Type of Issue</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {FEEDBACK_TYPES.map((type) => (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => setSelectedType(type.id)}
+                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                          selectedType === type.id
+                            ? 'border-blue-500 bg-blue-50 shadow-md'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="text-2xl mb-1">{type.icon}</div>
+                        <div className={`text-sm font-medium ${
+                          selectedType === type.id ? 'text-blue-700' : 'text-gray-700'
+                        }`}>
+                          {type.label}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Problem Description */}
+                <div>
+                  <h2 className="text-base font-semibold text-gray-800 mb-3">Problem Description</h2>
+                  <div className="relative">
+                    <textarea
+                      value={problemDescription}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 400) {
+                          setProblemDescription(e.target.value);
+                        }
+                      }}
+                      placeholder="Describe your issue or suggestion..."
+                      maxLength={400}
+                      rows={5}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white resize-none"
+                    />
+                    <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                      {problemDescription.length}/400
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div>
+                  <h2 className="text-base font-semibold text-gray-800 mb-3">Contact Information</h2>
+                  <input
+                    type="text"
+                    value={contactInfo}
+                    onChange={(e) => setContactInfo(e.target.value)}
+                    placeholder="Enter your email, Gmail or App ID"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white"
+                  />
+                </div>
+
+                {/* Error Message */}
+                {feedbackError && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                    {feedbackError}
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={feedbackSubmitting}
+                  className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-2xl transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 text-base"
+                >
+                  {feedbackSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Submitting...
+                    </span>
+                  ) : (
+                    'Submit Feedback'
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Privacy Policy Page
   if (showPrivacyPolicy) {
@@ -490,13 +685,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         
         {/* Top Right - Feedback Text Only (No Card, No Icon) */}
         <div className="w-full flex justify-end pt-4">
-          <button className="text-sm font-medium text-white/90 hover:text-white transition-all cursor-pointer">
+          <button 
+            onClick={() => setShowFeedbackPage(true)}
+            className="text-sm font-medium text-white/90 hover:text-white transition-all cursor-pointer"
+          >
             Feedback
           </button>
         </div>
 
         {/* 10VH Gap between Feedback and Logo */}
-        <div className="flex flex-col items-center" style={{ marginTop: '5vh' }}>
+        <div className="flex flex-col items-center" style={{ marginTop: '10vh' }}>
           {/* Logo Image */}
           <div className="mb-0.5">
             <img 
@@ -510,7 +708,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* 15VH Gap between Logo and Buttons */}
-        <div style={{ marginTop: '20vh' }}></div>
+        <div style={{ marginTop: '15vh' }}></div>
 
         {/* Buttons Section */}
         <div className="w-full max-w-sm space-y-3 mb-6">
@@ -621,4 +819,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-      }
+                    }
