@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, Eye, EyeOff, User, MessageSquare } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Eye, EyeOff, User } from 'lucide-react'
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, provider, db } from "../src/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -92,8 +92,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showLoginPage, setShowLoginPage] = useState(false)
+  const [videoLoaded, setVideoLoaded] = useState(false)
   
   const [showGoogleSheet, setShowGoogleSheet] = useState(false)
+
+  // Preload video
+  useEffect(() => {
+    const video = document.createElement('video');
+    video.src = '/VID_20260804_011114_027_bsl.mp4';
+    video.preload = 'auto';
+  }, []);
 
   const handleGoogleClick = () => {
     setShowGoogleSheet(true);
@@ -309,129 +317,148 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     );
   }
 
-  // Login Page (Account Button click - Alag Page)
+  // Login Page (Account Button click - Video Background, No Card Logo)
   if (showLoginPage) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex flex-col">
-        {/* Header with back button */}
-        <div className="flex items-center p-4">
-          <button
-            onClick={() => {
-              setShowLoginPage(false);
-              setEmail('');
-              setPassword('');
-              setAuthError(null);
-            }}
-            className="p-2 hover:bg-white/50 rounded-full transition-colors cursor-pointer"
-          >
-            <ArrowLeft size={24} className="text-gray-700" />
-          </button>
-        </div>
+      <div className="min-h-screen relative flex flex-col bg-gray-900">
+        {/* Video Background */}
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          preload="auto"
+          poster="/video-thumbnail.jpg"
+          onLoadedData={() => setVideoLoaded(true)}
+          className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <source src="/VID_20260804_011114_027_bsl.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/40 z-0"></div>
 
         {/* Content */}
-        <div className="flex-1 flex items-center justify-center px-6">
-          <div className="w-full max-w-sm">
-            {/* Logo and Title */}
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-4">
+        <div className="relative z-10 flex flex-col min-h-screen">
+          {/* Header with back button */}
+          <div className="flex items-center p-4">
+            <button
+              onClick={() => {
+                setShowLoginPage(false);
+                setEmail('');
+                setPassword('');
+                setAuthError(null);
+              }}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+            >
+              <ArrowLeft size={24} className="text-white" />
+            </button>
+          </div>
+
+          {/* Form Content - Moved Up */}
+          <div className="flex-1 flex flex-col items-center justify-start px-6 pt-8">
+            <div className="w-full max-w-sm">
+              {/* Logo without Card */}
+              <div className="text-center mb-6">
                 <img 
                   src="/logo.png" 
                   alt="Hawa" 
-                  className="w-12 h-12 rounded-xl" 
+                  className="w-16 h-16 rounded-2xl mx-auto mb-3 drop-shadow-lg" 
                 />
+                <h1 className="text-2xl font-bold text-white">Welcome Back!</h1>
+                <p className="text-white/70 text-sm mt-1">Sign in to your account</p>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Welcome Back!</h1>
-              <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
-            </div>
 
-            {/* Form */}
-            <form onSubmit={handleEmailAuth} className="space-y-4">
-              {authError && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
-                  {authError}
-                </div>
-              )}
-
-              {/* Email Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  E-mail Address
-                </label>
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white"
-                  required
-                />
-                {email && !isValidEmail(email) && (
-                  <p className="text-xs text-red-500 mt-1">Please enter a valid email</p>
+              {/* Form */}
+              <form onSubmit={handleEmailAuth} className="space-y-4">
+                {authError && (
+                  <div className="bg-red-500/20 backdrop-blur-md border border-red-300/30 text-white px-4 py-3 rounded-xl text-sm">
+                    {authError}
+                  </div>
                 )}
-              </div>
 
-              {/* Password Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
+                {/* Email Input */}
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    E-mail Address
+                  </label>
                   <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 pr-12 bg-white"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl focus:outline-none focus:border-white/50 transition-colors text-white placeholder-white/50"
                     required
-                    minLength={6}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
+                  {email && !isValidEmail(email) && (
+                    <p className="text-xs text-red-300 mt-1">Please enter a valid email</p>
+                  )}
                 </div>
-              </div>
 
-              {/* Do you have account? Sign In */}
-              <div className="text-center">
-                <p className="text-sm text-gray-500">
-                  Do you have account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail('');
-                      setPassword('');
-                      setAuthError(null);
-                    }}
-                    className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
-                  >
-                    Sign In
-                  </button>
-                </p>
-              </div>
+                {/* Password Input */}
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl focus:outline-none focus:border-white/50 transition-colors text-white placeholder-white/50 pr-12"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/60 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
 
-              {/* Login Button */}
-              <button
-                type="submit"
-                disabled={loading || !email || !password || !isValidEmail(email)}
-                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl transition-all hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 text-base"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Signing In...
-                  </span>
-                ) : (
-                  'Login'
-                )}
-              </button>
-            </form>
+                {/* Do you have account? Sign In */}
+                <div className="text-center">
+                  <p className="text-sm text-white/70">
+                    Do you have account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail('');
+                        setPassword('');
+                        setAuthError(null);
+                      }}
+                      className="text-blue-300 hover:text-blue-200 font-semibold cursor-pointer"
+                    >
+                      Sign In
+                    </button>
+                  </p>
+                </div>
+
+                {/* Login Button */}
+                <button
+                  type="submit"
+                  disabled={loading || !email || !password || !isValidEmail(email)}
+                  className="w-full bg-white text-blue-600 font-semibold py-3 rounded-xl transition-all hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-black/20 text-base"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Signing In...
+                    </span>
+                  ) : (
+                    'Login'
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -440,14 +467,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   // Main Landing Page with Video Background
   return (
-    <div className="min-h-screen relative flex flex-col items-center justify-between px-4 overflow-hidden">
+    <div className="min-h-screen relative flex flex-col items-center justify-between px-4 overflow-hidden bg-gray-900">
       
       {/* Video Background */}
       <video 
         autoPlay 
         loop 
+        muted 
         playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        preload="auto"
+        poster="/video-thumbnail.jpg"
+        onLoadedData={() => setVideoLoaded(true)}
+        className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
       >
         <source src="/VID_20260804_011114_027_bsl.mp4" type="video/mp4" />
         Your browser does not support the video tag.
@@ -459,21 +490,20 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       {/* Content - Above Video */}
       <div className="relative z-10 w-full flex flex-col items-center justify-between min-h-screen">
         
-        {/* Top Right - Feedback Tab */}
+        {/* Top Right - Feedback Text Only (No Card, No Icon) */}
         <div className="w-full flex justify-end pt-4">
-          <button className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full shadow-md text-sm font-medium text-white hover:bg-white/30 transition-all cursor-pointer border border-white/30">
-            <MessageSquare size={16} className="inline mr-1.5" />
+          <button className="text-sm font-medium text-white/90 hover:text-white transition-all cursor-pointer">
             Feedback
           </button>
         </div>
 
-        {/* 15VH Spacer + Middle Logo + Hawa Text */}
-        <div className="flex flex-col items-center" style={{ marginTop: '15vh' }}>
-          <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-3xl shadow-xl flex items-center justify-center mb-4 border border-white/30">
+        {/* 10VH Spacer + Middle Logo + Hawa Text (No Card) */}
+        <div className="flex flex-col items-center" style={{ marginTop: '10vh' }}>
+          <div className="mb-4">
             <img 
               src="/logo.png" 
               alt="Hawa" 
-              className="w-16 h-16 rounded-2xl" 
+              className="w-20 h-20 rounded-2xl drop-shadow-lg" 
             />
           </div>
           <h1 className="text-4xl font-bold text-white tracking-wide drop-shadow-lg">Hawa</h1>
@@ -588,4 +618,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-  }
+        }
