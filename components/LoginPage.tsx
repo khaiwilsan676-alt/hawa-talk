@@ -496,7 +496,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* 10VH Gap between Feedback and Logo */}
-        <div className="flex flex-col items-center" style={{ marginTop: '7vh' }}>
+        <div className="flex flex-col items-center" style={{ marginTop: '5vh' }}>
           {/* Logo Image */}
           <div className="mb-0.5">
             <img 
@@ -510,7 +510,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* 15VH Gap between Logo and Buttons */}
-        <div style={{ marginTop: '18vh' }}></div>
+        <div style={{ marginTop: '20vh' }}></div>
 
         {/* Buttons Section */}
         <div className="w-full max-w-sm space-y-3 mb-6">
