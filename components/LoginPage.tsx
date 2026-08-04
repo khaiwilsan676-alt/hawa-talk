@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, provider, db } from "../src/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -22,21 +22,18 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-// HELPER: Account ID Generator (Official/Admin Same + Deterministic for Normal Users)
+// HELPER: Account ID Generator
 export const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
 
-  // 1. Official IDs (500001 - 500005) & Admin IDs (700001 - 700003)
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return uid
   }
 
-  // 2. Special Accounts (100002, 100003)
   if (SPECIAL_ACCOUNTS[uid]) {
     return SPECIAL_ACCOUNTS[uid]
   }
 
-  // 3. Regular users pure Math/Hash based ID generation (Same UID = Always Same ID)
   let hash = 0
   for (let i = 0; i < uid.length; i++) {
     hash = (hash << 5) - hash + uid.charCodeAt(i)
@@ -51,11 +48,9 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
   try {
     let finalAccountId = ""
 
-    // Official/Admin ID check
     if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
       finalAccountId = SPECIAL_ACCOUNTS[uid] || uid
     } else {
-      // Pehle Firestore 'users' collection me check karo ki ID pehle se exist karti hai ya nahi
       const userDocRef = doc(db, "users", uid)
       const userDocSnap = await getDoc(userDocRef)
 
@@ -75,11 +70,9 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
       createdAt: Date.now()
     }
 
-    // Save/Merge in 'users' & 'globalRooms'
     await setDoc(doc(db, "users", uid), userData, { merge: true })
     await setDoc(doc(db, "globalRooms", uid), userData, { merge: true })
 
-    // LocalStorage Locks
     localStorage.setItem("accountNumber", finalAccountId)
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
 
@@ -97,6 +90,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   
   const [showGoogleSheet, setShowGoogleSheet] = useState(false)
   const [showEmailSheet, setShowEmailSheet] = useState(false)
@@ -168,6 +164,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
+    
+    if (!agreedToTerms) {
+      setAuthError("Please agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
     
     if (!email || !password || password.length < 6) {
       setAuthError("Password must be at least 6 characters long.");
@@ -268,24 +269,186 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
+  // Privacy Policy Page
+  if (showPrivacyPolicy) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col">
+        <div className="flex items-center p-4 border-b border-gray-100">
+          <button
+            onClick={() => setShowPrivacyPolicy(false)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={24} className="text-gray-700" />
+          </button>
+          <h1 className="text-lg font-semibold text-gray-900 ml-3">Privacy Policy</h1>
+        </div>
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div className="max-w-2xl mx-auto space-y-6 text-gray-700">
+            <h2 className="text-2xl font-bold text-gray-900">Privacy Policy</h2>
+            <p className="text-sm text-gray-500">Last updated: {new Date().toLocaleDateString()}</p>
+            
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">1. Information We Collect</h3>
+              <p>We collect information you provide directly to us, including your name, email address, and profile information when you create an account. We also collect information about your use of our services.</p>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">2. How We Use Your Information</h3>
+              <p>We use the information we collect to provide, maintain, and improve our services, to communicate with you, and to develop new features.</p>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">3. Information Sharing</h3>
+              <p>We do not share your personal information with third parties except as described in this privacy policy or with your consent.</p>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">4. Data Security</h3>
+              <p>We take reasonable measures to help protect your personal information from loss, theft, misuse, and unauthorized access.</p>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">5. Your Choices</h3>
+              <p>You can access, update, or delete your account information at any time through your account settings. You may also opt out of receiving promotional communications from us.</p>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">6. Contact Us</h3>
+              <p>If you have any questions about this Privacy Policy, please contact us at support@hawaapp.com.</p>
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Main Card */}
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <img 
-            src="/logo.png" 
-            alt="Hawa" 
-            className="w-20 h-20 mx-auto mb-4 rounded-2xl" 
-          />
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Hawa</h1>
-          <p className="text-gray-600">Welcome to Hawa - Chat & Connect</p>
-        </div>
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          {/* Row 1: Logo and Welcome Back */}
+          <div className="flex items-center gap-3 mb-2">
+            <img 
+              src="/logo.png" 
+              alt="Hawa" 
+              className="w-10 h-10 rounded-xl" 
+            />
+            <h1 className="text-2xl font-bold text-gray-900">Welcome Back!</h1>
+          </div>
 
-        <div className="space-y-4">
+          {/* Row 2: Subtitle */}
+          <p className="text-gray-500 mb-8">Sign in to enjoy Hawa</p>
+
+          {/* Login Form */}
+          <form onSubmit={handleEmailAuth} className="space-y-5">
+            {authError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                {authError}
+              </div>
+            )}
+
+            {/* Row 3: Email Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                E-mail Address
+              </label>
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400"
+                required
+              />
+              {email && !isValidEmail(email) && (
+                <p className="text-sm text-red-500 mt-1">Please enter a valid email</p>
+              )}
+            </div>
+
+            {/* Row 4: Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 pr-12"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Terms and Privacy Checkbox */}
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <label htmlFor="terms" className="text-sm text-gray-600">
+                You agree to our{' '}
+                <span className="text-gray-900 font-medium">Terms</span>
+                {', '}
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyPolicy(true)}
+                  className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+                >
+                  Privacy Policy
+                </button>
+              </label>
+            </div>
+
+            {/* Row 5: Sign In Button */}
+            <button
+              type="submit"
+              disabled={loading || !email || !password || !isValidEmail(email) || !agreedToTerms}
+              className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-xl transition-all hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Signing In...
+                </span>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">Or</span>
+            </div>
+          </div>
+
+          {/* Google Sign In Button */}
           <button
             onClick={handleGoogleClick}
-            className="w-full bg-white/80 backdrop-blur-md border border-white/40 shadow-md rounded-2xl p-4 flex items-center justify-center gap-3 transition-all hover:bg-white hover:shadow-lg cursor-pointer"
             disabled={loading}
+            className="w-full border-2 border-gray-200 rounded-xl p-3.5 flex items-center justify-center gap-3 transition-all hover:border-gray-300 hover:bg-gray-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -293,28 +456,33 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
-            <span className="font-semibold text-gray-800 text-lg">
-              {loading ? 'Signing in...' : 'Google'}
+            <span className="font-semibold text-gray-700 text-base">
+              Sign in with Google
             </span>
           </button>
 
-          <button
-            onClick={() => setShowEmailSheet(true)}
-            className="w-full bg-white/80 backdrop-blur-md border border-white/40 shadow-md rounded-2xl p-4 flex items-center justify-center gap-3 transition-all hover:bg-white hover:shadow-lg cursor-pointer"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
-              <rect width="20" height="16" x="2" y="4" rx="2" />
-              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-            </svg>
-            <span className="font-semibold text-gray-800 text-lg">Email</span>
-          </button>
+          {/* Sign Up Link */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setEmail('');
+                  setPassword('');
+                  setAuthError(null);
+                }}
+                className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
+              >
+                Sign Up
+              </button>
+            </p>
+          </div>
         </div>
-
-        <p className="text-center text-sm text-gray-600 mt-8">
-          By signing in, you agree to our Terms of Service
-        </p>
       </div>
 
+      {/* Google Sheet Modal */}
       {showGoogleSheet && (
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50 transition-all">
           <div className="w-full max-w-md h-[40vh] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl p-6 flex flex-col justify-between border-t border-white animate-in slide-in-from-bottom duration-300">
@@ -366,6 +534,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
       )}
 
+      {/* Email Sign Up Sheet Modal */}
       {showEmailSheet && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -416,20 +585,51 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Password
                   </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 pr-12"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
                   <input
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400"
-                    required
-                    minLength={6}
+                    type="checkbox"
+                    id="terms-mobile"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
+                  <label htmlFor="terms-mobile" className="text-sm text-gray-600">
+                    You agree to our{' '}
+                    <span className="text-gray-900 font-medium">Terms</span>
+                    {', '}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyPolicy(true)}
+                      className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+                    >
+                      Privacy Policy
+                    </button>
+                  </label>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={loading || !email || !password || !isValidEmail(email)}
+                  disabled={loading || !email || !password || !isValidEmail(email) || !agreedToTerms}
                   className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-xl transition-all hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 mt-4"
                 >
                   {loading ? (
@@ -466,5 +666,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-}
-
+  }
