@@ -324,7 +324,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {/* Video Background */}
         <video 
           autoPlay 
-          loop
+          loop  
           playsInline
           preload="auto"
           poster="/video-thumbnail.jpg"
@@ -496,20 +496,25 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </button>
         </div>
 
-        {/* 10VH Spacer + Middle Logo + Hawa Text (No Card) */}
-        <div className="flex flex-col items-center" style={{ marginTop: '7vh' }}>
-          <div className="mb-1">
+        {/* 10VH Gap between Feedback and Logo */}
+        <div className="flex flex-col items-center" style={{ marginTop: '10vh' }}>
+          {/* Logo Image */}
+          <div className="mb-0.5">
             <img 
               src="/logo.png" 
               alt="Hawa" 
               className="w-20 h-20 rounded-2xl drop-shadow-lg" 
             />
           </div>
-          <h1 className="text-4xl font-bold text-white tracking-wide drop-shadow-lg">Hawa</h1>
+          {/* Hawa Text - Smaller size */}
+          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-lg">Hawa</h1>
         </div>
 
+        {/* 15VH Gap between Logo and Buttons */}
+        <div style={{ marginTop: '15vh' }}></div>
+
         {/* Buttons Section */}
-        <div className="w-full max-w-sm space-y-3 mb-6"> style={{ marginTop: '10vh' }}>
+        <div className="w-full max-w-sm space-y-3 mb-6">
           {/* 3D Glossy White Google Button */}
           <button
             onClick={handleGoogleClick}
@@ -617,4 +622,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-        }
+              }
