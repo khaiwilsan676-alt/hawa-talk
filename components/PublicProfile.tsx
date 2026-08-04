@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
-import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X, Heart, MessageCircle } from 'lucide-react'
+import { ChevronLeft, Edit3, MapPin, Copy, Camera, ChevronRight, X, Heart, MessageCircle, MoreHorizontal } from 'lucide-react'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore"
 
@@ -29,57 +29,38 @@ interface PublicProfileProps {
   targetUser?: TargetUser | null
 }
 
+// ✅ Same COUNTRIES list as Gender Selection Page
 const COUNTRIES = [
   { code: 'IN', name: 'India', flag: '🇮🇳' },
   { code: 'US', name: 'United States', flag: '🇺🇸' },
   { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
   { code: 'CA', name: 'Canada', flag: '🇨🇦' },
   { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
+  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
+  { code: 'PK', name: 'Pakistan', flag: '🇵🇰' },
+  { code: 'BD', name: 'Bangladesh', flag: '🇧🇩' },
+  { code: 'NP', name: 'Nepal', flag: '🇳🇵' },
+  { code: 'LK', name: 'Sri Lanka', flag: '🇱🇰' },
+  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
+  { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
+  { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
+  { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
+  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
+  { code: 'CN', name: 'China', flag: '🇨🇳' },
   { code: 'DE', name: 'Germany', flag: '🇩🇪' },
   { code: 'FR', name: 'France', flag: '🇫🇷' },
-  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
-  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
-  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
   { code: 'IT', name: 'Italy', flag: '🇮🇹' },
   { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
   { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
-  { code: 'RU', name: 'Russia', flag: '🇷🇺' },
   { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
   { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
   { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
-  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
-  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
-  { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
-  { code: 'TH', name: 'Thailand', flag: '🇹🇭' },
-  { code: 'VN', name: 'Vietnam', flag: '🇻🇳' },
-  { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
-  { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
-  { code: 'PK', name: 'Pakistan', flag: '🇵🇰' },
-  { code: 'BD', name: 'Bangladesh', flag: '🇧🇩' },
+  { code: 'RU', name: 'Russia', flag: '🇷🇺' },
   { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
-  { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
-  { code: 'CL', name: 'Chile', flag: '🇨🇱' },
-  { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
-  { code: 'NZ', name: 'New Zealand', flag: '🇳🇿' },
-  { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
-  { code: 'NO', name: 'Norway', flag: '🇳🇴' },
-  { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
-  { code: 'FI', name: 'Finland', flag: '🇫🇮' },
   { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
-  { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
-  { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
-  { code: 'AT', name: 'Austria', flag: '🇦🇹' },
-  { code: 'PL', name: 'Poland', flag: '🇵🇱' },
-  { code: 'UA', name: 'Ukraine', flag: '🇺🇦' },
-  { code: 'PT', name: 'Portugal', flag: '🇵🇹' },
-  { code: 'GR', name: 'Greece', flag: '🇬🇷' },
-  { code: 'IE', name: 'Ireland', flag: '🇮🇪' },
-  { code: 'IL', name: 'Israel', flag: '🇮🇱' },
-  { code: 'KE', name: 'Kenya', flag: '🇰🇪' },
-  { code: 'GH', name: 'Ghana', flag: '🇬🇭' },
-  { code: 'TZ', name: 'Tanzania', flag: '🇹🇿' },
-  { code: 'UG', name: 'Uganda', flag: '🇺🇬' }
 ]
 
 // Special accounts configuration
@@ -92,12 +73,12 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-// ✅ Add gender-based default avatar helper function
+// ✅ Gender-based default avatar helper function
 const getDefaultAvatar = (gender: string): string => {
   if (gender === "♀" || gender === "female") {
     return "/IMG_20260804_211013.jpg" // Female default avatar
   }
-  return "/IMG_20260804_211031.jpg" // Male default avatar (also used as fallback)
+  return "/IMG_20260804_211031.jpg" // Male default avatar
 }
 
 const getOrCreateAccountNumber = (uid: string) => {
@@ -184,7 +165,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     followers: 0,
     bio: "",
     location: "India",
-    flag: "🇮🇳"
+    flag: "🇮🇳",
+    countryCode: "IN"
   })
 
   const [albumImages, setAlbumImages] = useState<string[]>([])
@@ -198,6 +180,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   const [genderLocked, setGenderLocked] = useState(false)
   
   const [editCountry, setEditCountry] = useState("India")
+  const [editCountryCode, setEditCountryCode] = useState("IN")
   const [countryLocked, setCountryLocked] = useState(false)
   
   const [showBioInput, setShowBioInput] = useState(false)
@@ -209,6 +192,9 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   // Follow State for Other User Profile
   const [isFollowing, setIsFollowing] = useState(false)
 
+  // Three dot menu state
+  const [showThreeDotMenu, setShowThreeDotMenu] = useState(false)
+
   // Check if this is a special account for UI modifications
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
@@ -217,11 +203,9 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     const currentUid = user.uid || localStorage.getItem("userUID") || localStorage.getItem("userPhone")
     if (currentUid && currentUid !== "N/A") {
       try {
-        // Save in 'users' collection
         const userDocRef = doc(db, "users", currentUid)
         await setDoc(userDocRef, updateData, { merge: true })
 
-        // Save in 'globalRooms' collection for search and room cards
         const globalRoomRef = doc(db, "globalRooms", currentUid)
         await setDoc(globalRoomRef, updateData, { merge: true })
       } catch (err) {
@@ -245,7 +229,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         let photo = targetUser.photo || targetUser.image || ""
         let coverPhoto = targetUser.coverPhoto || ""
         let bio = targetUser.bio || ""
-        let country = targetUser.location || targetUser.country || "India"
+        let country = targetUser.country || targetUser.location || "India"
+        let countryCode = targetUser.countryCode || "IN"
         let gender = targetUser.gender || "♂"
         let age = targetUser.age ? (typeof targetUser.age === 'number' ? targetUser.age : parseInt(targetUser.age)) : 22
         let followers = targetUser.followers || 0
@@ -255,7 +240,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           try {
             const userDocRef = doc(db, "users", targetUid)
             
-            // Real-time Listener: Fetching live updates saved by other user
             unsubscribe = onSnapshot(userDocRef, (docSnap) => {
               if (docSnap.exists()) {
                 const data = docSnap.data()
@@ -268,6 +252,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
                 bio = data.bio || data.about || bio
                 country = data.country || data.location || country
+                countryCode = data.countryCode || countryCode
                 gender = data.gender || gender
                 age = data.age ? parseInt(data.age) : age
                 followers = data.followers !== undefined ? data.followers : followers
@@ -282,7 +267,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                   displayAccNum = getOrCreateAccountNumber(targetUid)
                 }
 
-                const matchedCountry = COUNTRIES.find(c => c.name === country || c.flag === country) || { name: 'India', flag: '🇮🇳' }
+                const matchedCountry = COUNTRIES.find(c => c.code === countryCode || c.name === country || c.flag === country) || { name: 'India', flag: '🇮🇳', code: 'IN' }
 
                 setAlbumImages(album)
                 setUser({
@@ -296,7 +281,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                   followers,
                   bio,
                   location: matchedCountry.name,
-                  flag: matchedCountry.flag
+                  flag: matchedCountry.flag,
+                  countryCode: matchedCountry.code
                 })
               }
             })
@@ -315,10 +301,11 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       let photo = localStorage.getItem("userPhoto") || ""
       let coverPhoto = localStorage.getItem("userCoverPhoto") || ""
       let storedBio = localStorage.getItem("userBio") || ""
-      let storedCountry = localStorage.getItem("userCountry") || "India"
+      let storedCountry = localStorage.getItem("userCountry") || "🇮🇳"
+      let storedCountryCode = localStorage.getItem("userCountryCode") || "IN"
       let storedAge = localStorage.getItem("userAge") || "24"
-      let storedGender = localStorage.getItem("userGenderLocked") || ""
-      let isCountryLockedInStorage = localStorage.getItem("userCountryLocked") === "true"
+      let storedGender = localStorage.getItem("userGender") || localStorage.getItem("userGenderLocked") || ""
+      let isCountryLockedInStorage = localStorage.getItem("userCountryLocked") === "true" || localStorage.getItem("setupComplete") === "true"
       
       const storedAlbum = localStorage.getItem("userAlbumImages")
       if (storedAlbum) {
@@ -358,13 +345,21 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 storedCountry = data.country || data.location
                 localStorage.setItem("userCountry", storedCountry)
               }
+              if (data.countryCode) {
+                storedCountryCode = data.countryCode
+                localStorage.setItem("userCountryCode", storedCountryCode)
+              }
               if (data.countryLocked !== undefined) {
                 isCountryLockedInStorage = data.countryLocked
                 if (data.countryLocked) localStorage.setItem("userCountryLocked", "true")
               }
+              if (data.setupComplete) {
+                isCountryLockedInStorage = true
+                localStorage.setItem("userCountryLocked", "true")
+              }
               if (data.gender) {
                 storedGender = data.gender
-                localStorage.setItem("userGenderLocked", storedGender)
+                localStorage.setItem("userGender", storedGender)
               }
               if (data.age) {
                 storedAge = String(data.age)
@@ -379,7 +374,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 displayAccNum = getOrCreateAccountNumber(uid)
               }
 
-              const matchedCountry = COUNTRIES.find(c => c.name === storedCountry) || { name: 'India', flag: '🇮🇳' }
+              const matchedCountry = COUNTRIES.find(c => c.code === storedCountryCode || c.flag === storedCountry || c.name === storedCountry) || { name: 'India', flag: '🇮🇳', code: 'IN' }
 
               setUser({
                 name: storedName || "Hawa User",
@@ -390,6 +385,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 bio: storedBio,
                 location: matchedCountry.name,
                 flag: matchedCountry.flag,
+                countryCode: matchedCountry.code,
                 gender: storedGender === "female" || storedGender === "♀" ? "♀" : "♂",
                 age: storedAge ? parseInt(storedAge) : 24,
                 followers: data.followers || 0
@@ -399,6 +395,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
               setEditAge(storedAge || "24")
               setEditBio(storedBio || "")
               setEditCountry(matchedCountry.name)
+              setEditCountryCode(matchedCountry.code)
               setCountryLocked(isCountryLockedInStorage)
 
               if (storedGender) {
@@ -433,6 +430,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     setEditAge(user.age.toString())
     setEditBio(user.bio)
     setEditCountry(user.location || "India")
+    setEditCountryCode(user.countryCode || "IN")
     setShowEditSheet(true)
   }
 
@@ -446,6 +444,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     setEditGender(gender)
     setGenderLocked(true)
     const formattedGender = gender === "male" ? "♂" : "♀"
+    localStorage.setItem("userGender", gender)
     localStorage.setItem("userGenderLocked", gender)
     setUser(prev => ({ ...prev, gender: formattedGender }))
     
@@ -454,8 +453,12 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
 
   const handleCountrySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (countryLocked) return
-    const selectedCountry = e.target.value
-    setEditCountry(selectedCountry)
+    const selectedCountryName = e.target.value
+    const matchedCountry = COUNTRIES.find(c => c.name === selectedCountryName)
+    setEditCountry(selectedCountryName)
+    if (matchedCountry) {
+      setEditCountryCode(matchedCountry.code)
+    }
   }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -533,13 +536,14 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     if (editAge) localStorage.setItem("userAge", editAge)
     if (editBio) localStorage.setItem("userBio", editBio)
     
-    if (editCountry) {
+    if (editCountry && editCountryCode) {
       localStorage.setItem("userCountry", editCountry)
+      localStorage.setItem("userCountryCode", editCountryCode)
       localStorage.setItem("userCountryLocked", "true")
       setCountryLocked(true)
     }
 
-    const matchedCountry = COUNTRIES.find(c => c.name === editCountry) || { name: 'India', flag: '🇮🇳' }
+    const matchedCountry = COUNTRIES.find(c => c.name === editCountry || c.code === editCountryCode) || { name: 'India', flag: '🇮🇳', code: 'IN' }
 
     setUser(prev => ({
       ...prev,
@@ -547,10 +551,10 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       age: parseInt(editAge) || prev.age,
       bio: editBio,
       location: matchedCountry.name,
-      flag: matchedCountry.flag
+      flag: matchedCountry.flag,
+      countryCode: matchedCountry.code
     }))
 
-    // Save Changes Directly to Firestore Collections
     await saveToFirestore({
       name: editName,
       displayName: editName,
@@ -558,7 +562,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       age: parseInt(editAge) || user.age,
       bio: editBio,
       about: editBio,
-      country: matchedCountry.name,
+      country: matchedCountry.flag,
+      countryCode: matchedCountry.code,
       location: matchedCountry.name,
       countryLocked: true
     })
@@ -589,6 +594,12 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     })
   }
 
+  // ✅ Get default name based on gender
+  const getDefaultName = (gender: string): string => {
+    if (gender === "♀" || gender === "female") return "Barrey"
+    return "Simpson"
+  }
+
   return (
     <div className={`w-full bg-white min-h-screen text-gray-900 relative ${isOtherUser ? 'pb-24' : 'pb-10'}`}>
       {/* Cover Image & Header Section */}
@@ -605,7 +616,50 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
 
         <div className="absolute top-4 left-0 right-0 px-4 flex items-center justify-between z-10">
           <button onClick={onBack} className="text-white"><ChevronLeft size={28} /></button>
-          {!isOtherUser && (
+          
+          {/* ✅ Three Dot Menu for Other User Profile */}
+          {isOtherUser ? (
+            <div className="relative">
+              <button 
+                onClick={() => setShowThreeDotMenu(!showThreeDotMenu)} 
+                className="text-white"
+              >
+                <MoreHorizontal size={24} />
+              </button>
+              
+              {showThreeDotMenu && (
+                <div className="absolute right-0 top-8 bg-white rounded-xl shadow-lg py-2 w-48 z-50">
+                  <button 
+                    onClick={() => {
+                      setShowThreeDotMenu(false)
+                      alert("Report user")
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    Report
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowThreeDotMenu(false)
+                      alert("Block user")
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Block
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowThreeDotMenu(false)
+                      alert("Share profile")
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Share Profile
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
             <button onClick={handleOpenEditSheet} className="text-white"><Edit3 size={22} /></button>
           )}
         </div>
@@ -698,12 +752,14 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           />
         </div>
 
+        {/* Country Display - ✅ Shows flag + country name from Gender Page selection */}
         <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
           <MapPin size={14} className="text-gray-400" />
           <span className="text-base">{user.flag}</span>
           <span className="text-gray-500">{user.location || "India"}</span>
         </div>
 
+        {/* Bio Section - ✅ No pencil icon for other user */}
         <div className="flex items-start gap-2 mt-2">
           {!isOtherUser && (
             <button onClick={handleOpenEditSheet} className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0">
@@ -713,7 +769,9 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           {user.bio ? (
             <p className="text-xs text-gray-500 italic">{user.bio}</p>
           ) : (
-            <p className="text-xs text-gray-400 italic">{isOtherUser ? "No bio added yet" : "Add bio..."}</p>
+            <p className="text-xs text-gray-400 italic">
+              {isOtherUser ? "No bio added yet" : "Add bio..."}
+            </p>
           )}
         </div>
 
@@ -977,7 +1035,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 )}
               </div>
 
-              {/* Country Selection */}
+              {/* ✅ Country Selection - Same as Gender Page */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Country</span>
                 <select
@@ -996,7 +1054,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 </select>
               </div>
 
-              {/* Gender */}
+              {/* ✅ Gender Selection - Same as Gender Page */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Gender</span>
                 <div className="flex gap-2">
@@ -1051,4 +1109,4 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       `}</style>
     </div>
   )
-  }
+}
