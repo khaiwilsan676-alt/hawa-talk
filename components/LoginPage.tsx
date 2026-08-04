@@ -24,10 +24,10 @@ const ADMIN_IDS = ['700001', '700002', '700003']
 
 // Feedback Types
 const FEEDBACK_TYPES = [
-  { id: 'app_bug', label: 'App Bug', icon: '🐛' },
-  { id: 'suggestion', label: 'Suggestion', icon: '💡' },
-  { id: 'recharge', label: 'Recharge', icon: '💰' },
-  { id: 'others', label: 'Others', icon: '📝' }
+  { id: 'app_bug', label: 'App Bug', icon: '' },
+  { id: 'suggestion', label: 'Suggestion', icon: '' },
+  { id: 'recharge', label: 'Recharge', icon: '' },
+  { id: 'others', label: 'Others', icon: '' }
 ]
 
 // HELPER: Account ID Generator
@@ -694,7 +694,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* 10VH Gap between Feedback and Logo */}
-        <div className="flex flex-col items-center" style={{ marginTop: '10vh' }}>
+        <div className="flex flex-col items-center" style={{ marginTop: '5vh' }}>
           {/* Logo Image */}
           <div className="mb-0.5">
             <img 
@@ -708,7 +708,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* 15VH Gap between Logo and Buttons */}
-        <div style={{ marginTop: '15vh' }}></div>
+        <div style={{ marginTop: '23vh' }}></div>
 
         {/* Buttons Section */}
         <div className="w-full max-w-sm space-y-3 mb-6">
