@@ -324,8 +324,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {/* Video Background */}
         <video 
           autoPlay 
-          loop 
-          muted 
+          loop
           playsInline
           preload="auto"
           poster="/video-thumbnail.jpg"
