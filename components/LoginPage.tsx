@@ -324,7 +324,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {/* Video Background */}
         <video 
           autoPlay 
-          loop  
+          loop 
           playsInline
           preload="auto"
           poster="/video-thumbnail.jpg"
@@ -468,11 +468,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   return (
     <div className="min-h-screen relative flex flex-col items-center justify-between px-4 overflow-hidden bg-gray-900">
       
-      {/* Video Background */}
+      {/* Video Background - SOUND ENABLED */}
       <video 
         autoPlay 
         loop 
-        muted 
         playsInline
         preload="auto"
         poster="/video-thumbnail.jpg"
@@ -497,7 +496,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* 10VH Gap between Feedback and Logo */}
-        <div className="flex flex-col items-center" style={{ marginTop: '10vh' }}>
+        <div className="flex flex-col items-center" style={{ marginTop: '7vh' }}>
           {/* Logo Image */}
           <div className="mb-0.5">
             <img 
@@ -511,7 +510,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </div>
 
         {/* 15VH Gap between Logo and Buttons */}
-        <div style={{ marginTop: '15vh' }}></div>
+        <div style={{ marginTop: '18vh' }}></div>
 
         {/* Buttons Section */}
         <div className="w-full max-w-sm space-y-3 mb-6">
@@ -622,4 +621,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-              }
+      }
