@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star } from "lucide-react";
+import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star, MessageSquare, Trash2, RefreshCw } from "lucide-react";
 import { db } from "../../src/lib/firebase";
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, collection, query, orderBy, getDocs, deleteDoc } from "firebase/firestore";
 
 export default function OwnerPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -22,6 +22,10 @@ export default function OwnerPanel() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginKey, setLoginKey] = useState("");
   const [loginError, setLoginError] = useState("");
+
+  // Feedback States
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
 
   const getDefaultIdsData = () => ({
     "100002": { email: "", password: "" },
@@ -132,6 +136,72 @@ export default function OwnerPanel() {
       unsubscribes.forEach(unsub => unsub());
     };
   }, [idsData]);
+
+  // Load Feedbacks
+  const loadFeedbacks = async () => {
+    setLoadingFeedbacks(true);
+    try {
+      const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
+      const querySnapshot = await getDocs(q);
+      const feedbackList: any[] = [];
+      querySnapshot.forEach((doc) => {
+        feedbackList.push({ id: doc.id, ...doc.data() });
+      });
+      setFeedbacks(feedbackList);
+    } catch (error) {
+      console.error("Error loading feedbacks:", error);
+    } finally {
+      setLoadingFeedbacks(false);
+    }
+  };
+
+  // Auto-delete feedbacks older than 48 hours
+  useEffect(() => {
+    const checkAndDeleteOldFeedbacks = async () => {
+      try {
+        const q = query(collection(db, "feedbacks"));
+        const querySnapshot = await getDocs(q);
+        const now = Date.now();
+        const fortyEightHours = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
+
+        querySnapshot.forEach(async (document) => {
+          const data = document.data();
+          const feedbackTime = data.timestamp || 0;
+          
+          if (now - feedbackTime > fortyEightHours) {
+            await deleteDoc(doc(db, "feedbacks", document.id));
+            console.log(`Deleted old feedback: ${document.id}`);
+          }
+        });
+
+        // Reload feedbacks after cleanup
+        loadFeedbacks();
+      } catch (error) {
+        console.error("Error cleaning up old feedbacks:", error);
+      }
+    };
+
+    // Run cleanup when activeView is moderator
+    if (activeView === "moderator") {
+      checkAndDeleteOldFeedbacks();
+    }
+
+    // Set interval to check every 10 minutes
+    const interval = setInterval(() => {
+      if (activeView === "moderator") {
+        checkAndDeleteOldFeedbacks();
+      }
+    }, 600000); // 10 minutes
+
+    return () => clearInterval(interval);
+  }, [activeView]);
+
+  // Load feedbacks when switching to moderator view
+  useEffect(() => {
+    if (activeView === "moderator") {
+      loadFeedbacks();
+    }
+  }, [activeView]);
 
   const handleLogin = () => {
     if (loginUsername === "HAWA.IN" && loginPassword === "HAWA.OWNER/CEO" && loginKey === "25/7/2026") {
@@ -259,6 +329,44 @@ export default function OwnerPanel() {
     }
   }
 
+  // Format timestamp to readable date
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Calculate time remaining
+  const getTimeRemaining = (timestamp: number) => {
+    const now = Date.now();
+    const fortyEightHours = 48 * 60 * 60 * 1000;
+    const expiryTime = timestamp + fortyEightHours;
+    const remaining = expiryTime - now;
+
+    if (remaining <= 0) return 'Expired';
+
+    const hours = Math.floor(remaining / (60 * 60 * 1000));
+    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+    return `${hours}h ${minutes}m remaining`;
+  };
+
+  // Delete single feedback
+  const handleDeleteFeedback = async (feedbackId: string) => {
+    try {
+      await deleteDoc(doc(db, "feedbacks", feedbackId));
+      setFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
+      setSaveMessage("Feedback deleted!");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error("Error deleting feedback:", error);
+    }
+  };
+
   // LOGIN PAGE
   if (!isLoggedIn) {
     return (
@@ -349,13 +457,15 @@ export default function OwnerPanel() {
           <h1 className="text-xl font-bold tracking-wide text-gray-900">Owner Control Panel</h1>
         </div>
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setShowPasswords(!showPasswords)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition cursor-pointer"
-          >
-            {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {showPasswords ? "Hide" : "Show"}
-          </button>
+          {activeView !== "moderator" && (
+            <button
+              onClick={() => setShowPasswords(!showPasswords)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition cursor-pointer"
+            >
+              {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPasswords ? "Hide" : "Show"}
+            </button>
+          )}
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-sm font-medium text-red-700 transition cursor-pointer"
@@ -389,11 +499,31 @@ export default function OwnerPanel() {
                   setActiveView("official_id");
                   setIsDrawerOpen(false);
                 }}
-                className="w-full flex items-center justify-between px-5 py-4 bg-slate-700/50 hover:bg-slate-700 active:bg-blue-600 text-white font-semibold rounded-xl transition border border-slate-600 shadow-md cursor-pointer"
+                className={`w-full flex items-center justify-between px-5 py-4 text-white font-semibold rounded-xl transition border shadow-md cursor-pointer mb-3 ${
+                  activeView === "official_id"
+                    ? 'bg-blue-600 border-blue-500'
+                    : 'bg-slate-700/50 hover:bg-slate-700 border-slate-600'
+                }`}
               >
                 <span>MANAGE IDs</span>
                 <span className="text-xs bg-yellow-400 text-black px-2.5 py-1 rounded-full font-bold">
                   Official/Admin/Special
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveView("moderator");
+                  setIsDrawerOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-5 py-4 text-white font-semibold rounded-xl transition border shadow-md cursor-pointer ${
+                  activeView === "moderator"
+                    ? 'bg-blue-600 border-blue-500'
+                    : 'bg-slate-700/50 hover:bg-slate-700 border-slate-600'
+                }`}
+              >
+                <span>MODERATOR</span>
+                <span className="text-xs bg-green-400 text-black px-2.5 py-1 rounded-full font-bold">
+                  Feedbacks
                 </span>
               </button>
             </div>
@@ -406,6 +536,94 @@ export default function OwnerPanel() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 p-8 w-full max-w-5xl mx-auto overflow-y-auto bg-white">
+        
+        {/* MODERATOR VIEW - FEEDBACKS */}
+        {activeView === "moderator" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <MessageSquare className="w-7 h-7 text-blue-600" />
+                Feedback Submissions
+                <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
+                  {feedbacks.length} items
+                </span>
+              </h2>
+              <button
+                onClick={loadFeedbacks}
+                disabled={loadingFeedbacks}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-semibold text-gray-700 transition cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingFeedbacks ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700">
+              ⏰ Feedbacks are automatically deleted after 48 hours.
+            </div>
+
+            {loadingFeedbacks ? (
+              <div className="text-center py-12">
+                <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-4" />
+                <p className="text-gray-500">Loading feedbacks...</p>
+              </div>
+            ) : feedbacks.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200">
+                <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500 font-medium">No feedback submissions yet</p>
+                <p className="text-gray-400 text-sm mt-1">Feedback from users will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {feedbacks.map((feedback) => (
+                  <div
+                    key={feedback.id}
+                    className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase ${
+                          feedback.type === 'app_bug' ? 'bg-red-100 text-red-700' :
+                          feedback.type === 'suggestion' ? 'bg-blue-100 text-blue-700' :
+                          feedback.type === 'recharge' ? 'bg-green-100 text-green-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {feedback.typeLabel || feedback.type}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {formatDate(feedback.timestamp)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-orange-500 font-medium">
+                          ⏳ {getTimeRemaining(feedback.timestamp)}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteFeedback(feedback.id)}
+                          className="p-2 hover:bg-red-50 rounded-lg transition cursor-pointer group"
+                        >
+                          <Trash2 className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase mb-1">Description</h3>
+                        <p className="text-gray-700 leading-relaxed">{feedback.description}</p>
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase mb-1">Contact Info</h3>
+                        <p className="text-gray-700 font-medium">{feedback.contactInfo}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeView === "official_id" && (
           <div className="space-y-8">
 
@@ -638,5 +856,4 @@ export default function OwnerPanel() {
       </main>
     </div>
   );
-}
-
+    }
