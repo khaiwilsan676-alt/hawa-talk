@@ -92,6 +92,14 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
+// ✅ Add gender-based default avatar helper function
+const getDefaultAvatar = (gender: string): string => {
+  if (gender === "♀" || gender === "female") {
+    return "/IMG_20260804_211013.jpg" // Female default avatar
+  }
+  return "/IMG_20260804_211031.jpg" // Male default avatar (also used as fallback)
+}
+
 const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
 
@@ -606,15 +614,17 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
-        {/* Avatar */}
+        {/* Avatar - ✅ Updated with gender-based default */}
         <div className="absolute -bottom-1 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
+              <img 
+                src={getDefaultAvatar(user.gender)} 
+                alt="" 
+                className="w-full h-full object-cover" 
+              />
             )}
           </div>
         </div>
@@ -843,7 +853,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
               <input type="file" ref={albumInputRef} accept="image/*" onChange={handleAlbumUpload} className="hidden" />
               <input type="file" ref={coverInputRef} accept="image/*" onChange={handleCoverUpload} className="hidden" />
 
-              {/* Avatar */}
+              {/* Avatar - ✅ Updated with gender-based default */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Avatar</span>
                 <div 
@@ -853,9 +863,11 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                   {user.photo ? (
                     <img src={user.photo} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-500">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
+                    <img 
+                      src={getDefaultAvatar(user.gender)} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                    />
                   )}
                 </div>
               </div>
@@ -1039,5 +1051,4 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       `}</style>
     </div>
   )
-}
-
+  }
