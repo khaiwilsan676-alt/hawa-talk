@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Send } from "lucide-react";
-import { db, auth } from "../../src/lib/firebase";
-import { collection, addDoc, setDoc, doc, getDoc, deleteDoc, query, where, getDocs, onSnapshot } from "firebase/firestore";
+import { db } from "../src/lib/firebase";
+import { collection, addDoc, setDoc, doc, deleteDoc, query, where, getDocs } from "firebase/firestore";
 
 interface HawaSupportProps {
   onBack?: () => void;
@@ -22,12 +22,14 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
 
   // Get current user info
   useEffect(() => {
-    const uid = localStorage.getItem('userUID') || 'anonymous';
-    const name = localStorage.getItem('userName') || 'User';
-    const email = localStorage.getItem('userEmail') || '';
-    setUserId(uid);
-    setUserName(name);
-    setUserEmail(email);
+    if (typeof window !== 'undefined') {
+      const uid = localStorage.getItem('userUID') || 'anonymous';
+      const name = localStorage.getItem('userName') || 'User';
+      const email = localStorage.getItem('userEmail') || '';
+      setUserId(uid);
+      setUserName(name);
+      setUserEmail(email);
+    }
   }, []);
 
   // Auto-clear chats older than 24 hours
@@ -550,4 +552,4 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
       </div>
     </div>
   );
-  }
+      }
