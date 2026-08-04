@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Send } from "lucide-react";
+import { db, auth } from "../../src/lib/firebase";
+import { collection, addDoc, setDoc, doc, getDoc, deleteDoc, query, where, getDocs, onSnapshot } from "firebase/firestore";
 
 interface HawaSupportProps {
   onBack?: () => void;
@@ -9,25 +11,132 @@ interface HawaSupportProps {
 
 export default function HawaSupport({ onBack }: HawaSupportProps) {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Array<{ text: string; isBot: boolean }>>([]);
+  const [messages, setMessages] = useState<Array<{ text: string; isBot: boolean; timestamp?: number }>>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [chatDocId, setChatDocId] = useState<string>("");
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatLoadedRef = useRef(false);
+
+  // Get current user info
+  useEffect(() => {
+    const uid = localStorage.getItem('userUID') || 'anonymous';
+    const name = localStorage.getItem('userName') || 'User';
+    const email = localStorage.getItem('userEmail') || '';
+    setUserId(uid);
+    setUserName(name);
+    setUserEmail(email);
+  }, []);
+
+  // Auto-clear chats older than 24 hours
+  useEffect(() => {
+    const clearOldChats = async () => {
+      try {
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        const q = query(collection(db, "aiChats"));
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach(async (document) => {
+          const data = document.data();
+          const chatTime = data.timestamp || 0;
+          if (now - chatTime > twentyFourHours) {
+            await deleteDoc(doc(db, "aiChats", document.id));
+          }
+        });
+      } catch (error) {
+        console.error("Error clearing old chats:", error);
+      }
+    };
+
+    clearOldChats();
+    const interval = setInterval(clearOldChats, 3600000); // Check every hour
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load existing chat or create new one
+  useEffect(() => {
+    if (!userId || chatLoadedRef.current) return;
+
+    const loadOrCreateChat = async () => {
+      try {
+        const q = query(collection(db, "aiChats"), where("userId", "==", userId));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          // Load existing chat
+          const docSnap = querySnapshot.docs[0];
+          const data = docSnap.data();
+          setChatDocId(docSnap.id);
+          
+          if (data.messages && data.messages.length > 0) {
+            setMessages(data.messages);
+          } else {
+            const welcomeMessage = {
+              text: "Welcome to Hawa Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hawa App — I'm here to help! 😊",
+              isBot: true,
+              timestamp: Date.now()
+            };
+            setMessages([welcomeMessage]);
+          }
+        } else {
+          // Create new chat
+          const welcomeMessage = {
+            text: "Welcome to Hawa Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hawa App — I'm here to help! 😊",
+            isBot: true,
+            timestamp: Date.now()
+          };
+          setMessages([welcomeMessage]);
+          
+          const docRef = await addDoc(collection(db, "aiChats"), {
+            userId: userId,
+            userName: userName,
+            userEmail: userEmail,
+            timestamp: Date.now(),
+            messages: [welcomeMessage]
+          });
+          setChatDocId(docRef.id);
+        }
+        chatLoadedRef.current = true;
+      } catch (error) {
+        console.error("Error loading/creating chat:", error);
+        const welcomeMessage = {
+          text: "Welcome to Hawa Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hawa App — I'm here to help! 😊",
+          isBot: true,
+          timestamp: Date.now()
+        };
+        setMessages([welcomeMessage]);
+      }
+    };
+
+    loadOrCreateChat();
+  }, [userId, userName, userEmail]);
+
+  // Save messages to Firestore
+  const saveChatToFirestore = async (updatedMessages: Array<{ text: string; isBot: boolean; timestamp?: number }>) => {
+    if (!chatDocId || !userId) return;
+    
+    try {
+      await setDoc(doc(db, "aiChats", chatDocId), {
+        userId: userId,
+        userName: userName,
+        userEmail: userEmail,
+        timestamp: Date.now(),
+        messages: updatedMessages
+      }, { merge: true });
+    } catch (error) {
+      console.error("Error saving chat:", error);
+    }
+  };
 
   // Auto-scroll to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Initial welcome message
-  useEffect(() => {
-    const welcomeMessage = {
-      text: "Welcome to Hawa Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hawa App — I'm here to help! 😊",
-      isBot: true
-    };
-    setMessages([welcomeMessage]);
-  }, []);
-
-  // Bad words filter - FIXED VERSION
+  // Bad words filter
   const containsBadWords = (text: string) => {
     const badWords = [
       "gandu", "gaandu", "chutiya", "chutiye", 
@@ -60,19 +169,13 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
     ];
     
     const lowerText = text.toLowerCase().trim();
-    
-    // Split text into words for word-boundary matching
     const words = lowerText.split(/\s+/);
     
-    // Check each word against bad words
     return badWords.some(badWord => {
-      // For multi-word bad phrases
       if (badWord.includes(' ')) {
         return lowerText.includes(badWord);
       }
-      // For single bad words - check word boundaries
       return words.some(word => {
-        // Remove punctuation for comparison
         const cleanWord = word.replace(/[^a-zA-Z0-9\u0900-\u097F]/g, '');
         return cleanWord === badWord;
       });
@@ -229,7 +332,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
              "• Exclusive family features";
     }
 
-    // PROFILE EDIT (Name, DP, Bio, Age, Cover)
+    // PROFILE EDIT
     if (msg.includes("name change") || msg.includes("dp change") || msg.includes("profile picture") ||
         msg.includes("bio") || msg.includes("cover") || msg.includes("age") ||
         msg.includes("name badlo") || msg.includes("dp badlo") || msg.includes("नाम") ||
@@ -338,15 +441,24 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
       return;
     }
     
-    const userMessage = { text: message, isBot: false };
-    setMessages(prev => [...prev, userMessage]);
+    const userMessage = { text: message, isBot: false, timestamp: Date.now() };
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setMessage("");
     setIsTyping(true);
 
+    // Save user message
+    saveChatToFirestore(updatedMessages);
+
     setTimeout(() => {
       const botResponse = generateBotResponse(message);
-      setMessages(prev => [...prev, { text: botResponse, isBot: true }]);
+      const botMessage = { text: botResponse, isBot: true, timestamp: Date.now() };
+      const finalMessages = [...updatedMessages, botMessage];
+      setMessages(finalMessages);
       setIsTyping(false);
+      
+      // Save bot message
+      saveChatToFirestore(finalMessages);
     }, 1000);
   };
 
@@ -438,4 +550,4 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
       </div>
     </div>
   );
-      }
+  }
