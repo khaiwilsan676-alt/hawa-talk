@@ -668,8 +668,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
-        {/* Avatar - ✅ Updated with gender-based default */}
-        <div className="absolute -bottom-1 left-6 flex items-center">
+        {/* Avatar - ✅ Slightly positioned upward (-top-8) */}
+        <div className="absolute -bottom-8 left-6 flex items-center z-10">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="" className="w-full h-full object-cover" />
@@ -685,7 +685,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="px-5 pt-5">
+      <div className="px-5 pt-9">
         {/* Name + Gender + Badges */}
         <div className="flex flex-wrap items-center gap-0.5">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
@@ -759,13 +759,11 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           <span className="text-gray-500">{user.location || "India"}</span>
         </div>
 
-        {/* Bio Section - ✅ No pencil icon for other user */}
+        {/* Bio Section - ✅ Pencil icon shows for both own & other profile */}
         <div className="flex items-start gap-2 mt-2">
-          {!isOtherUser && (
-            <button onClick={handleOpenEditSheet} className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0">
-              <Edit3 size={14} />
-            </button>
-          )}
+          <button onClick={handleOpenEditSheet} className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0">
+            <Edit3 size={14} />
+          </button>
           {user.bio ? (
             <p className="text-xs text-gray-500 italic">{user.bio}</p>
           ) : (
