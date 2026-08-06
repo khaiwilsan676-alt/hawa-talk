@@ -49,15 +49,6 @@ interface GlobalRoom {
   createdAt: number
 }
 
-const BANNERS = [
-  {
-    image: '/1784458869444~2.jpg'
-  },
-  {
-    image: '/1784458869444~2.jpg'
-  }
-]
-
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
 type Page = 'home' | 'message' | 'me' | 'room' | 'public_profile'
@@ -130,7 +121,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [activeMineTab, setActiveMineTab] = useState<MineTab>('following')
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [mounted, setMounted] = useState(false)
-  const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
 
@@ -176,11 +166,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
   // Add dvh state for dynamic viewport height
   const [viewportHeight, setViewportHeight] = useState(0)
 
-  const bannerRef = useRef<HTMLDivElement>(null)
-  const touchStartX = useRef<number>(0)
-  const touchEndX = useRef<number>(0)
-  const [isSwiping, setIsSwiping] = useState(false)
-  const [swipeOffset, setSwipeOffset] = useState(0)
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
@@ -326,12 +311,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
 
   // Load sign-in day from localStorage
   useEffect(() => {
@@ -442,77 +421,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       window.removeEventListener('touchend', handleTouchEnd)
     }
   }, [isDragging, dragPosition, checkOverlap])
-
-  // Touch swipe handlers for banner
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchEndX.current = e.touches[0].clientX
-    setIsSwiping(true)
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping) return
-    touchEndX.current = e.touches[0].clientX
-    const diff = touchEndX.current - touchStartX.current
-    setSwipeOffset(diff)
-    if (Math.abs(diff) > 10) {
-      if (e.cancelable) e.preventDefault()
-    }
-  }
-
-  const handleTouchEnd = () => {
-    if (!isSwiping) return
-    const diff = touchEndX.current - touchStartX.current
-    const threshold = 50
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) {
-        setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
-      } else {
-        setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
-      }
-    }
-    setIsSwiping(false)
-    setSwipeOffset(0)
-    touchStartX.current = 0
-    touchEndX.current = 0
-  }
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    touchStartX.current = e.clientX
-    touchEndX.current = e.clientX
-    setIsSwiping(true)
-    e.preventDefault()
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isSwiping) return
-    touchEndX.current = e.clientX
-    const diff = touchEndX.current - touchStartX.current
-    setSwipeOffset(diff)
-  }
-
-  const handleMouseUp = () => {
-    if (!isSwiping) return
-    const diff = touchEndX.current - touchStartX.current
-    const threshold = 50
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) {
-        setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
-      } else {
-        setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
-      }
-    }
-    setIsSwiping(false)
-    setSwipeOffset(0)
-    touchStartX.current = 0
-    touchEndX.current = 0
-  }
-
-  const handleMouseLeave = () => {
-    if (isSwiping) {
-      handleMouseUp()
-    }
-  }
 
   const handleKeepRoom = (roomData: KeptRoomData) => {
     setKeptRoom(roomData)
@@ -1588,56 +1496,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 </button>    
               </div>    
 
-              {activeTab === 'popular' && (    
-                <>    
-                  <div    
-                    ref={bannerRef}    
-                    className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"    
-                    style={{    
-                      height: '90px',    
-                      width: '100%',    
-                      display: 'flex',    
-                      alignItems: 'center',    
-                      justifyContent: 'center',    
-                      transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',    
-                      transition: isSwiping ? 'none' : 'transform 0.3s ease-out',    
-                    }}    
-                    onTouchStart={handleTouchStart}    
-                    onTouchMove={handleTouchMove}    
-                    onTouchEnd={handleTouchEnd}    
-                    onMouseDown={handleMouseDown}    
-                    onMouseMove={handleMouseMove}    
-                    onMouseUp={handleMouseUp}    
-                    onMouseLeave={handleMouseLeave}    
-                  >    
-                    <div    
-                      key={currentBanner}    
-                      className="w-full h-full"    
-                      style={{    
-                        animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',    
-                      }}    
-                    >    
-                      <img    
-                        src={BANNERS[currentBanner].image}    
-                        alt="Banner"    
-                        className="w-full h-full object-cover rounded-2xl"    
-                        draggable="false"    
-                      />    
-                    </div>    
-                  </div>    
-
-                  <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>    
-                    {BANNERS.map((_, index) => (    
-                      <div    
-                        key={index}    
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${    
-                          index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'    
-                        }`}    
-                      />    
-                    ))}    
-                  </div>    
-                </>    
-              )}    
             </div>    
 
             {activeTab === 'mine' ? renderMineTab() : renderPopularTab()}    
