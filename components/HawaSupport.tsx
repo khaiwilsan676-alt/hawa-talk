@@ -206,25 +206,48 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
         : "You're welcome! 😊\n\nGlad I could help you.\n\nIf you need anything else, please feel free to ask.";
     }
 
-    // ONLINE RECHARGE
-    if (msg.includes("recharge") || msg.includes("coin") || msg.includes("buy coin") ||
-        msg.includes("purchase") || msg.includes("रिचार्ज") || msg.includes("सिक्का") ||
-        msg.includes("खरीद") || msg.includes("payment") || msg.includes("pay") ||
-        msg.includes("google play") || msg.includes("phonepay") || msg.includes("paytm")) {
-      return "💎 **How to Recharge Coins Online**\n\n" +
-             "Follow these simple steps:\n\n" +
-             "📌 **Step 1:** Go to your **Profile** section.\n" +
-             "📌 **Step 2:** Tap on the **Coins** option.\n" +
-             "📌 **Step 3:** You will see various **Coin Packages** and the **Recharge** option.\n" +
-             "📌 **Step 4:** Select your preferred package and proceed.\n\n" +
-             "💳 **Accepted Payment Methods:**\n" +
-             "• Google Play\n" +
-             "• PhonePe\n" +
-             "• Paytm\n" +
-             "• Official Website Recharge\n\n" +
-             "✅ Once payment is successful, coins will be credited instantly.\n\n" +
-             "🔹 **Need a Coin Seller?**\n" +
-             "Contact our Official Team for seller details, payment screenshot & User ID verification.";
+    // COIN RATES & RECHARGE INFO
+    if (msg.includes("rate") || msg.includes("coin rate") || msg.includes("price") || 
+        msg.includes("1$") || msg.includes("dollar") || msg.includes("recharge") || 
+        msg.includes("coin") || msg.includes("buy coin") || msg.includes("purchase") || 
+        msg.includes("रिचार्ज") || msg.includes("सिक्का") || msg.includes("खरीद") || 
+        msg.includes("payment") || msg.includes("pay") || msg.includes("google play") || 
+        msg.includes("phonepay") || msg.includes("paytm")) {
+      return "💎 **Hawa App Coins Rates & Recharge Info**\n\n" +
+             "💰 **Coins Exchange Rates:**\n" +
+             "• **Offline (Through Official Seller):**\n" +
+             "  👉 **1$ = 1,050,000 Coins**\n\n" +
+             "• **Online Recharge (In-App Wallet):**\n" +
+             "  👉 **1$ = 1,000,000 Coins (+30,000 Bonus Coins)**\n" +
+             "  *(Total: 1,030,000 Coins will show in your Wallet option)*\n\n" +
+             "📲 **How to Recharge Online:**\n" +
+             "📌 **Step 1:** Go to **Profile** section.\n" +
+             "📌 **Step 2:** Tap on **Coins** / **Wallet**.\n" +
+             "📌 **Step 3:** Select your package & preferred payment method.\n\n" +
+             "💳 **Accepted Payment Methods:** Google Play, PhonePe, Paytm & Official Site.\n\n" +
+             "🤝 **Want to buy Offline via Seller?**\n" +
+             "Contact our Official Team for verified seller options.";
+    }
+
+    // SELLER POLICY & PACKAGES
+    if (msg.includes("seller") || msg.includes("seller policy") || msg.includes("become seller") || 
+        msg.includes("earning") || msg.includes("earn") || msg.includes("sell coin") || 
+        msg.includes("विक्रेता") || msg.includes("कमाई") || msg.includes("seller lena") || 
+        msg.includes("seller banna") || msg.includes("100$") || msg.includes("200$") || msg.includes("300$")) {
+      return "💼 **Hawa Official Seller Policy & Packages**\n\n" +
+             "Become an Official Seller to buy in bulk, get special privileges, and earn by reselling coins!\n\n" +
+             "📊 **Seller Coin Packages (Rate: 1$ = 1,050,000 Coins):**\n\n" +
+             "💵 **$100 Package:**\n" +
+             "• Total Coins: **105,000,000 Coins** (10.5 Crore)\n\n" +
+             "💵 **$200 Package:**\n" +
+             "• Total Coins: **210,000,000 Coins** (21 Crore)\n\n" +
+             "💵 **$300 Package:**\n" +
+             "• Total Coins: **315,000,000 Coins** (31.5 Crore)\n\n" +
+             "📋 **Policy & Benefits:**\n" +
+             "• Instant Coin transfers to your seller dashboard.\n" +
+             "• Exclusive seller badge & customer priority.\n" +
+             "• Dedicated Official Admin support.\n\n" +
+             "📩 Contact Official Admin (**Hawa_IN** - ID: 100002) to apply for Seller Status!";
     }
 
     // ROOM MUSIC
@@ -290,20 +313,6 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
              "• Make new friends\n" +
              "• Earn rewards and coins\n\n" +
              "💰 For earning, you can become a **Seller** and sell coins.";
-    }
-
-    // SELLER INFO
-    if (msg.includes("seller") || msg.includes("become seller") || msg.includes("earning") ||
-        msg.includes("earn") || msg.includes("sell coin") || msg.includes("विक्रेता") ||
-        msg.includes("कमाई") || msg.includes("seller lena") || msg.includes("seller banna")) {
-      return "💼 **Become a Seller — Earn with Hawa**\n\n" +
-             "✅ **Benefits:**\n" +
-             "• Earn by selling coins to users\n" +
-             "• Get exclusive discounts and offers\n" +
-             "• Priority support from our team\n\n" +
-             "📋 **How to Apply:**\n" +
-             "Contact our Official Team. They will guide you through registration, pricing & payments.\n\n" +
-             "Would you like me to connect you with an Official?";
     }
 
     // OFFICIALS
@@ -420,12 +429,12 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
     // DEFAULT
     return "Thank you for reaching out! 😊\n\n" +
            "I'm here to help with any Hawa App questions:\n\n" +
-           "💎 • Online Coin Recharge\n" +
+           "💎 • Coins Rates (Offline 1$=1.05M | Online 1$=1M+30k)\n" +
+           "💼 • Seller Policy ($100, $200, $300 Packages)\n" +
            "🎵 • Playing Music in Room\n" +
            "🎮 • Playing Games & Winning Coins\n" +
            "🏠 • Creating a Room\n" +
            "⚠️ • Reporting Abuse\n" +
-           "💼 • Becoming a Seller\n" +
            "👑 • Contacting Officials\n" +
            "👨‍👩‍👧‍👦 • Family Feature (13L Coins)\n" +
            "✏️ • Edit Profile (Name, DP, Bio, Cover)\n" +
@@ -552,4 +561,4 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
       </div>
     </div>
   );
-      }
+}
