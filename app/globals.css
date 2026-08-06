@@ -146,3 +146,9 @@ html, body {
   }
 }
 
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-top {
+    padding-top: calc(env(safe-area-inset-top) + 0.25rem);
+  }
+}
