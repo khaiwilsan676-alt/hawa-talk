@@ -29,7 +29,6 @@ interface PublicProfileProps {
   targetUser?: TargetUser | null
 }
 
-// ✅ Same COUNTRIES list as Gender Selection Page
 const COUNTRIES = [
   { code: 'IN', name: 'India', flag: '🇮🇳' },
   { code: 'US', name: 'United States', flag: '🇺🇸' },
@@ -63,22 +62,19 @@ const COUNTRIES = [
   { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
 ]
 
-// Special accounts configuration
 const SPECIAL_ACCOUNTS: { [key: string]: string } = {
   'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
   'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003'
 }
 
-// Official/Admin IDs list
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-// ✅ Gender-based default avatar helper function
 const getDefaultAvatar = (gender: string): string => {
   if (gender === "♀" || gender === "female") {
-    return "/IMG_20260804_211013.jpg" // Female default avatar
+    return "/IMG_20260804_211013.jpg"
   }
-  return "/IMG_20260804_211031.jpg" // Male default avatar
+  return "/IMG_20260804_211031.jpg"
 }
 
 const getOrCreateAccountNumber = (uid: string) => {
@@ -111,7 +107,6 @@ const getOrCreateAccountNumber = (uid: string) => {
   return savedAccountNumber
 }
 
-// Client-side image canvas compressor
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -186,19 +181,14 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   const [showBioInput, setShowBioInput] = useState(false)
   const [activeTab, setActiveTab] = useState("profile")
 
-  // Full image view state
   const [fullImageView, setFullImageView] = useState<string | null>(null)
 
-  // Follow State for Other User Profile
   const [isFollowing, setIsFollowing] = useState(false)
 
-  // Three dot menu state
   const [showThreeDotMenu, setShowThreeDotMenu] = useState(false)
 
-  // Check if this is a special account for UI modifications
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
-  // ✅ HELPER: Save/Merge profile directly to Firestore 'users' & 'globalRooms'
   const saveToFirestore = async (updateData: Record<string, any>) => {
     const currentUid = user.uid || localStorage.getItem("userUID") || localStorage.getItem("userPhone")
     if (currentUid && currentUid !== "N/A") {
@@ -218,9 +208,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     let unsubscribe: () => void;
 
     const loadProfileData = async () => {
-      // -------------------------------------------------------------
-      // 1. IF VIEWING ANOTHER USER PROFILE (OTHER USER - REALTIME LISTEN)
-      // -------------------------------------------------------------
       if (isOtherUser && targetUser) {
         const targetUid = targetUser.uid || targetUser.id || 'N/A'
         
@@ -293,9 +280,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         return
       }
 
-      // -------------------------------------------------------------
-      // 2. IF VIEWING OWN PUBLIC PROFILE (REALTIME LISTEN)
-      // -------------------------------------------------------------
       const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
       let storedName = localStorage.getItem("userName") || ""
       let photo = localStorage.getItem("userPhoto") || ""
@@ -594,12 +578,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
     })
   }
 
-  // ✅ Get default name based on gender
-  const getDefaultName = (gender: string): string => {
-    if (gender === "♀" || gender === "female") return "Barrey"
-    return "Simpson"
-  }
-
   return (
     <div className={`w-full bg-white min-h-screen text-gray-900 relative ${isOtherUser ? 'pb-24' : 'pb-10'}`}>
       {/* Cover Image & Header Section */}
@@ -617,7 +595,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         <div className="absolute top-4 left-0 right-0 px-4 flex items-center justify-between z-10">
           <button onClick={onBack} className="text-white"><ChevronLeft size={28} /></button>
           
-          {/* ✅ Three Dot Menu for Other User Profile */}
           {isOtherUser ? (
             <div className="relative">
               <button 
@@ -668,8 +645,8 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
         </div>
 
-        {/* Avatar - ✅ Slightly positioned upward (-top-8) */}
-        <div className="absolute -bottom-8 left-6 flex items-center z-10">
+        {/* Avatar - Upar shift kiya */}
+        <div className="absolute bottom-2 left-6 flex items-center">
           <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden border-3 border-white bg-gray-700">
             {user.photo ? (
               <img src={user.photo} alt="" className="w-full h-full object-cover" />
@@ -685,8 +662,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       </div>
 
       {/* Profile Info Details Section */}
-      <div className="px-5 pt-9">
-        {/* Name + Gender + Badges */}
+      <div className="px-5 pt-5">
         <div className="flex flex-wrap items-center gap-0.5">
           <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
@@ -698,7 +674,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           <img src="/1785469365805.png" alt="" className="h-7 w-auto object-contain" />
         </div>
 
-        {/* ID and Followers */}
         <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
           <div className="flex items-center gap-1">
             {isSpecialAccount ? (
@@ -733,7 +708,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           <span className="text-gray-500">{user.followers} Fans</span>
         </div>
 
-        {/* Level Badge */}
         <div className="mt-1 flex items-center gap-1 -ml-2">
           <div className="relative inline-flex items-center justify-center ml-0.5">
             <img 
@@ -752,16 +726,18 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           />
         </div>
 
-        {/* Country Display - ✅ Shows flag + country name from Gender Page selection */}
         <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
           <MapPin size={14} className="text-gray-400" />
           <span className="text-base">{user.flag}</span>
           <span className="text-gray-500">{user.location || "India"}</span>
         </div>
 
-        {/* Bio Section - ✅ Pencil icon shows for both own & other profile */}
+        {/* Bio Section - Dono profile mein pencil icon */}
         <div className="flex items-start gap-2 mt-2">
-          <button onClick={handleOpenEditSheet} className="text-gray-400 hover:text-gray-600 mt-0.5 shrink-0">
+          <button 
+            onClick={!isOtherUser ? handleOpenEditSheet : undefined} 
+            className={`mt-0.5 shrink-0 ${isOtherUser ? 'text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}
+          >
             <Edit3 size={14} />
           </button>
           {user.bio ? (
@@ -773,7 +749,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           )}
         </div>
 
-        {/* Profile Tab Only */}
         <div className="flex gap-0 mt-4 border-b border-gray-200">
           <button
             onClick={() => setActiveTab("profile")}
@@ -791,7 +766,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
 
       {/* Content Tabs Section */}
       <div className="px-5 mt-6 space-y-4">
-        {/* Albums Tab */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2 flex justify-between items-center">
             Albums
@@ -816,7 +790,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           )}
         </div>
 
-        {/* Vehicle */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -824,7 +797,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           </div>
         </div>
 
-        {/* Medal */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -832,7 +804,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           </div>
         </div>
 
-        {/* Frame */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -840,7 +811,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
           </div>
         </div>
 
-        {/* Gift */}
         <div>
           <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
           <div className="w-full h-28 rounded-2xl overflow-hidden">
@@ -849,7 +819,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
         </div>
       </div>
 
-      {/* FULL MATCHING BOTTOM ACTION BAR */}
+      {/* Bottom Action Bar for Other User */}
       {isOtherUser && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md px-6 py-3.5 border-t border-gray-100 flex items-center justify-between gap-4 max-w-md mx-auto shadow-lg">
           <button
@@ -909,7 +879,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
               <input type="file" ref={albumInputRef} accept="image/*" onChange={handleAlbumUpload} className="hidden" />
               <input type="file" ref={coverInputRef} accept="image/*" onChange={handleCoverUpload} className="hidden" />
 
-              {/* Avatar - ✅ Updated with gender-based default */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Avatar</span>
                 <div 
@@ -928,7 +897,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 </div>
               </div>
 
-              {/* Background Cover */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Background Cover</span>
@@ -956,7 +924,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 )}
               </div>
 
-              {/* Album Upload */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Album Photos ({albumImages.length}/4)</span>
@@ -987,7 +954,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 )}
               </div>
 
-              {/* Name */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Name</span>
                 <input
@@ -999,7 +965,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 />
               </div>
 
-              {/* Age */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Age</span>
                 <input
@@ -1011,7 +976,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 />
               </div>
 
-              {/* Bio */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Bio</span>
                 {showBioInput ? (
@@ -1033,7 +997,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 )}
               </div>
 
-              {/* ✅ Country Selection - Same as Gender Page */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Country</span>
                 <select
@@ -1052,7 +1015,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 </select>
               </div>
 
-              {/* ✅ Gender Selection - Same as Gender Page */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">Gender</span>
                 <div className="flex gap-2">
@@ -1083,7 +1045,6 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
 
             </div>
 
-            {/* Save Button */}
             <div className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white border-t border-gray-100 shrink-0">
               <button
                 onClick={handleSaveEdit}
@@ -1107,4 +1068,4 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
       `}</style>
     </div>
   )
-}
+        }
