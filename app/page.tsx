@@ -65,7 +65,6 @@ export default function Page() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex items-center justify-center">
         <div className="text-center">
-          <img src="/logo.png" alt="Hawa" className="w-20 h-20 mx-auto mb-4 animate-bounce" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
