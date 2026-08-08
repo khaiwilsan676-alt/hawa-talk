@@ -202,7 +202,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           {/* Rules Card Patti */}
           <div className="mx-4 mt-4 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 p-4">
             <p className="text-white/80 text-xs text-center leading-relaxed">
-              Welcome to Hawa. Any Content related to Fraud, Abusing, violence Breaking a Hawa Rules Will be Ban.
+              Welcome to Hurry. Any Content related to Fraud, Abusing, violence Breaking a Hurry Rules Will be Ban.
             </p>
           </div>
         </div>

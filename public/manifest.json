@@ -1,7 +1,7 @@
 {
-  "name": "Hawa - Chat & Connect",
-  "short_name": "Hawa",
-  "description": "Connect with friends on Hawa. Chat, share moments, and discover popular content.",
+  "name": "Hurry - Chat & Connect",
+  "short_name": "Hurry",
+  "description": "Connect with friends on Hurry. Chat, share moments, and discover popular content.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

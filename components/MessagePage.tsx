@@ -38,12 +38,12 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
   const chats: ChatItem[] = [
     {
       id: 'hawa-team',
-      name: 'Hawa Team',
+      name: 'Hurry Team',
       image: '/logo.png'
     },
     {
       id: 'hawa-system',
-      name: 'Hawa System',
+      name: 'Hurry System',
       image: '/1784465161302~2.jpg'
     }
   ]

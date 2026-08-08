@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Hawa - Chat & Connect',
-  description: 'Connect with friends on Hawa. Chat, share moments, and discover popular content.',
+  title: 'Hurry - Chat & Connect',
+  description: 'Connect with friends on Hurry. Chat, share moments, and discover popular content.',
   generator: 'v0.app',
   icons: {
     icon: '/logo.png?v=2',
@@ -30,7 +30,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Hawa" />
+        <meta name="apple-mobile-web-app-title" content="Hurry" />
         <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>

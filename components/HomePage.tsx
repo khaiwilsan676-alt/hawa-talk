@@ -819,7 +819,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 Create your Room  
               </h3>  
               <p className="text-white/80 text-sm mt-1 font-medium">  
-                Embark Your Hawa journey!  
+                Embark Your Hurry journey!
               </p>  
             </div>  
           </>  

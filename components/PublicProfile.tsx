@@ -150,7 +150,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
   const coverInputRef = useRef<HTMLInputElement>(null)
 
   const [user, setUser] = useState({
-    name: "Hawa User",
+    name: "Hurry User",
     uid: "",
     displayAccountNumber: "100379620",
     photo: "",
@@ -361,7 +361,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
               const matchedCountry = COUNTRIES.find(c => c.code === storedCountryCode || c.flag === storedCountry || c.name === storedCountry) || { name: 'India', flag: '🇮🇳', code: 'IN' }
 
               setUser({
-                name: storedName || "Hawa User",
+                name: storedName || "Hurry User",
                 uid: uid,
                 displayAccountNumber: displayAccNum,
                 photo,
@@ -375,7 +375,7 @@ export default function PublicProfile({ onBack, isOtherUser = false, targetUser 
                 followers: data.followers || 0
               })
 
-              setEditName(storedName || "Hawa User")
+              setEditName(storedName || "Hurry User")
               setEditAge(storedAge || "24")
               setEditBio(storedBio || "")
               setEditCountry(matchedCountry.name)
