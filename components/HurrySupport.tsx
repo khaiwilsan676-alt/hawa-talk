@@ -5,11 +5,11 @@ import { ArrowLeft, Send } from "lucide-react";
 import { db } from "../src/lib/firebase";
 import { collection, addDoc, setDoc, doc, deleteDoc, query, where, getDocs } from "firebase/firestore";
 
-interface HawaSupportProps {
+interface HurrySupportProps {
   onBack?: () => void;
 }
 
-export default function HawaSupport({ onBack }: HawaSupportProps) {
+export default function HurrySupport({ onBack }: HurrySupportProps) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Array<{ text: string; isBot: boolean; timestamp?: number }>>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -77,7 +77,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
             setMessages(data.messages);
           } else {
             const welcomeMessage = {
-              text: "Welcome to Hawa Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hawa App — I'm here to help! 😊",
+              text: "Welcome to Hurry Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hurry App — I'm here to help! 😊",
               isBot: true,
               timestamp: Date.now()
             };
@@ -86,7 +86,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
         } else {
           // Create new chat
           const welcomeMessage = {
-            text: "Welcome to Hawa Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hawa App — I'm here to help! 😊",
+            text: "Welcome to Hurry Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hurry App — I'm here to help! 😊",
             isBot: true,
             timestamp: Date.now()
           };
@@ -105,7 +105,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
       } catch (error) {
         console.error("Error loading/creating chat:", error);
         const welcomeMessage = {
-          text: "Welcome to Hawa Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hawa App — I'm here to help! 😊",
+          text: "Welcome to Hurry Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hurry App — I'm here to help! 😊",
           isBot: true,
           timestamp: Date.now()
         };
@@ -195,7 +195,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
         msg.includes("good morning") || msg.includes("good evening")) {
       return isHindi
         ? "नमस्ते! 🙏\n\nहवा सपोर्ट में आपका स्वागत है।\n\nमैं Daisy हूँ, आपकी AI कस्टमर सपोर्ट असिस्टेंट।\n\nकृपया बताएं मैं आपकी किस प्रकार सहायता कर सकती हूँ?"
-        : "Hello! 👋\n\nWelcome to Hawa Support. I'm Daisy, your AI Customer Support Assistant.\n\nPlease let me know how I can assist you today.";
+        : "Hello! 👋\n\nWelcome to Hurry Support. I'm Daisy, your AI Customer Support Assistant.\n\nPlease let me know how I can assist you today.";
     }
 
     // THANK YOU
@@ -213,7 +213,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
         msg.includes("रिचार्ज") || msg.includes("सिक्का") || msg.includes("खरीद") || 
         msg.includes("payment") || msg.includes("pay") || msg.includes("google play") || 
         msg.includes("phonepay") || msg.includes("paytm")) {
-      return "💎 **Hawa App Coins Rates & Recharge Info**\n\n" +
+      return "💎 **Hurry App Coins Rates & Recharge Info**\n\n" +
              "💰 **Coins Exchange Rates:**\n" +
              "• **Offline (Through Official Seller):**\n" +
              "  👉 **1$ = 1,050,000 Coins**\n\n" +
@@ -234,7 +234,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
         msg.includes("earning") || msg.includes("earn") || msg.includes("sell coin") || 
         msg.includes("विक्रेता") || msg.includes("कमाई") || msg.includes("seller lena") || 
         msg.includes("seller banna") || msg.includes("100$") || msg.includes("200$") || msg.includes("300$")) {
-      return "💼 **Hawa Official Seller Policy & Packages**\n\n" +
+      return "💼 **Hurry Official Seller Policy & Packages**\n\n" +
              "Become an Official Seller to buy in bulk, get special privileges, and earn by reselling coins!\n\n" +
              "📊 **Seller Coin Packages (Rate: 1$ = 1,050,000 Coins):**\n\n" +
              "💵 **$100 Package:**\n" +
@@ -247,7 +247,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
              "• Instant Coin transfers to your seller dashboard.\n" +
              "• Exclusive seller badge & customer priority.\n" +
              "• Dedicated Official Admin support.\n\n" +
-             "📩 Contact Official Admin (**Hawa_IN** - ID: 100002) to apply for Seller Status!";
+             "📩 Contact Official Admin (**Hurry_IN** - ID: 100002) to apply for Seller Status!";
     }
 
     // ROOM MUSIC
@@ -304,8 +304,8 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
     // WHAT IS HAWA
     if (msg.includes("hawa kya") || msg.includes("what is hawa") || msg.includes("about hawa") ||
         msg.includes("hawa app") || msg.includes("app kya") || msg.includes("hawa kya hai")) {
-      return "🌟 **About Hawa App**\n\n" +
-             "Hawa is a **Social Dating & Live Party App** for entertainment and connecting with people.\n\n" +
+      return "🌟 **About Hurry App**\n\n" +
+             "Hurry is a **Social Dating & Live Party App** for entertainment and connecting with people.\n\n" +
              "✨ **Key Features:**\n" +
              "• Connect with like-minded people\n" +
              "• Host and join Live Parties\n" +
@@ -319,8 +319,8 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
     if (msg.includes("official") || msg.includes("admin") || msg.includes("contact") ||
         msg.includes("officer") || msg.includes("अधिकारी") || msg.includes("मालिक") ||
         msg.includes("owner") || msg.includes("team")) {
-      return "👑 **Hawa Official Team**\n\n" +
-             "• **Hawa_IN**\n" +
+      return "👑 **Hurry Official Team**\n\n" +
+             "• **Hurry_IN**\n" +
              "  🆔 ID: 100002\n\n" +
              "• **Paras**\n" +
              "  🆔 ID: 100003\n\n" +
@@ -428,7 +428,7 @@ export default function HawaSupport({ onBack }: HawaSupportProps) {
 
     // DEFAULT
     return "Thank you for reaching out! 😊\n\n" +
-           "I'm here to help with any Hawa App questions:\n\n" +
+           "I'm here to help with any Hurry App questions:\n\n" +
            "💎 • Coins Rates (Offline 1$=1.05M | Online 1$=1M+30k)\n" +
            "💼 • Seller Policy ($100, $200, $300 Packages)\n" +
            "🎵 • Playing Music in Room\n" +

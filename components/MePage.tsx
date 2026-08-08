@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { ChevronRight, Copy, ArrowLeft } from 'lucide-react'
 import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
-import HawaSupport from './HawaSupport'
+import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
@@ -402,7 +402,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   if (currentView === 'customer_service') {
-    return <HawaSupport onBack={() => switchView('me')} />
+    return <HurrySupport onBack={() => switchView('me')} />
   }
 
   if (currentView === 'settings') {
