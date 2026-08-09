@@ -14,9 +14,5 @@ public class MainActivity extends BridgeActivity {
         FullScreenManager.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
         
-        // Status bar ka color #60a5fa kar do - tere CSS wala blue
-        Window window = getWindow();
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.setStatusBarColor(ContextCompat.getColor(this, R.color.statusbar_blue));
     }
 }
