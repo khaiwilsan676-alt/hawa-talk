@@ -1110,7 +1110,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               className="w-20 h-20 rounded-2xl drop-shadow-lg" 
             />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-lg">Hurry</h1>
         </div>
 
         <div style={{ marginTop: '23vh' }}></div>

@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import HomePage from '@/components/HomePage'
 import LoginPage from '@/components/LoginPage'
+import { initializeCapacitor } from '../src/capacitor-init'
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    initializeCapacitor()
     // Check if user is already logged in
     const userEmail = localStorage.getItem('userEmail')
     const userPhone = localStorage.getItem('userPhone')
