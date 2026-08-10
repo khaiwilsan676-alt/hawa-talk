@@ -824,52 +824,20 @@ function SeatItem({
     <div className="flex flex-col items-center gap-1" onClick={onClick}>
       <div
         className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 relative
-        ${seatData.isLocked ? 'bg-gradient-to-br from-gray-400 to-gray-600' : 'bg-[rgba(125,143,168,0.32)]'}
-        border ${seatData.isLocked ? 'border-gray-400/50' : 'border-[rgba(210,220,235,0.55)]'}
-        backdrop-blur-[12px]
+        ${seatData.isLocked ? 'bg-white/10 backdrop-blur-md' : 'bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px]'}
+        border ${seatData.isLocked ? 'border-white/20' : 'border-[rgba(210,220,235,0.55)]'}
         ${seatData.isLocked 
-          ? 'shadow-[0_4px_15px_rgba(0,0,0,0.3),inset_0_1px_3px_rgba(255,255,255,0.2),inset_0_-1px_3px_rgba(0,0,0,0.2)]' 
+          ? 'shadow-[0_4px_16px_rgba(0,0,0,0.25)]' 
           : 'shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}
         transition-transform duration-300 hover:scale-105 cursor-pointer`}
-        style={seatData.isLocked ? {
-          transform: 'perspective(200px) rotateX(5deg)',
-          transformStyle: 'preserve-3d',
-        } : {}}
       >
         {seatData.isLocked ? (
-          // ✅ Locked seat - Only Lock icon (NO key)
-          <div className="w-[60%] h-[60%] flex items-center justify-center">
-            <svg viewBox="0 0 24 24" className="w-full h-full">
-              <defs>
-                <linearGradient id={`lockGrad-${seatNumber}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#d1d5db" />
-                  <stop offset="50%" stopColor="#9ca3af" />
-                  <stop offset="100%" stopColor="#6b7280" />
-                </linearGradient>
-                <filter id={`lockGlow-${seatNumber}`}>
-                  <feGaussianBlur stdDeviation="0.5" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-              {/* Lock Body */}
-              <rect 
-                x="3" y="11" width="18" height="11" rx="3" 
-                fill={`url(#lockGrad-${seatNumber})`}
-                stroke="#4b5563"
-                strokeWidth="1.5"
-                filter={`url(#lockGlow-${seatNumber})`}
-              />
-              {/* Lock Shackle */}
-              <path 
-                d="M 7 11 V 7 a 5 5 0 0 1 10 0 v 4" 
-                fill="none" 
-                stroke={`url(#lockGrad-${seatNumber})`}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-              {/* Keyhole */}
-              <circle cx="12" cy="16" r="1.5" fill="#374151" />
-              <line x1="12" y1="17.5" x2="12" y2="19.5" stroke="#374151" strokeWidth="0.8" />
+          // ✅ Image ke jaisa Frosted Lock UI
+          <div className="w-6 h-6 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-white/70 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              <circle cx="12" cy="16" r="1" fill="currentColor" />
             </svg>
           </div>
         ) : seatData.isOccupied && seatData.user ? (
@@ -931,4 +899,5 @@ function SeatItem({
       </span>
     </div>
   )
-                            }
+}
+
