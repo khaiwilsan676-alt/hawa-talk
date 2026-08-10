@@ -744,7 +744,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         .animate-slide-up {
           animation: slideUp 0.3s ease-out;
         }
-      `}`}</style>
+      `}</style>
     </div>
   )
 }
@@ -826,4 +826,4 @@ function SeatItem({
       </span>
     </div>
   )
-      }
+  }
