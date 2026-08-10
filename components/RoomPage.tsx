@@ -34,6 +34,7 @@ const ADMIN_IDS = ['700001', '700002', '700003']
 interface Seat {
   number: number
   isOccupied: boolean
+  isLocked?: boolean
   user?: {
     name: string
     image: string
@@ -47,6 +48,7 @@ interface Message {
   id: string
   text: string
   sender: string
+  senderImage: string
   timestamp: number
 }
 
@@ -60,17 +62,20 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   
+  // Chat visibility state
+  const [showChatInput, setShowChatInput] = useState(false)
+  
   // Seat Management State
   const [seats, setSeats] = useState<Seat[]>([
-    { number: 1, isOccupied: false },
-    { number: 2, isOccupied: false },
-    { number: 3, isOccupied: false },
-    { number: 4, isOccupied: false },
-    { number: 5, isOccupied: false },
-    { number: 6, isOccupied: false },
-    { number: 7, isOccupied: false },
-    { number: 8, isOccupied: false },
-    { number: 9, isOccupied: false },
+    { number: 1, isOccupied: false, isLocked: false },
+    { number: 2, isOccupied: false, isLocked: false },
+    { number: 3, isOccupied: false, isLocked: false },
+    { number: 4, isOccupied: false, isLocked: false },
+    { number: 5, isOccupied: false, isLocked: false },
+    { number: 6, isOccupied: false, isLocked: false },
+    { number: 7, isOccupied: false, isLocked: false },
+    { number: 8, isOccupied: false, isLocked: false },
+    { number: 9, isOccupied: false, isLocked: false },
   ])
 
   // Bottom Sheet State
@@ -122,8 +127,16 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Focus input when chat opens
+  useEffect(() => {
+    if (showChatInput && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
+  }, [showChatInput])
+
   // Handle Seat Click
   const handleSeatClick = (seatNumber: number) => {
+    const seat = seats.find(s => s.number === seatNumber)
     setSelectedSeat(seatNumber)
     setShowSeatSheet(true)
   }
@@ -131,6 +144,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   // Take Seat
   const handleTakeSeat = () => {
     if (selectedSeat === null) return
+    
+    const seat = seats.find(s => s.number === selectedSeat)
+    if (seat?.isLocked) {
+      alert("This seat is locked!")
+      return
+    }
     
     // Check if user already has a seat
     const userAlreadySeated = seats.some(s => s.isOccupied && s.user?.accountId === accountId)
@@ -168,7 +187,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       if (seat.number === selectedSeat) {
         return {
           number: seat.number,
-          isOccupied: false
+          isOccupied: false,
+          isLocked: false
         }
       }
       return seat
@@ -213,9 +233,23 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSeats(updatedSeats)
   }
 
-  // Lock Seat
+  // Lock Seat - Toggle lock
   const handleToggleLock = () => {
-    alert("Seat locked! Only you can unlock it.")
+    if (selectedSeat === null) return
+
+    const updatedSeats = seats.map(seat => {
+      if (seat.number === selectedSeat) {
+        return {
+          ...seat,
+          isLocked: !seat.isLocked
+        }
+      }
+      return seat
+    })
+
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
   // Invite User
@@ -238,6 +272,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       id: Date.now().toString(),
       text: message.trim(),
       sender: user.name,
+      senderImage: user.image,
       timestamp: Date.now()
     }
     
@@ -249,6 +284,14 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSendMessage()
+    }
+  }
+
+  // Toggle Chat Input
+  const toggleChatInput = () => {
+    setShowChatInput(!showChatInput)
+    if (!showChatInput) {
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
 
@@ -412,59 +455,69 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             />
           </div>
 
-          {/* Messages Area - Below Seats */}
-          <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 max-h-[120px]">
+          {/* Rules Card Patti */}
+          <div className="mx-4 mt-4 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 p-4">
+            <p className="text-white/80 text-xs text-center leading-relaxed">
+              Welcome to Hurry. Any Content related to Fraud, Abusing, violence Breaking a Hurry Rules Will be Ban.
+            </p>
+          </div>
+
+          {/* Messages Area - WhatsApp Style with Avatar */}
+          <div className="mx-4 mt-2 space-y-2 max-h-[150px] overflow-y-auto">
             {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.sender === user.name ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] px-3 py-1.5 rounded-xl text-xs ${
-                  msg.sender === user.name 
-                    ? 'bg-blue-500 text-white rounded-br-none' 
-                    : 'bg-white/20 text-white rounded-bl-none'
-                }`}>
-                  <p className="text-[10px] font-semibold opacity-70">{msg.sender}</p>
-                  <p className="text-xs break-words">{msg.text}</p>
+              <div key={msg.id} className="flex items-start gap-2">
+                {/* Avatar */}
+                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                  <img 
+                    src={msg.senderImage} 
+                    alt={msg.sender}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Message Bubble */}
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-semibold text-white/70">{msg.sender}</span>
+                  <div className="px-3 py-1.5 rounded-xl bg-white/20 text-white rounded-bl-none">
+                    <p className="text-xs break-words">{msg.text}</p>
+                  </div>
                 </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
-
-          {/* Rules Card Patti */}
-          <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 p-3">
-            <p className="text-white/80 text-xs text-center leading-relaxed">
-              Welcome to Hurry. Any Content related to Fraud, Abusing, violence Breaking a Hurry Rules Will be Ban.
-            </p>
-          </div>
         </div>
 
         {/* Footer Controls */}
         <div className="flex-shrink-0 pb-4">
-          {/* Message Input - Always Visible */}
-          <div className="flex items-center gap-2 mb-3">
-            <input
-              ref={inputRef}
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
-              className="flex-1 bg-white/10 text-white placeholder-white/40 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-blue-500 transition-colors"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!message.trim()}
-              className="bg-blue-500 text-white p-2.5 rounded-full hover:bg-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
-          </div>
+          {/* Message Input - Only shows when Say Hi is clicked */}
+          {showChatInput && (
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                ref={inputRef}
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type a message..."
+                className="flex-1 bg-white/10 text-white placeholder-white/40 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-blue-500 transition-colors"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!message.trim()}
+                className="bg-blue-500 text-white p-2.5 rounded-full hover:bg-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-2">
             {/* Say Hi Button - Left Side */}
             <button 
+              onClick={toggleChatInput}
               className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
             >
               Say Hi
@@ -472,7 +525,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
             {/* Icons - Right Side */}
             <div className="flex items-center gap-2">
-              {/* ✅ Show Mic and Speaker ONLY if user has a seat */}
+              {/* ✅ Show Mic ONLY if user has a seat - Speaker removed */}
               {hasSeat && (
                 <>
                   {/* Mic Icon - Click to Mute/Unmute */}
@@ -495,21 +548,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                       </svg>
                     )}
                     {currentUserSeat?.isMuted && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[8px] text-white font-bold flex items-center justify-center border-2 border-black">
-                        M
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[8px] text-white font-bold flex items-center justify-center">
+                        ✕
                       </span>
                     )}
-                  </button>
-
-                  {/* Speaker Icon */}
-                  <button 
-                    className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
-                  >
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                    </svg>
                   </button>
                 </>
               )}
@@ -610,7 +652,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Bottom Sheet for Seat Actions - Only Black Text */}
+      {/* Bottom Sheet for Seat Actions - 20vh, No Handle Bar, Only Black Text, Scrollable */}
       {showSeatSheet && selectedSeat !== null && (
         <div className="absolute inset-0 z-30 flex items-end justify-center">
           {/* Backdrop - Click anywhere to close */}
@@ -622,54 +664,50 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             }}
           />
           
-          {/* Sheet Content - Only Black Text Buttons */}
-          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl p-6 animate-slide-up">
-            {/* Handle Bar */}
-            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
-            
-            {/* Action Buttons - Only Black Text */}
-            <div className="space-y-3">
-              {/* Take Mic */}
+          {/* Sheet Content - 20vh, No Handle Bar, Scrollable, Only Black Text */}
+          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[20vh] overflow-y-auto">
+            {/* Action Buttons - Only 2 visible, rest scroll */}
+            <div className="space-y-2">
+              {/* 1. Take Mic - Always visible */}
               <button
                 onClick={handleTakeSeat}
                 disabled={seats.find(s => s.number === selectedSeat)?.isOccupied || seats.some(s => s.isOccupied && s.user?.accountId === accountId)}
-                className="w-full py-3.5 rounded-xl bg-transparent text-black font-medium text-base hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border border-gray-200"
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 Take Mic
               </button>
 
-              {/* Lock Mic */}
+              {/* 2. Lock Mic - Always visible */}
               <button
                 onClick={handleToggleLock}
-                disabled={!seats.find(s => s.number === selectedSeat)?.isOccupied}
-                className="w-full py-3.5 rounded-xl bg-transparent text-black font-medium text-base hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border border-gray-200"
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
-                Lock Mic
+                {seats.find(s => s.number === selectedSeat)?.isLocked ? 'Unlock Mic' : 'Lock Mic'}
               </button>
 
-              {/* Invite */}
+              {/* 3. Invite - Scroll pe */}
               <button
                 onClick={handleInvite}
-                className="w-full py-3.5 rounded-xl bg-transparent text-black font-medium text-base hover:bg-gray-100 transition-colors cursor-pointer border border-gray-200"
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 Invite
               </button>
 
-              {/* Mute/Unmute */}
+              {/* 4. Mute/Unmute - Scroll pe */}
               <button
                 onClick={handleToggleMute}
                 disabled={!seats.find(s => s.number === selectedSeat)?.isOccupied}
-                className="w-full py-3.5 rounded-xl bg-transparent text-black font-medium text-base hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border border-gray-200"
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 {seats.find(s => s.number === selectedSeat)?.isMuted ? 'Unmute' : 'Mute'}
               </button>
 
-              {/* Leave Seat Button (Only show if current user owns the seat) */}
+              {/* 5. Leave Seat - Scroll pe (Only show if current user owns the seat) */}
               {seats.find(s => s.number === selectedSeat)?.isOccupied && 
                isCurrentUsersSeat(seats.find(s => s.number === selectedSeat)!) && (
                 <button
                   onClick={handleLeaveSeat}
-                  className="w-full py-3.5 rounded-xl bg-transparent text-black font-medium text-base hover:bg-gray-100 transition-colors cursor-pointer border border-gray-200"
+                  className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                 >
                   Leave Seat
                 </button>
@@ -719,12 +757,12 @@ function SeatItem({
   return (
     <div className="flex flex-col items-center gap-1" onClick={onClick}>
       <div
-        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 relative
-        bg-[rgba(125,143,168,0.32)]
-        border border-[rgba(210,220,235,0.55)]
+        className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 relative
+        ${seatData.isLocked ? 'bg-gray-500/50' : 'bg-[rgba(125,143,168,0.32)]'}
+        border ${seatData.isLocked ? 'border-gray-400/70' : 'border-[rgba(210,220,235,0.55)]'}
         backdrop-blur-[12px]
         shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]
-        transition-transform duration-300 hover:scale-105 cursor-pointer"
+        transition-transform duration-300 hover:scale-105 cursor-pointer`}
       >
         {seatData.isOccupied && seatData.user ? (
           <>
@@ -733,13 +771,20 @@ function SeatItem({
               alt={seatData.user.name}
               className="w-full h-full rounded-full object-cover"
             />
-            {/* Small Red Mute Icon - Right Side of Seat */}
+            {/* Mute Icon - Only Cross (No border) */}
             {seatData.isMuted && (
-              <div className="absolute -right-1 -bottom-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
-                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <div className="absolute -right-1 -bottom-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
                   <line x1="4" y1="4" x2="20" y2="20" />
+                </svg>
+              </div>
+            )}
+            {/* Lock Icon - Top Right of Seat */}
+            {seatData.isLocked && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </div>
             )}
@@ -755,7 +800,7 @@ function SeatItem({
             >
               <g
                 fill="none"
-                stroke="#94a7be"
+                stroke={seatData.isLocked ? "#9ca3af" : "#94a7be"}
                 strokeWidth="7"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -766,8 +811,8 @@ function SeatItem({
               </g>
 
               <g
-                fill="#94a7be"
-                stroke="#5a6d89"
+                fill={seatData.isLocked ? "#9ca3af" : "#94a7be"}
+                stroke={seatData.isLocked ? "#6b7280" : "#5a6d89"}
                 strokeWidth="2.8"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -784,4 +829,4 @@ function SeatItem({
       </span>
     </div>
   )
-            }
+    }
