@@ -525,13 +525,13 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
             {/* Icons - Right Side */}
             <div className="flex items-center gap-2">
-              {/* ✅ Show Mic ONLY if user has a seat - Speaker removed */}
+              {/* ✅ Show Mic ONLY if user has a seat - No cross icon */}
               {hasSeat && (
                 <>
-                  {/* Mic Icon - Click to Mute/Unmute */}
+                  {/* Mic Icon - Click to Mute/Unmute (No cross, just mic) */}
                   <button 
                     onClick={handleBottomMicToggle}
-                    className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer relative"
+                    className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
                   >
                     {currentUserSeat?.isMuted ? (
                       <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-red-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
@@ -546,11 +546,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                         <line x1="12" y1="19" x2="12" y2="23" />
                         <line x1="8" y1="23" x2="16" y2="23" />
                       </svg>
-                    )}
-                    {currentUserSeat?.isMuted && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[8px] text-white font-bold flex items-center justify-center">
-                        ✕
-                      </span>
                     )}
                   </button>
                 </>
@@ -764,27 +759,28 @@ function SeatItem({
         shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]
         transition-transform duration-300 hover:scale-105 cursor-pointer`}
       >
-        {seatData.isOccupied && seatData.user ? (
+        {seatData.isLocked ? (
+          // If locked - Show only grey lock icon (no seat icon)
+          <div className="w-[58%] h-[58%] flex items-center justify-center">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              <g fill="none" stroke="#9ca3af" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="15" y="40" width="70" height="50" rx="10" ry="10" />
+                <path d="M 30 40 V 25 a 20 20 0 0 1 40 0 V 40" />
+              </g>
+            </svg>
+          </div>
+        ) : seatData.isOccupied && seatData.user ? (
           <>
             <img 
               src={seatData.user.image} 
               alt={seatData.user.name}
               className="w-full h-full rounded-full object-cover"
             />
-            {/* Mute Icon - Only Cross (No border) */}
+            {/* ✅ Small Mute Icon - Right Bottom of Seat (Only if muted) */}
             {seatData.isMuted && (
-              <div className="absolute -right-1 -bottom-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+              <div className="absolute -right-1 -bottom-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
                   <line x1="4" y1="4" x2="20" y2="20" />
-                </svg>
-              </div>
-            )}
-            {/* Lock Icon - Top Right of Seat */}
-            {seatData.isLocked && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
-                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </div>
             )}
@@ -800,7 +796,7 @@ function SeatItem({
             >
               <g
                 fill="none"
-                stroke={seatData.isLocked ? "#9ca3af" : "#94a7be"}
+                stroke="#94a7be"
                 strokeWidth="7"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -811,8 +807,8 @@ function SeatItem({
               </g>
 
               <g
-                fill={seatData.isLocked ? "#9ca3af" : "#94a7be"}
-                stroke={seatData.isLocked ? "#6b7280" : "#5a6d89"}
+                fill="#94a7be"
+                stroke="#5a6d89"
                 strokeWidth="2.8"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -825,8 +821,8 @@ function SeatItem({
         )}
       </div>
       <span className="text-xs font-medium text-white/80">
-        {seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`}
+        {seatData.isLocked ? 'Locked' : (seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`)}
       </span>
     </div>
   )
-    }
+        }
