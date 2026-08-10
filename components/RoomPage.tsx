@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import EmojiPicker from './Emojipicker'
 import GiftPicker from './GiftPicker'
 import { db } from "../src/lib/firebase"
@@ -30,32 +30,73 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
+// Seat Interface
+interface Seat {
+  number: number
+  isOccupied: boolean
+  user?: {
+    name: string
+    image: string
+    accountId: string
+  }
+  isMuted?: boolean
+}
+
+// Message Interface
+interface Message {
+  id: string
+  text: string
+  sender: string
+  timestamp: number
+}
+
 export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGiftPicker, setShowGiftPicker] = useState(false)
   const [accountId, setAccountId] = useState<string>("Loading...")
+  const [showChat, setShowChat] = useState(false)
+  const [message, setMessage] = useState("")
+  const [messages, setMessages] = useState<Message[]>([])
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  
+  // Seat Management State
+  const [seats, setSeats] = useState<Seat[]>([
+    { number: 1, isOccupied: false },
+    { number: 2, isOccupied: false },
+    { number: 3, isOccupied: false },
+    { number: 4, isOccupied: false },
+    { number: 5, isOccupied: false },
+    { number: 6, isOccupied: false },
+    { number: 7, isOccupied: false },
+    { number: 8, isOccupied: false },
+    { number: 9, isOccupied: false },
+  ])
+
+  // Bottom Sheet State
+  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
+  const [showSeatSheet, setShowSeatSheet] = useState(false)
+
+  // Check if user has a seat
+  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === accountId)
 
   useEffect(() => {
     const fetchRoomOwnerID = async () => {
-      // 1. Agar Direct accountId milli hai (Promoted/Search Card se)
       if (user?.accountId) {
         setAccountId(String(user.accountId))
         return
       }
 
-      // 2. Room owner ki Target UID find karo
       const targetUID = user?.id || user?.uid
 
       if (targetUID) {
-        // Direct Official/Admin/Special ID check
         if (OFFICIAL_IDS.includes(targetUID) || ADMIN_IDS.includes(targetUID) || SPECIAL_ACCOUNTS[targetUID]) {
           setAccountId(SPECIAL_ACCOUNTS[targetUID] || targetUID)
           return
         }
 
         try {
-          // 3. Firestore 'users' collection se Real ID Read karo
           const userDocRef = doc(db, "users", targetUID)
           const docSnap = await getDoc(userDocRef)
 
@@ -68,12 +109,147 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         }
       }
 
-      // Safe Fallback agar UID bhi na ho
       setAccountId(user?.accountId || "100379620")
     }
 
     fetchRoomOwnerID()
   }, [user])
+
+  // Auto scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Focus input when chat opens
+  useEffect(() => {
+    if (showChat && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
+  }, [showChat])
+
+  // Handle Seat Click
+  const handleSeatClick = (seatNumber: number) => {
+    const seat = seats.find(s => s.number === seatNumber)
+    if (seat?.isOccupied) {
+      setSelectedSeat(seatNumber)
+      setShowSeatSheet(true)
+    } else {
+      setSelectedSeat(seatNumber)
+      setShowSeatSheet(true)
+    }
+  }
+
+  // Take Seat
+  const handleTakeSeat = () => {
+    if (selectedSeat === null) return
+    
+    // Check if user already has a seat
+    const userAlreadySeated = seats.some(s => s.isOccupied && s.user?.accountId === accountId)
+    if (userAlreadySeated) {
+      alert("You already have a seat!")
+      return
+    }
+
+    const updatedSeats = seats.map(seat => {
+      if (seat.number === selectedSeat) {
+        return {
+          ...seat,
+          isOccupied: true,
+          user: {
+            name: user.name,
+            image: user.image,
+            accountId: accountId
+          },
+          isMuted: false
+        }
+      }
+      return seat
+    })
+
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
+  }
+
+  // Leave Seat
+  const handleLeaveSeat = () => {
+    if (selectedSeat === null) return
+
+    const updatedSeats = seats.map(seat => {
+      if (seat.number === selectedSeat) {
+        return {
+          number: seat.number,
+          isOccupied: false
+        }
+      }
+      return seat
+    })
+
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
+  }
+
+  // Mute/Unmute Seat
+  const handleToggleMute = () => {
+    if (selectedSeat === null) return
+
+    const updatedSeats = seats.map(seat => {
+      if (seat.number === selectedSeat) {
+        return {
+          ...seat,
+          isMuted: !seat.isMuted
+        }
+      }
+      return seat
+    })
+
+    setSeats(updatedSeats)
+  }
+
+  // Lock Seat
+  const handleToggleLock = () => {
+    alert("Seat locked! Only you can unlock it.")
+  }
+
+  // Invite User
+  const handleInvite = () => {
+    alert(`Invite sent to join seat ${selectedSeat}!`)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
+  }
+
+  // Check if current user owns this seat
+  const isCurrentUsersSeat = (seat: Seat) => {
+    return seat.isOccupied && seat.user?.accountId === accountId
+  }
+
+  // Handle Send Message
+  const handleSendMessage = () => {
+    if (!message.trim()) return
+    
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: message.trim(),
+      sender: user.name,
+      timestamp: Date.now()
+    }
+    
+    setMessages([...messages, newMessage])
+    setMessage("")
+  }
+
+  // Handle Enter key
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSendMessage()
+    }
+  }
+
+  // Toggle Chat
+  const toggleChat = () => {
+    setShowChat(!showChat)
+  }
 
   const handleExit = () => {
     setShowExitMenu(false)
@@ -182,21 +358,57 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         {/* Room Seats Layout */}
         <div className="flex-1 flex flex-col justify-start gap-3 pt-6">
           <div className="flex justify-center">
-            <SeatItem seatNumber={1} />
+            <SeatItem 
+              seatNumber={1} 
+              seatData={seats[0]} 
+              onClick={() => handleSeatClick(1)}
+            />
           </div>
 
           <div className="flex justify-around items-center px-2">
-            <SeatItem seatNumber={2} />
-            <SeatItem seatNumber={3} />
-            <SeatItem seatNumber={4} />
-            <SeatItem seatNumber={5} />
+            <SeatItem 
+              seatNumber={2} 
+              seatData={seats[1]} 
+              onClick={() => handleSeatClick(2)}
+            />
+            <SeatItem 
+              seatNumber={3} 
+              seatData={seats[2]} 
+              onClick={() => handleSeatClick(3)}
+            />
+            <SeatItem 
+              seatNumber={4} 
+              seatData={seats[3]} 
+              onClick={() => handleSeatClick(4)}
+            />
+            <SeatItem 
+              seatNumber={5} 
+              seatData={seats[4]} 
+              onClick={() => handleSeatClick(5)}
+            />
           </div>
 
           <div className="flex justify-around items-center px-2">
-            <SeatItem seatNumber={6} />
-            <SeatItem seatNumber={7} />
-            <SeatItem seatNumber={8} />
-            <SeatItem seatNumber={9} />
+            <SeatItem 
+              seatNumber={6} 
+              seatData={seats[5]} 
+              onClick={() => handleSeatClick(6)}
+            />
+            <SeatItem 
+              seatNumber={7} 
+              seatData={seats[6]} 
+              onClick={() => handleSeatClick(7)}
+            />
+            <SeatItem 
+              seatNumber={8} 
+              seatData={seats[7]} 
+              onClick={() => handleSeatClick(8)}
+            />
+            <SeatItem 
+              seatNumber={9} 
+              seatData={seats[8]} 
+              onClick={() => handleSeatClick(9)}
+            />
           </div>
 
           {/* Rules Card Patti */}
@@ -211,7 +423,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         <div className="flex-shrink-0 pb-4">
           <div className="flex items-center justify-between gap-2">
             {/* Say Hi Button - Left Side */}
-            <button className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer">
+            <button 
+              onClick={toggleChat}
+              className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
+            >
               Say Hi
             </button>
 
@@ -267,6 +482,75 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
       </div>
 
+      {/* Chat Overlay - Full Screen with Keyboard */}
+      {showChat && (
+        <div className="absolute inset-0 z-40 flex flex-col bg-black/95">
+          {/* Chat Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
+            <button 
+              onClick={toggleChat}
+              className="text-white p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer"
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <h3 className="text-white font-semibold text-lg">Chat</h3>
+            <div className="w-6"></div>
+          </div>
+
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+            {messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-white/40 text-sm">No messages yet. Say Hi!</p>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.sender === user.name ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+                    msg.sender === user.name 
+                      ? 'bg-blue-500 text-white rounded-br-none' 
+                      : 'bg-white/10 text-white rounded-bl-none'
+                  }`}>
+                    <p className="text-xs font-semibold opacity-70 mb-0.5">{msg.sender}</p>
+                    <p className="text-sm break-words">{msg.text}</p>
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area - Sticks to Keyboard */}
+          <div className="flex-shrink-0 bg-black/80 backdrop-blur-md border-t border-white/10 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type a message..."
+                className="flex-1 bg-white/10 text-white placeholder-white/40 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-blue-500 transition-colors"
+                autoFocus
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!message.trim()}
+                className="bg-blue-500 text-white p-2.5 rounded-full hover:bg-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Exit Menu Overlay */}
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
@@ -313,6 +597,130 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
+      {/* Bottom Sheet for Seat Actions */}
+      {showSeatSheet && selectedSeat !== null && (
+        <div className="absolute inset-0 z-30 flex items-end justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/30"
+            onClick={() => {
+              setShowSeatSheet(false)
+              setSelectedSeat(null)
+            }}
+          />
+          
+          {/* Sheet Content */}
+          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl p-6 animate-slide-up">
+            {/* Handle Bar */}
+            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-5" />
+            
+            {/* Seat Info */}
+            <div className="text-center mb-5">
+              <h3 className="text-lg font-bold text-gray-900">
+                Seat {selectedSeat}
+              </h3>
+              {seats.find(s => s.number === selectedSeat)?.isOccupied ? (
+                <p className="text-sm text-gray-500">Occupied by {seats.find(s => s.number === selectedSeat)?.user?.name}</p>
+              ) : (
+                <p className="text-sm text-gray-500">Empty Seat</p>
+              )}
+            </div>
+
+            {/* Action Buttons Grid */}
+            <div className="grid grid-cols-4 gap-3">
+              {/* Take Mic */}
+              <button
+                onClick={handleTakeSeat}
+                disabled={seats.find(s => s.number === selectedSeat)?.isOccupied || seats.some(s => s.isOccupied && s.user?.accountId === accountId)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-blue-600 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+                <span className="text-xs font-medium text-blue-600">Take</span>
+              </button>
+
+              {/* Lock Mic */}
+              <button
+                onClick={handleToggleLock}
+                disabled={!seats.find(s => s.number === selectedSeat)?.isOccupied}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-orange-600 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span className="text-xs font-medium text-orange-600">Lock</span>
+              </button>
+
+              {/* Invite */}
+              <button
+                onClick={handleInvite}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-green-50 hover:bg-green-100 transition-colors cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-green-600 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span className="text-xs font-medium text-green-600">Invite</span>
+              </button>
+
+              {/* Mute */}
+              <button
+                onClick={handleToggleMute}
+                disabled={!seats.find(s => s.number === selectedSeat)?.isOccupied}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer relative"
+              >
+                {seats.find(s => s.number === selectedSeat)?.isMuted ? (
+                  <>
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-red-600 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="4" y1="4" x2="20" y2="20" />
+                    </svg>
+                    <span className="text-xs font-medium text-red-600">Unmute</span>
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-red-600 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    </svg>
+                    <span className="text-xs font-medium text-red-600">Mute</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Leave Seat Button (Only show if current user owns the seat) */}
+            {seats.find(s => s.number === selectedSeat)?.isOccupied && 
+             isCurrentUsersSeat(seats.find(s => s.number === selectedSeat)!) && (
+              <button
+                onClick={handleLeaveSeat}
+                className="mt-4 w-full py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors cursor-pointer"
+              >
+                Leave Seat
+              </button>
+            )}
+
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowSeatSheet(false)
+                setSelectedSeat(null)
+              }}
+              className="mt-3 w-full py-2 rounded-xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Emoji Picker Modal */}
       {showEmojiPicker && (
         <EmojiPicker 
@@ -327,56 +735,95 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           onClose={() => setShowGiftPicker(false)}
         />
       )}
+
+      <style jsx>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}`}</style>
     </div>
   )
 }
 
-function SeatItem({ seatNumber }: { seatNumber: number }) {
+function SeatItem({ 
+  seatNumber, 
+  seatData, 
+  onClick 
+}: { 
+  seatNumber: number
+  seatData: Seat
+  onClick: () => void 
+}) {
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1" onClick={onClick}>
       <div
-        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0
+        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 relative
         bg-[rgba(125,143,168,0.32)]
         border border-[rgba(210,220,235,0.55)]
         backdrop-blur-[12px]
         shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]
         transition-transform duration-300 hover:scale-105 cursor-pointer"
       >
-        <div className="w-[58%] h-[58%] flex items-center justify-center">
-          <svg
-            viewBox="0 0 100 100"
-            width="100%"
-            height="100%"
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ overflow: "visible", display: "block" }}
-          >
-            <g
-              fill="none"
-              stroke="#94a7be"
-              strokeWidth="7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        {seatData.isOccupied && seatData.user ? (
+          <>
+            <img 
+              src={seatData.user.image} 
+              alt={seatData.user.name}
+              className="w-full h-full rounded-full object-cover"
+            />
+            {/* ✅ Small Red Mute Icon - Right Side of Seat */}
+            {seatData.isMuted && (
+              <div className="absolute -right-1 -bottom-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="4" y1="4" x2="20" y2="20" />
+                </svg>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="w-[58%] h-[58%] flex items-center justify-center">
+            <svg
+              viewBox="0 0 100 100"
+              width="100%"
+              height="100%"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ overflow: "visible", display: "block" }}
             >
-              <path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" />
-              <path d="M 50 74 L 50 86" />
-              <path d="M 38 90 L 62 90" />
-            </g>
+              <g
+                fill="none"
+                stroke="#94a7be"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" />
+                <path d="M 50 74 L 50 86" />
+                <path d="M 38 90 L 62 90" />
+              </g>
 
-            <g
-              fill="#94a7be"
-              stroke="#5a6d89"
-              strokeWidth="2.8"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              transform="translate(0, 6)"
-            >
-              <path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" />
-            </g>
-          </svg>
-        </div>
+              <g
+                fill="#94a7be"
+                stroke="#5a6d89"
+                strokeWidth="2.8"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                transform="translate(0, 6)"
+              >
+                <path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" />
+              </g>
+            </svg>
+          </div>
+        )}
       </div>
-      <span className="text-xs font-medium text-white/80">No {seatNumber}</span>
+      <span className="text-xs font-medium text-white/80">
+        {seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`}
+      </span>
     </div>
   )
-}
-
+      }
