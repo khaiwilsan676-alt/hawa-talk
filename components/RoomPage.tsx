@@ -824,20 +824,18 @@ function SeatItem({
     <div className="flex flex-col items-center gap-1" onClick={onClick}>
       <div
         className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 relative
-        ${seatData.isLocked ? 'bg-white/10 backdrop-blur-md' : 'bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px]'}
-        border ${seatData.isLocked ? 'border-white/20' : 'border-[rgba(210,220,235,0.55)]'}
-        ${seatData.isLocked 
-          ? 'shadow-[0_4px_16px_rgba(0,0,0,0.25)]' 
-          : 'shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}
+        bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px]
+        border border-[rgba(210,220,235,0.55)]
+        shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]
         transition-transform duration-300 hover:scale-105 cursor-pointer`}
       >
         {seatData.isLocked ? (
-          // ✅ Image ke jaisa Frosted Lock UI
-          <div className="w-6 h-6 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-white/70 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-              <rect x="5" y="11" width="14" height="10" rx="2" />
+          // ✅ Same Bubble Color with Slightly Larger Clean Lock Icon
+          <div className="w-8 h-8 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-white/80 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+              <rect x="5" y="11" width="14" height="10" rx="2.5" />
               <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              <circle cx="12" cy="16" r="1" fill="currentColor" />
+              <circle cx="12" cy="16" r="1.2" fill="currentColor" />
             </svg>
           </div>
         ) : seatData.isOccupied && seatData.user ? (
