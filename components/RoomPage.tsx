@@ -64,6 +64,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   
   // Chat visibility state
   const [showChatInput, setShowChatInput] = useState(false)
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
   
   // Seat Management State
   const [seats, setSeats] = useState<Seat[]>([
@@ -133,6 +134,49 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [showChatInput])
+
+  // Handle keyboard visibility - Hide chat input when keyboard closes
+  useEffect(() => {
+    const handleResize = () => {
+      // Check if visual viewport is smaller than window height (keyboard is open)
+      const isKeyboardVisible = window.visualViewport 
+        ? window.visualViewport.height < window.innerHeight * 0.85
+        : false
+      
+      setIsKeyboardOpen(isKeyboardVisible)
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+      window.visualViewport.addEventListener('scroll', handleResize)
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+        window.visualViewport.removeEventListener('scroll', handleResize)
+      }
+    }
+  }, [])
+
+  // Auto-hide chat input when keyboard closes
+  useEffect(() => {
+    if (!isKeyboardOpen && showChatInput) {
+      setShowChatInput(false)
+      setMessage("")
+    }
+  }, [isKeyboardOpen])
+
+  // Handle input blur - hide chat when input loses focus (keyboard closes)
+  const handleInputBlur = () => {
+    // Small delay to allow keyboard close detection
+    setTimeout(() => {
+      if (!isKeyboardOpen) {
+        setShowChatInput(false)
+        setMessage("")
+      }
+    }, 150)
+  }
 
   // Handle Seat Click
   const handleSeatClick = (seatNumber: number) => {
@@ -278,6 +322,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     
     setMessages([...messages, newMessage])
     setMessage("")
+    // Keep input focused after sending
+    inputRef.current?.focus()
   }
 
   // Handle Enter key
@@ -289,8 +335,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   // Toggle Chat Input
   const toggleChatInput = () => {
-    setShowChatInput(!showChatInput)
-    if (!showChatInput) {
+    if (showChatInput) {
+      // Close chat
+      setShowChatInput(false)
+      setMessage("")
+      // Blur to close keyboard
+      inputRef.current?.blur()
+    } else {
+      // Open chat
+      setShowChatInput(true)
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
@@ -489,28 +542,43 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
         {/* Footer Controls */}
         <div className="flex-shrink-0 pb-4">
-          {/* Message Input - Only shows when Say Hi is clicked */}
+          {/* Message Input - Full Width White Bar with Send & Image Icons Inside */}
           {showChatInput && (
-            <div className="flex items-center gap-2 mb-3">
-              <input
-                ref={inputRef}
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type a message..."
-                className="flex-1 bg-white/10 text-white placeholder-white/40 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-blue-500 transition-colors"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!message.trim()}
-                className="bg-blue-500 text-white p-2.5 rounded-full hover:bg-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
-              >
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
-              </button>
+            <div className="flex items-center gap-0 mb-3">
+              <div className="flex-1 bg-white rounded-full flex items-center px-3 py-1.5 shadow-lg">
+                {/* Image Icon - Left Side */}
+                <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                </button>
+
+                {/* Text Input */}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  onBlur={handleInputBlur}
+                  placeholder="Type a message..."
+                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-2 py-1.5 text-sm outline-none border-none"
+                />
+
+                {/* Send Button - Right Side */}
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!message.trim()}
+                  className="p-1.5 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
+                >
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
 
@@ -520,24 +588,27 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               onClick={toggleChatInput}
               className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
             >
-              Say Hi
+              {showChatInput ? 'Close' : 'Say Hi'}
             </button>
 
             {/* Icons - Right Side */}
             <div className="flex items-center gap-2">
-              {/* ✅ Show Mic ONLY if user has a seat - No cross icon */}
+              {/* Show Mic ONLY if user has a seat */}
               {hasSeat && (
                 <>
-                  {/* Mic Icon - Click to Mute/Unmute (No cross, just mic) */}
+                  {/* Mic Icon - Click to Mute/Unmute */}
                   <button 
                     onClick={handleBottomMicToggle}
                     className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
                   >
                     {currentUserSeat?.isMuted ? (
-                      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-red-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="4" y1="4" x2="20" y2="20" />
+                      // Mic Mute Icon (Full icon, not half cross)
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                        <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
                       </svg>
                     ) : (
                       <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
@@ -753,39 +824,75 @@ function SeatItem({
     <div className="flex flex-col items-center gap-1" onClick={onClick}>
       <div
         className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 relative
-        ${seatData.isLocked ? 'bg-gray-500/50' : 'bg-[rgba(125,143,168,0.32)]'}
-        border ${seatData.isLocked ? 'border-gray-400/70' : 'border-[rgba(210,220,235,0.55)]'}
+        ${seatData.isLocked ? 'bg-gradient-to-br from-gray-400 to-gray-600' : 'bg-[rgba(125,143,168,0.32)]'}
+        border ${seatData.isLocked ? 'border-gray-400/50' : 'border-[rgba(210,220,235,0.55)]'}
         backdrop-blur-[12px]
-        shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]
+        ${seatData.isLocked 
+          ? 'shadow-[0_4px_15px_rgba(0,0,0,0.3),inset_0_1px_3px_rgba(255,255,255,0.2),inset_0_-1px_3px_rgba(0,0,0,0.2)]' 
+          : 'shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}
         transition-transform duration-300 hover:scale-105 cursor-pointer`}
+        style={seatData.isLocked ? {
+          transform: 'perspective(200px) rotateX(5deg)',
+          transformStyle: 'preserve-3d',
+        } : {}}
       >
         {seatData.isLocked ? (
-          // If locked - Show only grey lock icon (no seat icon)
-          <div className="w-[58%] h-[58%] flex items-center justify-center">
-            <svg viewBox="0 0 100 100" className="w-full h-full">
-              <g fill="none" stroke="#9ca3af" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="15" y="40" width="70" height="50" rx="10" ry="10" />
-                <path d="M 30 40 V 25 a 20 20 0 0 1 40 0 V 40" />
-              </g>
+          // ✅ Locked seat - Only Lock icon (NO key)
+          <div className="w-[60%] h-[60%] flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-full h-full">
+              <defs>
+                <linearGradient id={`lockGrad-${seatNumber}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#d1d5db" />
+                  <stop offset="50%" stopColor="#9ca3af" />
+                  <stop offset="100%" stopColor="#6b7280" />
+                </linearGradient>
+                <filter id={`lockGlow-${seatNumber}`}>
+                  <feGaussianBlur stdDeviation="0.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              {/* Lock Body */}
+              <rect 
+                x="3" y="11" width="18" height="11" rx="3" 
+                fill={`url(#lockGrad-${seatNumber})`}
+                stroke="#4b5563"
+                strokeWidth="1.5"
+                filter={`url(#lockGlow-${seatNumber})`}
+              />
+              {/* Lock Shackle */}
+              <path 
+                d="M 7 11 V 7 a 5 5 0 0 1 10 0 v 4" 
+                fill="none" 
+                stroke={`url(#lockGrad-${seatNumber})`}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              {/* Keyhole */}
+              <circle cx="12" cy="16" r="1.5" fill="#374151" />
+              <line x1="12" y1="17.5" x2="12" y2="19.5" stroke="#374151" strokeWidth="0.8" />
             </svg>
           </div>
         ) : seatData.isOccupied && seatData.user ? (
+          // Occupied seat with user image
           <>
             <img 
               src={seatData.user.image} 
               alt={seatData.user.name}
               className="w-full h-full rounded-full object-cover"
             />
-            {/* ✅ Small Mute Icon - Right Bottom of Seat (Only if muted) */}
+            {/* Mute indicator */}
             {seatData.isMuted && (
-              <div className="absolute -right-1 -bottom-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
-                  <line x1="4" y1="4" x2="20" y2="20" />
+              <div className="absolute -right-1 -bottom-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center shadow-md">
+                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                  <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
                 </svg>
               </div>
             )}
           </>
         ) : (
+          // Empty seat
           <div className="w-[58%] h-[58%] flex items-center justify-center">
             <svg
               viewBox="0 0 100 100"
@@ -805,7 +912,6 @@ function SeatItem({
                 <path d="M 50 74 L 50 86" />
                 <path d="M 38 90 L 62 90" />
               </g>
-
               <g
                 fill="#94a7be"
                 stroke="#5a6d89"
@@ -825,4 +931,4 @@ function SeatItem({
       </span>
     </div>
   )
-        }
+                            }
