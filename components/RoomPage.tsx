@@ -32,6 +32,7 @@ interface RoomPageProps {
   onClose?: () => void
   onBack?: () => void
   onKeepRoom?: (roomData: { name: string; image: string; accountId: string }) => void
+  onFollowToggle?: (roomId: string, follow: boolean) => void
 }
 
 const SPECIAL_ACCOUNTS: { [key: string]: string } = {
@@ -75,7 +76,7 @@ interface ChatItem {
   image: string
 }
 
-export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom }: RoomPageProps) {
+export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGiftPicker, setShowGiftPicker] = useState(false)
@@ -84,10 +85,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [showRoomInfo, setShowRoomInfo] = useState(false)
   const [isFollowed, setIsFollowed] = useState(false)
   const [copied, setCopied] = useState(false)
-  
+
   const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest"
   const [accountId, setAccountId] = useState<string>(userAccountId)
-  
+
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [fullImageModal, setFullImageModal] = useState<string | null>(null)
@@ -115,6 +116,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const speakingUsersRef = useRef<Set<string>>(new Set())
   const speakingTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+
+  const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([])
 
   const getInitialSeats = (mode: number): Seat[] => {
     const seats: Seat[] = []
@@ -167,6 +170,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             if (data.micMode && data.micMode !== micMode) {
               setMicMode(data.micMode)
             }
+            // Fetch followers
+            const followerIds: string[] = data.followers || []
+            const followersList: RoomUser[] = followerIds.map((id: string) => ({
+              accountId: id,
+              name: `User ${id.slice(0, 5)}`, // You may want to fetch real names later
+              image: ''
+            }))
+            setRoomFollowers(followersList)
           }
         } catch (err) {
           console.error("Error loading room data:", err)
@@ -331,7 +342,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setSeats(getInitialSeats(micMode))
   }, [micMode])
 
-  // Add current user to room users
+  // Add current user to room users (live count)
   useEffect(() => {
     if (accountId !== "Loading..." && currentUser.name && currentUser.image) {
       const userExists = roomUsers.find(u => u.accountId === userAccountId)
@@ -784,7 +795,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-lg">{displayRoomName}</h2>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setIsFollowed(!isFollowed); }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const newFollow = !isFollowed
+                    setIsFollowed(newFollow)
+                    if (onFollowToggle) {
+                      onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow)
+                    }
+                    // Optionally update Firestore followers here
+                  }}
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-blue-500' : 'bg-blue-500'}`}
                   title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                 >
@@ -797,7 +816,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                   </svg>
                 </button>
               </div>
-              <p className="text-xs text-gray-300">ID: {userAccountId}</p>
+              <p className="text-xs text-gray-300">ID: {roomOwner.accountId || roomOwner.id || ''}</p>
             </div>
           </div>
 
@@ -992,18 +1011,29 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {roomUsers.map((roomUser, index) => (
-                    <div key={index} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                  {/* Owner first */}
+                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                      <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-800 truncate">{roomOwner.name} (Owner)</h4>
+                      <p className="text-xs text-gray-400">ID: {roomOwner.accountId}</p>
+                    </div>
+                  </div>
+                  {/* Followers */}
+                  {roomFollowers.map(follower => (
+                    <div key={follower.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
                       <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                        <img src={roomUser.image || "/default-avatar.png"} alt={roomUser.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+                        <img src={follower.image || "/default-avatar.png"} alt={follower.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-800 truncate">{roomUser.name}</h4>
-                        <p className="text-xs text-gray-400">ID: {roomUser.accountId}</p>
+                        <h4 className="text-sm font-medium text-gray-800 truncate">{follower.name}</h4>
+                        <p className="text-xs text-gray-400">ID: {follower.accountId}</p>
                       </div>
                     </div>
                   ))}
-                  {roomUsers.length === 0 && <p className="text-center text-gray-400 text-sm py-8">No members yet</p>}
+                  {roomFollowers.length === 0 && <p className="text-center text-gray-400 text-sm py-8">No followers yet</p>}
                 </div>
               )}
             </div>
@@ -1179,4 +1209,3 @@ function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: nu
     </div>
   )
 }
-
