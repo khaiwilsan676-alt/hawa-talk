@@ -48,7 +48,7 @@ interface Seat {
     accountId: string
   }
   isMuted?: boolean
-  isSpeaking?: boolean
+  isSpeaking?: boolean // Track speaking state
 }
 
 // Message Interface
@@ -81,6 +81,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   // Chat visibility state
   const [showChatInput, setShowChatInput] = useState(false)
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
+  
+  // Audio output device state
+  const [audioOutputDevices, setAudioOutputDevices] = useState<MediaDeviceInfo[]>([])
+  const [selectedAudioOutput, setSelectedAudioOutput] = useState<string>('default')
+  const [showAudioSettings, setShowAudioSettings] = useState(false)
+  const audioElementRef = useRef<HTMLAudioElement | null>(null)
   
   // Room Users State
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([])
@@ -130,6 +136,92 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     return Math.abs(hash)
   }
 
+  // Enumerate audio output devices
+  const getAudioOutputDevices = async () => {
+    try {
+      // Request permission first
+      await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const audioOutputs = devices.filter(device => device.kind === 'audiooutput')
+      setAudioOutputDevices(audioOutputs)
+      
+      console.log('Available audio output devices:', audioOutputs.map(d => d.label))
+    } catch (error) {
+      console.warn('Failed to enumerate audio devices:', error)
+    }
+  }
+
+  // Set audio output device (sinkId)
+  const setAudioOutput = async (deviceId: string) => {
+    try {
+      // Create or get audio element for Jitsi
+      if (!audioElementRef.current) {
+        // Jitsi creates audio elements dynamically, we need to find and set sinkId on them
+        const audioElements = document.querySelectorAll('audio')
+        for (const audio of audioElements) {
+          if ('setSinkId' in audio) {
+            await (audio as any).setSinkId(deviceId)
+          }
+        }
+      }
+      
+      setSelectedAudioOutput(deviceId)
+      localStorage.setItem('preferredAudioOutput', deviceId)
+      console.log('Audio output set to:', deviceId)
+      
+      // Apply to existing audio elements
+      applyAudioOutputToAll(deviceId)
+    } catch (error) {
+      console.error('Failed to set audio output:', error)
+    }
+  }
+
+  // Apply audio output to all audio elements
+  const applyAudioOutputToAll = async (deviceId: string) => {
+    const audioElements = document.querySelectorAll('audio')
+    for (const audio of audioElements) {
+      if ('setSinkId' in audio && audio.srcObject) {
+        try {
+          await (audio as any).setSinkId(deviceId)
+        } catch (e) {
+          console.warn('Failed to set sinkId on audio element:', e)
+        }
+      }
+    }
+  }
+
+  // Monitor for new audio elements (Jitsi creates them dynamically)
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeName === 'AUDIO' && 'setSinkId' in node) {
+            const savedDevice = localStorage.getItem('preferredAudioOutput') || 'default'
+            ;(node as any).setSinkId(savedDevice).catch(() => {})
+          }
+          // Also check for audio elements inside added nodes
+          if (node instanceof HTMLElement) {
+            const audioElements = node.querySelectorAll('audio')
+            audioElements.forEach((audio) => {
+              if ('setSinkId' in audio) {
+                const savedDevice = localStorage.getItem('preferredAudioOutput') || 'default'
+                ;(audio as any).setSinkId(savedDevice).catch(() => {})
+              }
+            })
+          }
+        })
+      })
+    })
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   // Load Jitsi External API script
   useEffect(() => {
     if (!document.getElementById('jitsi-script')) {
@@ -145,6 +237,22 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     } else {
       setJitsiLoaded(true)
     }
+
+    // Get audio devices on mount
+    getAudioOutputDevices()
+    
+    // Restore saved audio preference
+    const savedDevice = localStorage.getItem('preferredAudioOutput')
+    if (savedDevice) {
+      setSelectedAudioOutput(savedDevice)
+    }
+
+    // Listen for device changes
+    navigator.mediaDevices?.addEventListener?.('devicechange', getAudioOutputDevices)
+    
+    return () => {
+      navigator.mediaDevices?.removeEventListener?.('devicechange', getAudioOutputDevices)
+    }
   }, [])
 
   // Mark user as speaking in seats
@@ -155,37 +263,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       }
       return seat
     }))
-  }
-
-  // Audio Device Auto-Routing (Wired Headphones & Bluetooth Support)
-  const setupAudioDevices = async (api: any) => {
-    if (!api || !navigator.mediaDevices) return
-
-    const updateAudioRoute = async () => {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const audioOutputs = devices.filter(d => d.kind === 'audiooutput')
-        
-        const preferredOutput = audioOutputs.find(d => 
-          d.label.toLowerCase().includes('bluetooth') ||
-          d.label.toLowerCase().includes('headset') ||
-          d.label.toLowerCase().includes('headphone') ||
-          d.label.toLowerCase().includes('earpiece')
-        ) || audioOutputs[0]
-
-        if (preferredOutput && api.setAudioOutputDevice) {
-          api.setAudioOutputDevice(preferredOutput.label, preferredOutput.deviceId)
-        }
-      } catch (err) {
-        console.warn('Audio output device configuration error:', err)
-      }
-    }
-
-    await updateAudioRoute()
-
-    if (navigator.mediaDevices.ondevicechange !== undefined) {
-      navigator.mediaDevices.addEventListener('devicechange', updateAudioRoute)
-    }
   }
 
   // Initialize Jitsi Meet
@@ -217,15 +294,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           doNotStoreRoom: true,
           resolution: 180,
           constraints: {
-            video: false,
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true
+            video: {
+              height: { ideal: 180, max: 180, min: 180 }
             }
           },
+          // Enable speaker stats for detecting who is speaking
           disableAudioLevels: false,
           enableNoisyMicDetection: false,
+          // Audio output device selection
+          useRoomAsSharedDocument: false,
         },
         interfaceConfigOverrides: {
           filmStripOnly: false,
@@ -240,7 +317,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           MOBILE_APP_PROMO: false,
           APP_NAME: 'Hurry',
           NATIVE_APP_NAME: 'Hurry',
-          PROVIDER_NAME: 'Hurry'
+          PROVIDER_NAME: 'Hurry',
+          // Audio settings
+          AUDIO_FOCUS_DISABLED: false,
+          DISABLE_FOCUS_INDICATOR: true,
         }
       }
 
@@ -250,21 +330,40 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
         api.addListener('videoConferenceJoined', () => {
           console.log('Joined Jitsi conference')
-          setupAudioDevices(api)
           if (!hasSeat) {
             api.executeCommand('toggleAudio', false)
           }
+          
+          // Apply audio output setting after join
+          setTimeout(() => {
+            const savedDevice = localStorage.getItem('preferredAudioOutput') || 'default'
+            applyAudioOutputToAll(savedDevice)
+          }, 2000)
+        })
+
+        // Listen for audio track changes - set sinkId when new tracks are added
+        api.addListener('audioTrackAdded', (track: any) => {
+          console.log('Audio track added:', track)
+          // Apply audio output after a short delay
+          setTimeout(() => {
+            const savedDevice = localStorage.getItem('preferredAudioOutput') || 'default'
+            applyAudioOutputToAll(savedDevice)
+          }, 500)
         })
 
         // Listen for dominant speaker changes
         api.addListener('dominantSpeakerChanged', (data: any) => {
+          console.log('Dominant speaker changed:', data)
           if (data && data.id) {
+            // Mark this user as speaking
             speakingUsersRef.current.add(data.id)
             setUserSpeaking(data.id, true)
             
+            // Clear previous timer for this user
             const existingTimer = speakingTimersRef.current.get(data.id)
             if (existingTimer) clearTimeout(existingTimer)
             
+            // Auto-stop speaking after 1.5 seconds of silence
             const timer = setTimeout(() => {
               speakingUsersRef.current.delete(data.id)
               setUserSpeaking(data.id, false)
@@ -275,11 +374,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           }
         })
 
-        // Listen for audio level changes (Realtime voice detection)
+        // Listen for audio level changes (more responsive)
         api.addListener('audioLevelsChanged', (data: any) => {
           if (data && data.length > 0) {
             data.forEach((participant: any) => {
-              if (participant.id && participant.level > 0.04) {
+              if (participant.id && participant.level > 0.05) {
+                // User is speaking
                 speakingUsersRef.current.add(participant.id)
                 setUserSpeaking(participant.id, true)
                 
@@ -298,11 +398,18 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           }
         })
 
-        api.addListener('deviceListChanged', () => {
-          setupAudioDevices(api)
+        api.addListener('audioMuteStatusChanged', (muted: any) => {
+          console.log('Audio mute status changed:', muted)
+        })
+
+        // Track participants joining/leaving
+        api.addListener('participantJoined', (data: any) => {
+          console.log('Participant joined:', data)
         })
 
         api.addListener('participantLeft', (data: any) => {
+          console.log('Participant left:', data)
+          // Remove speaking state
           if (data && data.id) {
             speakingUsersRef.current.delete(data.id)
             setUserSpeaking(data.id, false)
@@ -322,6 +429,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     initJitsi()
 
     return () => {
+      // Cleanup all timers
       speakingTimersRef.current.forEach(timer => clearTimeout(timer))
       speakingTimersRef.current.clear()
       speakingUsersRef.current.clear()
@@ -370,12 +478,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           timestamp: Date.now(),
           type: 'join'
         }
-        setMessages(prev => {
-          if (prev.length > 0 && prev[0].type === 'join' && prev[0].sender === user.name) {
-            return prev
-          }
-          return [...prev, joinMessage]
-        })
+        setMessages(prev => [...prev, joinMessage])
       }
     }
     
@@ -433,38 +536,57 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
-          inputRef.current.click()
         }
-      }, 300)
+      }, 100)
     }
   }, [showChatInput])
 
   // Handle keyboard visibility
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return
-
-    let initialHeight = window.innerHeight
-
     const handleResize = () => {
       if (window.visualViewport) {
-        const currentHeight = window.visualViewport.height
-        const keyboardVisible = currentHeight < initialHeight * 0.8
-        setIsKeyboardOpen(keyboardVisible)
+        const isKeyboardVisible = window.visualViewport.height < window.innerHeight * 0.85
+        setIsKeyboardOpen(isKeyboardVisible)
       }
     }
 
-    window.visualViewport.addEventListener('resize', handleResize)
-    window.visualViewport.addEventListener('scroll', handleResize)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+      window.visualViewport.addEventListener('scroll', handleResize)
+    }
 
     return () => {
-      window.visualViewport.removeEventListener('resize', handleResize)
-      window.visualViewport.removeEventListener('scroll', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+        window.visualViewport.removeEventListener('scroll', handleResize)
+      }
     }
   }, [])
 
+  // Auto-hide chat input when keyboard closes
+  useEffect(() => {
+    if (!isKeyboardOpen && showChatInput) {
+      const timer = setTimeout(() => {
+        setShowChatInput(false)
+        setMessage("")
+      }, 200)
+      return () => clearTimeout(timer)
+    }
+  }, [isKeyboardOpen, showChatInput])
+
   // Handle input blur
   const handleInputBlur = () => {
-    // Keep chat input open
+    setTimeout(() => {
+      if (!isKeyboardOpen && showChatInput) {
+        setShowChatInput(false)
+        setMessage("")
+      }
+    }, 200)
+  }
+
+  // Handle Emoji Select
+  const handleEmojiSelect = (emoji: string) => {
+    console.log("Selected Emoji:", emoji)
   }
 
   // Handle Seat Click
@@ -474,20 +596,14 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setShowSeatSheet(true)
   }
 
-  // Take Seat / Switch Seat
+  // Take Seat
   const handleTakeSeat = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (selectedSeat === null) return
     
     const targetSeat = seats.find(s => s.number === selectedSeat)
-    
-    if (targetSeat?.isLocked) {
+    if (targetSeat?.isLocked && !targetSeat.isOccupied) {
       alert("This seat is locked!")
-      return
-    }
-    
-    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== accountId) {
-      alert("This seat is already occupied!")
       return
     }
 
@@ -497,12 +613,14 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           ...s,
           isOccupied: false,
           isLocked: s.isLocked,
-          isMuted: false,
+          isMuted: s.isMuted,
           isSpeaking: false
         }
       }
       return s
     })
+
+    const existingMuteState = targetSeat?.isMuted || false
 
     updatedSeats = updatedSeats.map(s => {
       if (s.number === selectedSeat) {
@@ -514,7 +632,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             image: user.image,
             accountId: accountId
           },
-          isMuted: false,
+          isMuted: existingMuteState,
           isSpeaking: false
         }
       }
@@ -532,12 +650,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     if (selectedSeat === null) return
 
     const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat && s.user?.accountId === accountId) {
+      if (s.number === selectedSeat) {
         return {
           ...s,
           isOccupied: false,
           isLocked: s.isLocked,
-          isMuted: false,
+          isMuted: s.isMuted,
           isSpeaking: false
         }
       }
@@ -549,7 +667,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSelectedSeat(null)
   }
 
-  // Mute/Unmute Seat from Bottom Sheet - RED icon for others, GREY for self (bottom button)
+  // Mute/Unmute Seat from Bottom Sheet
   const handleToggleMute = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (selectedSeat === null) return
@@ -567,7 +685,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSeats(updatedSeats)
   }
 
-  // Mute/Unmute from bottom mic icon - GREY for self
+  // Mute/Unmute from bottom mic icon
   const handleBottomMicToggle = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (!currentUserSeat) return
@@ -614,6 +732,11 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSelectedSeat(null)
   }
 
+  // Check if current user owns this seat
+  const isCurrentUsersSeat = (seat: Seat) => {
+    return seat.isOccupied && seat.user?.accountId === accountId
+  }
+
   // Handle Send Message
   const handleSendMessage = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
@@ -646,16 +769,19 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   // Toggle Chat Input
   const toggleChatInput = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    setShowChatInput(prev => !prev)
-    if (!showChatInput) {
+    if (showChatInput) {
+      setShowChatInput(false)
+      setMessage("")
+      if (inputRef.current) {
+        inputRef.current.blur()
+      }
+    } else {
+      setShowChatInput(true)
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
-          inputRef.current.click()
         }
-      }, 300)
-    } else {
-      setMessage("")
+      }, 100)
     }
   }
 
@@ -705,16 +831,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     if (onBack) onBack()
   }
 
-  const handleEmojiSelect = (emoji: string) => {
-    console.log("Selected Emoji:", emoji)
-    setMessage(prev => prev + emoji)
-  }
-
   // Get live user count
   const liveUserCount = roomUsers.length
 
-  const displayImage = user.image || "/default-avatar.png"
-  const displayName = user.name || "User"
+  // Get audio output device name
+  const getCurrentAudioDeviceName = () => {
+    if (selectedAudioOutput === 'default') return 'Default (Speaker)'
+    const device = audioOutputDevices.find(d => d.deviceId === selectedAudioOutput)
+    return device?.label || 'Default (Speaker)'
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -746,8 +871,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
               <img 
-                src={displayImage} 
-                alt={displayName}
+                src={user.image || "/default-avatar.png"} 
+                alt={user.name}
                 className="w-full h-full object-cover"
                 draggable={false}
                 onError={(e) => {
@@ -756,7 +881,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               />
             </div>
             <div className="text-left">
-              <h2 className="font-bold text-base">{displayName}</h2>
+              <h2 className="font-bold text-base">{user.name || "User"}</h2>
               <p className="text-xs text-gray-300">ID: {accountId}</p>
             </div>
           </div>
@@ -775,15 +900,128 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               <span className="text-white text-xs font-semibold leading-none">{liveUserCount}</span>
             </div>
 
+            {/* Audio Output Selector */}
             <button 
-              onClick={(e) => e.stopPropagation()}
-              aria-label="Settings"
-              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); setShowAudioSettings(!showAudioSettings); }}
+              aria-label="Audio Output Settings"
+              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer relative"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
-                <circle cx="12" cy="12" r="2.8" />
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
               </svg>
+              
+              {/* Audio Output Dropdown */}
+              {showAudioSettings && (
+                <div 
+                  className="absolute top-full right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl overflow-hidden z-50"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="p-3 border-b border-white/10">
+                    <p className="text-white text-xs font-semibold uppercase tracking-wider">Audio Output</p>
+                    <p className="text-gray-400 text-[10px] mt-0.5">Select where to hear voice</p>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto py-1">
+                    {/* Default Speaker */}
+                    <button
+                      onClick={() => { setAudioOutput('default'); setShowAudioSettings(false); }}
+                      className={`w-full px-4 py-2.5 text-left flex items-center gap-3 hover:bg-white/10 transition-colors ${
+                        selectedAudioOutput === 'default' ? 'bg-blue-500/20' : ''
+                      }`}
+                    >
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round flex-shrink-0">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm truncate">Speaker</p>
+                        <p className="text-gray-400 text-[10px]">Default device output</p>
+                      </div>
+                      {selectedAudioOutput === 'default' && (
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-blue-400 stroke-blue-400 stroke-[2] flex-shrink-0">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {/* Wired Headset */}
+                    <button
+                      onClick={() => { 
+                        const wiredDevice = audioOutputDevices.find(d => 
+                          d.label.toLowerCase().includes('wired') || 
+                          d.label.toLowerCase().includes('headset') ||
+                          d.label.toLowerCase().includes('headphone')
+                        );
+                        if (wiredDevice) {
+                          setAudioOutput(wiredDevice.deviceId);
+                          setShowAudioSettings(false);
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 text-left flex items-center gap-3 hover:bg-white/10 transition-colors"
+                    >
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round flex-shrink-0">
+                        <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                        <line x1="7" y1="8" x2="17" y2="8" />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm truncate">Wired Headphones</p>
+                        <p className="text-gray-400 text-[10px]">3.5mm / USB-C connected</p>
+                      </div>
+                    </button>
+
+                    {/* Bluetooth */}
+                    <button
+                      onClick={() => { 
+                        const btDevice = audioOutputDevices.find(d => 
+                          d.label.toLowerCase().includes('bluetooth') || 
+                          d.label.toLowerCase().includes('airpods') ||
+                          d.label.toLowerCase().includes('buds')
+                        );
+                        if (btDevice) {
+                          setAudioOutput(btDevice.deviceId);
+                          setShowAudioSettings(false);
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 text-left flex items-center gap-3 hover:bg-white/10 transition-colors"
+                    >
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-blue-400 stroke-blue-400 stroke-[1.5] flex-shrink-0">
+                        <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5L12 12" />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm truncate">Bluetooth</p>
+                        <p className="text-gray-400 text-[10px]">Wireless earphones/speaker</p>
+                      </div>
+                    </button>
+
+                    {/* List all available devices */}
+                    {audioOutputDevices
+                      .filter(d => d.deviceId !== 'default' && d.deviceId !== 'communications')
+                      .map((device) => (
+                        <button
+                          key={device.deviceId}
+                          onClick={() => { setAudioOutput(device.deviceId); setShowAudioSettings(false); }}
+                          className={`w-full px-4 py-2.5 text-left flex items-center gap-3 hover:bg-white/10 transition-colors ${
+                            selectedAudioOutput === device.deviceId ? 'bg-blue-500/20' : ''
+                          }`}
+                        >
+                          <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+                            <div className={`w-2 h-2 rounded-full ${selectedAudioOutput === device.deviceId ? 'bg-blue-400' : 'bg-gray-500'}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm truncate">{device.label || `Device ${device.deviceId.slice(0, 8)}`}</p>
+                            <p className="text-gray-400 text-[10px]">Audio output device</p>
+                          </div>
+                          {selectedAudioOutput === device.deviceId && (
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-blue-400 stroke-blue-400 stroke-[2] flex-shrink-0">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
             </button>
 
             <button 
@@ -885,12 +1123,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </p>
           </div>
 
-          {/* Messages Area - 7 rows max */}
-          <div className="mx-0 mt-1 space-y-1 max-h-[140px] overflow-y-auto px-1">
+          {/* Messages Area */}
+          <div className="mx-0 mt-1 space-y-1 max-h-[126px] overflow-y-auto">
             {messages.map((msg) => (
               <div key={msg.id}>
                 {msg.type === 'join' ? (
-                  <div className="flex items-start gap-1.5">
+                  <div className="flex items-start gap-1.5 px-1">
                     <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
                       <img 
                         src={msg.senderImage || "/default-avatar.png"} 
@@ -937,20 +1175,16 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         {/* Footer Controls */}
         <div className="flex-shrink-0 pb-4">
           {showChatInput && (
-            <div className="flex items-center gap-0 mb-2 mx-0">
-              <div className="flex-1 bg-white/90 backdrop-blur-md rounded-full flex items-center px-4 py-2 shadow-lg">
+            <div className="flex items-center gap-0 mb-0 -mx-4 w-screen">
+              <div className="flex-1 bg-white flex items-center px-4 py-3 shadow-lg w-full">
                 <button 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowEmojiPicker(true)
-                  }}
-                  className="p-1.5 hover:bg-white/50 rounded-full transition-colors flex-shrink-0 cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer"
                 >
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                    <line x1="9" y1="9" x2="9.01" y2="9" />
-                    <line x1="15" y1="9" x2="15.01" y2="9" />
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
                   </svg>
                 </button>
 
@@ -962,8 +1196,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   onKeyPress={handleKeyPress}
                   onBlur={handleInputBlur}
                   placeholder="Type a message..."
-                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-1 text-sm outline-none border-none"
-                  enterKeyHint="send"
+                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-2 text-base outline-none border-none"
                 />
 
                 <button
@@ -971,7 +1204,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   disabled={!message.trim()}
                   className="p-1.5 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
                 >
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                     <line x1="22" y1="2" x2="11" y2="13" />
                     <polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
@@ -985,18 +1218,17 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               onClick={toggleChatInput}
               className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
             >
-              {showChatInput ? 'Close' : 'Say Hi'}
+              Say Hi
             </button>
 
             <div className="flex items-center gap-2">
-              {/* Bottom Mic Button - Shows GREY when muted, White when unmuted */}
               {hasSeat && (
                 <button 
                   onClick={handleBottomMicToggle}
                   className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
                 >
                   {currentUserSeat?.isMuted ? (
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                       <line x1="1" y1="1" x2="23" y2="23" />
                       <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
                       <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
@@ -1123,53 +1355,48 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           />
           
           <div 
-            className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-6 animate-slide-up"
+            className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[20vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="space-y-1">
-              {(!seats.find(s => s.number === selectedSeat)?.isOccupied || 
-                seats.find(s => s.number === selectedSeat)?.user?.accountId === accountId) && (
-                <button
-                  onClick={handleTakeSeat}
-                  disabled={seats.find(s => s.number === selectedSeat)?.isLocked && !seats.find(s => s.number === selectedSeat)?.isOccupied}
-                  className="w-full py-3 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {seats.some(s => s.isOccupied && s.user?.accountId === accountId) ? 'Switch Mic' : 'Take Mic'}
-                </button>
-              )}
-
-              {seats.find(s => s.number === selectedSeat)?.user?.accountId === accountId && (
-                <button
-                  onClick={handleLeaveSeat}
-                  className="w-full py-3 text-red-500 font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                >
-                  Leave Seat
-                </button>
-              )}
-
-              {/* Mute button in Bottom Sheet - always available for any occupied seat or when user has seat */}
-              {seats.find(s => s.number === selectedSeat)?.isOccupied && (
-                <button
-                  onClick={handleToggleMute}
-                  className="w-full py-3 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                >
-                  {seats.find(s => s.number === selectedSeat)?.isMuted ? 'Unmute' : 'Mute'}
-                </button>
-              )}
+            <div className="space-y-2">
+              <button
+                onClick={handleTakeSeat}
+                disabled={seats.find(s => s.number === selectedSeat)?.isOccupied && !seats.some(s => s.isOccupied && s.user?.accountId === accountId)}
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {seats.some(s => s.isOccupied && s.user?.accountId === accountId) ? 'Switch Seat' : 'Take Mic'}
+              </button>
 
               <button
                 onClick={handleToggleLock}
-                className="w-full py-3 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 {seats.find(s => s.number === selectedSeat)?.isLocked ? 'Unlock Mic' : 'Lock Mic'}
               </button>
 
               <button
                 onClick={handleInvite}
-                className="w-full py-3 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 Invite
               </button>
+
+              <button
+                onClick={handleToggleMute}
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                {seats.find(s => s.number === selectedSeat)?.isMuted ? 'Unmute' : 'Mute'}
+              </button>
+
+              {seats.find(s => s.number === selectedSeat)?.isOccupied && 
+               isCurrentUsersSeat(seats.find(s => s.number === selectedSeat)!) && (
+                <button
+                  onClick={handleLeaveSeat}
+                  className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  Leave Seat
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1190,67 +1417,64 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         />
       )}
 
-      {/* Voice wave animations */}
-      <style>{`
-        @keyframes rippleRing1 {
-          0% {
-            transform: scale(1);
-            opacity: 0.9;
-          }
-          100% {
-            transform: scale(1.65);
-            opacity: 0;
-          }
-        }
-
-        @keyframes rippleRing2 {
-          0% {
-            transform: scale(1);
-            opacity: 0.8;
-          }
-          100% {
-            transform: scale(1.9);
-            opacity: 0;
-          }
-        }
-
-        @keyframes rippleRing3 {
-          0% {
-            transform: scale(1);
-            opacity: 0.7;
-          }
-          100% {
-            transform: scale(2.15);
-            opacity: 0;
-          }
-        }
-
+      <style jsx>{`
         @keyframes slideUp {
           from { transform: translateY(100%); }
           to { transform: translateY(0); }
         }
-        
         .animate-slide-up {
           animation: slideUp 0.3s ease-out;
         }
-
-        .blue-wave-1 {
-          animation: rippleRing1 1.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+        
+        @keyframes voiceWave {
+          0%, 100% { 
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6), 0 0 0 0 rgba(59, 130, 246, 0.4);
+          }
+          50% { 
+            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0), 0 0 0 12px rgba(59, 130, 246, 0);
+          }
         }
-
-        .blue-wave-2 {
-          animation: rippleRing2 1.4s cubic-bezier(0, 0.2, 0.8, 1) 0.35s infinite;
+        
+        @keyframes voicePulse {
+          0%, 100% { 
+            transform: scale(1);
+          }
+          50% { 
+            transform: scale(1.05);
+          }
         }
-
-        .blue-wave-3 {
-          animation: rippleRing3 1.4s cubic-bezier(0, 0.2, 0.8, 1) 0.7s infinite;
+        
+        @keyframes waveBehind {
+          0% {
+            transform: scale(0.8);
+            opacity: 0.8;
+          }
+          50% {
+            transform: scale(1.3);
+            opacity: 0.3;
+          }
+          100% {
+            transform: scale(1.5);
+            opacity: 0;
+          }
+        }
+        
+        .speaking-wave {
+          animation: voiceWave 1.2s ease-in-out infinite, voicePulse 1.2s ease-in-out infinite;
+        }
+        
+        .wave-ripple {
+          animation: waveBehind 1.2s ease-out infinite;
+        }
+        
+        .wave-ripple-delayed {
+          animation: waveBehind 1.2s ease-out 0.4s infinite;
         }
       `}</style>
     </div>
   )
 }
 
-// SeatItem Component
 function SeatItem({ 
   seatNumber, 
   seatData, 
@@ -1262,30 +1486,65 @@ function SeatItem({
   onClick: (e: React.MouseEvent) => void
   accountId: string
 }) {
-  const isCurrentUser = seatData.user?.accountId === accountId
-  
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      <div className="relative w-[60px] h-[60px] flex items-center justify-center">
-        
-        {/* Glowing Blue Outer Ripples for speaking */}
+      <div className="relative">
+        {/* Blue Wave Ripple Behind Avatar - Shows when speaking */}
         {seatData.isSpeaking && (
-          <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full blue-wave-1 bg-blue-500/40 border border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
-            <div className="absolute inset-0 rounded-full blue-wave-2 bg-blue-400/30 border border-cyan-400 shadow-[0_0_20px_rgba(59,130,246,0.6)]" />
-            <div className="absolute inset-0 rounded-full blue-wave-3 bg-blue-600/20 border border-blue-300 shadow-[0_0_25px_rgba(59,130,246,0.4)]" />
-          </div>
+          <>
+            {/* Outer ripple */}
+            <div 
+              className="absolute inset-0 rounded-full bg-blue-400 wave-ripple"
+              style={{
+                width: '60px',
+                height: '60px',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: -1
+              }}
+            />
+            {/* Inner ripple delayed */}
+            <div 
+              className="absolute inset-0 rounded-full bg-blue-500 wave-ripple-delayed"
+              style={{
+                width: '60px',
+                height: '60px',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: -1
+              }}
+            />
+            {/* Center glow */}
+            <div 
+              className="absolute inset-0 rounded-full bg-blue-400/30"
+              style={{
+                width: '60px',
+                height: '60px',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: -1,
+                filter: 'blur(8px)',
+                animation: 'voicePulse 1.2s ease-in-out infinite'
+              }}
+            />
+          </>
         )}
-
-        {/* Seat Circle Container */}
+        
+        {/* Main Seat Circle */}
         <div
-          className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10
+          className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative
           bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px]
           border transition-all duration-300 hover:scale-105 pointer-events-auto
           ${seatData.isSpeaking 
-            ? 'border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.8)] scale-105' 
+            ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]' 
             : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'
           }`}
+          style={seatData.isSpeaking ? {
+            boxShadow: '0 0 0 4px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.4), 0 8px 32px rgba(0, 0, 0, 0.28)'
+          } : {}}
         >
           {seatData.isLocked ? (
             <div className="w-8 h-8 flex items-center justify-center">
@@ -1306,10 +1565,11 @@ function SeatItem({
                   (e.target as HTMLImageElement).src = "/default-avatar.png"
                 }}
               />
-              {/* Mute Icon for Occupied Seat - Always RED, Bottom Right */}
               {seatData.isMuted && (
-                <div className="absolute -right-0.5 -bottom-0.5 z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center shadow-md pointer-events-none border border-white/30">
-                  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${
+                  seatData.user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'
+                }`}>
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
                     <line x1="1" y1="1" x2="23" y2="23" />
                     <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
                     <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
@@ -1348,21 +1608,9 @@ function SeatItem({
                   <path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" />
                 </g>
               </svg>
-              
-              {/* Lock Icon for Empty Seat - Bottom Right Corner */}
-              {seatData.isLocked && (
-                <div className="absolute -right-1 -bottom-1 z-20 w-[18px] h-[18px] rounded-full bg-gray-500 flex items-center justify-center shadow-md border border-white/30">
-                  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
-                    <rect x="5" y="11" width="14" height="10" rx="2" />
-                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                  </svg>
-                </div>
-              )}
-              
-              {/* Mute Icon for Empty Seat - RED, Bottom Right Corner */}
-              {seatData.isMuted && !seatData.isLocked && (
-                <div className="absolute -right-1 -bottom-1 z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center shadow-md border border-white/30">
-                  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+              {seatData.isMuted && (
+                <div className="absolute -right-2 -bottom-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
                     <line x1="1" y1="1" x2="23" y2="23" />
                     <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
                     <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
@@ -1372,22 +1620,10 @@ function SeatItem({
             </div>
           )}
         </div>
-        
-        {/* Lock Icon for Occupied Seat - Outside Bottom Right */}
-        {seatData.isOccupied && seatData.isLocked && (
-          <div className="absolute -right-0.5 -bottom-0.5 z-20 w-[18px] h-[18px] rounded-full bg-gray-500 flex items-center justify-center shadow-md border border-white/30">
-            <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
-              <rect x="5" y="11" width="14" height="10" rx="2" />
-              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-            </svg>
-          </div>
-        )}
       </div>
-      
-      <span className="text-[10px] font-medium text-white/80 pointer-events-none text-center max-w-[60px] truncate">
-        {seatData.isLocked && !seatData.isOccupied ? `No ${seatNumber}` : 
-         (seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`)}
+      <span className="text-[10px] font-medium text-white/80 pointer-events-none">
+        {seatData.isLocked ? `No ${seatNumber}` : (seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`)}
       </span>
     </div>
   )
-      }
+    }
