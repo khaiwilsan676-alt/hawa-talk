@@ -5,6 +5,7 @@ import EmojiPicker from './Emojipicker'
 import GiftPicker from './GiftPicker'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
+import Image from 'next/image'
 
 // Jitsi Meet External API
 declare global {
@@ -48,7 +49,7 @@ interface Seat {
     accountId: string
   }
   isMuted?: boolean
-  isSpeaking?: boolean // Track speaking state
+  isSpeaking?: boolean
 }
 
 // Message Interface
@@ -59,6 +60,7 @@ interface Message {
   senderImage: string
   timestamp: number
   type?: 'message' | 'join' | 'leave'
+  imageUrl?: string
 }
 
 // Room User Interface
@@ -68,25 +70,27 @@ interface RoomUser {
   image: string
 }
 
+// Chat Interface for MessagePage
+interface ChatItem {
+  id: string
+  name: string
+  image: string
+}
+
 export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGiftPicker, setShowGiftPicker] = useState(false)
+  const [showMessageSheet, setShowMessageSheet] = useState(false)
   const [accountId, setAccountId] = useState<string>("Loading...")
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Chat visibility state
   const [showChatInput, setShowChatInput] = useState(false)
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
-  
-  // Audio output device state
-  const [audioOutputDevices, setAudioOutputDevices] = useState<MediaDeviceInfo[]>([])
-  const [selectedAudioOutput, setSelectedAudioOutput] = useState<string>('default')
-  const [showAudioSettings, setShowAudioSettings] = useState(false)
-  const audioElementRef = useRef<HTMLAudioElement | null>(null)
   
   // Room Users State
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([])
@@ -117,6 +121,22 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
   const [showSeatSheet, setShowSeatSheet] = useState(false)
 
+  // Message Sheet State
+  const [activeChat, setActiveChat] = useState<ChatItem | null>(null)
+
+  const chats: ChatItem[] = [
+    {
+      id: 'hawa-team',
+      name: 'Hurry Team',
+      image: '/logo.png'
+    },
+    {
+      id: 'hawa-system',
+      name: 'Hurry System',
+      image: '/1784465161302~2.jpg'
+    }
+  ]
+
   // Check if user has a seat
   const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === accountId)
 
@@ -136,92 +156,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     return Math.abs(hash)
   }
 
-  // Enumerate audio output devices
-  const getAudioOutputDevices = async () => {
-    try {
-      // Request permission first
-      await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-      
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const audioOutputs = devices.filter(device => device.kind === 'audiooutput')
-      setAudioOutputDevices(audioOutputs)
-      
-      console.log('Available audio output devices:', audioOutputs.map(d => d.label))
-    } catch (error) {
-      console.warn('Failed to enumerate audio devices:', error)
-    }
-  }
-
-  // Set audio output device (sinkId)
-  const setAudioOutput = async (deviceId: string) => {
-    try {
-      // Create or get audio element for Jitsi
-      if (!audioElementRef.current) {
-        // Jitsi creates audio elements dynamically, we need to find and set sinkId on them
-        const audioElements = document.querySelectorAll('audio')
-        for (const audio of audioElements) {
-          if ('setSinkId' in audio) {
-            await (audio as any).setSinkId(deviceId)
-          }
-        }
-      }
-      
-      setSelectedAudioOutput(deviceId)
-      localStorage.setItem('preferredAudioOutput', deviceId)
-      console.log('Audio output set to:', deviceId)
-      
-      // Apply to existing audio elements
-      applyAudioOutputToAll(deviceId)
-    } catch (error) {
-      console.error('Failed to set audio output:', error)
-    }
-  }
-
-  // Apply audio output to all audio elements
-  const applyAudioOutputToAll = async (deviceId: string) => {
-    const audioElements = document.querySelectorAll('audio')
-    for (const audio of audioElements) {
-      if ('setSinkId' in audio && audio.srcObject) {
-        try {
-          await (audio as any).setSinkId(deviceId)
-        } catch (e) {
-          console.warn('Failed to set sinkId on audio element:', e)
-        }
-      }
-    }
-  }
-
-  // Monitor for new audio elements (Jitsi creates them dynamically)
-  useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeName === 'AUDIO' && 'setSinkId' in node) {
-            const savedDevice = localStorage.getItem('preferredAudioOutput') || 'default'
-            ;(node as any).setSinkId(savedDevice).catch(() => {})
-          }
-          // Also check for audio elements inside added nodes
-          if (node instanceof HTMLElement) {
-            const audioElements = node.querySelectorAll('audio')
-            audioElements.forEach((audio) => {
-              if ('setSinkId' in audio) {
-                const savedDevice = localStorage.getItem('preferredAudioOutput') || 'default'
-                ;(audio as any).setSinkId(savedDevice).catch(() => {})
-              }
-            })
-          }
-        })
-      })
-    })
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
   // Load Jitsi External API script
   useEffect(() => {
     if (!document.getElementById('jitsi-script')) {
@@ -236,22 +170,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       document.body.appendChild(script)
     } else {
       setJitsiLoaded(true)
-    }
-
-    // Get audio devices on mount
-    getAudioOutputDevices()
-    
-    // Restore saved audio preference
-    const savedDevice = localStorage.getItem('preferredAudioOutput')
-    if (savedDevice) {
-      setSelectedAudioOutput(savedDevice)
-    }
-
-    // Listen for device changes
-    navigator.mediaDevices?.addEventListener?.('devicechange', getAudioOutputDevices)
-    
-    return () => {
-      navigator.mediaDevices?.removeEventListener?.('devicechange', getAudioOutputDevices)
     }
   }, [])
 
@@ -298,11 +216,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               height: { ideal: 180, max: 180, min: 180 }
             }
           },
-          // Enable speaker stats for detecting who is speaking
           disableAudioLevels: false,
           enableNoisyMicDetection: false,
-          // Audio output device selection
-          useRoomAsSharedDocument: false,
         },
         interfaceConfigOverrides: {
           filmStripOnly: false,
@@ -317,10 +232,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           MOBILE_APP_PROMO: false,
           APP_NAME: 'Hurry',
           NATIVE_APP_NAME: 'Hurry',
-          PROVIDER_NAME: 'Hurry',
-          // Audio settings
-          AUDIO_FOCUS_DISABLED: false,
-          DISABLE_FOCUS_INDICATOR: true,
+          PROVIDER_NAME: 'Hurry'
         }
       }
 
@@ -333,37 +245,16 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           if (!hasSeat) {
             api.executeCommand('toggleAudio', false)
           }
-          
-          // Apply audio output setting after join
-          setTimeout(() => {
-            const savedDevice = localStorage.getItem('preferredAudioOutput') || 'default'
-            applyAudioOutputToAll(savedDevice)
-          }, 2000)
         })
 
-        // Listen for audio track changes - set sinkId when new tracks are added
-        api.addListener('audioTrackAdded', (track: any) => {
-          console.log('Audio track added:', track)
-          // Apply audio output after a short delay
-          setTimeout(() => {
-            const savedDevice = localStorage.getItem('preferredAudioOutput') || 'default'
-            applyAudioOutputToAll(savedDevice)
-          }, 500)
-        })
-
-        // Listen for dominant speaker changes
         api.addListener('dominantSpeakerChanged', (data: any) => {
-          console.log('Dominant speaker changed:', data)
           if (data && data.id) {
-            // Mark this user as speaking
             speakingUsersRef.current.add(data.id)
             setUserSpeaking(data.id, true)
             
-            // Clear previous timer for this user
             const existingTimer = speakingTimersRef.current.get(data.id)
             if (existingTimer) clearTimeout(existingTimer)
             
-            // Auto-stop speaking after 1.5 seconds of silence
             const timer = setTimeout(() => {
               speakingUsersRef.current.delete(data.id)
               setUserSpeaking(data.id, false)
@@ -374,12 +265,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           }
         })
 
-        // Listen for audio level changes (more responsive)
         api.addListener('audioLevelsChanged', (data: any) => {
           if (data && data.length > 0) {
             data.forEach((participant: any) => {
               if (participant.id && participant.level > 0.05) {
-                // User is speaking
                 speakingUsersRef.current.add(participant.id)
                 setUserSpeaking(participant.id, true)
                 
@@ -398,18 +287,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           }
         })
 
-        api.addListener('audioMuteStatusChanged', (muted: any) => {
-          console.log('Audio mute status changed:', muted)
-        })
-
-        // Track participants joining/leaving
-        api.addListener('participantJoined', (data: any) => {
-          console.log('Participant joined:', data)
-        })
-
         api.addListener('participantLeft', (data: any) => {
-          console.log('Participant left:', data)
-          // Remove speaking state
           if (data && data.id) {
             speakingUsersRef.current.delete(data.id)
             setUserSpeaking(data.id, false)
@@ -429,7 +307,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     initJitsi()
 
     return () => {
-      // Cleanup all timers
       speakingTimersRef.current.forEach(timer => clearTimeout(timer))
       speakingTimersRef.current.clear()
       speakingUsersRef.current.clear()
@@ -541,52 +418,49 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }, [showChatInput])
 
-  // Handle keyboard visibility
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.visualViewport) {
-        const isKeyboardVisible = window.visualViewport.height < window.innerHeight * 0.85
-        setIsKeyboardOpen(isKeyboardVisible)
-      }
+  // Handle image upload
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
     }
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize)
-      window.visualViewport.addEventListener('scroll', handleResize)
-    }
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleResize)
-        window.visualViewport.removeEventListener('scroll', handleResize)
-      }
-    }
-  }, [])
-
-  // Auto-hide chat input when keyboard closes
-  useEffect(() => {
-    if (!isKeyboardOpen && showChatInput) {
-      const timer = setTimeout(() => {
-        setShowChatInput(false)
-        setMessage("")
-      }, 200)
-      return () => clearTimeout(timer)
-    }
-  }, [isKeyboardOpen, showChatInput])
-
-  // Handle input blur
-  const handleInputBlur = () => {
-    setTimeout(() => {
-      if (!isKeyboardOpen && showChatInput) {
-        setShowChatInput(false)
-        setMessage("")
-      }
-    }, 200)
   }
 
-  // Handle Emoji Select
-  const handleEmojiSelect = (emoji: string) => {
-    console.log("Selected Emoji:", emoji)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string
+      
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        text: '',
+        sender: user.name,
+        senderImage: user.image,
+        timestamp: Date.now(),
+        type: 'message',
+        imageUrl: imageUrl
+      }
+      
+      setMessages(prev => [...prev, newMessage])
+    }
+    reader.readAsDataURL(file)
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   // Handle Seat Click
@@ -604,6 +478,11 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     const targetSeat = seats.find(s => s.number === selectedSeat)
     if (targetSeat?.isLocked && !targetSeat.isOccupied) {
       alert("This seat is locked!")
+      return
+    }
+
+    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== accountId) {
+      alert("This seat is already taken!")
       return
     }
 
@@ -772,9 +651,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     if (showChatInput) {
       setShowChatInput(false)
       setMessage("")
-      if (inputRef.current) {
-        inputRef.current.blur()
-      }
     } else {
       setShowChatInput(true)
       setTimeout(() => {
@@ -804,6 +680,20 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setShowExitMenu(true)
   }
 
+  // Open Message Sheet
+  const openMessageSheet = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setActiveChat(null)
+    setShowMessageSheet(true)
+  }
+
+  // Close Message Sheet
+  const closeMessageSheet = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowMessageSheet(false)
+    setActiveChat(null)
+  }
+
   const handleExit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setShowExitMenu(false)
@@ -831,15 +721,17 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     if (onBack) onBack()
   }
 
+  const handleEmojiSelect = (emoji: string) => {
+    console.log("Selected Emoji:", emoji)
+  }
+
   // Get live user count
   const liveUserCount = roomUsers.length
 
-  // Get audio output device name
-  const getCurrentAudioDeviceName = () => {
-    if (selectedAudioOutput === 'default') return 'Default (Speaker)'
-    const device = audioOutputDevices.find(d => d.deviceId === selectedAudioOutput)
-    return device?.label || 'Default (Speaker)'
-  }
+  // Check if selected seat is already taken by current user
+  const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null
+  const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false
+  const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isCurrentUsersSeat(selectedSeatData)) : false
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -857,11 +749,21 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         className="absolute inset-0 z-0 opacity-0 pointer-events-none"
         style={{ width: '1px', height: '1px' }}
       />
+
+      {/* Hidden File Input for Image Upload */}
+      <input 
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+        aria-label="Upload image"
+      />
       
       {/* Content Overlay */}
       <div
-        className="relative z-10 flex flex-col h-full px-4 pb-4"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
+        className="relative z-10 flex flex-col h-full px-4"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
       >
         
         {/* Top Header Section */}
@@ -900,130 +802,19 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               <span className="text-white text-xs font-semibold leading-none">{liveUserCount}</span>
             </div>
 
-            {/* Audio Output Selector */}
+            {/* Settings Hexagon Icon */}
             <button 
-              onClick={(e) => { e.stopPropagation(); setShowAudioSettings(!showAudioSettings); }}
-              aria-label="Audio Output Settings"
-              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer relative"
+              onClick={(e) => e.stopPropagation()}
+              aria-label="Settings"
+              className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
+                <circle cx="12" cy="12" r="2.8" />
               </svg>
-              
-              {/* Audio Output Dropdown */}
-              {showAudioSettings && (
-                <div 
-                  className="absolute top-full right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl overflow-hidden z-50"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="p-3 border-b border-white/10">
-                    <p className="text-white text-xs font-semibold uppercase tracking-wider">Audio Output</p>
-                    <p className="text-gray-400 text-[10px] mt-0.5">Select where to hear voice</p>
-                  </div>
-                  <div className="max-h-48 overflow-y-auto py-1">
-                    {/* Default Speaker */}
-                    <button
-                      onClick={() => { setAudioOutput('default'); setShowAudioSettings(false); }}
-                      className={`w-full px-4 py-2.5 text-left flex items-center gap-3 hover:bg-white/10 transition-colors ${
-                        selectedAudioOutput === 'default' ? 'bg-blue-500/20' : ''
-                      }`}
-                    >
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round flex-shrink-0">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-                      </svg>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm truncate">Speaker</p>
-                        <p className="text-gray-400 text-[10px]">Default device output</p>
-                      </div>
-                      {selectedAudioOutput === 'default' && (
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-blue-400 stroke-blue-400 stroke-[2] flex-shrink-0">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      )}
-                    </button>
-
-                    {/* Wired Headset */}
-                    <button
-                      onClick={() => { 
-                        const wiredDevice = audioOutputDevices.find(d => 
-                          d.label.toLowerCase().includes('wired') || 
-                          d.label.toLowerCase().includes('headset') ||
-                          d.label.toLowerCase().includes('headphone')
-                        );
-                        if (wiredDevice) {
-                          setAudioOutput(wiredDevice.deviceId);
-                          setShowAudioSettings(false);
-                        }
-                      }}
-                      className="w-full px-4 py-2.5 text-left flex items-center gap-3 hover:bg-white/10 transition-colors"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round flex-shrink-0">
-                        <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-                        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
-                        <line x1="7" y1="8" x2="17" y2="8" />
-                      </svg>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm truncate">Wired Headphones</p>
-                        <p className="text-gray-400 text-[10px]">3.5mm / USB-C connected</p>
-                      </div>
-                    </button>
-
-                    {/* Bluetooth */}
-                    <button
-                      onClick={() => { 
-                        const btDevice = audioOutputDevices.find(d => 
-                          d.label.toLowerCase().includes('bluetooth') || 
-                          d.label.toLowerCase().includes('airpods') ||
-                          d.label.toLowerCase().includes('buds')
-                        );
-                        if (btDevice) {
-                          setAudioOutput(btDevice.deviceId);
-                          setShowAudioSettings(false);
-                        }
-                      }}
-                      className="w-full px-4 py-2.5 text-left flex items-center gap-3 hover:bg-white/10 transition-colors"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-blue-400 stroke-blue-400 stroke-[1.5] flex-shrink-0">
-                        <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5L12 12" />
-                      </svg>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm truncate">Bluetooth</p>
-                        <p className="text-gray-400 text-[10px]">Wireless earphones/speaker</p>
-                      </div>
-                    </button>
-
-                    {/* List all available devices */}
-                    {audioOutputDevices
-                      .filter(d => d.deviceId !== 'default' && d.deviceId !== 'communications')
-                      .map((device) => (
-                        <button
-                          key={device.deviceId}
-                          onClick={() => { setAudioOutput(device.deviceId); setShowAudioSettings(false); }}
-                          className={`w-full px-4 py-2.5 text-left flex items-center gap-3 hover:bg-white/10 transition-colors ${
-                            selectedAudioOutput === device.deviceId ? 'bg-blue-500/20' : ''
-                          }`}
-                        >
-                          <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-                            <div className={`w-2 h-2 rounded-full ${selectedAudioOutput === device.deviceId ? 'bg-blue-400' : 'bg-gray-500'}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm truncate">{device.label || `Device ${device.deviceId.slice(0, 8)}`}</p>
-                            <p className="text-gray-400 text-[10px]">Audio output device</p>
-                          </div>
-                          {selectedAudioOutput === device.deviceId && (
-                            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-blue-400 stroke-blue-400 stroke-[2] flex-shrink-0">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
             </button>
 
+            {/* Share Icon */}
             <button 
               onClick={(e) => e.stopPropagation()}
               aria-label="Share"
@@ -1034,6 +825,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               </svg>
             </button>
 
+            {/* Power / Exit Button */}
             <button 
               onClick={openExitMenu}
               aria-label="Power"
@@ -1116,15 +908,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             />
           </div>
 
-          {/* Rules Card - Compact */}
-          <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-3 py-2">
+          {/* Rules Card */}
+          <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-3 py-2 flex-shrink-0">
             <p className="text-white/80 text-[10px] text-center leading-relaxed">
               Welcome to Hurry. Any Content related to Fraud, Abusing, violence Breaking a Hurry Rules Will be Ban.
             </p>
           </div>
 
-          {/* Messages Area */}
-          <div className="mx-0 mt-1 space-y-1 max-h-[126px] overflow-y-auto">
+          {/* Messages Area - Between Rules Card and Footer */}
+          <div className="flex-1 mx-1 mt-1 space-y-1 overflow-y-auto min-h-0">
             {messages.map((msg) => (
               <div key={msg.id}>
                 {msg.type === 'join' ? (
@@ -1143,6 +935,31 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                     <div className="flex flex-col bg-white/8 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/5">
                       <span className="text-[9px] font-semibold text-white/80 leading-tight">{msg.sender}</span>
                       <span className="text-[8px] text-white/50 leading-tight">Enter the Room</span>
+                    </div>
+                  </div>
+                ) : msg.imageUrl ? (
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <img 
+                        src={msg.senderImage || "/default-avatar.png"} 
+                        alt={msg.sender}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/default-avatar.png"
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[9px] font-semibold text-white/70">{msg.sender}</span>
+                      <div className="rounded-lg overflow-hidden rounded-bl-none max-w-[200px]">
+                        <img 
+                          src={msg.imageUrl} 
+                          alt="Shared image"
+                          className="w-full h-auto object-cover"
+                          draggable={false}
+                        />
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1172,13 +989,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           </div>
         </div>
 
-        {/* Footer Controls */}
-        <div className="flex-shrink-0 pb-4">
+        {/* Footer Controls - Fixed at bottom */}
+        <div className="flex-shrink-0 pt-2">
+          {/* Chat Input with Keyboard */}
           {showChatInput && (
-            <div className="flex items-center gap-0 mb-0 -mx-4 w-screen">
+            <div className="flex items-center gap-0 mb-2 -mx-4 w-screen">
               <div className="flex-1 bg-white flex items-center px-4 py-3 shadow-lg w-full">
+                {/* Image Upload Button */}
                 <button 
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={handleImageClick}
                   className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
@@ -1194,7 +1013,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  onBlur={handleInputBlur}
                   placeholder="Type a message..."
                   className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-2 text-base outline-none border-none"
                 />
@@ -1213,6 +1031,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </div>
           )}
 
+          {/* Bottom Action Buttons */}
           <div className="flex items-center justify-between gap-2">
             <button 
               onClick={toggleChatInput}
@@ -1257,19 +1076,20 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
               <button 
                 onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }}
-                aria-label="File"
+                aria-label="Gift"
                 className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 overflow-hidden cursor-pointer"
               >
                 <img 
                   src="/file_000000008e508208b1353ae33e2abef9.png" 
-                  alt="File"
+                  alt="Gift"
                   className="w-full h-full object-cover"
                   draggable={false}
                 />
               </button>
 
+              {/* Mail Icon - Opens Message Sheet */}
               <button 
-                onClick={(e) => e.stopPropagation()}
+                onClick={openMessageSheet}
                 aria-label="Message Box Menu"
                 className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
               >
@@ -1359,19 +1179,30 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-2">
-              <button
-                onClick={handleTakeSeat}
-                disabled={seats.find(s => s.number === selectedSeat)?.isOccupied && !seats.some(s => s.isOccupied && s.user?.accountId === accountId)}
-                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {seats.some(s => s.isOccupied && s.user?.accountId === accountId) ? 'Switch Seat' : 'Take Mic'}
-              </button>
+              {!isSelectedSeatTakenByOther && !isSelectedSeatMySeat && (
+                <button
+                  onClick={handleTakeSeat}
+                  disabled={selectedSeatData?.isLocked && !selectedSeatData?.isOccupied}
+                  className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Take Mic
+                </button>
+              )}
+
+              {isSelectedSeatMySeat && (
+                <button
+                  onClick={handleLeaveSeat}
+                  className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  Leave Seat
+                </button>
+              )}
 
               <button
                 onClick={handleToggleLock}
                 className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
-                {seats.find(s => s.number === selectedSeat)?.isLocked ? 'Unlock Mic' : 'Lock Mic'}
+                {selectedSeatData?.isLocked ? 'Unlock Mic' : 'Lock Mic'}
               </button>
 
               <button
@@ -1385,19 +1216,133 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                 onClick={handleToggleMute}
                 className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
-                {seats.find(s => s.number === selectedSeat)?.isMuted ? 'Unmute' : 'Mute'}
+                {selectedSeatData?.isMuted ? 'Unmute' : 'Mute'}
               </button>
-
-              {seats.find(s => s.number === selectedSeat)?.isOccupied && 
-               isCurrentUsersSeat(seats.find(s => s.number === selectedSeat)!) && (
-                <button
-                  onClick={handleLeaveSeat}
-                  className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                >
-                  Leave Seat
-                </button>
-              )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Message Bottom Sheet - 60vh */}
+      {showMessageSheet && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center">
+          <div 
+            className="absolute inset-0 bg-black/30"
+            onClick={closeMessageSheet}
+          />
+          
+          <div 
+            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+            style={{ height: '60vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {!activeChat ? (
+              // Chat List View
+              <div className="flex flex-col h-full">
+                {/* Header: Left Back Arrow & Center Heading "Message" */}
+                <div
+                  className="px-4 pb-4 flex items-center justify-between flex-shrink-0 relative"
+                  style={{
+                    background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
+                    paddingTop: '24px'
+                  }}
+                >
+                  <button 
+                    onClick={closeMessageSheet}
+                    className="p-1.5 hover:bg-black/10 rounded-full transition-colors cursor-pointer z-10"
+                    aria-label="Back"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+
+                  <h1 className="text-xl font-bold text-gray-800 absolute inset-x-0 text-center pointer-events-none">
+                    Message
+                  </h1>
+
+                  <div className="w-9" /> {/* Spacer to balance layout */}
+                </div>
+
+                {/* Chat List: Hurry Team & Hurry System */}
+                <div className="flex-1 px-4 pt-2 overflow-y-auto">
+                  <div className="flex flex-col gap-2">
+                    {chats.map((chat) => (
+                      <div
+                        key={chat.id}
+                        onClick={() => setActiveChat(chat)}
+                        className="flex items-center gap-3 bg-gray-100 px-3 py-2.5 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <Image
+                            src={chat.image}
+                            alt={chat.name}
+                            width={40}
+                            height={40}
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-800 text-sm">{chat.name}</h3>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Chat Detail View
+              <div className="flex flex-col h-full">
+                {/* Chat Header */}
+                <div
+                  className="px-4 pb-4 flex-shrink-0"
+                  style={{
+                    background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
+                    paddingTop: '24px'
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setActiveChat(null)}
+                      className="flex-shrink-0 hover:bg-white/30 rounded-full p-1 transition-colors cursor-pointer"
+                    >
+                      <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                    </button>
+
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <Image
+                        src={activeChat.image}
+                        alt={activeChat.name}
+                        width={40}
+                        height={40}
+                        className="object-cover"
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg font-bold text-gray-800">{activeChat.name}</h2>
+                    </div>
+
+                    <button 
+                      onClick={closeMessageSheet}
+                      className="p-1.5 hover:bg-black/10 rounded-full transition-colors cursor-pointer"
+                    >
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-600 stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Messages Area */}
+                <div className="flex-1 px-4 py-4 overflow-y-auto">
+                  <p className="text-center text-gray-400 mt-20">No messages yet</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1446,15 +1391,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         
         @keyframes waveBehind {
           0% {
-            transform: scale(0.8);
+            transform: translate(-50%, -50%) scale(0.8);
             opacity: 0.8;
           }
           50% {
-            transform: scale(1.3);
+            transform: translate(-50%, -50%) scale(1.3);
             opacity: 0.3;
           }
           100% {
-            transform: scale(1.5);
+            transform: translate(-50%, -50%) scale(1.5);
             opacity: 0;
           }
         }
@@ -1489,36 +1434,30 @@ function SeatItem({
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
       <div className="relative">
-        {/* Blue Wave Ripple Behind Avatar - Shows when speaking */}
         {seatData.isSpeaking && (
           <>
-            {/* Outer ripple */}
             <div 
-              className="absolute inset-0 rounded-full bg-blue-400 wave-ripple"
+              className="absolute rounded-full bg-blue-400 wave-ripple"
               style={{
                 width: '60px',
                 height: '60px',
                 left: '50%',
                 top: '50%',
-                transform: 'translate(-50%, -50%)',
                 zIndex: -1
               }}
             />
-            {/* Inner ripple delayed */}
             <div 
-              className="absolute inset-0 rounded-full bg-blue-500 wave-ripple-delayed"
+              className="absolute rounded-full bg-blue-500 wave-ripple-delayed"
               style={{
                 width: '60px',
                 height: '60px',
                 left: '50%',
                 top: '50%',
-                transform: 'translate(-50%, -50%)',
                 zIndex: -1
               }}
             />
-            {/* Center glow */}
             <div 
-              className="absolute inset-0 rounded-full bg-blue-400/30"
+              className="absolute rounded-full"
               style={{
                 width: '60px',
                 height: '60px',
@@ -1526,6 +1465,7 @@ function SeatItem({
                 top: '50%',
                 transform: 'translate(-50%, -50%)',
                 zIndex: -1,
+                backgroundColor: 'rgba(59, 130, 246, 0.3)',
                 filter: 'blur(8px)',
                 animation: 'voicePulse 1.2s ease-in-out infinite'
               }}
@@ -1533,7 +1473,6 @@ function SeatItem({
           </>
         )}
         
-        {/* Main Seat Circle */}
         <div
           className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative
           bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px]
@@ -1626,4 +1565,5 @@ function SeatItem({
       </span>
     </div>
   )
-    }
+}
+
