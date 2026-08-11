@@ -703,8 +703,13 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             {renderSeats()}
           </div>
 
+          {/* Announcement Card - 3 Rows: Welcome, Divider, Announcement */}
           <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3 flex-shrink-0">
-            <p className="text-white/80 text-[11px] text-center leading-relaxed">{roomAnnouncement}</p>
+            <div className="flex flex-col gap-1">
+              <div className="text-white/60 text-[10px] text-center">Welcome to Hurry</div>
+              <div className="h-px bg-white/10 w-full"></div>
+              <p className="text-white/80 text-[11px] text-center leading-relaxed">{roomAnnouncement}</p>
+            </div>
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
@@ -813,20 +818,9 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
             
-            {/* Warning Icon - Black Outline Only, No Fill */}
-            <div className="absolute top-4 left-4 z-10">
-              <svg viewBox="0 0 24 24" className="w-7 h-7">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="none" stroke="#333" strokeWidth="1.8" strokeLinejoin="round" />
-                <line x1="12" y1="8.5" x2="12" y2="12.5" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="12" cy="16" r="1" fill="#333" stroke="none" />
-              </svg>
-            </div>
-
-            {/* Header - Room Name only (No follow button inside sheet) */}
+            {/* Header - Room Info title only */}
             <div className="px-6 pt-6 pb-2">
-              <h2 className="text-lg font-bold text-gray-800 text-center truncate">
-                {roomName || user.name || "Room"}
-              </h2>
+              <h2 className="text-lg font-bold text-gray-800 text-center">Room Info</h2>
             </div>
 
             {/* Tabs */}
@@ -839,11 +833,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {roomInfoTab === 'info' ? (
                 <div className="space-y-4">
+                  {/* Room DP Icon + Name + ID */}
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
                       <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
                     </div>
-                    <div><h3 className="font-semibold text-gray-800">{roomName || user.name || "Room"}</h3></div>
+                    <div>
+                      <h3 className="font-semibold text-gray-800">{roomName || user.name || "Room"}</h3>
+                      <p className="text-xs text-gray-400">ID: {accountId}</p>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5">
@@ -1051,4 +1049,4 @@ function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: nu
       </span>
     </div>
   )
-}
+    }
