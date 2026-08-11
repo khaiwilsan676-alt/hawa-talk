@@ -85,6 +85,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const [accountId, setAccountId] = useState<string>("Loading...")
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
+  const [fullImageModal, setFullImageModal] = useState<string | null>(null)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -174,10 +176,13 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }, [])
 
   // Mark user as speaking in seats
-  const setUserSpeaking = (userId: string, speaking: boolean) => {
+  const setUserSpeaking = (targetId: string, speaking: boolean) => {
     setSeats(prev => prev.map(seat => {
-      if (seat.user?.accountId === userId) {
-        return { ...seat, isSpeaking: speaking }
+      if (seat.isOccupied && seat.user) {
+        // Match either accountId or current active user seat
+        if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === accountId)) {
+          return { ...seat, isSpeaking: speaking }
+        }
       }
       return seat
     }))
@@ -248,40 +253,40 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         })
 
         api.addListener('dominantSpeakerChanged', (data: any) => {
-          if (data && data.id) {
-            speakingUsersRef.current.add(data.id)
-            setUserSpeaking(data.id, true)
-            
-            const existingTimer = speakingTimersRef.current.get(data.id)
-            if (existingTimer) clearTimeout(existingTimer)
-            
-            const timer = setTimeout(() => {
-              speakingUsersRef.current.delete(data.id)
-              setUserSpeaking(data.id, false)
-              speakingTimersRef.current.delete(data.id)
-            }, 1500)
-            
-            speakingTimersRef.current.set(data.id, timer)
-          }
+          const speakerId = data?.id || 'local'
+          speakingUsersRef.current.add(speakerId)
+          setUserSpeaking(speakerId, true)
+          
+          const existingTimer = speakingTimersRef.current.get(speakerId)
+          if (existingTimer) clearTimeout(existingTimer)
+          
+          const timer = setTimeout(() => {
+            speakingUsersRef.current.delete(speakerId)
+            setUserSpeaking(speakerId, false)
+            speakingTimersRef.current.delete(speakerId)
+          }, 1500)
+          
+          speakingTimersRef.current.set(speakerId, timer)
         })
 
         api.addListener('audioLevelsChanged', (data: any) => {
           if (data && data.length > 0) {
             data.forEach((participant: any) => {
-              if (participant.id && participant.level > 0.05) {
-                speakingUsersRef.current.add(participant.id)
-                setUserSpeaking(participant.id, true)
+              if (participant.id && participant.level > 0.03) {
+                const targetKey = participant.id
+                speakingUsersRef.current.add(targetKey)
+                setUserSpeaking(targetKey, true)
                 
-                const existingTimer = speakingTimersRef.current.get(participant.id)
+                const existingTimer = speakingTimersRef.current.get(targetKey)
                 if (existingTimer) clearTimeout(existingTimer)
                 
                 const timer = setTimeout(() => {
-                  speakingUsersRef.current.delete(participant.id)
-                  setUserSpeaking(participant.id, false)
-                  speakingTimersRef.current.delete(participant.id)
+                  speakingUsersRef.current.delete(targetKey)
+                  setUserSpeaking(targetKey, false)
+                  speakingTimersRef.current.delete(targetKey)
                 }, 800)
                 
-                speakingTimersRef.current.set(participant.id, timer)
+                speakingTimersRef.current.set(targetKey, timer)
               }
             })
           }
@@ -407,14 +412,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }, [messages])
 
-  // Focus input when chat opens
+  // Focus input when chat opens strictly
   useEffect(() => {
     if (showChatInput && inputRef.current) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
         }
       }, 100)
+      return () => clearTimeout(timer)
     }
   }, [showChatInput])
 
@@ -645,7 +651,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }
 
-  // Toggle Chat Input
+  // Toggle Chat Input strictly
   const toggleChatInput = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (showChatInput) {
@@ -915,8 +921,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </p>
           </div>
 
-          {/* Messages Area - Between Rules Card and Footer */}
-          <div className="flex-1 mx-1 mt-1 space-y-1 overflow-y-auto min-h-0">
+          {/* Messages Area - Fixed Height for ~8 Rows with Auto Scroll & Hand Scroll */}
+          <div className="mx-1 mt-1 space-y-1 overflow-y-auto max-h-[170px] min-h-[170px] flex-shrink-0 scrollbar-thin">
             {messages.map((msg) => (
               <div key={msg.id}>
                 {msg.type === 'join' ? (
@@ -938,6 +944,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                     </div>
                   </div>
                 ) : msg.imageUrl ? (
+                  /* Small 4-Row Image Thumbnail - Click to open Full View */
                   <div className="flex items-start gap-2">
                     <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
                       <img 
@@ -952,11 +959,14 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="text-[9px] font-semibold text-white/70">{msg.sender}</span>
-                      <div className="rounded-lg overflow-hidden rounded-bl-none max-w-[200px]">
+                      <div 
+                        onClick={() => setFullImageModal(msg.imageUrl || null)} 
+                        className="rounded-lg overflow-hidden border border-white/20 h-16 w-16 cursor-pointer hover:opacity-90 transition-opacity bg-black/40 flex items-center justify-center mt-0.5"
+                      >
                         <img 
                           src={msg.imageUrl} 
                           alt="Shared image"
-                          className="w-full h-auto object-cover"
+                          className="w-full h-full object-cover"
                           draggable={false}
                         />
                       </div>
@@ -1223,6 +1233,31 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
+      {/* Full Image Preview Modal */}
+      {fullImageModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setFullImageModal(null)}
+        >
+          <div className="relative max-w-full max-h-full">
+            <img 
+              src={fullImageModal} 
+              alt="Full preview" 
+              className="max-w-full max-h-[85vh] object-contain rounded-lg" 
+            />
+            <button 
+              onClick={() => setFullImageModal(null)}
+              className="absolute -top-10 right-0 text-white bg-white/20 rounded-full p-2 hover:bg-white/40"
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-white stroke-[2.5]">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Message Bottom Sheet - 60vh */}
       {showMessageSheet && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
@@ -1370,48 +1405,35 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         .animate-slide-up {
           animation: slideUp 0.3s ease-out;
         }
-        
-        @keyframes voiceWave {
-          0%, 100% { 
-            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6), 0 0 0 0 rgba(59, 130, 246, 0.4);
-          }
-          50% { 
-            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0), 0 0 0 12px rgba(59, 130, 246, 0);
-          }
-        }
-        
-        @keyframes voicePulse {
-          0%, 100% { 
-            transform: scale(1);
-          }
-          50% { 
-            transform: scale(1.05);
-          }
-        }
-        
+
         @keyframes waveBehind {
           0% {
-            transform: translate(-50%, -50%) scale(0.8);
-            opacity: 0.8;
+            transform: translate(-50%, -50%) scale(0.85);
+            opacity: 0.9;
           }
           50% {
-            transform: translate(-50%, -50%) scale(1.3);
-            opacity: 0.3;
+            transform: translate(-50%, -50%) scale(1.35);
+            opacity: 0.4;
           }
           100% {
-            transform: translate(-50%, -50%) scale(1.5);
+            transform: translate(-50%, -50%) scale(1.6);
             opacity: 0;
           }
         }
-        
-        .speaking-wave {
-          animation: voiceWave 1.2s ease-in-out infinite, voicePulse 1.2s ease-in-out infinite;
+
+        @keyframes voicePulse {
+          0%, 100% { 
+            transform: translate(-50%, -50%) scale(1);
+          }
+          50% { 
+            transform: translate(-50%, -50%) scale(1.08);
+          }
         }
-        
+
         .wave-ripple {
           animation: waveBehind 1.2s ease-out infinite;
         }
-        
+
         .wave-ripple-delayed {
           animation: waveBehind 1.2s ease-out 0.4s infinite;
         }
@@ -1433,40 +1455,39 @@ function SeatItem({
 }) {
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      <div className="relative">
+      <div className="relative overflow-visible">
         {seatData.isSpeaking && (
           <>
             <div 
-              className="absolute rounded-full bg-blue-400 wave-ripple"
+              className="absolute rounded-full bg-blue-400 wave-ripple pointer-events-none"
               style={{
                 width: '60px',
                 height: '60px',
                 left: '50%',
                 top: '50%',
-                zIndex: -1
+                zIndex: 0
               }}
             />
             <div 
-              className="absolute rounded-full bg-blue-500 wave-ripple-delayed"
+              className="absolute rounded-full bg-blue-500 wave-ripple-delayed pointer-events-none"
               style={{
                 width: '60px',
                 height: '60px',
                 left: '50%',
                 top: '50%',
-                zIndex: -1
+                zIndex: 0
               }}
             />
             <div 
-              className="absolute rounded-full"
+              className="absolute rounded-full pointer-events-none"
               style={{
-                width: '60px',
-                height: '60px',
+                width: '64px',
+                height: '64px',
                 left: '50%',
                 top: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: -1,
-                backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                filter: 'blur(8px)',
+                zIndex: 0,
+                backgroundColor: 'rgba(59, 130, 246, 0.35)',
+                filter: 'blur(6px)',
                 animation: 'voicePulse 1.2s ease-in-out infinite'
               }}
             />
@@ -1474,16 +1495,13 @@ function SeatItem({
         )}
         
         <div
-          className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative
+          className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10
           bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px]
           border transition-all duration-300 hover:scale-105 pointer-events-auto
           ${seatData.isSpeaking 
-            ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]' 
+            ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' 
             : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'
           }`}
-          style={seatData.isSpeaking ? {
-            boxShadow: '0 0 0 4px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.4), 0 8px 32px rgba(0, 0, 0, 0.28)'
-          } : {}}
         >
           {seatData.isLocked ? (
             <div className="w-8 h-8 flex items-center justify-center">
