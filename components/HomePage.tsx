@@ -1659,7 +1659,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
         {currentPage === 'room' && selectedUser && (
           <RoomPage    
-            user={selectedUser}    
+            roomOwner={selectedUser}
+            currentUser={{
+              id: userUID,
+              uid: userUID,
+              accountId: (() => {
+                const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+                return typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
+              })(),
+              name: userName,
+              image: userPhoto
+            }}
             onBack={handleBackFromRoom}    
             onKeepRoom={handleKeepRoom}    
           />
