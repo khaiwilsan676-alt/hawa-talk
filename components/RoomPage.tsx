@@ -447,6 +447,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
         {/* Room Seats Layout */}
         <div className="flex-1 flex flex-col justify-start gap-2 pt-4">
+          {/* Row 1: Seat 1 */}
           <div className="flex justify-center">
             <SeatItem 
               seatNumber={1} 
@@ -456,6 +457,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             />
           </div>
 
+          {/* Row 2: Seats 2,3,4,5 */}
           <div className="flex justify-around items-center px-1">
             <SeatItem 
               seatNumber={2} 
@@ -463,51 +465,46 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               onClick={() => handleSeatClick(2)}
               accountId={accountId}
             />
-            <div className="w-2" />
             <SeatItem 
               seatNumber={3} 
               seatData={seats[2]} 
               onClick={() => handleSeatClick(3)}
               accountId={accountId}
             />
-            <div className="w-2" />
             <SeatItem 
               seatNumber={4} 
               seatData={seats[3]} 
               onClick={() => handleSeatClick(4)}
               accountId={accountId}
             />
-          </div>
-
-          <div className="flex justify-around items-center px-1">
             <SeatItem 
               seatNumber={5} 
               seatData={seats[4]} 
               onClick={() => handleSeatClick(5)}
               accountId={accountId}
             />
-            <div className="w-2" />
+          </div>
+
+          {/* Row 3: Seats 6,7,8,9 */}
+          <div className="flex justify-around items-center px-1">
             <SeatItem 
               seatNumber={6} 
               seatData={seats[5]} 
               onClick={() => handleSeatClick(6)}
               accountId={accountId}
             />
-            <div className="w-2" />
             <SeatItem 
               seatNumber={7} 
               seatData={seats[6]} 
               onClick={() => handleSeatClick(7)}
               accountId={accountId}
             />
-            <div className="w-2" />
             <SeatItem 
               seatNumber={8} 
               seatData={seats[7]} 
               onClick={() => handleSeatClick(8)}
               accountId={accountId}
             />
-            <div className="w-2" />
             <SeatItem 
               seatNumber={9} 
               seatData={seats[8]} 
@@ -548,13 +545,13 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
         {/* Footer Controls */}
         <div className="flex-shrink-0 pb-4">
-          {/* Message Input - Full Width No Curve Square */}
+          {/* Message Input - Full Width No Curve Square - More Wide */}
           {showChatInput && (
-            <div className="flex items-center gap-0 mb-0 w-full">
-              <div className="flex-1 bg-white flex items-center px-3 py-2 shadow-lg w-full">
+            <div className="flex items-center gap-0 mb-0 -mx-4 w-screen">
+              <div className="flex-1 bg-white flex items-center px-4 py-3 shadow-lg w-full">
                 {/* Image Icon - Left Side */}
                 <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <polyline points="21 15 16 10 5 21" />
@@ -570,7 +567,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   onKeyPress={handleKeyPress}
                   onBlur={handleInputBlur}
                   placeholder="Type a message..."
-                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-2 py-1.5 text-sm outline-none border-none"
+                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-2 text-base outline-none border-none"
                 />
 
                 {/* Send Button - Right Side */}
@@ -579,7 +576,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   disabled={!message.trim()}
                   className="p-1.5 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
                 >
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                     <line x1="22" y1="2" x2="11" y2="13" />
                     <polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
@@ -844,7 +841,7 @@ function SeatItem({
               className="w-full h-full rounded-full object-cover"
             />
             {seatData.isMuted && (
-              <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md ${seatData.user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
+              <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md ${isCurrentUserOnSeat ? 'bg-gray-400' : 'bg-red-500'}`}>
                 <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
                   <line x1="1" y1="1" x2="23" y2="23" />
                   <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
@@ -892,4 +889,4 @@ function SeatItem({
       </span>
     </div>
   )
-              }
+      }
