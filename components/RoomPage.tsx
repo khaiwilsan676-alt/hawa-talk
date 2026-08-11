@@ -166,7 +166,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         const devices = await navigator.mediaDevices.enumerateDevices()
         const audioOutputs = devices.filter(d => d.kind === 'audiooutput')
         
-        // Priority: Bluetooth / Headset > Wired Headphones > Default
         const preferredOutput = audioOutputs.find(d => 
           d.label.toLowerCase().includes('bluetooth') ||
           d.label.toLowerCase().includes('headset') ||
@@ -184,7 +183,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
     await updateAudioRoute()
 
-    // Re-route when user plugs/unplugs earphones or connects Bluetooth
     if (navigator.mediaDevices.ondevicechange !== undefined) {
       navigator.mediaDevices.addEventListener('devicechange', updateAudioRoute)
     }
@@ -372,7 +370,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           timestamp: Date.now(),
           type: 'join'
         }
-        setMessages(prev => [...prev, joinMessage])
+        setMessages(prev => {
+          if (prev.length > 0 && prev[0].type === 'join' && prev[0].sender === user.name) {
+            return prev
+          }
+          return [...prev, joinMessage]
+        })
       }
     }
     
@@ -430,52 +433,38 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
+          inputRef.current.click()
         }
-      }, 100)
+      }, 300)
     }
   }, [showChatInput])
 
   // Handle keyboard visibility
   useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return
+
+    let initialHeight = window.innerHeight
+
     const handleResize = () => {
       if (window.visualViewport) {
-        const isKeyboardVisible = window.visualViewport.height < window.innerHeight * 0.85
-        setIsKeyboardOpen(isKeyboardVisible)
+        const currentHeight = window.visualViewport.height
+        const keyboardVisible = currentHeight < initialHeight * 0.8
+        setIsKeyboardOpen(keyboardVisible)
       }
     }
 
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize)
-      window.visualViewport.addEventListener('scroll', handleResize)
-    }
+    window.visualViewport.addEventListener('resize', handleResize)
+    window.visualViewport.addEventListener('scroll', handleResize)
 
     return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleResize)
-        window.visualViewport.removeEventListener('scroll', handleResize)
-      }
+      window.visualViewport.removeEventListener('resize', handleResize)
+      window.visualViewport.removeEventListener('scroll', handleResize)
     }
   }, [])
 
-  // Auto-hide chat input when keyboard closes
-  useEffect(() => {
-    if (!isKeyboardOpen && showChatInput) {
-      const timer = setTimeout(() => {
-        setShowChatInput(false)
-        setMessage("")
-      }, 200)
-      return () => clearTimeout(timer)
-    }
-  }, [isKeyboardOpen, showChatInput])
-
   // Handle input blur
   const handleInputBlur = () => {
-    setTimeout(() => {
-      if (!isKeyboardOpen && showChatInput) {
-        setShowChatInput(false)
-        setMessage("")
-      }
-    }, 200)
+    // Keep chat input open
   }
 
   // Handle Seat Click
@@ -485,14 +474,20 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setShowSeatSheet(true)
   }
 
-  // Take Seat
+  // Take Seat / Switch Seat
   const handleTakeSeat = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (selectedSeat === null) return
     
     const targetSeat = seats.find(s => s.number === selectedSeat)
-    if (targetSeat?.isLocked && !targetSeat.isOccupied) {
+    
+    if (targetSeat?.isLocked) {
       alert("This seat is locked!")
+      return
+    }
+    
+    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== accountId) {
+      alert("This seat is already occupied!")
       return
     }
 
@@ -502,14 +497,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           ...s,
           isOccupied: false,
           isLocked: s.isLocked,
-          isMuted: s.isMuted,
+          isMuted: false,
           isSpeaking: false
         }
       }
       return s
     })
-
-    const existingMuteState = targetSeat?.isMuted || false
 
     updatedSeats = updatedSeats.map(s => {
       if (s.number === selectedSeat) {
@@ -521,7 +514,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             image: user.image,
             accountId: accountId
           },
-          isMuted: existingMuteState,
+          isMuted: false,
           isSpeaking: false
         }
       }
@@ -539,12 +532,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     if (selectedSeat === null) return
 
     const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) {
+      if (s.number === selectedSeat && s.user?.accountId === accountId) {
         return {
           ...s,
           isOccupied: false,
           isLocked: s.isLocked,
-          isMuted: s.isMuted,
+          isMuted: false,
           isSpeaking: false
         }
       }
@@ -556,7 +549,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSelectedSeat(null)
   }
 
-  // Mute/Unmute Seat from Bottom Sheet
+  // Mute/Unmute Seat from Bottom Sheet - RED icon for others, GREY for self (bottom button)
   const handleToggleMute = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (selectedSeat === null) return
@@ -574,7 +567,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSeats(updatedSeats)
   }
 
-  // Mute/Unmute from bottom mic icon
+  // Mute/Unmute from bottom mic icon - GREY for self
   const handleBottomMicToggle = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (!currentUserSeat) return
@@ -621,11 +614,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSelectedSeat(null)
   }
 
-  // Check if current user owns this seat
-  const isCurrentUsersSeat = (seat: Seat) => {
-    return seat.isOccupied && seat.user?.accountId === accountId
-  }
-
   // Handle Send Message
   const handleSendMessage = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
@@ -658,19 +646,16 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   // Toggle Chat Input
   const toggleChatInput = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    if (showChatInput) {
-      setShowChatInput(false)
-      setMessage("")
-      if (inputRef.current) {
-        inputRef.current.blur()
-      }
-    } else {
-      setShowChatInput(true)
+    setShowChatInput(prev => !prev)
+    if (!showChatInput) {
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
+          inputRef.current.click()
         }
-      }, 100)
+      }, 300)
+    } else {
+      setMessage("")
     }
   }
 
@@ -722,10 +707,14 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   const handleEmojiSelect = (emoji: string) => {
     console.log("Selected Emoji:", emoji)
+    setMessage(prev => prev + emoji)
   }
 
   // Get live user count
   const liveUserCount = roomUsers.length
+
+  const displayImage = user.image || "/default-avatar.png"
+  const displayName = user.name || "User"
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -757,8 +746,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
               <img 
-                src={user.image || "/default-avatar.png"} 
-                alt={user.name}
+                src={displayImage} 
+                alt={displayName}
                 className="w-full h-full object-cover"
                 draggable={false}
                 onError={(e) => {
@@ -767,7 +756,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               />
             </div>
             <div className="text-left">
-              <h2 className="font-bold text-base">{user.name || "User"}</h2>
+              <h2 className="font-bold text-base">{displayName}</h2>
               <p className="text-xs text-gray-300">ID: {accountId}</p>
             </div>
           </div>
@@ -896,12 +885,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </p>
           </div>
 
-          {/* Messages Area */}
-          <div className="mx-0 mt-1 space-y-1 max-h-[126px] overflow-y-auto">
+          {/* Messages Area - 7 rows max */}
+          <div className="mx-0 mt-1 space-y-1 max-h-[140px] overflow-y-auto px-1">
             {messages.map((msg) => (
               <div key={msg.id}>
                 {msg.type === 'join' ? (
-                  <div className="flex items-start gap-1.5 px-1">
+                  <div className="flex items-start gap-1.5">
                     <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
                       <img 
                         src={msg.senderImage || "/default-avatar.png"} 
@@ -948,16 +937,20 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         {/* Footer Controls */}
         <div className="flex-shrink-0 pb-4">
           {showChatInput && (
-            <div className="flex items-center gap-0 mb-0 -mx-4 w-screen">
-              <div className="flex-1 bg-white flex items-center px-4 py-3 shadow-lg w-full">
+            <div className="flex items-center gap-0 mb-2 mx-0">
+              <div className="flex-1 bg-white/90 backdrop-blur-md rounded-full flex items-center px-4 py-2 shadow-lg">
                 <button 
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowEmojiPicker(true)
+                  }}
+                  className="p-1.5 hover:bg-white/50 rounded-full transition-colors flex-shrink-0 cursor-pointer"
                 >
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                    <line x1="9" y1="9" x2="9.01" y2="9" />
+                    <line x1="15" y1="9" x2="15.01" y2="9" />
                   </svg>
                 </button>
 
@@ -969,7 +962,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   onKeyPress={handleKeyPress}
                   onBlur={handleInputBlur}
                   placeholder="Type a message..."
-                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-2 text-base outline-none border-none"
+                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-1 text-sm outline-none border-none"
+                  enterKeyHint="send"
                 />
 
                 <button
@@ -977,7 +971,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   disabled={!message.trim()}
                   className="p-1.5 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
                 >
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                     <line x1="22" y1="2" x2="11" y2="13" />
                     <polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
@@ -991,17 +985,18 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               onClick={toggleChatInput}
               className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
             >
-              Say Hi
+              {showChatInput ? 'Close' : 'Say Hi'}
             </button>
 
             <div className="flex items-center gap-2">
+              {/* Bottom Mic Button - Shows GREY when muted, White when unmuted */}
               {hasSeat && (
                 <button 
                   onClick={handleBottomMicToggle}
                   className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
                 >
                   {currentUserSeat?.isMuted ? (
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                       <line x1="1" y1="1" x2="23" y2="23" />
                       <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
                       <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
@@ -1128,48 +1123,53 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           />
           
           <div 
-            className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[20vh] overflow-y-auto"
+            className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-6 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="space-y-2">
-              <button
-                onClick={handleTakeSeat}
-                disabled={seats.find(s => s.number === selectedSeat)?.isOccupied && !seats.some(s => s.isOccupied && s.user?.accountId === accountId)}
-                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {seats.some(s => s.isOccupied && s.user?.accountId === accountId) ? 'Switch Seat' : 'Take Mic'}
-              </button>
+            <div className="space-y-1">
+              {(!seats.find(s => s.number === selectedSeat)?.isOccupied || 
+                seats.find(s => s.number === selectedSeat)?.user?.accountId === accountId) && (
+                <button
+                  onClick={handleTakeSeat}
+                  disabled={seats.find(s => s.number === selectedSeat)?.isLocked && !seats.find(s => s.number === selectedSeat)?.isOccupied}
+                  className="w-full py-3 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {seats.some(s => s.isOccupied && s.user?.accountId === accountId) ? 'Switch Mic' : 'Take Mic'}
+                </button>
+              )}
+
+              {seats.find(s => s.number === selectedSeat)?.user?.accountId === accountId && (
+                <button
+                  onClick={handleLeaveSeat}
+                  className="w-full py-3 text-red-500 font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  Leave Seat
+                </button>
+              )}
+
+              {/* Mute button in Bottom Sheet - always available for any occupied seat or when user has seat */}
+              {seats.find(s => s.number === selectedSeat)?.isOccupied && (
+                <button
+                  onClick={handleToggleMute}
+                  className="w-full py-3 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  {seats.find(s => s.number === selectedSeat)?.isMuted ? 'Unmute' : 'Mute'}
+                </button>
+              )}
 
               <button
                 onClick={handleToggleLock}
-                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                className="w-full py-3 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 {seats.find(s => s.number === selectedSeat)?.isLocked ? 'Unlock Mic' : 'Lock Mic'}
               </button>
 
               <button
                 onClick={handleInvite}
-                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                className="w-full py-3 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 Invite
               </button>
-
-              <button
-                onClick={handleToggleMute}
-                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-              >
-                {seats.find(s => s.number === selectedSeat)?.isMuted ? 'Unmute' : 'Mute'}
-              </button>
-
-              {seats.find(s => s.number === selectedSeat)?.isOccupied && 
-               isCurrentUsersSeat(seats.find(s => s.number === selectedSeat)!) && (
-                <button
-                  onClick={handleLeaveSeat}
-                  className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                >
-                  Leave Seat
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -1190,16 +1190,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         />
       )}
 
-      <style jsx>{`
-        @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-        .animate-slide-up {
-          animation: slideUp 0.3s ease-out;
-        }
-
-        /* Expanding Blue Wave Effect radiating from behind avatar */
+      {/* Voice wave animations */}
+      <style>{`
         @keyframes rippleRing1 {
           0% {
             transform: scale(1);
@@ -1233,6 +1225,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           }
         }
 
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        
+        .animate-slide-up {
+          animation: slideUp 0.3s ease-out;
+        }
+
         .blue-wave-1 {
           animation: rippleRing1 1.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
         }
@@ -1249,6 +1250,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   )
 }
 
+// SeatItem Component
 function SeatItem({ 
   seatNumber, 
   seatData, 
@@ -1260,16 +1262,18 @@ function SeatItem({
   onClick: (e: React.MouseEvent) => void
   accountId: string
 }) {
+  const isCurrentUser = seatData.user?.accountId === accountId
+  
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
       <div className="relative w-[60px] h-[60px] flex items-center justify-center">
         
-        {/* Glowing Blue Outer Ripples (Avatar ke piche se aane wali continuous waves) */}
+        {/* Glowing Blue Outer Ripples for speaking */}
         {seatData.isSpeaking && (
           <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-blue-500/40 border border-blue-400 blue-wave-1 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
-            <div className="absolute inset-0 rounded-full bg-blue-400/30 border border-cyan-400 blue-wave-2 shadow-[0_0_20px_rgba(59,130,246,0.6)]" />
-            <div className="absolute inset-0 rounded-full bg-blue-600/20 border border-blue-300 blue-wave-3 shadow-[0_0_25px_rgba(59,130,246,0.4)]" />
+            <div className="absolute inset-0 rounded-full blue-wave-1 bg-blue-500/40 border border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+            <div className="absolute inset-0 rounded-full blue-wave-2 bg-blue-400/30 border border-cyan-400 shadow-[0_0_20px_rgba(59,130,246,0.6)]" />
+            <div className="absolute inset-0 rounded-full blue-wave-3 bg-blue-600/20 border border-blue-300 shadow-[0_0_25px_rgba(59,130,246,0.4)]" />
           </div>
         )}
 
@@ -1302,11 +1306,10 @@ function SeatItem({
                   (e.target as HTMLImageElement).src = "/default-avatar.png"
                 }}
               />
+              {/* Mute Icon for Occupied Seat - Always RED, Bottom Right */}
               {seatData.isMuted && (
-                <div className={`absolute -right-1 -bottom-1 z-20 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${
-                  seatData.user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'
-                }`}>
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+                <div className="absolute -right-0.5 -bottom-0.5 z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center shadow-md pointer-events-none border border-white/30">
+                  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
                     <line x1="1" y1="1" x2="23" y2="23" />
                     <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
                     <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
@@ -1345,9 +1348,21 @@ function SeatItem({
                   <path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" />
                 </g>
               </svg>
-              {seatData.isMuted && (
-                <div className="absolute -right-2 -bottom-2 z-20 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+              
+              {/* Lock Icon for Empty Seat - Bottom Right Corner */}
+              {seatData.isLocked && (
+                <div className="absolute -right-1 -bottom-1 z-20 w-[18px] h-[18px] rounded-full bg-gray-500 flex items-center justify-center shadow-md border border-white/30">
+                  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                  </svg>
+                </div>
+              )}
+              
+              {/* Mute Icon for Empty Seat - RED, Bottom Right Corner */}
+              {seatData.isMuted && !seatData.isLocked && (
+                <div className="absolute -right-1 -bottom-1 z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center shadow-md border border-white/30">
+                  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
                     <line x1="1" y1="1" x2="23" y2="23" />
                     <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
                     <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
@@ -1357,11 +1372,22 @@ function SeatItem({
             </div>
           )}
         </div>
+        
+        {/* Lock Icon for Occupied Seat - Outside Bottom Right */}
+        {seatData.isOccupied && seatData.isLocked && (
+          <div className="absolute -right-0.5 -bottom-0.5 z-20 w-[18px] h-[18px] rounded-full bg-gray-500 flex items-center justify-center shadow-md border border-white/30">
+            <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+          </div>
+        )}
       </div>
-      <span className="text-[10px] font-medium text-white/80 pointer-events-none">
-        {seatData.isLocked ? `No ${seatNumber}` : (seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`)}
+      
+      <span className="text-[10px] font-medium text-white/80 pointer-events-none text-center max-w-[60px] truncate">
+        {seatData.isLocked && !seatData.isOccupied ? `No ${seatNumber}` : 
+         (seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`)}
       </span>
     </div>
   )
-}
-
+      }
