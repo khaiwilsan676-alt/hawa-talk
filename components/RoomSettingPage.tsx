@@ -1,9 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
+import { db } from "../src/lib/firebase"
+import { doc, setDoc } from "firebase/firestore"
 
 interface RoomSettingPageProps {
   onBack: () => void
+  roomOwnerId?: string          // Firestore doc ID of the room (for saving)
   roomData?: {
     roomName?: string
     roomImage?: string
@@ -16,7 +19,89 @@ interface RoomSettingPageProps {
   onSave?: (data: any) => void
 }
 
-export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettingPageProps) {
+// ---------- Mini room preview for mic mode cards ----------
+function MicModePreview({ count, selected }: { count: number; selected: boolean }) {
+  // Pre‑defined seat positions for each mode (scaled down)
+  const positions: { [key: number]: { top: number; left: number }[] } = {
+    5: [
+      { top: 15, left: 50 },
+      { top: 55, left: 15 },
+      { top: 55, left: 85 },
+      { top: 55, left: 50 },
+      { top: 55, left: 85 },  // adjusted for balance
+    ],
+    9: [
+      { top: 10, left: 50 },
+      { top: 40, left: 18 },
+      { top: 40, left: 82 },
+      { top: 40, left: 50 },
+      { top: 40, left: 82 },
+      { top: 70, left: 18 },
+      { top: 70, left: 82 },
+      { top: 70, left: 50 },
+      { top: 70, left: 82 },
+    ],
+    10: [
+      { top: 10, left: 35 },
+      { top: 10, left: 65 },
+      { top: 40, left: 15 },
+      { top: 40, left: 85 },
+      { top: 40, left: 50 },
+      { top: 40, left: 85 },
+      { top: 70, left: 15 },
+      { top: 70, left: 85 },
+      { top: 70, left: 50 },
+      { top: 70, left: 85 },
+    ],
+    13: [
+      { top: 5, left: 50 },
+      { top: 28, left: 15 },
+      { top: 28, left: 85 },
+      { top: 28, left: 50 },
+      { top: 28, left: 85 },
+      { top: 52, left: 15 },
+      { top: 52, left: 85 },
+      { top: 52, left: 50 },
+      { top: 52, left: 85 },
+      { top: 76, left: 15 },
+      { top: 76, left: 85 },
+      { top: 76, left: 50 },
+      { top: 76, left: 85 },
+    ],
+  }
+
+  // Ensure we don’t go out of bounds
+  const seats = positions[count] ?? positions[9]
+
+  return (
+    <div className="relative w-20 h-24 mx-auto">
+      {/* Background gradient (mimics a dark room) */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-80" />
+      {/* Tiny seat circles */}
+      {seats.slice(0, count).map((pos, i) => (
+        <div
+          key={i}
+          className={`absolute w-2.5 h-2.5 rounded-full border ${
+            selected ? 'border-blue-400 bg-blue-300/40' : 'border-gray-500 bg-gray-400/30'
+          }`}
+          style={{
+            top: `${pos.top}%`,
+            left: `${pos.left}%`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+      ))}
+      {/* Subtle count number */}
+      <div className="absolute bottom-1 right-1.5 text-[9px] font-bold text-white/80 bg-black/30 px-1 rounded">
+        {count}
+      </div>
+    </div>
+  )
+}
+
+// ------------------------------------------------------------
+
+export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave }: RoomSettingPageProps) {
   const [roomImage, setRoomImage] = useState<string>(roomData?.roomImage || '/1784533036732~2.jpg')
   const [roomName, setRoomName] = useState<string>(roomData?.roomName || '')
   const [announcement, setAnnouncement] = useState<string>(roomData?.announcement || '')
@@ -24,12 +109,7 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
   const [selectedMicMode, setSelectedMicMode] = useState<number>(roomData?.micMode || 9)
   const [showMicModeSheet, setShowMicModeSheet] = useState<boolean>(false)
 
-  const micModes = [
-    { value: 5, label: '5 Mic Mode' },
-    { value: 9, label: '9 Mic Mode' },
-    { value: 10, label: '10 Mic Mode' },
-    { value: 13, label: '13 Mic Mode' },
-  ]
+  const micModes = [5, 9, 10, 13]
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -49,7 +129,7 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
     reader.readAsDataURL(file)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const settingsData = {
       roomImage,
       roomName,
@@ -57,6 +137,20 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
       isLocked,
       micMode: selectedMicMode,
     }
+
+    if (roomOwnerId && db) {
+      try {
+        await setDoc(doc(db, "globalRooms", roomOwnerId), {
+          name: roomName,
+          image: roomImage,
+          announcement: announcement,
+          micMode: selectedMicMode,
+        }, { merge: true })
+      } catch (err) {
+        console.error("Firestore update failed:", err)
+      }
+    }
+
     if (onSave) onSave(settingsData)
     onBack()
   }
@@ -65,7 +159,7 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
     <div className="fixed inset-0 z-50 bg-white flex flex-col">
       {/* Header */}
       <div className="flex items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
-        <button 
+        <button
           onClick={onBack}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
         >
@@ -74,7 +168,7 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
           </svg>
         </button>
         <h1 className="flex-1 text-center text-lg font-bold text-gray-800">Room Setting</h1>
-        <button 
+        <button
           onClick={handleSave}
           className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-full"
         >
@@ -84,28 +178,25 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
-        
-        {/* 1. Room Cover (DP only) */}
-        <div className="mb-6">
-          <div className="flex flex-col items-center">
-            <p className="text-sm font-medium text-gray-600 mb-3">Room Cover</p>
-            <label className="cursor-pointer relative group">
-              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
-                <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white opacity-0 group-hover:opacity-100">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                </div>
+        {/* 1. Room Cover (DP) – square image, label below */}
+        <div className="mb-6 flex flex-col items-center">
+          <label className="cursor-pointer relative group">
+            <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200 shadow-md">
+              <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white opacity-0 group-hover:opacity-100">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
               </div>
-              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-            </label>
-          </div>
+            </div>
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          </label>
+          <p className="text-sm font-medium text-gray-600 mt-2">Room Cover</p>
         </div>
 
-        {/* 2. Room Name - Label Left, Value Right */}
+        {/* 2. Room Name */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Room Name</label>
@@ -119,7 +210,7 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
           </div>
         </div>
 
-        {/* 3. Room Announcement - Label Left, Value Right */}
+        {/* 3. Room Announcement – starts empty */}
         <div className="mb-5">
           <div className="flex items-start justify-between px-1">
             <label className="text-sm font-medium text-gray-600 pt-1">Room Announcement</label>
@@ -133,7 +224,7 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
           </div>
         </div>
 
-        {/* 4. Theme - Label Left, Text Right */}
+        {/* 4. Theme */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Theme</label>
@@ -141,7 +232,7 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
           </div>
         </div>
 
-        {/* 5. Admin - Label Left, Text Right */}
+        {/* 5. Admin */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Admin</label>
@@ -149,7 +240,7 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
           </div>
         </div>
 
-        {/* 6. Lock Room - Label Left, Toggle Right */}
+        {/* 6. Lock Room */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Lock Room</label>
@@ -162,15 +253,18 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
           </div>
         </div>
 
-        {/* 7. Mic Mode - Label Left, Value Right */}
+        {/* 7. Mic Mode – now shows a visual preview */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Mic Mode</label>
-            <button 
+            <button
               onClick={() => setShowMicModeSheet(true)}
-              className="text-sm text-gray-800 flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-lg"
+              className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-lg"
             >
-              <span>{selectedMicMode} Mic Mode</span>
+              {/* Mini preview of the currently selected mode */}
+              <div className="w-8 h-10">
+                <MicModePreview count={selectedMicMode} selected={false} />
+              </div>
               <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-400 stroke-[2]">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -179,28 +273,29 @@ export default function RoomSettingPage({ onBack, roomData, onSave }: RoomSettin
         </div>
       </div>
 
-      {/* Mic Mode Bottom Sheet - 3 cards per row */}
+      {/* Mic Mode Bottom Sheet */}
       {showMicModeSheet && (
         <div className="absolute inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowMicModeSheet(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-6 animate-slide-up">
             <h3 className="text-lg font-bold text-gray-800 text-center mb-4">Select Mic Mode</h3>
-            
-            <div className="grid grid-cols-3 gap-3">
+
+            <div className="grid grid-cols-3 gap-4">
               {micModes.map((mode) => (
                 <button
-                  key={mode.value}
+                  key={mode}
                   onClick={() => {
-                    setSelectedMicMode(mode.value)
+                    setSelectedMicMode(mode)
                     setShowMicModeSheet(false)
                   }}
                   className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${
-                    selectedMicMode === mode.value 
-                      ? 'border-blue-400 bg-blue-50 text-blue-700' 
-                      : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    selectedMicMode === mode
+                      ? 'border-blue-400 bg-blue-50'
+                      : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
-                  <span className="text-sm font-medium">{mode.label}</span>
+                  {/* Seat preview – NO TEXT */}
+                  <MicModePreview count={mode} selected={selectedMicMode === mode} />
                 </button>
               ))}
             </div>
