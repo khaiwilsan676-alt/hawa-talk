@@ -84,7 +84,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [showRoomInfo, setShowRoomInfo] = useState(false)
   const [isFollowed, setIsFollowed] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [accountId, setAccountId] = useState<string>(currentUser.accountId)
+  
+  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest"
+  const [accountId, setAccountId] = useState<string>(userAccountId)
+  
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [fullImageModal, setFullImageModal] = useState<string | null>(null)
@@ -131,8 +134,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     { id: 'hawa-system', name: 'Hurry System', image: '/1784465161302~2.jpg' }
   ]
 
-  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === currentUser.accountId)
-  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === currentUser.accountId)
+  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId)
+  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId)
 
   const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomOwner.id || roomOwner.accountId || 'default')) % 100000}`
 
@@ -161,7 +164,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             setRoomName(data.name || "")
             setRoomAnnouncement(data.announcement || "")
             setRoomImage(data.image || roomOwner.image)
-            setMicMode(data.micMode || 9)
+            if (data.micMode && data.micMode !== micMode) {
+              setMicMode(data.micMode)
+            }
           }
         } catch (err) {
           console.error("Error loading room data:", err)
@@ -188,7 +193,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const setUserSpeaking = (targetId: string, speaking: boolean) => {
     setSeats(prev => prev.map(seat => {
       if (seat.isOccupied && seat.user) {
-        if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === currentUser.accountId)) {
+        if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === userAccountId)) {
           return { ...seat, isSpeaking: speaking }
         }
       }
@@ -207,7 +212,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         width: '100%',
         height: '100%',
         parentNode: jitsiContainerRef.current,
-        userInfo: { displayName: currentUser.name, email: currentUser.accountId + '@hurry.app' },
+        userInfo: { displayName: currentUser.name, email: userAccountId + '@hurry.app' },
         configOverrides: {
           startWithAudioMuted: true,
           startWithVideoMuted: true,
@@ -305,15 +310,19 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       speakingUsersRef.current.clear()
       if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null }
     }
-  }, [jitsiLoaded, jitsiRoomName, currentUser.accountId, currentUser.name])
+  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name])
 
   // Toggle audio when seat status changes
   useEffect(() => {
     if (!jitsiApiRef.current) return
-    if (hasSeat) {
-      jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted)
-    } else {
-      jitsiApiRef.current.executeCommand('toggleAudio', false)
+    try {
+      if (hasSeat) {
+        jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted)
+      } else {
+        jitsiApiRef.current.executeCommand('toggleAudio', false)
+      }
+    } catch (e) {
+      console.warn("Jitsi audio execute error:", e)
     }
   }, [hasSeat, currentUserSeat?.isMuted])
 
@@ -325,9 +334,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   // Add current user to room users
   useEffect(() => {
     if (accountId !== "Loading..." && currentUser.name && currentUser.image) {
-      const userExists = roomUsers.find(u => u.accountId === currentUser.accountId)
+      const userExists = roomUsers.find(u => u.accountId === userAccountId)
       if (!userExists) {
-        setRoomUsers(prev => [...prev, { accountId: currentUser.accountId, name: currentUser.name, image: currentUser.image }])
+        setRoomUsers(prev => [...prev, { accountId: userAccountId, name: currentUser.name, image: currentUser.image }])
         setMessages(prev => [...prev, {
           id: `join-${Date.now()}`,
           text: 'Enter the Room',
@@ -339,9 +348,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       }
     }
     return () => {
-      setRoomUsers(prev => prev.filter(u => u.accountId !== currentUser.accountId))
+      setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId))
     }
-  }, [currentUser.accountId, currentUser.name, currentUser.image])
+  }, [userAccountId, currentUser.name, currentUser.image])
 
   // Scroll messages to bottom
   useEffect(() => {
@@ -418,31 +427,37 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   }
 
   const handleSeatClick = (seatNumber: number) => (e: React.MouseEvent) => {
+    e.preventDefault()
     e.stopPropagation()
     setSelectedSeat(seatNumber)
     setShowSeatSheet(true)
   }
 
   const handleTakeSeat = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     const targetSeat = seats.find(s => s.number === selectedSeat)
     if (targetSeat?.isLocked && !targetSeat.isOccupied) { alert("This seat is locked!"); return }
-    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== currentUser.accountId) { alert("This seat is already taken!"); return }
+    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== userAccountId) { alert("This seat is already taken!"); return }
 
     let updatedSeats = seats.map(s => {
-      if (s.isOccupied && s.user?.accountId === currentUser.accountId)
+      if (s.isOccupied && s.user?.accountId === userAccountId)
         return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
       return s
     })
 
     updatedSeats = updatedSeats.map(s => {
       if (s.number === selectedSeat) {
-        if (jitsiApiRef.current) jitsiApiRef.current.executeCommand('toggleAudio', true)
+        if (jitsiApiRef.current) {
+          try { jitsiApiRef.current.executeCommand('toggleAudio', true) } catch (err) {}
+        }
         return {
           ...s,
           isOccupied: true,
-          user: { name: currentUser.name, image: currentUser.image, accountId: currentUser.accountId },
+          user: { name: currentUser.name, image: currentUser.image, accountId: userAccountId },
           isMuted: false,
           isSpeaking: false
         }
@@ -456,10 +471,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   }
 
   const handleLeaveSeat = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
-    if (jitsiApiRef.current && currentUser.accountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
-      jitsiApiRef.current.executeCommand('toggleAudio', false)
+    if (jitsiApiRef.current && userAccountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
+      try { jitsiApiRef.current.executeCommand('toggleAudio', false) } catch (err) {}
     }
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat)
@@ -472,13 +490,17 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   }
 
   const handleToggleMute = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
         const newMuteState = !s.isMuted
-        if (s.user?.accountId === currentUser.accountId && jitsiApiRef.current)
-          jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState)
+        if (s.user?.accountId === userAccountId && jitsiApiRef.current) {
+          try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState) } catch (err) {}
+        }
         return { ...s, isMuted: newMuteState }
       }
       return s
@@ -490,7 +512,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (e) e.stopPropagation()
     if (!currentUserSeat || !jitsiApiRef.current) return
     const newMuteState = !currentUserSeat.isMuted
-    jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState)
+    try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState) } catch (err) {}
     const updatedSeats = seats.map(s => {
       if (s.number === currentUserSeat.number) return { ...s, isMuted: newMuteState }
       return s
@@ -499,7 +521,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   }
 
   const handleToggleLock = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked }
@@ -511,14 +536,17 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   }
 
   const handleInvite = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     alert(`Invite sent to join seat ${selectedSeat}!`)
     setShowSeatSheet(false)
     setSelectedSeat(null)
   }
 
-  const isCurrentUsersSeat = (seat: Seat) => seat.isOccupied && seat.user?.accountId === currentUser.accountId
+  const isCurrentUsersSeat = (seat?: Seat) => Boolean(seat && seat.isOccupied && seat.user?.accountId === userAccountId)
 
   const handleSendMessage = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
@@ -602,7 +630,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (e) e.stopPropagation()
     setShowExitMenu(false)
     localStorage.removeItem('keptRoom')
-    setRoomUsers(prev => prev.filter(u => u.accountId !== currentUser.accountId))
+    setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId))
     if (jitsiApiRef.current) jitsiApiRef.current.dispose()
     if (onBack) onBack()
     if (onClose) onClose()
@@ -623,7 +651,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const liveUserCount = roomUsers.length
   const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false
-  const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isCurrentUsersSeat(selectedSeatData)) : false
+  const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false
 
   // ---------- Render seats based on mic mode ----------
   const renderSeats = () => {
@@ -631,13 +659,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return (
         <>
           <div className="flex justify-center">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={userAccountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={userAccountId} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={userAccountId} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={userAccountId} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={userAccountId} />
           </div>
         </>
       )
@@ -646,20 +674,20 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return (
         <>
           <div className="flex justify-center gap-4">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={userAccountId} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={userAccountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={userAccountId} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={userAccountId} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={userAccountId} />
+            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={userAccountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={userAccountId} />
+            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={userAccountId} />
+            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={userAccountId} />
+            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={userAccountId} />
           </div>
         </>
       )
@@ -668,25 +696,25 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return (
         <>
           <div className="flex justify-center">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={userAccountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={userAccountId} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={userAccountId} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={userAccountId} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={userAccountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={userAccountId} />
+            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={userAccountId} />
+            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={userAccountId} />
+            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={userAccountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} accountId={currentUser.accountId} />
-            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={userAccountId} />
+            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} accountId={userAccountId} />
+            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} accountId={userAccountId} />
+            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} accountId={userAccountId} />
           </div>
         </>
       )
@@ -695,19 +723,19 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     return (
       <>
         <div className="flex justify-center">
-          <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={userAccountId} />
         </div>
         <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={currentUser.accountId} />
-          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={currentUser.accountId} />
-          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={currentUser.accountId} />
-          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={userAccountId} />
+          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={userAccountId} />
+          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={userAccountId} />
+          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={userAccountId} />
         </div>
         <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={currentUser.accountId} />
-          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={currentUser.accountId} />
-          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={currentUser.accountId} />
-          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={userAccountId} />
+          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={userAccountId} />
+          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={userAccountId} />
+          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={userAccountId} />
         </div>
       </>
     )
@@ -769,7 +797,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                   </svg>
                 </button>
               </div>
-              <p className="text-xs text-gray-300">ID: {currentUser.accountId}</p>
+              <p className="text-xs text-gray-300">ID: {userAccountId}</p>
             </div>
           </div>
 
@@ -1099,27 +1127,33 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 }
 
 // ---------- SeatItem Component ----------
-function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: number; seatData: Seat; onClick: (e: React.MouseEvent) => void; accountId: string }) {
+function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: number; seatData?: Seat; onClick: (e: React.MouseEvent) => void; accountId: string }) {
+  const isLocked = seatData?.isLocked ?? false
+  const isOccupied = seatData?.isOccupied ?? false
+  const isSpeaking = seatData?.isSpeaking ?? false
+  const isMuted = seatData?.isMuted ?? false
+  const user = seatData?.user
+
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
       <div className="relative overflow-visible">
-        {seatData.isSpeaking && (
+        {isSpeaking && (
           <>
             <div className="absolute rounded-full bg-blue-400 wave-ripple pointer-events-none" style={{ width: '60px', height: '60px', left: '50%', top: '50%', zIndex: 0 }} />
             <div className="absolute rounded-full bg-blue-500 wave-ripple-delayed pointer-events-none" style={{ width: '60px', height: '60px', left: '50%', top: '50%', zIndex: 0 }} />
             <div className="absolute rounded-full pointer-events-none" style={{ width: '64px', height: '64px', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
           </>
         )}
-        <div className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${seatData.isSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
-          {seatData.isLocked ? (
+        <div className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${isSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
+          {isLocked ? (
             <div className="w-8 h-8 flex items-center justify-center">
               <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="5" y="11" width="14" height="10" rx="2.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><circle cx="12" cy="16" r="1.2" fill="#94a7be" /></svg>
             </div>
-          ) : seatData.isOccupied && seatData.user ? (
+          ) : isOccupied && user ? (
             <>
-              <img src={seatData.user.image || "/default-avatar.png"} alt={seatData.user.name} className="w-full h-full rounded-full object-cover pointer-events-none" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-              {seatData.isMuted && (
-                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${seatData.user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
+              <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full rounded-full object-cover pointer-events-none" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+              {isMuted && (
+                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
                   <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
@@ -1130,7 +1164,7 @@ function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: nu
                 <g fill="none" stroke="#94a7be" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"><path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" /><path d="M 50 74 L 50 86" /><path d="M 38 90 L 62 90" /></g>
                 <g fill="#94a7be" stroke="#5a6d89" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" transform="translate(0, 6)"><path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" /></g>
               </svg>
-              {seatData.isMuted && (
+              {isMuted && (
                 <div className="absolute -right-2 -bottom-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
                   <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
@@ -1140,8 +1174,9 @@ function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: nu
         </div>
       </div>
       <span className="text-[10px] font-medium text-white/80 pointer-events-none">
-        {seatData.isLocked ? `No ${seatNumber}` : (seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`)}
+        {isLocked ? `No ${seatNumber}` : (isOccupied && user ? user.name : `No ${seatNumber}`)}
       </span>
     </div>
   )
-    }
+}
+
