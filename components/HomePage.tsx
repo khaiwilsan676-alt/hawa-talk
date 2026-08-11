@@ -564,6 +564,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
 
+      // Save room data to Firestore - Room name and Room DP saved here
       await setDoc(doc(db, "globalRooms", userUID), {
         id: userUID,
         name: userName,
@@ -573,6 +574,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         createdAt: Date.now()
       }, { merge: true });
 
+      // Save user data to Firestore
       await setDoc(doc(db, "users", userUID), {
         id: userUID,
         name: userName,
@@ -1762,4 +1764,3 @@ export default function HomePage({ onLogout }: HomePageProps) {
     </div>  
   )
 }
-
