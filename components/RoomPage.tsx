@@ -5,10 +5,9 @@ import EmojiPicker from './Emojipicker'
 import GiftPicker from './GiftPicker'
 import RoomSettingPage from './RoomSettingPage'
 import { db } from "../src/lib/firebase"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, setDoc, getDoc } from "firebase/firestore"
 import Image from 'next/image'
 
-// Jitsi Meet External API
 declare global {
   interface Window {
     JitsiMeetExternalAPI: any;
@@ -16,10 +15,17 @@ declare global {
 }
 
 interface RoomPageProps {
-  user: {
+  roomOwner: {
     id?: string
     uid?: string
     accountId?: string
+    name: string
+    image: string
+  }
+  currentUser: {
+    id?: string
+    uid?: string
+    accountId: string
     name: string
     image: string
   }
@@ -69,7 +75,7 @@ interface ChatItem {
   image: string
 }
 
-export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
+export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGiftPicker, setShowGiftPicker] = useState(false)
@@ -78,33 +84,35 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const [showRoomInfo, setShowRoomInfo] = useState(false)
   const [isFollowed, setIsFollowed] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [accountId, setAccountId] = useState<string>("Loading...")
+  const [accountId, setAccountId] = useState<string>(currentUser.accountId)
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [fullImageModal, setFullImageModal] = useState<string | null>(null)
 
   const [roomName, setRoomName] = useState<string>("")
-  const [roomAnnouncement, setRoomAnnouncement] = useState<string>("Welcome to Hurry. Any Content related to Fraud, Abusing, violence Breaking a Hurry Rules Will be Ban.")
-  const [roomImage, setRoomImage] = useState<string>("/1784533036732~2.jpg")
+  const [roomAnnouncement, setRoomAnnouncement] = useState<string>("")
+  const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg")
   const [micMode, setMicMode] = useState<number>(9)
   const [roomInfoTab, setRoomInfoTab] = useState<'info' | 'members'>('info')
+
+  const backgroundImage = "/1784533036732~2.jpg"
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputContainerRef = useRef<HTMLDivElement>(null)
-  
+
   const [showChatInput, setShowChatInput] = useState(false)
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([])
-  
+
   const jitsiContainerRef = useRef<HTMLDivElement>(null)
   const jitsiApiRef = useRef<any>(null)
   const [jitsiLoaded, setJitsiLoaded] = useState(false)
-  
+
   const speakingUsersRef = useRef<Set<string>>(new Set())
   const speakingTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
-  
+
   const getInitialSeats = (mode: number): Seat[] => {
     const seats: Seat[] = []
     for (let i = 1; i <= mode; i++) {
@@ -123,10 +131,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     { id: 'hawa-system', name: 'Hurry System', image: '/1784465161302~2.jpg' }
   ]
 
-  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === accountId)
-  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === accountId)
+  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === currentUser.accountId)
+  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === currentUser.accountId)
 
-  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(accountId + 'room')) % 100000}`
+  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomOwner.id || roomOwner.accountId || 'default')) % 100000}`
 
   function hashCode(str: string): number {
     let hash = 0
@@ -138,12 +146,32 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     return Math.abs(hash)
   }
 
-  // Display room name - max 6 characters for header
-  const displayRoomName = roomName 
+  const displayRoomName = roomName
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
-    : (user.name?.length > 6 ? user.name?.substring(0, 6) + '...' : user.name || 'User')
+    : (roomOwner.name?.length > 6 ? roomOwner.name?.substring(0, 6) + '...' : roomOwner.name || 'User')
 
-  // Load Jitsi
+  // Fetch room data from Firestore
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      if (roomOwner.id && db) {
+        try {
+          const snap = await getDoc(doc(db, "globalRooms", roomOwner.id))
+          if (snap.exists()) {
+            const data = snap.data()
+            setRoomName(data.name || "")
+            setRoomAnnouncement(data.announcement || "")
+            setRoomImage(data.image || roomOwner.image)
+            setMicMode(data.micMode || 9)
+          }
+        } catch (err) {
+          console.error("Error loading room data:", err)
+        }
+      }
+    }
+    fetchRoomData()
+  }, [roomOwner.id, roomOwner.image])
+
+  // Load Jitsi script
   useEffect(() => {
     if (!document.getElementById('jitsi-script')) {
       const script = document.createElement('script')
@@ -160,7 +188,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const setUserSpeaking = (targetId: string, speaking: boolean) => {
     setSeats(prev => prev.map(seat => {
       if (seat.isOccupied && seat.user) {
-        if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === accountId)) {
+        if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === currentUser.accountId)) {
           return { ...seat, isSpeaking: speaking }
         }
       }
@@ -168,6 +196,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }))
   }
 
+  // Initialize Jitsi
   useEffect(() => {
     if (!jitsiLoaded || !jitsiContainerRef.current || accountId === "Loading...") return
 
@@ -178,21 +207,38 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         width: '100%',
         height: '100%',
         parentNode: jitsiContainerRef.current,
-        userInfo: { displayName: user.name, email: accountId + '@hurry.app' },
+        userInfo: { displayName: currentUser.name, email: currentUser.accountId + '@hurry.app' },
         configOverrides: {
-          startWithAudioMuted: true, startWithVideoMuted: true, disableDeepLinking: true,
-          prejoinPageEnabled: false, enableNoisyMicDetection: true, disableAudioLevels: false,
-          toolbarButtons: [], disableInviteFunctions: true, disablePolls: true,
-          disableSelfView: true, hideConferenceSubject: true, hideConferenceTimer: true,
-          doNotStoreRoom: true, resolution: 180,
+          startWithAudioMuted: true,
+          startWithVideoMuted: true,
+          disableDeepLinking: true,
+          prejoinPageEnabled: false,
+          enableNoisyMicDetection: true,
+          disableAudioLevels: false,
+          toolbarButtons: [],
+          disableInviteFunctions: true,
+          disablePolls: true,
+          disableSelfView: true,
+          hideConferenceSubject: true,
+          hideConferenceTimer: true,
+          doNotStoreRoom: true,
+          resolution: 180,
           constraints: { video: { height: { ideal: 180, max: 180, min: 180 } } },
         },
         interfaceConfigOverrides: {
-          filmStripOnly: false, SHOW_JITSI_WATERMARK: false, SHOW_WATERMARK_FOR_GUESTS: false,
-          SHOW_BRAND_WATERMARK: false, SHOW_POWERED_BY: false, SHOW_PROMOTIONAL_CLOSE_PAGE: false,
-          TOOLBAR_ALWAYS_VISIBLE: false, DISABLE_VIDEO_BACKGROUND: true,
-          HIDE_INVITE_MORE_HEADER: true, MOBILE_APP_PROMO: false,
-          APP_NAME: 'Hurry', NATIVE_APP_NAME: 'Hurry', PROVIDER_NAME: 'Hurry'
+          filmStripOnly: false,
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_WATERMARK_FOR_GUESTS: false,
+          SHOW_BRAND_WATERMARK: false,
+          SHOW_POWERED_BY: false,
+          SHOW_PROMOTIONAL_CLOSE_PAGE: false,
+          TOOLBAR_ALWAYS_VISIBLE: false,
+          DISABLE_VIDEO_BACKGROUND: true,
+          HIDE_INVITE_MORE_HEADER: true,
+          MOBILE_APP_PROMO: false,
+          APP_NAME: 'Hurry',
+          NATIVE_APP_NAME: 'Hurry',
+          PROVIDER_NAME: 'Hurry'
         }
       }
 
@@ -259,8 +305,9 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       speakingUsersRef.current.clear()
       if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null }
     }
-  }, [jitsiLoaded, accountId, jitsiRoomName])
+  }, [jitsiLoaded, jitsiRoomName, currentUser.accountId, currentUser.name])
 
+  // Toggle audio when seat status changes
   useEffect(() => {
     if (!jitsiApiRef.current) return
     if (hasSeat) {
@@ -270,51 +317,38 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }, [hasSeat, currentUserSeat?.isMuted])
 
+  // Update seats when mic mode changes
   useEffect(() => {
     setSeats(getInitialSeats(micMode))
   }, [micMode])
 
+  // Add current user to room users
   useEffect(() => {
-    if (accountId !== "Loading..." && user.name && user.image) {
-      const userExists = roomUsers.find(u => u.accountId === accountId)
+    if (accountId !== "Loading..." && currentUser.name && currentUser.image) {
+      const userExists = roomUsers.find(u => u.accountId === currentUser.accountId)
       if (!userExists) {
-        setRoomUsers(prev => [...prev, { accountId, name: user.name, image: user.image }])
+        setRoomUsers(prev => [...prev, { accountId: currentUser.accountId, name: currentUser.name, image: currentUser.image }])
         setMessages(prev => [...prev, {
-          id: `join-${Date.now()}`, text: 'Enter the Room', sender: user.name,
-          senderImage: user.image, timestamp: Date.now(), type: 'join'
+          id: `join-${Date.now()}`,
+          text: 'Enter the Room',
+          sender: currentUser.name,
+          senderImage: currentUser.image,
+          timestamp: Date.now(),
+          type: 'join'
         }])
       }
     }
     return () => {
-      if (accountId !== "Loading...") setRoomUsers(prev => prev.filter(u => u.accountId !== accountId))
+      setRoomUsers(prev => prev.filter(u => u.accountId !== currentUser.accountId))
     }
-  }, [accountId, user.name, user.image])
+  }, [currentUser.accountId, currentUser.name, currentUser.image])
 
-  useEffect(() => {
-    const fetchRoomOwnerID = async () => {
-      if (user?.accountId) { setAccountId(String(user.accountId)); return }
-      const targetUID = user?.id || user?.uid
-      if (targetUID) {
-        if (OFFICIAL_IDS.includes(targetUID) || ADMIN_IDS.includes(targetUID) || SPECIAL_ACCOUNTS[targetUID]) {
-          setAccountId(SPECIAL_ACCOUNTS[targetUID] || targetUID); return
-        }
-        try {
-          const userDocRef = doc(db, "users", targetUID)
-          const docSnap = await getDoc(userDocRef)
-          if (docSnap.exists() && docSnap.data().accountId) {
-            setAccountId(String(docSnap.data().accountId)); return
-          }
-        } catch (err) { console.warn("Firestore fetch error:", err) }
-      }
-      setAccountId(user?.accountId || "100379620")
-    }
-    fetchRoomOwnerID()
-  }, [user])
-
+  // Scroll messages to bottom
   useEffect(() => {
     if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Focus input when chat opens
   useEffect(() => {
     if (showChatInput && inputRef.current) {
       const timer = setTimeout(() => { if (inputRef.current) inputRef.current.focus() }, 100)
@@ -322,16 +356,19 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }, [showChatInput])
 
+  // Handle click outside chat input
   useEffect(() => {
     if (!showChatInput) return
     const handleClickOutside = (e: MouseEvent) => {
       if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
-        setShowChatInput(false); setMessage("")
+        setShowChatInput(false)
+        setMessage("")
       }
     }
     const handleTouchOutside = (e: TouchEvent) => {
       if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
-        setShowChatInput(false); setMessage("")
+        setShowChatInput(false)
+        setMessage("")
       }
     }
     const timer = setTimeout(() => {
@@ -345,8 +382,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }, [showChatInput])
 
+  // ---------- All handler functions ----------
+
   const handleCopyId = () => {
-    navigator.clipboard.writeText(accountId)
+    navigator.clipboard.writeText(roomOwner.accountId || '')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -365,8 +404,13 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     reader.onload = (event) => {
       const imageUrl = event.target?.result as string
       setMessages(prev => [...prev, {
-        id: Date.now().toString(), text: '', sender: user.name,
-        senderImage: user.image, timestamp: Date.now(), type: 'message', imageUrl
+        id: Date.now().toString(),
+        text: '',
+        sender: currentUser.name,
+        senderImage: currentUser.image,
+        timestamp: Date.now(),
+        type: 'message',
+        imageUrl
       }])
     }
     reader.readAsDataURL(file)
@@ -374,7 +418,9 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   const handleSeatClick = (seatNumber: number) => (e: React.MouseEvent) => {
-    e.stopPropagation(); setSelectedSeat(seatNumber); setShowSeatSheet(true)
+    e.stopPropagation()
+    setSelectedSeat(seatNumber)
+    setShowSeatSheet(true)
   }
 
   const handleTakeSeat = (e?: React.MouseEvent) => {
@@ -382,35 +428,47 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     if (selectedSeat === null) return
     const targetSeat = seats.find(s => s.number === selectedSeat)
     if (targetSeat?.isLocked && !targetSeat.isOccupied) { alert("This seat is locked!"); return }
-    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== accountId) { alert("This seat is already taken!"); return }
+    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== currentUser.accountId) { alert("This seat is already taken!"); return }
 
     let updatedSeats = seats.map(s => {
-      if (s.isOccupied && s.user?.accountId === accountId) return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
+      if (s.isOccupied && s.user?.accountId === currentUser.accountId)
+        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
       return s
     })
 
     updatedSeats = updatedSeats.map(s => {
       if (s.number === selectedSeat) {
         if (jitsiApiRef.current) jitsiApiRef.current.executeCommand('toggleAudio', true)
-        return { ...s, isOccupied: true, user: { name: user.name, image: user.image, accountId }, isMuted: false, isSpeaking: false }
+        return {
+          ...s,
+          isOccupied: true,
+          user: { name: currentUser.name, image: currentUser.image, accountId: currentUser.accountId },
+          isMuted: false,
+          isSpeaking: false
+        }
       }
       return s
     })
 
-    setSeats(updatedSeats); setShowSeatSheet(false); setSelectedSeat(null)
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
   const handleLeaveSeat = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (selectedSeat === null) return
-    if (jitsiApiRef.current && accountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
+    if (jitsiApiRef.current && currentUser.accountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
       jitsiApiRef.current.executeCommand('toggleAudio', false)
     }
     const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
+      if (s.number === selectedSeat)
+        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
       return s
     })
-    setSeats(updatedSeats); setShowSeatSheet(false); setSelectedSeat(null)
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
   const handleToggleMute = (e?: React.MouseEvent) => {
@@ -419,7 +477,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
         const newMuteState = !s.isMuted
-        if (s.user?.accountId === accountId && jitsiApiRef.current) jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState)
+        if (s.user?.accountId === currentUser.accountId && jitsiApiRef.current)
+          jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState)
         return { ...s, isMuted: newMuteState }
       }
       return s
@@ -446,24 +505,31 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked }
       return s
     })
-    setSeats(updatedSeats); setShowSeatSheet(false); setSelectedSeat(null)
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
   const handleInvite = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (selectedSeat === null) return
     alert(`Invite sent to join seat ${selectedSeat}!`)
-    setShowSeatSheet(false); setSelectedSeat(null)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
-  const isCurrentUsersSeat = (seat: Seat) => seat.isOccupied && seat.user?.accountId === accountId
+  const isCurrentUsersSeat = (seat: Seat) => seat.isOccupied && seat.user?.accountId === currentUser.accountId
 
   const handleSendMessage = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (!message.trim()) return
     setMessages(prev => [...prev, {
-      id: Date.now().toString(), text: message.trim(), sender: user.name,
-      senderImage: user.image, timestamp: Date.now(), type: 'message'
+      id: Date.now().toString(),
+      text: message.trim(),
+      sender: currentUser.name,
+      senderImage: currentUser.image,
+      timestamp: Date.now(),
+      type: 'message'
     }])
     setMessage("")
     if (inputRef.current) inputRef.current.focus()
@@ -482,28 +548,61 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   const closeBottomSheet = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation(); setShowSeatSheet(false); setSelectedSeat(null)
+    if (e) e.stopPropagation()
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
-  const closeExitMenu = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setShowExitMenu(false) }
-  const openExitMenu = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setShowExitMenu(true) }
-  const openSettings = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setShowSettingPage(true) }
+
+  const closeExitMenu = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowExitMenu(false)
+  }
+
+  const openExitMenu = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowExitMenu(true)
+  }
+
+  const openSettings = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowSettingPage(true)
+  }
+
   const closeSettings = () => setShowSettingPage(false)
 
-  const handleSaveSettings = (data: any) => {
+  const handleSaveSettings = async (data: any) => {
     if (data.roomName) setRoomName(data.roomName)
-    if (data.announcement) setRoomAnnouncement(data.announcement)
+    if (data.announcement !== undefined) setRoomAnnouncement(data.announcement)
     if (data.roomImage) setRoomImage(data.roomImage)
     if (data.micMode) setMicMode(data.micMode)
+
+    if (roomOwner.id && db) {
+      await setDoc(doc(db, "globalRooms", roomOwner.id), {
+        name: data.roomName,
+        image: data.roomImage,
+        announcement: data.announcement,
+        micMode: data.micMode
+      }, { merge: true })
+    }
   }
 
-  const openMessageSheet = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setActiveChat(null); setShowMessageSheet(true) }
-  const closeMessageSheet = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setShowMessageSheet(false); setActiveChat(null) }
+  const openMessageSheet = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setActiveChat(null)
+    setShowMessageSheet(true)
+  }
+
+  const closeMessageSheet = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowMessageSheet(false)
+    setActiveChat(null)
+  }
 
   const handleExit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setShowExitMenu(false)
     localStorage.removeItem('keptRoom')
-    setRoomUsers(prev => prev.filter(u => u.accountId !== accountId))
+    setRoomUsers(prev => prev.filter(u => u.accountId !== currentUser.accountId))
     if (jitsiApiRef.current) jitsiApiRef.current.dispose()
     if (onBack) onBack()
     if (onClose) onClose()
@@ -511,7 +610,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   const handleKeep = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    const roomData = { name: user.name, image: user.image, accountId }
+    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' }
     localStorage.setItem('keptRoom', JSON.stringify(roomData))
     setShowExitMenu(false)
     if (onKeepRoom) onKeepRoom(roomData)
@@ -520,21 +619,25 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji)
 
+  // Derived values
   const liveUserCount = roomUsers.length
   const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false
   const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isCurrentUsersSeat(selectedSeatData)) : false
 
+  // ---------- Render seats based on mic mode ----------
   const renderSeats = () => {
     if (micMode === 5) {
       return (
         <>
-          <div className="flex justify-center"><SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={accountId} /></div>
+          <div className="flex justify-center">
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={currentUser.accountId} />
+          </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={accountId} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={accountId} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={currentUser.accountId} />
           </div>
         </>
       )
@@ -543,20 +646,20 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       return (
         <>
           <div className="flex justify-center gap-4">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={accountId} />
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={accountId} />
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={currentUser.accountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={accountId} />
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={accountId} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={currentUser.accountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={accountId} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={accountId} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={accountId} />
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={accountId} />
+            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={currentUser.accountId} />
           </div>
         </>
       )
@@ -564,24 +667,26 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     if (micMode === 13) {
       return (
         <>
-          <div className="flex justify-center"><SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={accountId} /></div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={accountId} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={accountId} />
+          <div className="flex justify-center">
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={currentUser.accountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={accountId} />
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={accountId} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={accountId} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={accountId} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={currentUser.accountId} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={accountId} />
-            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} accountId={accountId} />
-            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} accountId={accountId} />
-            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} accountId={accountId} />
+            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={currentUser.accountId} />
+          </div>
+          <div className="flex justify-around items-center px-1">
+            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} accountId={currentUser.accountId} />
+            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} accountId={currentUser.accountId} />
           </div>
         </>
       )
@@ -589,51 +694,57 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     // Default 9 seats
     return (
       <>
-        <div className="flex justify-center"><SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={accountId} /></div>
-        <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={accountId} />
-          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={accountId} />
-          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={accountId} />
-          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={accountId} />
+        <div className="flex justify-center">
+          <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={currentUser.accountId} />
         </div>
         <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={accountId} />
-          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={accountId} />
-          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={accountId} />
-          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={accountId} />
+          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={currentUser.accountId} />
+        </div>
+        <div className="flex justify-around items-center px-1">
+          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={currentUser.accountId} />
+          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={currentUser.accountId} />
         </div>
       </>
     )
   }
 
+  // Settings page
   if (showSettingPage) {
     return (
-      <RoomSettingPage 
+      <RoomSettingPage
         onBack={closeSettings}
+        roomOwnerId={roomOwner.id}
         roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode }}
         onSave={handleSaveSettings}
       />
     )
   }
 
+  // ---------- Main Return JSX ----------
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      <img 
-        src={roomImage} 
-        alt="Room Background" 
-        className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" 
+      {/* Fixed background image */}
+      <img
+        src={backgroundImage}
+        alt="Room Background"
+        className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
         draggable={false}
       />
-      
+
+      {/* Hidden Jitsi container */}
       <div ref={jitsiContainerRef} className="absolute inset-0 z-0 opacity-0 pointer-events-none" style={{ width: '1px', height: '1px' }} />
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
-      
+
       <div className="relative z-10 flex flex-col h-full px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
-        
-        {/* Top Header Section */}
+
+        {/* ---------- Top Header Section ---------- */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
-          
-          {/* Room Cover + Name + Follow Button */}
+          {/* Room Cover + Name + Follow */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => { setRoomInfoTab('info'); setShowRoomInfo(true); }}
@@ -644,12 +755,9 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-lg">{displayRoomName}</h2>
-                {/* Follow Button - Outside Sheet, Next to Room Name */}
                 <button
                   onClick={(e) => { e.stopPropagation(); setIsFollowed(!isFollowed); }}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                    isFollowed ? 'bg-blue-500' : 'bg-blue-500'
-                  }`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-blue-500' : 'bg-blue-500'}`}
                   title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                 >
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
@@ -661,7 +769,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   </svg>
                 </button>
               </div>
-              <p className="text-xs text-gray-300">ID: {accountId}</p>
+              <p className="text-xs text-gray-300">ID: {currentUser.accountId}</p>
             </div>
           </div>
 
@@ -697,21 +805,24 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           </div>
         </div>
 
-        {/* Scrollable Middle Content */}
+        {/* ---------- Scrollable Middle Content ---------- */}
         <div className="flex-1 flex flex-col overflow-y-auto scrollbar-none min-h-0">
+          {/* Seats */}
           <div className="flex-shrink-0 flex flex-col gap-2 pt-4">
             {renderSeats()}
           </div>
 
-          {/* Announcement Card - 3 Rows: Welcome, Divider, Announcement */}
-          <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3 flex-shrink-0">
-            <div className="flex flex-col gap-1">
-              <div className="text-white/60 text-[10px] text-center">Welcome to Hurry</div>
-              <div className="h-px bg-white/10 w-full"></div>
-              <p className="text-white/80 text-[11px] text-center leading-relaxed">{roomAnnouncement}</p>
+          {/* Announcement Card – only if text exists */}
+          {roomAnnouncement && (
+            <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3 flex-shrink-0">
+              <div className="flex items-start gap-2">
+                <span className="text-white/60 text-[10px] font-medium whitespace-nowrap">ANNOUNCEMENT:</span>
+                <p className="text-white/80 text-[11px] leading-relaxed">{roomAnnouncement}</p>
+              </div>
             </div>
-          </div>
+          )}
 
+          {/* Messages */}
           <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
             <div className="space-y-0.5">
               {messages.map((msg) => (
@@ -758,7 +869,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           </div>
         </div>
 
-        {/* Footer Controls */}
+        {/* ---------- Footer Controls ---------- */}
         <div className="flex-shrink-0 pt-2">
           {showChatInput && (
             <div ref={inputContainerRef} className="flex items-center gap-0 mb-2 -mx-4 w-screen">
@@ -811,62 +922,45 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       </div>
 
-      {/* Room Info Bottom Sheet - 50vh */}
+      {/* ---------- Room Info Sheet ---------- */}
       {showRoomInfo && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
-          
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            
-            {/* Header - Room Info title only */}
             <div className="px-6 pt-6 pb-2">
               <h2 className="text-lg font-bold text-gray-800 text-center">Room Info</h2>
             </div>
-
-            {/* Tabs */}
             <div className="flex border-b border-gray-200 px-6">
               <button onClick={() => setRoomInfoTab('info')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'info' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>Room Info</button>
               <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
             </div>
-
-            {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {roomInfoTab === 'info' ? (
                 <div className="space-y-4">
-                  {/* Room DP Icon + Name + ID */}
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
                       <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-800">{roomName || user.name || "Room"}</h3>
-                      <p className="text-xs text-gray-400">ID: {accountId}</p>
+                      <h3 className="font-semibold text-gray-800">{roomName || roomOwner.name}</h3>
+                      <p className="text-xs text-gray-400">ID: {roomOwner.accountId}</p>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5">
-                    <span className="text-sm text-gray-600">ID: {accountId}</span>
-                    <button onClick={handleCopyId} className="p-1.5 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
-                      {copied ? (
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-green-500 stroke-[2.5]"><polyline points="20 6 9 17 4 12" /></svg>
-                      ) : (
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-                      )}
-                    </button>
-                  </div>
-
                   <div>
                     <span className="text-xs text-gray-400 font-medium">Host</span>
                     <div className="flex items-center gap-2 mt-1">
-                      <div className="w-7 h-7 rounded-full overflow-hidden"><img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" /></div>
-                      <span className="text-sm font-medium text-gray-800">{user.name || "Unknown"}</span>
+                      <div className="w-7 h-7 rounded-full overflow-hidden">
+                        <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-800">{roomOwner.name || "Unknown"}</span>
                     </div>
                   </div>
-
-                  <div>
-                    <span className="text-xs text-gray-400 font-medium">Announcement</span>
-                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement}</p>
-                  </div>
+                  {roomAnnouncement && (
+                    <div>
+                      <span className="text-xs text-gray-400 font-medium">Announcement</span>
+                      <p className="text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement}</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -889,7 +983,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Exit Menu */}
+      {/* ---------- Exit Menu ---------- */}
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40" onClick={closeExitMenu}>
           <div className="flex flex-col items-center gap-8" onClick={(e) => e.stopPropagation()}>
@@ -912,7 +1006,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Seat Actions Sheet */}
+      {/* ---------- Seat Actions Sheet ---------- */}
       {showSeatSheet && selectedSeat !== null && (
         <div className="absolute inset-0 z-30 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
@@ -930,7 +1024,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Full Image Modal */}
+      {/* ---------- Full Image Modal ---------- */}
       {fullImageModal && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
           <div className="relative max-w-full max-h-full">
@@ -942,7 +1036,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Message Sheet */}
+      {/* ---------- Message Sheet ---------- */}
       {showMessageSheet && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={closeMessageSheet} />
@@ -986,6 +1080,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
+      {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
 
@@ -1003,7 +1098,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   )
 }
 
-// SeatItem Component
+// ---------- SeatItem Component ----------
 function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: number; seatData: Seat; onClick: (e: React.MouseEvent) => void; accountId: string }) {
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
