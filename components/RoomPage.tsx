@@ -92,8 +92,9 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   
-  // Chat visibility state - only show when keyboard is open
+  // Chat visibility state
   const [showChatInput, setShowChatInput] = useState(false)
+  const [isInputFocused, setIsInputFocused] = useState(false)
   
   // Room Users State
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([])
@@ -412,7 +413,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }, [messages])
 
-  // Focus input when chat opens strictly
+  // Focus input when chat opens
   useEffect(() => {
     if (showChatInput && inputRef.current) {
       const timer = setTimeout(() => {
@@ -638,7 +639,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     
     setMessages(prev => [...prev, newMessage])
     setMessage("")
-    // Keep focus on input after sending
     if (inputRef.current) {
       inputRef.current.focus()
     }
@@ -652,21 +652,25 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }
 
-  // Handle input focus - triggered when keyboard opens
+  // Handle input focus
   const handleInputFocus = () => {
+    setIsInputFocused(true)
     setShowChatInput(true)
   }
 
-  // Handle input blur - close chat input when keyboard dismissed
-  const handleInputBlur = () => {
-    // Small delay to allow send button click to fire
-    setTimeout(() => {
-      setShowChatInput(false)
-      setMessage("")
-    }, 150)
+  // Handle input blur
+  const handleInputBlur = (e: React.FocusEvent) => {
+    const relatedTarget = e.relatedTarget as HTMLElement
+    if (relatedTarget && (
+      relatedTarget.closest('button')?.getAttribute('data-chat-action') === 'send' ||
+      relatedTarget.closest('button')?.getAttribute('data-chat-action') === 'image'
+    )) {
+      return
+    }
+    setIsInputFocused(false)
   }
 
-  // Open chat input (triggered by Say Hi button)
+  // Open chat input
   const openChatInput = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setShowChatInput(true)
@@ -675,6 +679,17 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         inputRef.current.focus()
       }
     }, 100)
+  }
+
+  // Handle tap outside
+  const handleContentTap = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('button') && !target.closest('input') && !target.closest('.chat-input-area')) {
+      if (showChatInput && !isInputFocused) {
+        setShowChatInput(false)
+        setMessage("")
+      }
+    }
   }
 
   // Close bottom sheet
@@ -750,7 +765,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isCurrentUsersSeat(selectedSeatData)) : false
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={handleContentTap}>
       {/* Background Image */}
       <img 
         src="/1784533036732~2.jpg" 
@@ -931,22 +946,25 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </p>
           </div>
 
-          {/* Messages Area - 9 Rows Max, Scrollable, NO SCROLLBAR */}
+          {/* Messages Area */}
           <div 
             ref={messagesContainerRef}
             className="mx-1 mt-1 flex-shrink-0 overflow-y-auto scrollbar-none"
             style={{ 
-              maxHeight: 'calc(9 * 1.9rem)',
+              maxHeight: 'calc(9 * 2.6rem)',
               height: 'auto',
               minHeight: '0px'
             }}
           >
             <div className="space-y-0.5">
               {messages.map((msg) => (
-                <div key={msg.id} className="leading-[1.9rem]">
+                <div key={msg.id}>
                   {msg.type === 'join' ? (
-                    <div className="flex items-start gap-1.5 px-1">
-                      <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                    /* ========== ENTER CARD ========== */
+                    /* Avatar OUTSIDE | Card with Name + "Enter the Room" INSIDE */
+                    <div className="flex items-start gap-2 px-1">
+                      {/* Avatar outside */}
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2 border-white/30">
                         <img 
                           src={msg.senderImage || "/default-avatar.png"} 
                           alt={msg.sender}
@@ -957,15 +975,18 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                           }}
                         />
                       </div>
-                      <div className="flex flex-col bg-white/8 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/5">
-                        <span className="text-[9px] font-semibold text-white/80 leading-tight">{msg.sender}</span>
-                        <span className="text-[8px] text-white/50 leading-tight">Enter the Room</span>
+                      {/* Enter Card */}
+                      <div className="flex-1 min-w-0 bg-white/12 backdrop-blur-sm rounded-xl border border-white/15 px-3 py-2">
+                        <span className="text-[12px] font-semibold text-white/90 block leading-tight">{msg.sender}</span>
+                        <span className="text-[10px] text-white/50 leading-tight">Enter the Room</span>
                       </div>
                     </div>
                   ) : msg.imageUrl ? (
-                    /* Image Message takes 4 rows height */
-                    <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.9rem)' }}>
-                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                    /* ========== IMAGE MSG CARD ========== */
+                    /* Avatar OUTSIDE | Name OUTSIDE above card | Image inside card */
+                    <div className="flex items-start gap-2 px-1">
+                      {/* Avatar outside */}
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2 border-white/30 mt-0.5">
                         <img 
                           src={msg.senderImage || "/default-avatar.png"} 
                           alt={msg.sender}
@@ -976,25 +997,32 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                           }}
                         />
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[9px] font-semibold text-white/70">{msg.sender}</span>
-                        <div 
-                          onClick={() => setFullImageModal(msg.imageUrl || null)} 
-                          className="rounded-lg overflow-hidden border border-white/20 cursor-pointer hover:opacity-90 transition-opacity bg-black/40 flex items-center justify-center mt-0.5"
-                          style={{ height: 'calc(3.5 * 1.9rem)', width: 'calc(3.5 * 1.9rem)' }}
-                        >
-                          <img 
-                            src={msg.imageUrl} 
-                            alt="Shared image"
-                            className="w-full h-full object-cover"
-                            draggable={false}
-                          />
+                      <div className="flex-1 min-w-0">
+                        {/* Name OUTSIDE above card */}
+                        <span className="text-[11px] font-semibold text-white/80 block mb-0.5 pl-1">{msg.sender}</span>
+                        {/* Image Card */}
+                        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 px-3 py-2">
+                          <div 
+                            onClick={(e) => { e.stopPropagation(); setFullImageModal(msg.imageUrl || null); }}
+                            className="rounded-lg overflow-hidden border border-white/20 cursor-pointer hover:opacity-90 transition-opacity bg-black/40 flex items-center justify-center"
+                            style={{ height: '70px', width: '70px' }}
+                          >
+                            <img 
+                              src={msg.imageUrl} 
+                              alt="Shared image"
+                              className="w-full h-full object-cover"
+                              draggable={false}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2">
-                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                    /* ========== TEXT MSG CARD ========== */
+                    /* Avatar OUTSIDE | Name OUTSIDE above card | Text message inside card */
+                    <div className="flex items-start gap-2 px-1">
+                      {/* Avatar outside */}
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2 border-white/30 mt-0.5">
                         <img 
                           src={msg.senderImage || "/default-avatar.png"} 
                           alt={msg.sender}
@@ -1005,10 +1033,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                           }}
                         />
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[9px] font-semibold text-white/70">{msg.sender}</span>
-                        <div className="px-2.5 py-1 rounded-lg bg-white/15 text-white rounded-bl-none">
-                          <p className="text-[11px] break-words leading-tight">{msg.text}</p>
+                      <div className="flex-1 min-w-0">
+                        {/* Name OUTSIDE above card */}
+                        <span className="text-[11px] font-semibold text-white/80 block mb-0.5 pl-1">{msg.sender}</span>
+                        {/* Message Card */}
+                        <div className="bg-white/12 backdrop-blur-sm rounded-xl rounded-tl-sm border border-white/15 px-3 py-2">
+                          <p className="text-[13px] text-white/90 break-words leading-snug">{msg.text}</p>
                         </div>
                       </div>
                     </div>
@@ -1021,15 +1051,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
 
         {/* Footer Controls - Fixed at bottom */}
-        <div className="flex-shrink-0 pt-2">
-          {/* Chat Input ONLY visible when keyboard is open */}
+        <div className="flex-shrink-0 pt-2 chat-input-area">
+          {/* Chat Input */}
           {showChatInput && (
             <div className="flex items-center gap-0 mb-2 -mx-4 w-screen">
               <div className="flex-1 bg-white flex items-center px-4 py-3 shadow-lg w-full">
-                {/* Image Upload Button */}
                 <button 
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={handleImageClick}
+                  data-chat-action="image"
                   className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
@@ -1054,6 +1084,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                 <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={handleSendMessage}
+                  data-chat-action="send"
                   disabled={!message.trim()}
                   className="p-1.5 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"
                 >
@@ -1066,7 +1097,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </div>
           )}
 
-          {/* Bottom Action Buttons - Always Visible */}
+          {/* Bottom Action Buttons */}
           <div className="flex items-center justify-between gap-2">
             <button 
               onClick={openChatInput}
@@ -1122,7 +1153,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                 />
               </button>
 
-              {/* Mail Icon - Opens Message Sheet */}
+              {/* Mail Icon */}
               <button 
                 onClick={openMessageSheet}
                 aria-label="Message Box Menu"
@@ -1283,7 +1314,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Message Bottom Sheet - 60vh */}
+      {/* Message Bottom Sheet */}
       {showMessageSheet && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div 
@@ -1299,7 +1330,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             {!activeChat ? (
               // Chat List View
               <div className="flex flex-col h-full">
-                {/* Header: Left Back Arrow & Center Heading "Message" */}
                 <div
                   className="px-4 pb-4 flex items-center justify-between flex-shrink-0 relative"
                   style={{
@@ -1307,6 +1337,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                     paddingTop: '24px'
                   }}
                 >
+                  {/* Arrow Back Icon */}
                   <button 
                     onClick={closeMessageSheet}
                     className="p-1.5 hover:bg-black/10 rounded-full transition-colors cursor-pointer z-10"
@@ -1321,10 +1352,9 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                     Message
                   </h1>
 
-                  <div className="w-9" /> {/* Spacer to balance layout */}
+                  <div className="w-9" />
                 </div>
 
-                {/* Chat List: Hurry Team & Hurry System */}
                 <div className="flex-1 px-4 pt-2 overflow-y-auto">
                   <div className="flex flex-col gap-2">
                     {chats.map((chat) => (
@@ -1351,9 +1381,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                 </div>
               </div>
             ) : (
-              // Chat Detail View - NO CROSS ICON, ONLY BACK ARROW
+              // Chat Detail View - Arrow Back Icon only
               <div className="flex flex-col h-full">
-                {/* Chat Header */}
                 <div
                   className="px-4 pb-4 flex-shrink-0"
                   style={{
@@ -1362,7 +1391,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    {/* Back Arrow Only - No Cross Icon */}
                     <button
                       onClick={() => setActiveChat(null)}
                       className="flex-shrink-0 hover:bg-white/30 rounded-full p-1 transition-colors cursor-pointer"
@@ -1386,12 +1414,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                       <h2 className="text-lg font-bold text-gray-800">{activeChat.name}</h2>
                     </div>
 
-                    {/* Empty spacer for alignment */}
                     <div className="w-9" />
                   </div>
                 </div>
 
-                {/* Messages Area */}
                 <div className="flex-1 px-4 py-4 overflow-y-auto">
                   <p className="text-center text-gray-400 mt-20">No messages yet</p>
                 </div>
@@ -1457,7 +1483,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           animation: waveBehind 1.2s ease-out 0.4s infinite;
         }
 
-        /* Hide scrollbar but keep scroll functionality */
         .scrollbar-none {
           -ms-overflow-style: none;
           scrollbar-width: none;
