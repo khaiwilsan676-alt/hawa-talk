@@ -6,6 +6,13 @@ import GiftPicker from './GiftPicker'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
 
+// Jitsi Meet External API
+declare global {
+  interface Window {
+    JitsiMeetExternalAPI: any;
+  }
+}
+
 interface RoomPageProps {
   user: {
     id?: string
@@ -41,6 +48,7 @@ interface Seat {
     accountId: string
   }
   isMuted?: boolean
+  isSpeaking?: boolean
 }
 
 // Message Interface
@@ -50,6 +58,14 @@ interface Message {
   sender: string
   senderImage: string
   timestamp: number
+  type?: 'message' | 'join' | 'leave'
+}
+
+// Room User Interface
+interface RoomUser {
+  accountId: string
+  name: string
+  image: string
 }
 
 export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
@@ -66,17 +82,29 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const [showChatInput, setShowChatInput] = useState(false)
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
   
+  // Room Users State
+  const [roomUsers, setRoomUsers] = useState<RoomUser[]>([])
+  
+  // Jitsi State
+  const jitsiContainerRef = useRef<HTMLDivElement>(null)
+  const jitsiApiRef = useRef<any>(null)
+  const [jitsiLoaded, setJitsiLoaded] = useState(false)
+  
+  // Speaking users tracking
+  const speakingUsersRef = useRef<Set<string>>(new Set())
+  const speakingTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  
   // Seat Management State
   const [seats, setSeats] = useState<Seat[]>([
-    { number: 1, isOccupied: false, isLocked: false },
-    { number: 2, isOccupied: false, isLocked: false },
-    { number: 3, isOccupied: false, isLocked: false },
-    { number: 4, isOccupied: false, isLocked: false },
-    { number: 5, isOccupied: false, isLocked: false },
-    { number: 6, isOccupied: false, isLocked: false },
-    { number: 7, isOccupied: false, isLocked: false },
-    { number: 8, isOccupied: false, isLocked: false },
-    { number: 9, isOccupied: false, isLocked: false },
+    { number: 1, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
+    { number: 2, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
+    { number: 3, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
+    { number: 4, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
+    { number: 5, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
+    { number: 6, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
+    { number: 7, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
+    { number: 8, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
+    { number: 9, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false },
   ])
 
   // Bottom Sheet State
@@ -88,6 +116,272 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   // Get current user's seat
   const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === accountId)
+
+  // Generate unique room name for Jitsi
+  const roomName = `hurry-room-${Math.abs(hashCode(accountId + 'room')) % 100000}`
+
+  function hashCode(str: string): number {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash |= 0
+    }
+    return Math.abs(hash)
+  }
+
+  // Load Jitsi External API script
+  useEffect(() => {
+    if (!document.getElementById('jitsi-script')) {
+      const script = document.createElement('script')
+      script.id = 'jitsi-script'
+      script.src = 'https://meet.jit.si/external_api.js'
+      script.async = true
+      script.onload = () => {
+        console.log('Jitsi script loaded')
+        setJitsiLoaded(true)
+      }
+      document.body.appendChild(script)
+    } else {
+      setJitsiLoaded(true)
+    }
+  }, [])
+
+  // Mark user as speaking in seats
+  const setUserSpeaking = (userId: string, speaking: boolean) => {
+    setSeats(prev => prev.map(seat => {
+      if (seat.user?.accountId === userId) {
+        return { ...seat, isSpeaking: speaking }
+      }
+      return seat
+    }))
+  }
+
+  // Audio Device Auto-Routing (Wired Headphones & Bluetooth Support)
+  const setupAudioDevices = async (api: any) => {
+    if (!api || !navigator.mediaDevices) return
+
+    const updateAudioRoute = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices()
+        const audioOutputs = devices.filter(d => d.kind === 'audiooutput')
+        
+        // Priority: Bluetooth / Headset > Wired Headphones > Default
+        const preferredOutput = audioOutputs.find(d => 
+          d.label.toLowerCase().includes('bluetooth') ||
+          d.label.toLowerCase().includes('headset') ||
+          d.label.toLowerCase().includes('headphone') ||
+          d.label.toLowerCase().includes('earpiece')
+        ) || audioOutputs[0]
+
+        if (preferredOutput && api.setAudioOutputDevice) {
+          api.setAudioOutputDevice(preferredOutput.label, preferredOutput.deviceId)
+        }
+      } catch (err) {
+        console.warn('Audio output device configuration error:', err)
+      }
+    }
+
+    await updateAudioRoute()
+
+    // Re-route when user plugs/unplugs earphones or connects Bluetooth
+    if (navigator.mediaDevices.ondevicechange !== undefined) {
+      navigator.mediaDevices.addEventListener('devicechange', updateAudioRoute)
+    }
+  }
+
+  // Initialize Jitsi Meet
+  useEffect(() => {
+    if (!jitsiLoaded || !jitsiContainerRef.current || accountId === "Loading...") return
+
+    const initJitsi = () => {
+      const domain = 'meet.jit.si'
+      const options = {
+        roomName: roomName,
+        width: '100%',
+        height: '100%',
+        parentNode: jitsiContainerRef.current,
+        userInfo: {
+          displayName: user.name,
+          email: accountId + '@hurry.app'
+        },
+        configOverrides: {
+          startWithAudioMuted: !hasSeat,
+          startWithVideoMuted: true,
+          disableDeepLinking: true,
+          prejoinPageEnabled: false,
+          toolbarButtons: [],
+          disableInviteFunctions: true,
+          disablePolls: true,
+          disableSelfView: true,
+          hideConferenceSubject: true,
+          hideConferenceTimer: true,
+          doNotStoreRoom: true,
+          resolution: 180,
+          constraints: {
+            video: false,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          },
+          disableAudioLevels: false,
+          enableNoisyMicDetection: false,
+        },
+        interfaceConfigOverrides: {
+          filmStripOnly: false,
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_WATERMARK_FOR_GUESTS: false,
+          SHOW_BRAND_WATERMARK: false,
+          SHOW_POWERED_BY: false,
+          SHOW_PROMOTIONAL_CLOSE_PAGE: false,
+          TOOLBAR_ALWAYS_VISIBLE: false,
+          DISABLE_VIDEO_BACKGROUND: true,
+          HIDE_INVITE_MORE_HEADER: true,
+          MOBILE_APP_PROMO: false,
+          APP_NAME: 'Hurry',
+          NATIVE_APP_NAME: 'Hurry',
+          PROVIDER_NAME: 'Hurry'
+        }
+      }
+
+      try {
+        const api = new window.JitsiMeetExternalAPI(domain, options)
+        jitsiApiRef.current = api
+
+        api.addListener('videoConferenceJoined', () => {
+          console.log('Joined Jitsi conference')
+          setupAudioDevices(api)
+          if (!hasSeat) {
+            api.executeCommand('toggleAudio', false)
+          }
+        })
+
+        // Listen for dominant speaker changes
+        api.addListener('dominantSpeakerChanged', (data: any) => {
+          if (data && data.id) {
+            speakingUsersRef.current.add(data.id)
+            setUserSpeaking(data.id, true)
+            
+            const existingTimer = speakingTimersRef.current.get(data.id)
+            if (existingTimer) clearTimeout(existingTimer)
+            
+            const timer = setTimeout(() => {
+              speakingUsersRef.current.delete(data.id)
+              setUserSpeaking(data.id, false)
+              speakingTimersRef.current.delete(data.id)
+            }, 1500)
+            
+            speakingTimersRef.current.set(data.id, timer)
+          }
+        })
+
+        // Listen for audio level changes (Realtime voice detection)
+        api.addListener('audioLevelsChanged', (data: any) => {
+          if (data && data.length > 0) {
+            data.forEach((participant: any) => {
+              if (participant.id && participant.level > 0.04) {
+                speakingUsersRef.current.add(participant.id)
+                setUserSpeaking(participant.id, true)
+                
+                const existingTimer = speakingTimersRef.current.get(participant.id)
+                if (existingTimer) clearTimeout(existingTimer)
+                
+                const timer = setTimeout(() => {
+                  speakingUsersRef.current.delete(participant.id)
+                  setUserSpeaking(participant.id, false)
+                  speakingTimersRef.current.delete(participant.id)
+                }, 800)
+                
+                speakingTimersRef.current.set(participant.id, timer)
+              }
+            })
+          }
+        })
+
+        api.addListener('deviceListChanged', () => {
+          setupAudioDevices(api)
+        })
+
+        api.addListener('participantLeft', (data: any) => {
+          if (data && data.id) {
+            speakingUsersRef.current.delete(data.id)
+            setUserSpeaking(data.id, false)
+            const timer = speakingTimersRef.current.get(data.id)
+            if (timer) {
+              clearTimeout(timer)
+              speakingTimersRef.current.delete(data.id)
+            }
+          }
+        })
+
+      } catch (error) {
+        console.error('Error initializing Jitsi:', error)
+      }
+    }
+
+    initJitsi()
+
+    return () => {
+      speakingTimersRef.current.forEach(timer => clearTimeout(timer))
+      speakingTimersRef.current.clear()
+      speakingUsersRef.current.clear()
+      
+      if (jitsiApiRef.current) {
+        jitsiApiRef.current.dispose()
+        jitsiApiRef.current = null
+      }
+    }
+  }, [jitsiLoaded, accountId, roomName])
+
+  // Handle seat changes - update Jitsi audio
+  useEffect(() => {
+    if (!jitsiApiRef.current) return
+
+    if (hasSeat) {
+      jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted)
+    } else {
+      jitsiApiRef.current.executeCommand('toggleAudio', false)
+    }
+  }, [hasSeat, currentUserSeat?.isMuted])
+
+  // Handle mute toggle for current user
+  useEffect(() => {
+    if (!jitsiApiRef.current || !hasSeat) return
+    jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted)
+  }, [currentUserSeat?.isMuted])
+
+  // Add current user to room on mount
+  useEffect(() => {
+    if (accountId !== "Loading..." && user.name && user.image) {
+      const userExists = roomUsers.find(u => u.accountId === accountId)
+      if (!userExists) {
+        const newUser: RoomUser = {
+          accountId: accountId,
+          name: user.name,
+          image: user.image
+        }
+        setRoomUsers(prev => [...prev, newUser])
+        
+        const joinMessage: Message = {
+          id: `join-${Date.now()}`,
+          text: 'Enter the Room',
+          sender: user.name,
+          senderImage: user.image,
+          timestamp: Date.now(),
+          type: 'join'
+        }
+        setMessages(prev => [...prev, joinMessage])
+      }
+    }
+    
+    return () => {
+      if (accountId !== "Loading...") {
+        setRoomUsers(prev => prev.filter(u => u.accountId !== accountId))
+      }
+    }
+  }, [accountId, user.name, user.image])
 
   useEffect(() => {
     const fetchRoomOwnerID = async () => {
@@ -125,24 +419,29 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   // Auto scroll to bottom of messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages])
 
   // Focus input when chat opens
   useEffect(() => {
     if (showChatInput && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus()
+        }
+      }, 100)
     }
   }, [showChatInput])
 
-  // Handle keyboard visibility - Hide chat input when keyboard closes
+  // Handle keyboard visibility
   useEffect(() => {
     const handleResize = () => {
-      const isKeyboardVisible = window.visualViewport 
-        ? window.visualViewport.height < window.innerHeight * 0.85
-        : false
-      
-      setIsKeyboardOpen(isKeyboardVisible)
+      if (window.visualViewport) {
+        const isKeyboardVisible = window.visualViewport.height < window.innerHeight * 0.85
+        setIsKeyboardOpen(isKeyboardVisible)
+      }
     }
 
     if (window.visualViewport) {
@@ -161,58 +460,72 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   // Auto-hide chat input when keyboard closes
   useEffect(() => {
     if (!isKeyboardOpen && showChatInput) {
-      setShowChatInput(false)
-      setMessage("")
+      const timer = setTimeout(() => {
+        setShowChatInput(false)
+        setMessage("")
+      }, 200)
+      return () => clearTimeout(timer)
     }
-  }, [isKeyboardOpen])
+  }, [isKeyboardOpen, showChatInput])
 
-  // Handle input blur - hide chat when input loses focus (keyboard closes)
+  // Handle input blur
   const handleInputBlur = () => {
     setTimeout(() => {
-      if (!isKeyboardOpen) {
+      if (!isKeyboardOpen && showChatInput) {
         setShowChatInput(false)
         setMessage("")
       }
-    }, 150)
+    }, 200)
   }
 
   // Handle Seat Click
-  const handleSeatClick = (seatNumber: number) => {
-    const seat = seats.find(s => s.number === seatNumber)
+  const handleSeatClick = (seatNumber: number) => (e: React.MouseEvent) => {
+    e.stopPropagation()
     setSelectedSeat(seatNumber)
     setShowSeatSheet(true)
   }
 
   // Take Seat
-  const handleTakeSeat = () => {
+  const handleTakeSeat = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (selectedSeat === null) return
     
-    const seat = seats.find(s => s.number === selectedSeat)
-    if (seat?.isLocked) {
+    const targetSeat = seats.find(s => s.number === selectedSeat)
+    if (targetSeat?.isLocked && !targetSeat.isOccupied) {
       alert("This seat is locked!")
       return
     }
-    
-    const userAlreadySeated = seats.some(s => s.isOccupied && s.user?.accountId === accountId)
-    if (userAlreadySeated) {
-      alert("You already have a seat!")
-      return
-    }
 
-    const updatedSeats = seats.map(seat => {
-      if (seat.number === selectedSeat) {
+    let updatedSeats = seats.map(s => {
+      if (s.isOccupied && s.user?.accountId === accountId) {
         return {
-          ...seat,
+          ...s,
+          isOccupied: false,
+          isLocked: s.isLocked,
+          isMuted: s.isMuted,
+          isSpeaking: false
+        }
+      }
+      return s
+    })
+
+    const existingMuteState = targetSeat?.isMuted || false
+
+    updatedSeats = updatedSeats.map(s => {
+      if (s.number === selectedSeat) {
+        return {
+          ...s,
           isOccupied: true,
           user: {
             name: user.name,
             image: user.image,
             accountId: accountId
           },
-          isMuted: false
+          isMuted: existingMuteState,
+          isSpeaking: false
         }
       }
-      return seat
+      return s
     })
 
     setSeats(updatedSeats)
@@ -221,18 +534,21 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   // Leave Seat
-  const handleLeaveSeat = () => {
+  const handleLeaveSeat = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (selectedSeat === null) return
 
-    const updatedSeats = seats.map(seat => {
-      if (seat.number === selectedSeat) {
+    const updatedSeats = seats.map(s => {
+      if (s.number === selectedSeat) {
         return {
-          number: seat.number,
+          ...s,
           isOccupied: false,
-          isLocked: false
+          isLocked: s.isLocked,
+          isMuted: s.isMuted,
+          isSpeaking: false
         }
       }
-      return seat
+      return s
     })
 
     setSeats(updatedSeats)
@@ -240,52 +556,55 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSelectedSeat(null)
   }
 
-  // Mute/Unmute Seat
-  const handleToggleMute = () => {
+  // Mute/Unmute Seat from Bottom Sheet
+  const handleToggleMute = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (selectedSeat === null) return
 
-    const updatedSeats = seats.map(seat => {
-      if (seat.number === selectedSeat) {
+    const updatedSeats = seats.map(s => {
+      if (s.number === selectedSeat) {
         return {
-          ...seat,
-          isMuted: !seat.isMuted
+          ...s,
+          isMuted: !s.isMuted
         }
       }
-      return seat
+      return s
     })
 
     setSeats(updatedSeats)
   }
 
   // Mute/Unmute from bottom mic icon
-  const handleBottomMicToggle = () => {
+  const handleBottomMicToggle = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (!currentUserSeat) return
 
-    const updatedSeats = seats.map(seat => {
-      if (seat.number === currentUserSeat.number) {
+    const updatedSeats = seats.map(s => {
+      if (s.number === currentUserSeat.number) {
         return {
-          ...seat,
-          isMuted: !seat.isMuted
+          ...s,
+          isMuted: !s.isMuted
         }
       }
-      return seat
+      return s
     })
 
     setSeats(updatedSeats)
   }
 
-  // Lock Seat - Toggle lock
-  const handleToggleLock = () => {
+  // Lock Seat
+  const handleToggleLock = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (selectedSeat === null) return
 
-    const updatedSeats = seats.map(seat => {
-      if (seat.number === selectedSeat) {
+    const updatedSeats = seats.map(s => {
+      if (s.number === selectedSeat) {
         return {
-          ...seat,
-          isLocked: !seat.isLocked
+          ...s,
+          isLocked: !s.isLocked
         }
       }
-      return seat
+      return s
     })
 
     setSeats(updatedSeats)
@@ -294,7 +613,9 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   // Invite User
-  const handleInvite = () => {
+  const handleInvite = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    if (selectedSeat === null) return
     alert(`Invite sent to join seat ${selectedSeat}!`)
     setShowSeatSheet(false)
     setSelectedSeat(null)
@@ -306,7 +627,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   // Handle Send Message
-  const handleSendMessage = () => {
+  const handleSendMessage = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (!message.trim()) return
     
     const newMessage: Message = {
@@ -314,41 +636,77 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       text: message.trim(),
       sender: user.name,
       senderImage: user.image,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      type: 'message'
     }
     
-    setMessages([...messages, newMessage])
+    setMessages(prev => [...prev, newMessage])
     setMessage("")
-    inputRef.current?.focus()
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
   }
 
   // Handle Enter key
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault()
       handleSendMessage()
     }
   }
 
   // Toggle Chat Input
-  const toggleChatInput = () => {
+  const toggleChatInput = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (showChatInput) {
       setShowChatInput(false)
       setMessage("")
-      inputRef.current?.blur()
+      if (inputRef.current) {
+        inputRef.current.blur()
+      }
     } else {
       setShowChatInput(true)
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus()
+        }
+      }, 100)
     }
   }
 
-  const handleExit = () => {
+  // Close bottom sheet
+  const closeBottomSheet = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
+  }
+
+  // Close exit menu
+  const closeExitMenu = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowExitMenu(false)
+  }
+
+  // Open exit menu
+  const openExitMenu = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowExitMenu(true)
+  }
+
+  const handleExit = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     setShowExitMenu(false)
     localStorage.removeItem('keptRoom')
+    setRoomUsers(prev => prev.filter(u => u.accountId !== accountId))
+    if (jitsiApiRef.current) {
+      jitsiApiRef.current.dispose()
+    }
     if (onBack) onBack()
     if (onClose) onClose()
   }
 
-  const handleKeep = () => {
+  const handleKeep = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     const roomData = {
       name: user.name,
       image: user.image,
@@ -366,6 +724,9 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     console.log("Selected Emoji:", emoji)
   }
 
+  // Get live user count
+  const liveUserCount = roomUsers.length
+
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* Background Image */}
@@ -373,6 +734,14 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         src="/1784533036732~2.jpg" 
         alt="Room Background" 
         className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" 
+        draggable={false}
+      />
+      
+      {/* Hidden Jitsi Container for Audio Only */}
+      <div 
+        ref={jitsiContainerRef} 
+        className="absolute inset-0 z-0 opacity-0 pointer-events-none"
+        style={{ width: '1px', height: '1px' }}
       />
       
       {/* Content Overlay */}
@@ -388,19 +757,24 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0">
               <img 
-                src={user.image} 
+                src={user.image || "/default-avatar.png"} 
                 alt={user.name}
                 className="w-full h-full object-cover"
+                draggable={false}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/default-avatar.png"
+                }}
               />
             </div>
             <div className="text-left">
-              <h2 className="font-bold text-base">{user.name}</h2>
+              <h2 className="font-bold text-base">{user.name || "User"}</h2>
               <p className="text-xs text-gray-300">ID: {accountId}</p>
             </div>
           </div>
 
           {/* Top Right Icons */}
           <div className="flex items-center gap-1.5">
+            {/* LIVE User Count Pill */}
             <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7">
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <circle cx="9" cy="7" r="4" />
@@ -409,10 +783,11 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                 <line x1="18" y1="12" x2="21" y2="12" />
                 <line x1="18" y1="16" x2="20" y2="16" />
               </svg>
-              <span className="text-white text-xs font-semibold leading-none">1</span>
+              <span className="text-white text-xs font-semibold leading-none">{liveUserCount}</span>
             </div>
 
             <button 
+              onClick={(e) => e.stopPropagation()}
               aria-label="Settings"
               className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer"
             >
@@ -423,6 +798,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </button>
 
             <button 
+              onClick={(e) => e.stopPropagation()}
               aria-label="Share"
               className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer"
             >
@@ -432,7 +808,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </button>
 
             <button 
-              onClick={() => setShowExitMenu(true)}
+              onClick={openExitMenu}
               aria-label="Power"
               className="p-1.5 bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center w-9 h-9 cursor-pointer"
             >
@@ -452,7 +828,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <SeatItem 
               seatNumber={1} 
               seatData={seats[0]} 
-              onClick={() => handleSeatClick(1)}
+              onClick={handleSeatClick(1)}
               accountId={accountId}
             />
           </div>
@@ -462,25 +838,25 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <SeatItem 
               seatNumber={2} 
               seatData={seats[1]} 
-              onClick={() => handleSeatClick(2)}
+              onClick={handleSeatClick(2)}
               accountId={accountId}
             />
             <SeatItem 
               seatNumber={3} 
               seatData={seats[2]} 
-              onClick={() => handleSeatClick(3)}
+              onClick={handleSeatClick(3)}
               accountId={accountId}
             />
             <SeatItem 
               seatNumber={4} 
               seatData={seats[3]} 
-              onClick={() => handleSeatClick(4)}
+              onClick={handleSeatClick(4)}
               accountId={accountId}
             />
             <SeatItem 
               seatNumber={5} 
               seatData={seats[4]} 
-              onClick={() => handleSeatClick(5)}
+              onClick={handleSeatClick(5)}
               accountId={accountId}
             />
           </div>
@@ -490,25 +866,25 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <SeatItem 
               seatNumber={6} 
               seatData={seats[5]} 
-              onClick={() => handleSeatClick(6)}
+              onClick={handleSeatClick(6)}
               accountId={accountId}
             />
             <SeatItem 
               seatNumber={7} 
               seatData={seats[6]} 
-              onClick={() => handleSeatClick(7)}
+              onClick={handleSeatClick(7)}
               accountId={accountId}
             />
             <SeatItem 
               seatNumber={8} 
               seatData={seats[7]} 
-              onClick={() => handleSeatClick(8)}
+              onClick={handleSeatClick(8)}
               accountId={accountId}
             />
             <SeatItem 
               seatNumber={9} 
               seatData={seats[8]} 
-              onClick={() => handleSeatClick(9)}
+              onClick={handleSeatClick(9)}
               accountId={accountId}
             />
           </div>
@@ -520,23 +896,49 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </p>
           </div>
 
-          {/* Messages Area - WhatsApp Style with Avatar */}
-          <div className="mx-4 mt-1 space-y-2 max-h-[120px] overflow-y-auto">
+          {/* Messages Area */}
+          <div className="mx-0 mt-1 space-y-1 max-h-[126px] overflow-y-auto">
             {messages.map((msg) => (
-              <div key={msg.id} className="flex items-start gap-2">
-                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
-                  <img 
-                    src={msg.senderImage} 
-                    alt={msg.sender}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-white/70">{msg.sender}</span>
-                  <div className="px-3 py-1.5 rounded-xl bg-white/20 text-white rounded-bl-none">
-                    <p className="text-xs break-words">{msg.text}</p>
+              <div key={msg.id}>
+                {msg.type === 'join' ? (
+                  <div className="flex items-start gap-1.5 px-1">
+                    <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <img 
+                        src={msg.senderImage || "/default-avatar.png"} 
+                        alt={msg.sender}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/default-avatar.png"
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col bg-white/8 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/5">
+                      <span className="text-[9px] font-semibold text-white/80 leading-tight">{msg.sender}</span>
+                      <span className="text-[8px] text-white/50 leading-tight">Enter the Room</span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <img 
+                        src={msg.senderImage || "/default-avatar.png"} 
+                        alt={msg.sender}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/default-avatar.png"
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[9px] font-semibold text-white/70">{msg.sender}</span>
+                      <div className="px-2.5 py-1 rounded-lg bg-white/15 text-white rounded-bl-none">
+                        <p className="text-[11px] break-words leading-tight">{msg.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />
@@ -545,12 +947,13 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
         {/* Footer Controls */}
         <div className="flex-shrink-0 pb-4">
-          {/* Message Input - Full Width No Curve Square - More Wide */}
           {showChatInput && (
             <div className="flex items-center gap-0 mb-0 -mx-4 w-screen">
               <div className="flex-1 bg-white flex items-center px-4 py-3 shadow-lg w-full">
-                {/* Image Icon - Left Side */}
-                <button className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
+                <button 
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer"
+                >
                   <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
@@ -558,7 +961,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   </svg>
                 </button>
 
-                {/* Text Input */}
                 <input
                   ref={inputRef}
                   type="text"
@@ -570,7 +972,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-2 text-base outline-none border-none"
                 />
 
-                {/* Send Button - Right Side */}
                 <button
                   onClick={handleSendMessage}
                   disabled={!message.trim()}
@@ -586,7 +987,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           )}
 
           <div className="flex items-center justify-between gap-2">
-            {/* Say Hi Button - Left Side */}
             <button 
               onClick={toggleChatInput}
               className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
@@ -594,39 +994,33 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               Say Hi
             </button>
 
-            {/* Icons - Right Side */}
             <div className="flex items-center gap-2">
-              {/* Show Mic ONLY if user has a seat */}
               {hasSeat && (
-                <>
-                  {/* Mic Icon - Click to Mute/Unmute */}
-                  <button 
-                    onClick={handleBottomMicToggle}
-                    className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
-                  >
-                    {currentUserSeat?.isMuted ? (
-                      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                        <line x1="1" y1="1" x2="23" y2="23" />
-                        <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-                        <line x1="12" y1="19" x2="12" y2="23" />
-                        <line x1="8" y1="23" x2="16" y2="23" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="23" />
-                        <line x1="8" y1="23" x2="16" y2="23" />
-                      </svg>
-                    )}
-                  </button>
-                </>
+                <button 
+                  onClick={handleBottomMicToggle}
+                  className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
+                >
+                  {currentUserSeat?.isMuted ? (
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                      <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                      <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                      <line x1="12" y1="19" x2="12" y2="23" />
+                      <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="12" y1="19" x2="12" y2="23" />
+                      <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                  )}
+                </button>
               )}
 
-              {/* Emoji Picker Button */}
               <button 
-                onClick={() => setShowEmojiPicker(true)}
+                onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }}
                 className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -634,9 +1028,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                 </svg>
               </button>
 
-              {/* Gift Picker Button */}
               <button 
-                onClick={() => setShowGiftPicker(true)}
+                onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }}
                 aria-label="File"
                 className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 overflow-hidden cursor-pointer"
               >
@@ -644,10 +1037,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                   src="/file_000000008e508208b1353ae33e2abef9.png" 
                   alt="File"
                   className="w-full h-full object-cover"
+                  draggable={false}
                 />
               </button>
 
               <button 
+                onClick={(e) => e.stopPropagation()}
                 aria-label="Message Box Menu"
                 className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
               >
@@ -658,6 +1053,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               </button>
 
               <button 
+                onClick={(e) => e.stopPropagation()}
                 aria-label="Apps Menu"
                 className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
               >
@@ -676,9 +1072,14 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
       {/* Exit Menu Overlay */}
       {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
-          <div className="flex flex-col items-center gap-8">
-            {/* Keep Button - Top */}
+        <div 
+          className="absolute inset-0 z-20 flex items-center justify-center bg-black/40"
+          onClick={closeExitMenu}
+        >
+          <div 
+            className="flex flex-col items-center gap-8"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={handleKeep}
@@ -691,7 +1092,6 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               <span className="text-white font-semibold text-base">Keep</span>
             </div>
 
-            {/* Exit Button - Below Keep */}
             <div className="flex flex-col items-center gap-2">
               <button 
                 onClick={handleExit}
@@ -707,9 +1107,8 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             </div>
           </div>
 
-          {/* Cross Close Button */}
           <button 
-            onClick={() => setShowExitMenu(false)}
+            onClick={closeExitMenu}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 cursor-pointer"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
@@ -725,20 +1124,20 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         <div className="absolute inset-0 z-30 flex items-end justify-center">
           <div 
             className="absolute inset-0 bg-black/30"
-            onClick={() => {
-              setShowSeatSheet(false)
-              setSelectedSeat(null)
-            }}
+            onClick={closeBottomSheet}
           />
           
-          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[20vh] overflow-y-auto">
+          <div 
+            className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[20vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="space-y-2">
               <button
                 onClick={handleTakeSeat}
-                disabled={seats.find(s => s.number === selectedSeat)?.isOccupied || seats.some(s => s.isOccupied && s.user?.accountId === accountId)}
+                disabled={seats.find(s => s.number === selectedSeat)?.isOccupied && !seats.some(s => s.isOccupied && s.user?.accountId === accountId)}
                 className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
-                Take Mic
+                {seats.some(s => s.isOccupied && s.user?.accountId === accountId) ? 'Switch Seat' : 'Take Mic'}
               </button>
 
               <button
@@ -757,8 +1156,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
               <button
                 onClick={handleToggleMute}
-                disabled={!seats.find(s => s.number === selectedSeat)?.isOccupied}
-                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 {seats.find(s => s.number === selectedSeat)?.isMuted ? 'Unmute' : 'Mute'}
               </button>
@@ -800,6 +1198,52 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         .animate-slide-up {
           animation: slideUp 0.3s ease-out;
         }
+
+        /* Expanding Blue Wave Effect radiating from behind avatar */
+        @keyframes rippleRing1 {
+          0% {
+            transform: scale(1);
+            opacity: 0.9;
+          }
+          100% {
+            transform: scale(1.65);
+            opacity: 0;
+          }
+        }
+
+        @keyframes rippleRing2 {
+          0% {
+            transform: scale(1);
+            opacity: 0.8;
+          }
+          100% {
+            transform: scale(1.9);
+            opacity: 0;
+          }
+        }
+
+        @keyframes rippleRing3 {
+          0% {
+            transform: scale(1);
+            opacity: 0.7;
+          }
+          100% {
+            transform: scale(2.15);
+            opacity: 0;
+          }
+        }
+
+        .blue-wave-1 {
+          animation: rippleRing1 1.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+        }
+
+        .blue-wave-2 {
+          animation: rippleRing2 1.4s cubic-bezier(0, 0.2, 0.8, 1) 0.35s infinite;
+        }
+
+        .blue-wave-3 {
+          animation: rippleRing3 1.4s cubic-bezier(0, 0.2, 0.8, 1) 0.7s infinite;
+        }
       `}</style>
     </div>
   )
@@ -813,80 +1257,111 @@ function SeatItem({
 }: { 
   seatNumber: number
   seatData: Seat
-  onClick: () => void
+  onClick: (e: React.MouseEvent) => void
   accountId: string
 }) {
   return (
-    <div className="flex flex-col items-center gap-1" onClick={onClick}>
-      <div
-        className={`w-[54px] h-[54px] rounded-full flex items-center justify-center shrink-0 relative
-        bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px]
-        border border-[rgba(210,220,235,0.55)]
-        shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]
-        transition-transform duration-300 hover:scale-105 cursor-pointer`}
-      >
-        {seatData.isLocked ? (
-          <div className="w-7 h-7 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round">
-              <rect x="5" y="11" width="14" height="10" rx="2.5" />
-              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              <circle cx="12" cy="16" r="1.2" fill="#94a7be" />
-            </svg>
-          </div>
-        ) : seatData.isOccupied && seatData.user ? (
-          <>
-            <img 
-              src={seatData.user.image} 
-              alt={seatData.user.name}
-              className="w-full h-full rounded-full object-cover"
-            />
-            {seatData.isMuted && (
-              <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md ${isCurrentUserOnSeat ? 'bg-gray-400' : 'bg-red-500'}`}>
-                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                  <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-                </svg>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="w-[58%] h-[58%] flex items-center justify-center">
-            <svg
-              viewBox="0 0 100 100"
-              width="100%"
-              height="100%"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ overflow: "visible", display: "block" }}
-            >
-              <g
-                fill="none"
-                stroke="#94a7be"
-                strokeWidth="7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" />
-                <path d="M 50 74 L 50 86" />
-                <path d="M 38 90 L 62 90" />
-              </g>
-              <g
-                fill="#94a7be"
-                stroke="#5a6d89"
-                strokeWidth="2.8"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                transform="translate(0, 6)"
-              >
-                <path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" />
-              </g>
-            </svg>
+    <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
+      <div className="relative w-[60px] h-[60px] flex items-center justify-center">
+        
+        {/* Glowing Blue Outer Ripples (Avatar ke piche se aane wali continuous waves) */}
+        {seatData.isSpeaking && (
+          <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-blue-500/40 border border-blue-400 blue-wave-1 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+            <div className="absolute inset-0 rounded-full bg-blue-400/30 border border-cyan-400 blue-wave-2 shadow-[0_0_20px_rgba(59,130,246,0.6)]" />
+            <div className="absolute inset-0 rounded-full bg-blue-600/20 border border-blue-300 blue-wave-3 shadow-[0_0_25px_rgba(59,130,246,0.4)]" />
           </div>
         )}
+
+        {/* Seat Circle Container */}
+        <div
+          className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10
+          bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px]
+          border transition-all duration-300 hover:scale-105 pointer-events-auto
+          ${seatData.isSpeaking 
+            ? 'border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.8)] scale-105' 
+            : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'
+          }`}
+        >
+          {seatData.isLocked ? (
+            <div className="w-8 h-8 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                <rect x="5" y="11" width="14" height="10" rx="2.5" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                <circle cx="12" cy="16" r="1.2" fill="#94a7be" />
+              </svg>
+            </div>
+          ) : seatData.isOccupied && seatData.user ? (
+            <>
+              <img 
+                src={seatData.user.image || "/default-avatar.png"} 
+                alt={seatData.user.name}
+                className="w-full h-full rounded-full object-cover pointer-events-none"
+                draggable={false}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/default-avatar.png"
+                }}
+              />
+              {seatData.isMuted && (
+                <div className={`absolute -right-1 -bottom-1 z-20 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${
+                  seatData.user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'
+                }`}>
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                    <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                  </svg>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-[58%] h-[58%] flex items-center justify-center pointer-events-none relative">
+              <svg
+                viewBox="0 0 100 100"
+                width="100%"
+                height="100%"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ overflow: "visible", display: "block" }}
+              >
+                <g
+                  fill="none"
+                  stroke="#94a7be"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" />
+                  <path d="M 50 74 L 50 86" />
+                  <path d="M 38 90 L 62 90" />
+                </g>
+                <g
+                  fill="#94a7be"
+                  stroke="#5a6d89"
+                  strokeWidth="2.8"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  transform="translate(0, 6)"
+                >
+                  <path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" />
+                </g>
+              </svg>
+              {seatData.isMuted && (
+                <div className="absolute -right-2 -bottom-2 z-20 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                    <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-      <span className="text-[10px] font-medium text-white/80">
-        {seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`}
+      <span className="text-[10px] font-medium text-white/80 pointer-events-none">
+        {seatData.isLocked ? `No ${seatNumber}` : (seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`)}
       </span>
     </div>
   )
-      }
+}
+
