@@ -26,13 +26,13 @@ function MicModeImageCard({ count, selected }: { count: number; selected: boolea
       case 5:
         return '/IMG_20260812_015943.jpg'
       case 9:
-        return '/IMG_20260812_020002.jpg'
-      case 10:
         return '/IMG_20260812_015111.jpg'
-      case 13:
-        return '/IMG_20260812_015943.jpg'
-      default:
+      case 10:
         return '/IMG_20260812_020002.jpg'
+      case 13:
+        return '/IMG_20260812_020022.jpg'
+      default:
+        return '/IMG_20260812_015111.jpg'
     }
   }
 
@@ -58,13 +58,13 @@ function MainMicModePreview({ count }: { count: number }) {
       case 5:
         return '/IMG_20260812_015943.jpg'
       case 9:
-        return '/IMG_20260812_020002.jpg'
-      case 10:
         return '/IMG_20260812_015111.jpg'
-      case 13:
-        return '/IMG_20260812_015943.jpg'
-      default:
+      case 10:
         return '/IMG_20260812_020002.jpg'
+      case 13:
+        return '/IMG_20260812_020022.jpg'
+      default:
+        return '/IMG_20260812_015111.jpg'
     }
   }
 
