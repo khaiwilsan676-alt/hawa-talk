@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { db } from "../src/lib/supabase"
-import { doc, setDoc } from "../src/lib/supabase"
+
+import { doc, setDoc , db} from "../src/lib/supabase"
 
 interface RoomSettingPageProps {
   onBack: () => void

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { db } from "../src/lib/supabase"
+
 import {
   collection,
   doc,
@@ -12,7 +12,7 @@ import {
   where,
   getDocs,
   getDoc
-} from "../src/lib/supabase"
+, db} from "../src/lib/supabase"
 
 import MessagePage from './MessagePage'
 import MePage from './MePage';

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star, MessageSquare, Trash2, RefreshCw, Bot, ChevronDown, ChevronUp } from "lucide-react";
-
-import { supabase } from '../../src/lib/supabase';
+;
+import { doc, setDoc, onSnapshot, collection, query, orderBy, getDocs, deleteDoc , db} from "../../src/lib/supabase";
 
 export default function OwnerPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

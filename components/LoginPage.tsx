@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
-import { db } from "../src/lib/supabase";
-import { account } from "../src/lib/appwrite";
-import { OAuthProvider } from "appwrite";
-import { doc, getDoc, setDoc, collection, addDoc } from "../src/lib/supabase";
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
+import { auth, provider } from "../src/lib/firebase";
+import { doc, getDoc, setDoc, collection, addDoc , db} from "../src/lib/supabase";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -470,35 +469,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     video.preload = 'auto';
   }, []);
 
-  // Check for active appwrite session on mount (for OAuth redirects)
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const user = await account.get();
-        if (user && !localStorage.getItem("userUID")) {
-          // New login from OAuth redirect
-          const userName = user.name || "Google User";
-          const userEmail = user.email || "";
-          const userPhoto = "/default-avatar.png";
-          const userUID = user.$id;
-
-          const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto);
-
-          localStorage.setItem("userName", userName);
-          localStorage.setItem("userEmail", userEmail);
-          localStorage.setItem("userPhoto", userPhoto);
-          localStorage.setItem("userUID", userUID);
-          localStorage.setItem("accountNumber", accNum);
-
-          await processLoginSuccess(user);
-        }
-      } catch (e) {
-        // No active session
-      }
-    };
-    checkSession();
-  }, []);
-
   const handleGoogleClick = () => {
     setShowGoogleSheet(true);
   };
@@ -568,10 +538,30 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setShowGoogleSheet(false);
     setLoading(true);
     try {
-      account.createOAuth2Session(OAuthProvider.Google, window.location.href, window.location.href);
-      // It will redirect the user to Google OAuth page.
+      if (provider instanceof GoogleAuthProvider) {
+        provider.setCustomParameters({ prompt: 'select_account' });
+      }
+
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      const userName = user.displayName || "Google User"
+      const userEmail = user.email || ""
+      const userPhoto = user.photoURL || "/default-avatar.png"
+      const userUID = user.uid
+
+      const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
+
+      localStorage.setItem("userName", userName);
+      localStorage.setItem("userEmail", userEmail);
+      localStorage.setItem("userPhoto", userPhoto);
+      localStorage.setItem("userUID", userUID);
+      localStorage.setItem("accountNumber", accNum);
+
+      await processLoginSuccess(user);
     } catch (error: any) {
       console.error(error);
+    } finally {
       setLoading(false);
     }
   };
@@ -658,14 +648,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return;
       }
 
-      let appwriteSession;
-      appwriteSession = await account.createEmailPasswordSession(email, password);
+      let userCredential;
+      userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      const user = await account.get();
-      const userName = user.name || email.split('@')[0]
+      const user = userCredential.user;
+      const userName = user.displayName || email.split('@')[0]
       const userEmail = user.email || ""
-      const userPhoto = "/default-avatar.png"
-      const userUID = user.$id
+      const userPhoto = user.photoURL || "/default-avatar.png"
+      const userUID = user.uid
 
       const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
 
