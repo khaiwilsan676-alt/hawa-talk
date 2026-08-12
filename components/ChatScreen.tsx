@@ -24,11 +24,8 @@ interface ChatScreenProps {
   onClose: () => void
 }
 
-const SIGNALING_SERVER = 'ws://localhost:3001'  // Change to your server's address
+const SIGNALING_SERVER = 'ws://localhost:3001'
 
-// ======================
-// Fixed chat UIDs jinke liye input hide karna hai
-// ======================
 const FIXED_CHAT_UIDS = ['hurry_team_official', 'hurry_system_official']
 
 export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScreenProps) {
@@ -37,18 +34,13 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
   const [connected, setConnected] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // WebRTC refs
   const wsRef = useRef<WebSocket | null>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const dataChannelRef = useRef<RTCDataChannel | null>(null)
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
 
-  // ======================
-  // Check if this is a fixed chat (Hurry Team / Hurry System)
-  // ======================
   const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid)
 
-  // Connect to signalling server
   const connectSignaling = useCallback(() => {
     const ws = new WebSocket(SIGNALING_SERVER)
     wsRef.current = ws
@@ -59,7 +51,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
 
     ws.onmessage = async (event) => {
       const data = JSON.parse(event.data)
-      const { type, from } = data
+      const { type } = data
 
       if (type === 'offer') {
         await handleReceiveOffer(data.sdp)
@@ -77,7 +69,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     return ws
   }, [currentUser.uid])
 
-  // Cleanup on unmount
   useEffect(() => {
     const ws = connectSignaling()
     return () => {
@@ -95,7 +86,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     }])
   }
 
-  // Create peer connection and data channel (as caller)
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -118,7 +108,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
       setupDataChannel(channel)
     }
 
-    // Create data channel (only if we are the offerer)
     const channel = pc.createDataChannel('chat')
     setupDataChannel(channel)
 
@@ -142,8 +131,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
 
     channel.onopen = () => {
       setConnected(true)
-      console.log('Data channel open')
-      // Send any pending ice candidates
       while (pendingCandidatesRef.current.length) {
         const candidate = pendingCandidatesRef.current.shift()!
         wsRef.current?.send(JSON.stringify({
@@ -164,7 +151,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     }
   }
 
-  // Handle receiving an offer
   const handleReceiveOffer = async (sdp: RTCSessionDescriptionInit) => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -207,7 +193,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
 
   const handleRemoteIceCandidate = async (candidate: RTCIceCandidateInit) => {
     if (!pcRef.current?.remoteDescription) {
-      // Queue candidate until remote description is set
       pendingCandidatesRef.current.push(candidate)
       return
     }
@@ -218,9 +203,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     }
   }
 
-  // Trigger connection when component mounts (caller initiates)
   useEffect(() => {
-    // Small delay to ensure signalling socket is ready
     const timer = setTimeout(() => {
       createPeerConnection()
     }, 1000)
@@ -233,7 +216,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     addMessage(newMessage.trim(), 'me')
     setNewMessage('')
 
-    // Save last message to localStorage (for MessagePage list)
     const chatKey = `chat_${[currentUser.uid, targetUser.uid].sort().join('_')}`
     const existing = localStorage.getItem(chatKey)
     let chatData = existing ? JSON.parse(existing) : { messages: [] }
@@ -254,10 +236,13 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     }
   }
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const formatTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col">
@@ -283,7 +268,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
 
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-bold text-gray-800 truncate">{targetUser.name}</h2>
-          {/* Fixed chat ke liye "Official" badge dikhao, connection status nahi */}
           {isFixedChat ? (
             <span className="text-xs text-blue-500 font-medium">Official Account</span>
           ) : (
@@ -299,22 +283,23 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
       </div>
 
       {/* Messages area */}
-      <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50 ${isFixedChat ? 'pb-4' : ''}`}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
         {messages.length === 0 && (
           <p className="text-center text-gray-400 mt-20">
-            {isFixedChat 
-              ? 'No messages from Hurry Team yet' 
-              : connected 
-                ? 'No messages yet. Say hello!' 
+            {isFixedChat
+              ? 'No messages from ' + targetUser.name + ' yet'
+              : connected
+                ? 'No messages yet. Say hello!'
                 : 'Waiting for connection...'}
           </p>
         )}
         {messages.map((msg) => {
           const isMine = msg.sender === 'me'
-          return (
-            <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              {/* Fixed chat ke messages me sender ka naam bhi dikhao */}
-              {!isMine && isFixedChat && (
+          
+          // Fixed chat messages with sender avatar
+          if (!isMine && isFixedChat) {
+            return (
+              <div key={msg.id} className="flex justify-start">
                 <div className="flex items-end gap-2">
                   <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-1">
                     <img
@@ -327,39 +312,36 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
                     <span className="text-[10px] text-gray-500 ml-1 mb-0.5">{targetUser.name}</span>
                     <div className="max-w-[80%] px-4 py-2 rounded-2xl break-words bg-white text-gray-800 rounded-bl-md shadow-sm">
                       <p className="text-sm">{msg.text}</p>
-                      <p className="text-[10px] mt-1 text-gray-400">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                      <p className="text-[10px] mt-1 text-gray-400">{formatTime(msg.timestamp)}</p>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div
-                  className={`max-w-[80%] px-4 py-2 rounded-2xl break-words ${
-                    isMine
-                      ? 'bg-blue-500 text-white rounded-br-md'
-                      : 'bg-white text-gray-800 rounded-bl-md shadow-sm'
-                  }`}
-                >
-                  <p className="text-sm">{msg.text}</p>
-                  <p
-                    className={`text-[10px] mt-1 ${
-                      isMine ? 'text-blue-100' : 'text-gray-400'
-                    }`}
-                  >
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              )}
+              </div>
+            )
+          }
+
+          // Normal messages
+          return (
+            <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[80%] px-4 py-2 rounded-2xl break-words ${
+                  isMine
+                    ? 'bg-blue-500 text-white rounded-br-md'
+                    : 'bg-white text-gray-800 rounded-bl-md shadow-sm'
+                }`}
+              >
+                <p className="text-sm">{msg.text}</p>
+                <p className={`text-[10px] mt-1 ${isMine ? 'text-blue-100' : 'text-gray-400'}`}>
+                  {formatTime(msg.timestamp)}
+                </p>
+              </div>
             </div>
           )
         })}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ====================== */}
-      {/* INPUT BAR — Sirf normal chats ke liye, fixed chats me hide */}
-      {/* ====================== */}
+      {/* Input bar - Only for normal chats */}
       {!isFixedChat && (
         <div className="px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-2">
           <button className="text-gray-500 hover:text-gray-700">
@@ -384,7 +366,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
         </div>
       )}
 
-      {/* Fixed chat bottom info */}
+      {/* Fixed chat bottom notice */}
       {isFixedChat && (
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
           <p className="text-xs text-gray-400">This is an official account. You cannot reply here.</p>
@@ -392,4 +374,4 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
       )}
     </div>
   )
-    }
+      }
