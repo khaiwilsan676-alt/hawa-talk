@@ -174,7 +174,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             const followerIds: string[] = data.followers || []
             const followersList: RoomUser[] = followerIds.map((id: string) => ({
               accountId: id,
-              name: `User ${id.slice(0, 5)}`, // You may want to fetch real names later
+              name: `User ${id.slice(0, 5)}`,
               image: ''
             }))
             setRoomFollowers(followersList)
@@ -802,7 +802,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     if (onFollowToggle) {
                       onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow)
                     }
-                    // Optionally update Firestore followers here
                   }}
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-blue-500' : 'bg-blue-500'}`}
                   title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
@@ -852,6 +851,17 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           </div>
         </div>
 
+        {/* ---------- Dangerous Warning Icon - Top Left Corner ---------- */}
+        <div className="absolute top-2 left-2 z-20">
+          <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center bg-transparent">
+            <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-black stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="13" />
+              <circle cx="12" cy="16.5" r="0.8" fill="black" stroke="none" />
+            </svg>
+          </div>
+        </div>
+
         {/* ---------- Scrollable Middle Content ---------- */}
         <div className="flex-1 flex flex-col overflow-y-auto scrollbar-none min-h-0">
           {/* Seats */}
@@ -859,15 +869,38 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             {renderSeats()}
           </div>
 
-          {/* Announcement Card – only if text exists */}
-          {roomAnnouncement && (
-            <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3 flex-shrink-0">
+          {/* Announcement Card - Permanent with warning in WHITE text */}
+          <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3 flex-shrink-0">
+            <div className="flex flex-col gap-2">
+              {/* Permanent Warning Text - WHITE color */}
               <div className="flex items-start gap-2">
-                <span className="text-white/60 text-[10px] font-medium whitespace-nowrap">ANNOUNCEMENT:</span>
-                <p className="text-white/80 text-[11px] leading-relaxed">{roomAnnouncement}</p>
+                <div className="w-5 h-5 rounded-md border-2 border-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+                    <line x1="12" y1="5" x2="12" y2="15" />
+                    <circle cx="12" cy="19" r="1" fill="white" stroke="none" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-white text-[10px] leading-relaxed font-medium">
+                    Welcome to Hurry any content Related to porn, Fraud, Violence fake official will be ban (Can't edit it this like permanent this is)
+                  </p>
+                </div>
               </div>
+              
+              {/* Divider - only show if there's an announcement */}
+              {roomAnnouncement && (
+                <>
+                  <div className="border-t border-white/10 my-1"></div>
+                  
+                  {/* User Announcement */}
+                  <div className="flex items-start gap-2">
+                    <span className="text-white/60 text-[10px] font-medium whitespace-nowrap">ANNOUNCEMENT:</span>
+                    <p className="text-white/80 text-[11px] leading-relaxed">{roomAnnouncement}</p>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Messages */}
           <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
@@ -990,15 +1023,28 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-800">{roomName || roomOwner.name}</h3>
-                      <p className="text-xs text-gray-400">ID: {roomOwner.accountId}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-gray-400">ID: {roomOwner.accountId}</p>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(roomOwner.accountId || '');
+                            alert('ID copied to clipboard!');
+                          }} 
+                          className="p-1 hover:bg-gray-100 rounded transition-colors cursor-pointer"
+                          title="Copy ID"
+                        >
+                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div>
                     <span className="text-xs text-gray-400 font-medium">Host</span>
                     <div className="flex items-center gap-2 mt-1">
-                      <div className="w-7 h-7 rounded-full overflow-hidden">
-                        <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" />
-                      </div>
                       <span className="text-sm font-medium text-gray-800">{roomOwner.name || "Unknown"}</span>
                     </div>
                   </div>
@@ -1208,4 +1254,4 @@ function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: nu
       </span>
     </div>
   )
-}
+         }
