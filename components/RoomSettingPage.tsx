@@ -6,7 +6,7 @@ import { doc, setDoc } from "firebase/firestore"
 
 interface RoomSettingPageProps {
   onBack: () => void
-  roomOwnerId?: string          // Firestore doc ID of the room (for saving)
+  roomOwnerId?: string
   roomData?: {
     roomName?: string
     roomImage?: string
@@ -21,80 +21,71 @@ interface RoomSettingPageProps {
 
 // ---------- Mini room preview for mic mode cards ----------
 function MicModePreview({ count, selected }: { count: number; selected: boolean }) {
-  // Pre‑defined seat positions for each mode (scaled down)
-  const positions: { [key: number]: { top: number; left: number }[] } = {
-    5: [
-      { top: 15, left: 50 },
-      { top: 55, left: 15 },
-      { top: 55, left: 85 },
-      { top: 55, left: 50 },
-      { top: 55, left: 85 },  // adjusted for balance
-    ],
-    9: [
-      { top: 10, left: 50 },
-      { top: 40, left: 18 },
-      { top: 40, left: 82 },
-      { top: 40, left: 50 },
-      { top: 40, left: 82 },
-      { top: 70, left: 18 },
-      { top: 70, left: 82 },
-      { top: 70, left: 50 },
-      { top: 70, left: 82 },
-    ],
-    10: [
-      { top: 10, left: 35 },
-      { top: 10, left: 65 },
-      { top: 40, left: 15 },
-      { top: 40, left: 85 },
-      { top: 40, left: 50 },
-      { top: 40, left: 85 },
-      { top: 70, left: 15 },
-      { top: 70, left: 85 },
-      { top: 70, left: 50 },
-      { top: 70, left: 85 },
-    ],
-    13: [
-      { top: 5, left: 50 },
-      { top: 28, left: 15 },
-      { top: 28, left: 85 },
-      { top: 28, left: 50 },
-      { top: 28, left: 85 },
-      { top: 52, left: 15 },
-      { top: 52, left: 85 },
-      { top: 52, left: 50 },
-      { top: 52, left: 85 },
-      { top: 76, left: 15 },
-      { top: 76, left: 85 },
-      { top: 76, left: 50 },
-      { top: 76, left: 85 },
-    ],
+  // Image mapping based on mic mode count
+  const getModeImage = (count: number) => {
+    switch(count) {
+      case 5:
+        return '/IMG_20260812_015943.jpg'
+      case 9:
+        return '/IMG_20260812_020002.jpg'
+      case 10:
+        return '/IMG_20260812_015111.jpg'
+      case 13:
+        return '/IMG_20260812_015943.jpg'
+      default:
+        return '/IMG_20260812_020002.jpg'
+    }
   }
-
-  // Ensure we don’t go out of bounds
-  const seats = positions[count] ?? positions[9]
 
   return (
     <div className="relative w-20 h-24 mx-auto">
-      {/* Background gradient (mimics a dark room) */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-80" />
-      {/* Tiny seat circles */}
-      {seats.slice(0, count).map((pos, i) => (
-        <div
-          key={i}
-          className={`absolute w-2.5 h-2.5 rounded-full border ${
-            selected ? 'border-blue-400 bg-blue-300/40' : 'border-gray-500 bg-gray-400/30'
-          }`}
-          style={{
-            top: `${pos.top}%`,
-            left: `${pos.left}%`,
-            transform: 'translate(-50%, -50%)',
-          }}
-        />
-      ))}
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-70" />
+      
+      {/* Room image as background */}
+      <img 
+        src={getModeImage(count)} 
+        alt={`Mic mode ${count}`}
+        className="absolute inset-0 w-full h-full object-cover rounded-xl"
+      />
+      
       {/* Subtle count number */}
-      <div className="absolute bottom-1 right-1.5 text-[9px] font-bold text-white/80 bg-black/30 px-1 rounded">
+      <div className="absolute bottom-1 right-1.5 text-[9px] font-bold text-white bg-black/50 px-1 rounded">
         {count}
       </div>
+      
+      {/* Selection indicator */}
+      {selected && (
+        <div className="absolute inset-0 rounded-xl border-2 border-blue-400" />
+      )}
+    </div>
+  )
+}
+
+// Main preview for the settings page
+function MainMicModePreview({ count }: { count: number }) {
+  const getModeImage = (count: number) => {
+    switch(count) {
+      case 5:
+        return '/IMG_20260812_015943.jpg'
+      case 9:
+        return '/IMG_20260812_020002.jpg'
+      case 10:
+        return '/IMG_20260812_015111.jpg'
+      case 13:
+        return '/IMG_20260812_015943.jpg'
+      default:
+        return '/IMG_20260812_020002.jpg'
+    }
+  }
+
+  return (
+    <div className="relative w-10 h-12">
+      <img 
+        src={getModeImage(count)} 
+        alt={`Mic mode ${count}`}
+        className="w-full h-full object-contain rounded-lg"
+      />
     </div>
   )
 }
@@ -253,7 +244,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           </div>
         </div>
 
-        {/* 7. Mic Mode – now shows a visual preview */}
+        {/* 7. Mic Mode – now shows image preview */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Mic Mode</label>
@@ -261,10 +252,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
               onClick={() => setShowMicModeSheet(true)}
               className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-lg"
             >
-              {/* Mini preview of the currently selected mode */}
-              <div className="w-8 h-10">
-                <MicModePreview count={selectedMicMode} selected={false} />
-              </div>
+              {/* Image preview of the currently selected mode */}
+              <MainMicModePreview count={selectedMicMode} />
               <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-400 stroke-[2]">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -294,7 +283,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
                       : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
-                  {/* Seat preview – NO TEXT */}
+                  {/* Image preview with object-contain */}
                   <MicModePreview count={mode} selected={selectedMicMode === mode} />
                 </button>
               ))}
