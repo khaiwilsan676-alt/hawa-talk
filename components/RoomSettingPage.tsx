@@ -19,9 +19,8 @@ interface RoomSettingPageProps {
   onSave?: (data: any) => void
 }
 
-// ---------- Mini room preview for mic mode cards ----------
-function MicModePreview({ count, selected }: { count: number; selected: boolean }) {
-  // Image mapping based on mic mode count
+// ---------- Mic mode image card component ----------
+function MicModeImageCard({ count, selected }: { count: number; selected: boolean }) {
   const getModeImage = (count: number) => {
     switch(count) {
       case 5:
@@ -38,31 +37,21 @@ function MicModePreview({ count, selected }: { count: number; selected: boolean 
   }
 
   return (
-    <div className="relative w-20 h-24 mx-auto">
-      {/* Background gradient overlay */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-70" />
-      
-      {/* Room image as background */}
+    <div className={`relative w-full aspect-[4/3] rounded-xl overflow-hidden ${selected ? 'ring-2 ring-blue-400' : ''}`}>
       <img 
         src={getModeImage(count)} 
         alt={`Mic mode ${count}`}
-        className="absolute inset-0 w-full h-full object-cover rounded-xl"
+        className="w-full h-full object-contain"
       />
-      
-      {/* Subtle count number */}
-      <div className="absolute bottom-1 right-1.5 text-[9px] font-bold text-white bg-black/50 px-1 rounded">
-        {count}
+      {/* Mode count badge */}
+      <div className="absolute bottom-2 right-2 text-xs font-bold text-white bg-black/60 px-2 py-0.5 rounded-full">
+        Mode {count}
       </div>
-      
-      {/* Selection indicator */}
-      {selected && (
-        <div className="absolute inset-0 rounded-xl border-2 border-blue-400" />
-      )}
     </div>
   )
 }
 
-// Main preview for the settings page
+// Main preview for settings page
 function MainMicModePreview({ count }: { count: number }) {
   const getModeImage = (count: number) => {
     switch(count) {
@@ -80,12 +69,39 @@ function MainMicModePreview({ count }: { count: number }) {
   }
 
   return (
-    <div className="relative w-10 h-12">
+    <div className="w-12 h-12 rounded-lg overflow-hidden">
       <img 
         src={getModeImage(count)} 
         alt={`Mic mode ${count}`}
-        className="w-full h-full object-contain rounded-lg"
+        className="w-full h-full object-contain"
       />
+    </div>
+  )
+}
+
+// ---------- Password Input Component ----------
+function PasswordInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const digits = value.split('')
+  
+  const handleInput = (index: number, inputValue: string) => {
+    const newDigits = [...digits]
+    newDigits[index] = inputValue.slice(-1)
+    const newPassword = newDigits.join('').slice(0, 6)
+    onChange(newPassword)
+  }
+
+  return (
+    <div className="flex gap-3 justify-center">
+      {[0, 1, 2, 3, 4, 5].map((index) => (
+        <input
+          key={index}
+          type="text"
+          maxLength={1}
+          value={digits[index] || ''}
+          onChange={(e) => handleInput(index, e.target.value)}
+          className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+        />
+      ))}
     </div>
   )
 }
@@ -99,8 +115,17 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
   const [isLocked, setIsLocked] = useState<boolean>(roomData?.isLocked || false)
   const [selectedMicMode, setSelectedMicMode] = useState<number>(roomData?.micMode || 9)
   const [showMicModeSheet, setShowMicModeSheet] = useState<boolean>(false)
+  const [showThemeSheet, setShowThemeSheet] = useState<boolean>(false)
+  const [showLockCard, setShowLockCard] = useState<boolean>(false)
+  const [password, setPassword] = useState<string>('')
+  const [selectedTheme, setSelectedTheme] = useState<string>(roomData?.theme || 'forest-night')
 
   const micModes = [5, 9, 10, 13]
+
+  const themes = [
+    { id: 'forest-night', name: 'Forest Night', image: '/1784875884052~2.jpg' },
+    { id: 'mood-light', name: 'Mood Light', image: '/1784533036732~2.jpg' }
+  ]
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -120,6 +145,14 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
     reader.readAsDataURL(file)
   }
 
+  const handleSetPassword = () => {
+    if (password.length === 6) {
+      setIsLocked(true)
+      setShowLockCard(false)
+      setPassword('')
+    }
+  }
+
   const handleSave = async () => {
     const settingsData = {
       roomImage,
@@ -127,6 +160,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
       announcement,
       isLocked,
       micMode: selectedMicMode,
+      theme: selectedTheme,
     }
 
     if (roomOwnerId && db) {
@@ -136,6 +170,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           image: roomImage,
           announcement: announcement,
           micMode: selectedMicMode,
+          theme: selectedTheme,
         }, { merge: true })
       } catch (err) {
         console.error("Firestore update failed:", err)
@@ -215,36 +250,40 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           </div>
         </div>
 
-        {/* 4. Theme */}
+        {/* 4. Theme - Clickable */}
         <div className="mb-5">
-          <div className="flex items-center justify-between px-1">
+          <button 
+            onClick={() => setShowThemeSheet(true)}
+            className="flex items-center justify-between px-1 w-full hover:bg-gray-50 py-2 rounded-lg"
+          >
             <label className="text-sm font-medium text-gray-600">Theme</label>
-            <span className="text-sm text-gray-800">Default</span>
-          </div>
+            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-400 stroke-[2]">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
         </div>
 
-        {/* 5. Admin */}
+        {/* 5. Admin - Only label */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Admin</label>
-            <span className="text-sm text-gray-800">Manage Admins</span>
           </div>
         </div>
 
-        {/* 6. Lock Room */}
+        {/* 6. Lock Room - Clickable */}
         <div className="mb-5">
-          <div className="flex items-center justify-between px-1">
+          <button 
+            onClick={() => setShowLockCard(true)}
+            className="flex items-center justify-between px-1 w-full hover:bg-gray-50 py-2 rounded-lg"
+          >
             <label className="text-sm font-medium text-gray-600">Lock Room</label>
-            <button
-              onClick={() => setIsLocked(!isLocked)}
-              className={`relative w-12 h-7 rounded-full transition-colors ${isLocked ? 'bg-blue-500' : 'bg-gray-300'}`}
-            >
-              <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all ${isLocked ? 'left-5.5' : 'left-0.5'}`} />
-            </button>
-          </div>
+            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-400 stroke-[2]">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
         </div>
 
-        {/* 7. Mic Mode – now shows image preview */}
+        {/* 7. Mic Mode – shows image preview */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Mic Mode</label>
@@ -252,7 +291,6 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
               onClick={() => setShowMicModeSheet(true)}
               className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-lg"
             >
-              {/* Image preview of the currently selected mode */}
               <MainMicModePreview count={selectedMicMode} />
               <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-400 stroke-[2]">
                 <polyline points="9 18 15 12 9 6" />
@@ -262,6 +300,96 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
         </div>
       </div>
 
+      {/* Theme Bottom Sheet */}
+      {showThemeSheet && (
+        <div className="absolute inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowThemeSheet(false)} />
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-6 animate-slide-up">
+            {/* Theme Sheet Header */}
+            <div className="flex items-center mb-4">
+              <button
+                onClick={() => setShowThemeSheet(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5]">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+              <h3 className="flex-1 text-center text-lg font-bold text-gray-800">Room Theme</h3>
+            </div>
+
+            {/* Theme Options Grid */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {themes.map((theme) => (
+                <button
+                  key={theme.id}
+                  onClick={() => {
+                    setSelectedTheme(theme.id)
+                    setShowThemeSheet(false)
+                  }}
+                  className={`flex flex-col items-center p-3 rounded-xl transition-all ${
+                    selectedTheme === theme.id
+                      ? 'bg-blue-50 ring-2 ring-blue-400'
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="w-full aspect-square rounded-lg overflow-hidden mb-2">
+                    <img 
+                      src={theme.image} 
+                      alt={theme.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{theme.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lock Room Password Card */}
+      {showLockCard && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowLockCard(false)} />
+          <div className="relative bg-white w-80 rounded-2xl shadow-2xl p-6 mx-4">
+            <h3 className="text-lg font-bold text-gray-800 text-center mb-6">Set Room Password</h3>
+            
+            {/* 6 Digit Password Input */}
+            <PasswordInput value={password} onChange={setPassword} />
+            
+            {/* Show Password Text */}
+            <p className="text-center text-sm text-gray-600 mt-4">
+              Password will show, don't hide
+            </p>
+            
+            {/* Set Password Button */}
+            <button
+              onClick={handleSetPassword}
+              disabled={password.length !== 6}
+              className={`w-full mt-6 py-3 rounded-xl font-semibold text-white transition-all ${
+                password.length === 6
+                  ? 'bg-blue-500 hover:bg-blue-600'
+                  : 'bg-gray-300 cursor-not-allowed'
+              }`}
+            >
+              Set Password
+            </button>
+            
+            {/* Cancel Button */}
+            <button
+              onClick={() => {
+                setShowLockCard(false)
+                setPassword('')
+              }}
+              className="w-full mt-3 py-2 text-gray-500 font-medium text-center hover:bg-gray-100 rounded-xl"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mic Mode Bottom Sheet */}
       {showMicModeSheet && (
         <div className="absolute inset-0 z-50 flex items-end justify-center">
@@ -269,7 +397,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-6 animate-slide-up">
             <h3 className="text-lg font-bold text-gray-800 text-center mb-4">Select Mic Mode</h3>
 
-            <div className="grid grid-cols-3 gap-4">
+            {/* Single column layout with full cards */}
+            <div className="space-y-3 max-h-96 overflow-y-auto">
               {micModes.map((mode) => (
                 <button
                   key={mode}
@@ -277,14 +406,13 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
                     setSelectedMicMode(mode)
                     setShowMicModeSheet(false)
                   }}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${
+                  className={`w-full rounded-xl overflow-hidden transition-all ${
                     selectedMicMode === mode
-                      ? 'border-blue-400 bg-blue-50'
-                      : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                      ? 'ring-2 ring-blue-400 ring-offset-2'
+                      : 'hover:opacity-90'
                   }`}
                 >
-                  {/* Image preview with object-contain */}
-                  <MicModePreview count={mode} selected={selectedMicMode === mode} />
+                  <MicModeImageCard count={mode} selected={selectedMicMode === mode} />
                 </button>
               ))}
             </div>
