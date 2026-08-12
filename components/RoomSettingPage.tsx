@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { db } from "../src/lib/firebase"
 import { doc, setDoc } from "firebase/firestore"
 
@@ -37,15 +37,15 @@ function MicModeImageCard({ count, selected }: { count: number; selected: boolea
   }
 
   return (
-    <div className={`relative w-full aspect-[4/3] rounded-xl overflow-hidden ${selected ? 'ring-2 ring-blue-400' : ''}`}>
+    <div className={`relative w-full rounded-xl overflow-hidden ${selected ? 'ring-2 ring-blue-400' : ''}`}>
       <img 
         src={getModeImage(count)} 
         alt={`Mic mode ${count}`}
-        className="w-full h-full object-contain"
+        className="w-full h-auto object-contain"
       />
       {/* Mode count badge */}
-      <div className="absolute bottom-2 right-2 text-xs font-bold text-white bg-black/60 px-2 py-0.5 rounded-full">
-        Mode {count}
+      <div className="absolute bottom-1 right-1 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded-full">
+        {count}
       </div>
     </div>
   )
@@ -79,27 +79,47 @@ function MainMicModePreview({ count }: { count: number }) {
   )
 }
 
-// ---------- Password Input Component ----------
+// ---------- Password Input Component (4 Digits, Numbers Only, Auto-shift) ----------
 function PasswordInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const digits = value.split('')
-  
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
   const handleInput = (index: number, inputValue: string) => {
-    const newDigits = [...digits]
-    newDigits[index] = inputValue.slice(-1)
-    const newPassword = newDigits.join('').slice(0, 6)
-    onChange(newPassword)
+    // Only allow numbers
+    const numberValue = inputValue.replace(/[^0-9]/g, '')
+    
+    if (numberValue) {
+      const newDigits = value.split('')
+      newDigits[index] = numberValue.slice(-1)
+      const newPassword = newDigits.join('').slice(0, 4)
+      onChange(newPassword)
+      
+      // Auto-shift to next box
+      if (index < 3 && numberValue) {
+        inputRefs.current[index + 1]?.focus()
+      }
+    }
+  }
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !value[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus()
+    }
   }
 
   return (
     <div className="flex gap-3 justify-center">
-      {[0, 1, 2, 3, 4, 5].map((index) => (
+      {[0, 1, 2, 3].map((index) => (
         <input
           key={index}
+          ref={(el) => { inputRefs.current[index] = el }}
           type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           maxLength={1}
-          value={digits[index] || ''}
+          value={value[index] || ''}
           onChange={(e) => handleInput(index, e.target.value)}
-          className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+          onKeyDown={(e) => handleKeyDown(index, e)}
+          className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
         />
       ))}
     </div>
@@ -115,7 +135,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
   const [isLocked, setIsLocked] = useState<boolean>(roomData?.isLocked || false)
   const [selectedMicMode, setSelectedMicMode] = useState<number>(roomData?.micMode || 9)
   const [showMicModeSheet, setShowMicModeSheet] = useState<boolean>(false)
-  const [showThemeSheet, setShowThemeSheet] = useState<boolean>(false)
+  const [showThemePage, setShowThemePage] = useState<boolean>(false)
   const [showLockCard, setShowLockCard] = useState<boolean>(false)
   const [password, setPassword] = useState<string>('')
   const [selectedTheme, setSelectedTheme] = useState<string>(roomData?.theme || 'forest-night')
@@ -146,7 +166,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
   }
 
   const handleSetPassword = () => {
-    if (password.length === 6) {
+    if (password.length === 4) {
       setIsLocked(true)
       setShowLockCard(false)
       setPassword('')
@@ -253,7 +273,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
         {/* 4. Theme - Clickable */}
         <div className="mb-5">
           <button 
-            onClick={() => setShowThemeSheet(true)}
+            onClick={() => setShowThemePage(true)}
             className="flex items-center justify-between px-1 w-full hover:bg-gray-50 py-2 rounded-lg"
           >
             <label className="text-sm font-medium text-gray-600">Theme</label>
@@ -300,32 +320,32 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
         </div>
       </div>
 
-      {/* Theme Bottom Sheet */}
-      {showThemeSheet && (
-        <div className="absolute inset-0 z-50 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowThemeSheet(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-6 animate-slide-up">
-            {/* Theme Sheet Header */}
-            <div className="flex items-center mb-4">
-              <button
-                onClick={() => setShowThemeSheet(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5]">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
-              <h3 className="flex-1 text-center text-lg font-bold text-gray-800">Room Theme</h3>
-            </div>
+      {/* Theme Full Page */}
+      {showThemePage && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          {/* Theme Page Header */}
+          <div className="flex items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
+            <button
+              onClick={() => setShowThemePage(false)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5]">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <h3 className="flex-1 text-center text-lg font-bold text-gray-800">Room Theme</h3>
+            <div className="w-10"></div>
+          </div>
 
-            {/* Theme Options Grid */}
-            <div className="grid grid-cols-2 gap-4 mt-4">
+          {/* Theme Content */}
+          <div className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="grid grid-cols-2 gap-4">
               {themes.map((theme) => (
                 <button
                   key={theme.id}
                   onClick={() => {
                     setSelectedTheme(theme.id)
-                    setShowThemeSheet(false)
+                    setShowThemePage(false)
                   }}
                   className={`flex flex-col items-center p-3 rounded-xl transition-all ${
                     selectedTheme === theme.id
@@ -355,20 +375,15 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           <div className="relative bg-white w-80 rounded-2xl shadow-2xl p-6 mx-4">
             <h3 className="text-lg font-bold text-gray-800 text-center mb-6">Set Room Password</h3>
             
-            {/* 6 Digit Password Input */}
+            {/* 4 Digit Password Input - Numbers Only with Auto-shift */}
             <PasswordInput value={password} onChange={setPassword} />
-            
-            {/* Show Password Text */}
-            <p className="text-center text-sm text-gray-600 mt-4">
-              Password will show, don't hide
-            </p>
             
             {/* Set Password Button */}
             <button
               onClick={handleSetPassword}
-              disabled={password.length !== 6}
+              disabled={password.length !== 4}
               className={`w-full mt-6 py-3 rounded-xl font-semibold text-white transition-all ${
-                password.length === 6
+                password.length === 4
                   ? 'bg-blue-500 hover:bg-blue-600'
                   : 'bg-gray-300 cursor-not-allowed'
               }`}
@@ -397,8 +412,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-6 animate-slide-up">
             <h3 className="text-lg font-bold text-gray-800 text-center mb-4">Select Mic Mode</h3>
 
-            {/* Single column layout with full cards */}
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            {/* 3 cards per row grid layout */}
+            <div className="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto">
               {micModes.map((mode) => (
                 <button
                   key={mode}
@@ -406,9 +421,9 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
                     setSelectedMicMode(mode)
                     setShowMicModeSheet(false)
                   }}
-                  className={`w-full rounded-xl overflow-hidden transition-all ${
+                  className={`rounded-xl overflow-hidden transition-all ${
                     selectedMicMode === mode
-                      ? 'ring-2 ring-blue-400 ring-offset-2'
+                      ? 'ring-2 ring-blue-400 ring-offset-1'
                       : 'hover:opacity-90'
                   }`}
                 >
