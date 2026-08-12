@@ -6,7 +6,7 @@
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
 
-        <item name="android:statusBarColor">#282c34</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 
@@ -17,7 +17,7 @@
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
 
-        <item name="android:statusBarColor">#282c34</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 

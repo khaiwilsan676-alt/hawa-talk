@@ -3,11 +3,11 @@
 import React, { useState } from "react";
 import { Mic, Coins, ChevronUp } from "lucide-react";
 
-export default function GiftPicker({ onClose }) {
+export default function GiftPicker({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState("Hot");
   const [selectedMultiplier, setSelectedMultiplier] = useState("1×");
   const [showMultipliers, setShowMultipliers] = useState(false);
-  const [selectedGift, setSelectedGift] = useState(null);
+  const [selectedGift, setSelectedGift] = useState<number | null>(null);
 
   const tabs = ["Hot", "Lucky", "Luxury", "Event"];
   const multipliers = ["1×", "10×", "299×", "599×", "999×"];

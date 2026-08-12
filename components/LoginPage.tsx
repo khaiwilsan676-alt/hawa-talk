@@ -975,7 +975,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <div className="text-center mb-6">
                 <img 
                   src="/logo.png" 
-                  alt="Hurry"
+                  alt="Logo"
                   className="w-16 h-16 rounded-2xl mx-auto mb-3 drop-shadow-lg" 
                 />
                 <h1 className="text-2xl font-bold text-white">Welcome Back!</h1>
@@ -1106,11 +1106,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <div className="mb-0.5">
             <img 
               src="/logo.png" 
-              alt="Hurry"
+              alt="Logo"
               className="w-20 h-20 rounded-2xl drop-shadow-lg" 
             />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-lg">Hurry</h1>
+
         </div>
 
         <div style={{ marginTop: '23vh' }}></div>
@@ -1190,7 +1190,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mb-3">to continue to Hurry</p>
+              <p className="text-xs text-gray-500 mb-3">to continue</p>
 
               <div className="space-y-2 overflow-y-auto max-h-[16vh]">
                 <div

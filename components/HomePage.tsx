@@ -1218,7 +1218,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           }}
         >
           {/* Top Row Header */}
-          <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100 safe-top">
+          <div className="flex items-center gap-2.5 px-4 pt-10 pb-3 border-b border-gray-100 safe-top">
             <button
               onClick={() => setIsSearchOpen(false)}
               className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
@@ -1406,7 +1406,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </button>
 
             <div
-              className="relative px-6 pt-8 pb-6 text-center"
+              className="relative px-6 pt-10 pb-6 text-center"
               style={{
                 background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
               }}
@@ -1627,7 +1627,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             }}
           >
             <div
-              className="w-full pt-3 px-4"
+              className="w-full pt-10 px-4"
               style={{
                 height: activeTab === 'mine' ? 'auto' : '34vh',
                 minHeight: activeTab === 'mine' ? 'auto' : '34vh',

@@ -14,7 +14,7 @@ class ChatDB {
 
   constructor() {
     this.dbReady = new Promise((resolve, reject) => {
-      const request = indexedDB.open('HurryChatDB', 1)
+      if (typeof indexedDB === 'undefined') { resolve(null as any); return; }; const request = indexedDB.open('HurryChatDB', 1)
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result
