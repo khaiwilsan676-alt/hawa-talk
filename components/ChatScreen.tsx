@@ -26,6 +26,11 @@ interface ChatScreenProps {
 
 const SIGNALING_SERVER = 'ws://localhost:3001'  // Change to your server's address
 
+// ======================
+// Fixed chat UIDs jinke liye input hide karna hai
+// ======================
+const FIXED_CHAT_UIDS = ['hurry_team_official', 'hurry_system_official']
+
 export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScreenProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -37,6 +42,11 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const dataChannelRef = useRef<RTCDataChannel | null>(null)
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
+
+  // ======================
+  // Check if this is a fixed chat (Hurry Team / Hurry System)
+  // ======================
+  const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid)
 
   // Connect to signalling server
   const connectSignaling = useCallback(() => {
@@ -273,9 +283,14 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
 
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-bold text-gray-800 truncate">{targetUser.name}</h2>
-          <span className={`text-xs ${connected ? 'text-green-500' : 'text-red-400'}`}>
-            {connected ? 'Connected' : 'Connecting...'}
-          </span>
+          {/* Fixed chat ke liye "Official" badge dikhao, connection status nahi */}
+          {isFixedChat ? (
+            <span className="text-xs text-blue-500 font-medium">Official Account</span>
+          ) : (
+            <span className={`text-xs ${connected ? 'text-green-500' : 'text-red-400'}`}>
+              {connected ? 'Connected' : 'Connecting...'}
+            </span>
+          )}
         </div>
 
         <button className="flex-shrink-0 hover:bg-white/30 rounded-full p-1">
@@ -284,60 +299,97 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
+      <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50 ${isFixedChat ? 'pb-4' : ''}`}>
         {messages.length === 0 && (
           <p className="text-center text-gray-400 mt-20">
-            {connected ? 'No messages yet. Say hello!' : 'Waiting for connection...'}
+            {isFixedChat 
+              ? 'No messages from Hurry Team yet' 
+              : connected 
+                ? 'No messages yet. Say hello!' 
+                : 'Waiting for connection...'}
           </p>
         )}
         {messages.map((msg) => {
           const isMine = msg.sender === 'me'
           return (
             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[80%] px-4 py-2 rounded-2xl break-words ${
-                  isMine
-                    ? 'bg-blue-500 text-white rounded-br-md'
-                    : 'bg-white text-gray-800 rounded-bl-md shadow-sm'
-                }`}
-              >
-                <p className="text-sm">{msg.text}</p>
-                <p
-                  className={`text-[10px] mt-1 ${
-                    isMine ? 'text-blue-100' : 'text-gray-400'
+              {/* Fixed chat ke messages me sender ka naam bhi dikhao */}
+              {!isMine && isFixedChat && (
+                <div className="flex items-end gap-2">
+                  <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-1">
+                    <img
+                      src={targetUser.photo || '/default-avatar.png'}
+                      alt={targetUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-500 ml-1 mb-0.5">{targetUser.name}</span>
+                    <div className="max-w-[80%] px-4 py-2 rounded-2xl break-words bg-white text-gray-800 rounded-bl-md shadow-sm">
+                      <p className="text-sm">{msg.text}</p>
+                      <p className="text-[10px] mt-1 text-gray-400">
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={`max-w-[80%] px-4 py-2 rounded-2xl break-words ${
+                    isMine
+                      ? 'bg-blue-500 text-white rounded-br-md'
+                      : 'bg-white text-gray-800 rounded-bl-md shadow-sm'
                   }`}
                 >
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
+                  <p className="text-sm">{msg.text}</p>
+                  <p
+                    className={`text-[10px] mt-1 ${
+                      isMine ? 'text-blue-100' : 'text-gray-400'
+                    }`}
+                  >
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              )}
             </div>
           )
         })}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input bar */}
-      <div className="px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-2">
-        <button className="text-gray-500 hover:text-gray-700">
-          <ImageIcon size={24} />
-        </button>
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          disabled={!connected}
-          className="flex-1 bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
-        />
-        <button
-          onClick={handleSend}
-          disabled={!newMessage.trim() || !connected}
-          className="text-blue-500 disabled:text-gray-300 hover:text-blue-600"
-        >
-          <Send size={24} />
-        </button>
-      </div>
+      {/* ====================== */}
+      {/* INPUT BAR — Sirf normal chats ke liye, fixed chats me hide */}
+      {/* ====================== */}
+      {!isFixedChat && (
+        <div className="px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-2">
+          <button className="text-gray-500 hover:text-gray-700">
+            <ImageIcon size={24} />
+          </button>
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            disabled={!connected}
+            className="flex-1 bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!newMessage.trim() || !connected}
+            className="text-blue-500 disabled:text-gray-300 hover:text-blue-600"
+          >
+            <Send size={24} />
+          </button>
+        </div>
+      )}
+
+      {/* Fixed chat bottom info */}
+      {isFixedChat && (
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
+          <p className="text-xs text-gray-400">This is an official account. You cannot reply here.</p>
+        </div>
+      )}
     </div>
   )
-                    }
+    }
