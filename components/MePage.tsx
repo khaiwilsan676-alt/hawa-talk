@@ -7,8 +7,8 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-import { db } from "../src/lib/firebase"
-import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
+import { db } from "../src/lib/supabase"
+import { doc, getDoc, onSnapshot, collection, addDoc } from "../src/lib/supabase"
 
 interface MenuItem {
   id: string

@@ -5,8 +5,8 @@ import EmojiPicker from './Emojipicker'
 import GiftPicker from './GiftPicker'
 import RoomSettingPage from './RoomSettingPage'
 import MessagePage from './MessagePage'
-import { db } from "../src/lib/firebase"
-import { doc, setDoc, getDoc } from "firebase/firestore"
+import { db } from "../src/lib/supabase"
+import { doc, setDoc, getDoc } from "../src/lib/supabase"
 import Image from 'next/image'
 
 declare global {

@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
-import { db } from "../src/lib/firebase";
+import { db } from "../src/lib/supabase";
 import { account } from "../src/lib/appwrite";
 import { OAuthProvider } from "appwrite";
-import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, addDoc } from "../src/lib/supabase";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
