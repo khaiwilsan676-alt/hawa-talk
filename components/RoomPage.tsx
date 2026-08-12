@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import EmojiPicker from './Emojipicker'
 import GiftPicker from './GiftPicker'
 import RoomSettingPage from './RoomSettingPage'
+import MessagePage from './MessagePage'
 import { db } from "../src/lib/firebase"
 import { doc, setDoc, getDoc } from "firebase/firestore"
 import Image from 'next/image'
@@ -70,12 +71,6 @@ interface RoomUser {
   image: string
 }
 
-interface ChatItem {
-  id: string
-  name: string
-  image: string
-}
-
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -83,11 +78,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [showMessageSheet, setShowMessageSheet] = useState(false)
   const [showSettingPage, setShowSettingPage] = useState(false)
   const [showRoomInfo, setShowRoomInfo] = useState(false)
+  const [showActiveUsers, setShowActiveUsers] = useState(false)
   const [isFollowed, setIsFollowed] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest"
-  const [accountId, setAccountId] = useState<string>(userAccountId)
+  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || ""
+  const isRoomOwner = userAccountId === roomOwnerId
 
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
@@ -97,7 +94,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [roomAnnouncement, setRoomAnnouncement] = useState<string>("")
   const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg")
   const [micMode, setMicMode] = useState<number>(9)
-  const [roomInfoTab, setRoomInfoTab] = useState<'info' | 'members'>('info')
+  const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile')
 
   const backgroundImage = "/1784533036732~2.jpg"
 
@@ -130,12 +127,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [seats, setSeats] = useState<Seat[]>(getInitialSeats(9))
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
   const [showSeatSheet, setShowSeatSheet] = useState(false)
-  const [activeChat, setActiveChat] = useState<ChatItem | null>(null)
-
-  const chats: ChatItem[] = [
-    { id: 'hawa-team', name: 'Hurry Team', image: '/logo.png' },
-    { id: 'hawa-system', name: 'Hurry System', image: '/1784465161302~2.jpg' }
-  ]
 
   const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId)
   const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId)
@@ -170,7 +161,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             if (data.micMode && data.micMode !== micMode) {
               setMicMode(data.micMode)
             }
-            // Fetch followers
             const followerIds: string[] = data.followers || []
             const followersList: RoomUser[] = followerIds.map((id: string) => ({
               accountId: id,
@@ -214,106 +204,102 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   // Initialize Jitsi
   useEffect(() => {
-    if (!jitsiLoaded || !jitsiContainerRef.current || accountId === "Loading...") return
+    if (!jitsiLoaded || !jitsiContainerRef.current) return
 
-    const initJitsi = () => {
-      const domain = 'meet.jit.si'
-      const options = {
-        roomName: jitsiRoomName,
-        width: '100%',
-        height: '100%',
-        parentNode: jitsiContainerRef.current,
-        userInfo: { displayName: currentUser.name, email: userAccountId + '@hurry.app' },
-        configOverrides: {
-          startWithAudioMuted: true,
-          startWithVideoMuted: true,
-          disableDeepLinking: true,
-          prejoinPageEnabled: false,
-          enableNoisyMicDetection: true,
-          disableAudioLevels: false,
-          toolbarButtons: [],
-          disableInviteFunctions: true,
-          disablePolls: true,
-          disableSelfView: true,
-          hideConferenceSubject: true,
-          hideConferenceTimer: true,
-          doNotStoreRoom: true,
-          resolution: 180,
-          constraints: { video: { height: { ideal: 180, max: 180, min: 180 } } },
-        },
-        interfaceConfigOverrides: {
-          filmStripOnly: false,
-          SHOW_JITSI_WATERMARK: false,
-          SHOW_WATERMARK_FOR_GUESTS: false,
-          SHOW_BRAND_WATERMARK: false,
-          SHOW_POWERED_BY: false,
-          SHOW_PROMOTIONAL_CLOSE_PAGE: false,
-          TOOLBAR_ALWAYS_VISIBLE: false,
-          DISABLE_VIDEO_BACKGROUND: true,
-          HIDE_INVITE_MORE_HEADER: true,
-          MOBILE_APP_PROMO: false,
-          APP_NAME: 'Hurry',
-          NATIVE_APP_NAME: 'Hurry',
-          PROVIDER_NAME: 'Hurry'
-        }
-      }
-
-      try {
-        const api = new window.JitsiMeetExternalAPI(domain, options)
-        jitsiApiRef.current = api
-
-        api.addListener('videoConferenceJoined', () => {
-          api.executeCommand('toggleAudio', false)
-        })
-
-        api.addListener('dominantSpeakerChanged', (data: any) => {
-          const speakerId = data?.id || 'local'
-          speakingUsersRef.current.add(speakerId)
-          setUserSpeaking(speakerId, true)
-          const existingTimer = speakingTimersRef.current.get(speakerId)
-          if (existingTimer) clearTimeout(existingTimer)
-          const timer = setTimeout(() => {
-            speakingUsersRef.current.delete(speakerId)
-            setUserSpeaking(speakerId, false)
-            speakingTimersRef.current.delete(speakerId)
-          }, 1500)
-          speakingTimersRef.current.set(speakerId, timer)
-        })
-
-        api.addListener('audioLevelsChanged', (data: any) => {
-          if (data && data.length > 0) {
-            data.forEach((participant: any) => {
-              if (participant.id && participant.level > 0.03) {
-                const targetKey = participant.id
-                speakingUsersRef.current.add(targetKey)
-                setUserSpeaking(targetKey, true)
-                const existingTimer = speakingTimersRef.current.get(targetKey)
-                if (existingTimer) clearTimeout(existingTimer)
-                const timer = setTimeout(() => {
-                  speakingUsersRef.current.delete(targetKey)
-                  setUserSpeaking(targetKey, false)
-                  speakingTimersRef.current.delete(targetKey)
-                }, 800)
-                speakingTimersRef.current.set(targetKey, timer)
-              }
-            })
-          }
-        })
-
-        api.addListener('participantLeft', (data: any) => {
-          if (data && data.id) {
-            speakingUsersRef.current.delete(data.id)
-            setUserSpeaking(data.id, false)
-            const timer = speakingTimersRef.current.get(data.id)
-            if (timer) { clearTimeout(timer); speakingTimersRef.current.delete(data.id) }
-          }
-        })
-      } catch (error) {
-        console.error('Error initializing Jitsi:', error)
+    const domain = 'meet.jit.si'
+    const options = {
+      roomName: jitsiRoomName,
+      width: '100%',
+      height: '100%',
+      parentNode: jitsiContainerRef.current,
+      userInfo: { displayName: currentUser.name, email: userAccountId + '@hurry.app' },
+      configOverrides: {
+        startWithAudioMuted: true,
+        startWithVideoMuted: true,
+        disableDeepLinking: true,
+        prejoinPageEnabled: false,
+        enableNoisyMicDetection: true,
+        disableAudioLevels: false,
+        toolbarButtons: [],
+        disableInviteFunctions: true,
+        disablePolls: true,
+        disableSelfView: true,
+        hideConferenceSubject: true,
+        hideConferenceTimer: true,
+        doNotStoreRoom: true,
+        resolution: 180,
+        constraints: { video: { height: { ideal: 180, max: 180, min: 180 } } },
+      },
+      interfaceConfigOverrides: {
+        filmStripOnly: false,
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        SHOW_BRAND_WATERMARK: false,
+        SHOW_POWERED_BY: false,
+        SHOW_PROMOTIONAL_CLOSE_PAGE: false,
+        TOOLBAR_ALWAYS_VISIBLE: false,
+        DISABLE_VIDEO_BACKGROUND: true,
+        HIDE_INVITE_MORE_HEADER: true,
+        MOBILE_APP_PROMO: false,
+        APP_NAME: 'Hurry',
+        NATIVE_APP_NAME: 'Hurry',
+        PROVIDER_NAME: 'Hurry'
       }
     }
 
-    initJitsi()
+    try {
+      const api = new window.JitsiMeetExternalAPI(domain, options)
+      jitsiApiRef.current = api
+
+      api.addListener('videoConferenceJoined', () => {
+        api.executeCommand('toggleAudio', false)
+      })
+
+      api.addListener('dominantSpeakerChanged', (data: any) => {
+        const speakerId = data?.id || 'local'
+        speakingUsersRef.current.add(speakerId)
+        setUserSpeaking(speakerId, true)
+        const existingTimer = speakingTimersRef.current.get(speakerId)
+        if (existingTimer) clearTimeout(existingTimer)
+        const timer = setTimeout(() => {
+          speakingUsersRef.current.delete(speakerId)
+          setUserSpeaking(speakerId, false)
+          speakingTimersRef.current.delete(speakerId)
+        }, 1500)
+        speakingTimersRef.current.set(speakerId, timer)
+      })
+
+      api.addListener('audioLevelsChanged', (data: any) => {
+        if (data && data.length > 0) {
+          data.forEach((participant: any) => {
+            if (participant.id && participant.level > 0.03) {
+              const targetKey = participant.id
+              speakingUsersRef.current.add(targetKey)
+              setUserSpeaking(targetKey, true)
+              const existingTimer = speakingTimersRef.current.get(targetKey)
+              if (existingTimer) clearTimeout(existingTimer)
+              const timer = setTimeout(() => {
+                speakingUsersRef.current.delete(targetKey)
+                setUserSpeaking(targetKey, false)
+                speakingTimersRef.current.delete(targetKey)
+              }, 800)
+              speakingTimersRef.current.set(targetKey, timer)
+            }
+          })
+        }
+      })
+
+      api.addListener('participantLeft', (data: any) => {
+        if (data && data.id) {
+          speakingUsersRef.current.delete(data.id)
+          setUserSpeaking(data.id, false)
+          const timer = speakingTimersRef.current.get(data.id)
+          if (timer) { clearTimeout(timer); speakingTimersRef.current.delete(data.id) }
+        }
+      })
+    } catch (error) {
+      console.error('Error initializing Jitsi:', error)
+    }
 
     return () => {
       speakingTimersRef.current.forEach(timer => clearTimeout(timer))
@@ -344,7 +330,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   // Add current user to room users (live count)
   useEffect(() => {
-    if (accountId !== "Loading..." && currentUser.name && currentUser.image) {
+    if (userAccountId !== "guest" && currentUser.name && currentUser.image) {
       const userExists = roomUsers.find(u => u.accountId === userAccountId)
       if (!userExists) {
         setRoomUsers(prev => [...prev, { accountId: userAccountId, name: currentUser.name, image: currentUser.image }])
@@ -404,8 +390,16 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   // ---------- All handler functions ----------
 
-  const handleCopyId = () => {
+  const handleCopyId = (e: React.MouseEvent) => {
+    e.stopPropagation()
     navigator.clipboard.writeText(roomOwner.accountId || '')
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleCopyUserId = (accountId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(accountId)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -625,18 +619,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   }
 
-  const openMessageSheet = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setActiveChat(null)
-    setShowMessageSheet(true)
-  }
-
-  const closeMessageSheet = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setShowMessageSheet(false)
-    setActiveChat(null)
-  }
-
   const handleExit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setShowExitMenu(false)
@@ -786,7 +768,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           {/* Room Cover + Name + Follow */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => { setRoomInfoTab('info'); setShowRoomInfo(true); }}
+              onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
               className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer hover:border-white/50 transition-colors"
             >
               <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" draggable={false} />
@@ -794,6 +776,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-lg">{displayRoomName}</h2>
+                {/* Follow button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -803,16 +786,26 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                       onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow)
                     }
                   }}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-blue-500' : 'bg-blue-500'}`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                    isFollowed ? 'bg-gray-500' : 'bg-blue-500'
+                  }`}
                   title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                 >
-                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 absolute">
-                    <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                    <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                  </svg>
+                  {isFollowed ? (
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white absolute">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </svg>
+                      <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 relative">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               </div>
               <p className="text-xs text-gray-300">ID: {roomOwner.accountId || roomOwner.id || ''}</p>
@@ -821,21 +814,28 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
           {/* Top Right Icons */}
           <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7">
+            {/* User count button - opens Active Users sheet */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }}
+              className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7 cursor-pointer hover:bg-black/60 transition-colors"
+            >
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
                 <line x1="18" y1="8" x2="21" y2="8" /><line x1="18" y1="12" x2="21" y2="12" /><line x1="18" y1="16" x2="20" y2="16" />
               </svg>
               <span className="text-white text-xs font-semibold leading-none">{liveUserCount}</span>
-            </div>
-
-            <button onClick={openSettings} aria-label="Settings" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
-                <circle cx="12" cy="12" r="2.8" />
-              </svg>
             </button>
+
+            {/* Settings icon – ONLY visible to room owner */}
+            {isRoomOwner && (
+              <button onClick={openSettings} aria-label="Settings" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                  <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
+                  <circle cx="12" cy="12" r="2.8" />
+                </svg>
+              </button>
+            )}
 
             <button onClick={(e) => e.stopPropagation()} aria-label="Share" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
@@ -851,59 +851,29 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           </div>
         </div>
 
-        {/* ---------- Dangerous Warning Icon - Top Left Corner ---------- */}
-        <div className="absolute top-2 left-2 z-20">
-          <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center bg-transparent">
-            <svg viewBox="0 0 24 24" className="w-7 h-7 fill-none stroke-black stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="13" />
-              <circle cx="12" cy="16.5" r="0.8" fill="black" stroke="none" />
-            </svg>
-          </div>
-        </div>
-
-        {/* ---------- Scrollable Middle Content ---------- */}
-        <div className="flex-1 flex flex-col overflow-y-auto scrollbar-none min-h-0">
-          {/* Seats */}
+        {/* ---------- Middle Section: Seats (fixed) + Scrollable Content ---------- */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Seats - FIXED (no scroll) */}
           <div className="flex-shrink-0 flex flex-col gap-2 pt-4">
             {renderSeats()}
           </div>
 
-          {/* Announcement Card - Permanent with warning in WHITE text */}
-          <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3 flex-shrink-0">
-            <div className="flex flex-col gap-2">
-              {/* Permanent Warning Text - WHITE color */}
-              <div className="flex items-start gap-2">
-                <div className="w-5 h-5 rounded-md border-2 border-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
-                    <line x1="12" y1="5" x2="12" y2="15" />
-                    <circle cx="12" cy="19" r="1" fill="white" stroke="none" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-white text-[10px] leading-relaxed font-medium">
-                    Welcome to Hurry any content Related to porn, Fraud, Violence fake official will be ban (Can't edit it this like permanent this is)
-                  </p>
-                </div>
-              </div>
-              
-              {/* Divider - only show if there's an announcement */}
+          {/* Messages + Welcome - SCROLLABLE */}
+          <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
+            {/* Fixed Welcome + Announcement Card */}
+            <div className="mx-2 mb-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3">
+              <p className="text-white/80 text-[11px] leading-relaxed">
+                Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban
+              </p>
               {roomAnnouncement && (
-                <>
-                  <div className="border-t border-white/10 my-1"></div>
-                  
-                  {/* User Announcement */}
-                  <div className="flex items-start gap-2">
-                    <span className="text-white/60 text-[10px] font-medium whitespace-nowrap">ANNOUNCEMENT:</span>
-                    <p className="text-white/80 text-[11px] leading-relaxed">{roomAnnouncement}</p>
-                  </div>
-                </>
+                <div className="flex items-start gap-2 mt-2">
+                  <span className="text-white/60 text-[10px] font-medium whitespace-nowrap">ANNOUNCEMENT:</span>
+                  <p className="text-white/80 text-[11px] leading-relaxed">{roomAnnouncement}</p>
+                </div>
               )}
             </div>
-          </div>
 
-          {/* Messages */}
-          <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
+            {/* Chat Messages */}
             <div className="space-y-0.5">
               {messages.map((msg) => (
                 <div key={msg.id} className="leading-[1.9rem]">
@@ -991,7 +961,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 overflow-hidden cursor-pointer">
                 <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover" draggable={false} />
               </button>
-              <button onClick={openMessageSheet} aria-label="Message Box Menu" className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
+                aria-label="Message Box Menu"
+                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
+              >
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round"><rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" /></svg>
               </button>
               <button onClick={(e) => e.stopPropagation()} aria-label="Apps Menu" className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer">
@@ -1002,20 +976,79 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       </div>
 
+      {/* ---------- Active Users Sheet ---------- */}
+      {showActiveUsers && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
+          <div
+            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+            style={{ height: '30vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 pt-6 pb-3 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
+            </div>
+            {/* Users list */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {roomUsers.length > 0 ? (
+                <div className="space-y-2">
+                  {roomUsers.map((user) => (
+                    <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                        <img
+                          src={user.image || "/default-avatar.png"}
+                          alt={user.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-gray-400">ID: {user.accountId}</p>
+                          <button
+                            onClick={(e) => handleCopyUserId(user.accountId, e)}
+                            className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                            title="Copy ID"
+                          >
+                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-400 text-sm">No active users</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ---------- Room Info Sheet ---------- */}
       {showRoomInfo && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-2">
-              <h2 className="text-lg font-bold text-gray-800 text-center">Room Info</h2>
+            <div className="px-6 pt-6 pb-2 flex items-center gap-2">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <h2 className="text-lg font-bold text-gray-800">Room Information</h2>
             </div>
             <div className="flex border-b border-gray-200 px-6">
-              <button onClick={() => setRoomInfoTab('info')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'info' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>Room Info</button>
-              <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
+              <button onClick={() => setRoomInfoTab('profile')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'profile' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Profile</button>
+              <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              {roomInfoTab === 'info' ? (
+              {roomInfoTab === 'profile' ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
@@ -1023,51 +1056,39 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-800">{roomName || roomOwner.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-gray-400">ID: {roomOwner.accountId}</p>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(roomOwner.accountId || '');
-                            alert('ID copied to clipboard!');
-                          }} 
-                          className="p-1 hover:bg-gray-100 rounded transition-colors cursor-pointer"
-                          title="Copy ID"
-                        >
-                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <span>ID: {roomOwner.accountId}</span>
+                        <button onClick={handleCopyId} className="p-0.5 hover:bg-gray-100 rounded transition-colors cursor-pointer" title="Copy ID">
+                          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                           </svg>
                         </button>
+                        {copied && <span className="text-green-500 text-xs">Copied!</span>}
                       </div>
                     </div>
                   </div>
                   <div>
                     <span className="text-xs text-gray-400 font-medium">Host</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm font-medium text-gray-800">{roomOwner.name || "Unknown"}</span>
-                    </div>
+                    <p className="text-sm font-medium text-gray-800 mt-1">{roomOwner.name || "Unknown"}</p>
                   </div>
-                  {roomAnnouncement && (
-                    <div>
-                      <span className="text-xs text-gray-400 font-medium">Announcement</span>
-                      <p className="text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement}</p>
-                    </div>
-                  )}
+                  <div>
+                    <span className="text-xs text-gray-400 font-medium">Announcement:</span>
+                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement || '—'}</p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {/* Owner first */}
                   <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
                     <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
                       <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-800 truncate">{roomOwner.name} (Owner)</h4>
-                      <p className="text-xs text-gray-400">ID: {roomOwner.accountId}</p>
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <h4 className="text-sm font-medium text-gray-800 truncate">{roomOwner.name}</h4>
+                      <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+                      </span>
                     </div>
                   </div>
-                  {/* Followers */}
                   {roomFollowers.map(follower => (
                     <div key={follower.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
                       <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
@@ -1075,7 +1096,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-medium text-gray-800 truncate">{follower.name}</h4>
-                        <p className="text-xs text-gray-400">ID: {follower.accountId}</p>
                       </div>
                     </div>
                   ))}
@@ -1143,43 +1163,23 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       {/* ---------- Message Sheet ---------- */}
       {showMessageSheet && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={closeMessageSheet} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '60vh' }} onClick={(e) => e.stopPropagation()}>
-            {!activeChat ? (
-              <div className="flex flex-col h-full">
-                <div className="px-4 pb-4 flex items-center justify-between flex-shrink-0 relative" style={{ background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)', paddingTop: '24px' }}>
-                  <button onClick={closeMessageSheet} className="p-1.5 hover:bg-black/10 rounded-full transition-colors cursor-pointer z-10" aria-label="Back">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><polyline points="15 18 9 12 15 6" /></svg>
-                  </button>
-                  <h1 className="text-xl font-bold text-gray-800 absolute inset-x-0 text-center pointer-events-none">Message</h1>
-                  <div className="w-9" />
-                </div>
-                <div className="flex-1 px-4 pt-2 overflow-y-auto">
-                  <div className="flex flex-col gap-2">
-                    {chats.map((chat) => (
-                      <div key={chat.id} onClick={() => setActiveChat(chat)} className="flex items-center gap-3 bg-gray-100 px-3 py-2.5 rounded-xl cursor-pointer active:bg-gray-200 transition-colors">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"><Image src={chat.image} alt={chat.name} width={40} height={40} className="object-cover" /></div>
-                        <div className="flex-1 min-w-0"><h3 className="font-semibold text-gray-800 text-sm">{chat.name}</h3></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col h-full">
-                <div className="px-4 pb-4 flex-shrink-0" style={{ background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)', paddingTop: '24px' }}>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setActiveChat(null)} className="flex-shrink-0 hover:bg-white/30 rounded-full p-1 transition-colors cursor-pointer">
-                      <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><polyline points="15 18 9 12 15 6" /></svg>
-                    </button>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"><Image src={activeChat.image} alt={activeChat.name} width={40} height={40} className="object-cover" /></div>
-                    <div className="flex-1 min-w-0"><h2 className="text-lg font-bold text-gray-800">{activeChat.name}</h2></div>
-                    <div className="w-9" />
-                  </div>
-                </div>
-                <div className="flex-1 px-4 py-4 overflow-y-auto"><p className="text-center text-gray-400 mt-20">No messages yet</p></div>
-              </div>
-            )}
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
+          <div
+            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+            style={{ height: '60vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowMessageSheet(false)}
+              className="absolute top-3 left-3 z-20 p-1.5 bg-white/80 rounded-full shadow hover:bg-white transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-700 stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <div className="h-full overflow-y-auto">
+              <MessagePage />
+            </div>
           </div>
         </div>
       )}
@@ -1254,4 +1254,4 @@ function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: nu
       </span>
     </div>
   )
-         }
+}
