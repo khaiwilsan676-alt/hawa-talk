@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Next.js build time safety ke liye valid fallback values
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nkuphmrkcifnuzldoan.supabase.co'
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'dummy-key-for-build'
+// Next.js Build Time Safety Fallbacks
+const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nkuphmrkcifnuzldoan.supabase.co'
+const supabaseUrl = rawUrl.trim().startsWith('http') ? rawUrl.trim() : 'https://nkuphmrkcifnuzldoan.supabase.co'
+
+const supabaseKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'dummy-key-for-build').trim()
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
