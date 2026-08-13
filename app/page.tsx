@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import HomePage from '@/components/HomePage'
 import LoginPage from '@/components/LoginPage'
-import { account } from '@/lib/appwrite' // Path check kar lein apne project ke hisab se
+import { account } from '@/src/lib/appwrite' // Path updated to @/src/lib/appwrite
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
