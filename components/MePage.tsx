@@ -7,8 +7,7 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-import { db } from "../src/lib/supabase"
-import { doc, getDoc, onSnapshot, collection, addDoc } from "../src/lib/supabase"
+import { supabase } from "../src/lib/supabase"
 
 interface MenuItem {
   id: string
@@ -84,6 +83,12 @@ const bottomMenuItems: MenuItem[] = [
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
+// Special Accounts
+const SPECIAL_ACCOUNTS: { [key: string]: string } = {
+  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
+  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
+}
+
 // Feedback Types
 const FEEDBACK_TYPES = [
   { id: 'app_bug', label: 'App Bug', icon: '' },
@@ -92,30 +97,50 @@ const FEEDBACK_TYPES = [
   { id: 'others', label: 'Others', icon: '' }
 ]
 
-export const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid || uid === 'N/A') return { fullAccNum: 'N/A', displayAccNum: 'N/A' }
+// Get Account Number from Supabase directly
+export const getAccountNumberFromSupabase = async (uid: string): Promise<string> => {
+  if (!uid || uid === 'N/A') return 'N/A'
 
-  // Check if it's an official or admin ID
+  // Check if official/admin
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
-    return { fullAccNum: uid, displayAccNum: uid }
+    return uid
   }
 
-  // Check stored account number first
-  const savedAcc = localStorage.getItem('accountNumber')
-  if (savedAcc) {
-    return { fullAccNum: savedAcc, displayAccNum: savedAcc }
+  // Check special accounts
+  if (SPECIAL_ACCOUNTS[uid]) {
+    return SPECIAL_ACCOUNTS[uid]
   }
 
-  // Consistent 8-digit calculation based on UID
-  let hash = 0
-  for (let i = 0; i < uid.length; i++) {
-    hash = (hash << 5) - hash + uid.charCodeAt(i)
-    hash |= 0
+  try {
+    // Direct Supabase query
+    const { data, error } = await supabase
+      .from('users')
+      .select('account_id')
+      .eq('id', uid)
+      .single()
+
+    if (data?.account_id) {
+      const accountId = String(data.account_id).slice(0, 8)
+      // Save to localStorage for quick access
+      localStorage.setItem('accountNumber', accountId)
+      localStorage.setItem(`user_account_number_${uid}`, accountId)
+      return accountId
+    }
+
+    // Fallback to localStorage
+    const savedId = localStorage.getItem(`user_account_number_${uid}`)
+    if (savedId) {
+      return savedId
+    }
+
+    return 'N/A'
+  } catch (error) {
+    console.error("Error fetching account number from Supabase:", error)
+    // Fallback to localStorage
+    const savedId = localStorage.getItem(`user_account_number_${uid}`) || 
+                    localStorage.getItem('accountNumber')
+    return savedId || 'N/A'
   }
-  const positiveHash = Math.abs(hash)
-  const generated = String(10000000 + (positiveHash % 90000000))
-  
-  return { fullAccNum: generated, displayAccNum: generated }
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
@@ -131,6 +156,35 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [feedbackSuccess, setFeedbackSuccess] = useState(false)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
 
+  // User State
+  const [user, setUser] = useState({
+    name: "Guest",
+    uid: "",
+    accountNumber: "",
+    displayAccountNumber: "",
+    phone: "",
+    photo: "",
+  })
+
+  // Force Mobile Viewport
+  useEffect(() => {
+    let meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = 'viewport'
+      document.head.appendChild(meta)
+    }
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover')
+
+    // Mobile view force
+    document.documentElement.style.setProperty('max-width', '480px')
+    document.documentElement.style.setProperty('margin', '0 auto')
+    document.body.style.setProperty('max-width', '480px')
+    document.body.style.setProperty('margin', '0 auto')
+    document.body.style.setProperty('overflow-x', 'hidden')
+  }, [])
+
+  // Language Setup
   useEffect(() => {
     const savedLang = localStorage.getItem('appLanguage') as LanguageCode
     if (savedLang) {
@@ -148,15 +202,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }, [])
 
   const t = getTranslation(appLang)
-
-  const [user, setUser] = useState({
-    name: "Guest",
-    uid: "",
-    accountNumber: "",
-    displayAccountNumber: "",
-    phone: "",
-    photo: "",
-  })
 
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
@@ -186,24 +231,25 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     setFeedbackSubmitting(true);
 
     try {
-      const feedbackData = {
-        type: selectedType,
-        typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
-        description: problemDescription.trim(),
-        contactInfo: contactInfo.trim(),
-        createdAt: new Date().toISOString(),
-        timestamp: Date.now(),
-        status: 'pending'
-      };
+      const { error } = await supabase
+        .from('feedbacks')
+        .insert({
+          type: selectedType,
+          type_label: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
+          description: problemDescription.trim(),
+          contact_info: contactInfo.trim(),
+          created_at: new Date().toISOString(),
+          timestamp: Date.now(),
+          status: 'pending'
+        })
 
-      await addDoc(collection(db, "feedbacks"), feedbackData);
+      if (error) throw error
       
       setFeedbackSuccess(true);
       setSelectedType('');
       setProblemDescription('');
       setContactInfo('');
       
-      // Auto close after 2 seconds
       setTimeout(() => {
         setShowFeedbackPage(false);
         setFeedbackSuccess(false);
@@ -217,6 +263,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   };
 
+  // Fetch User Data from Supabase
   useEffect(() => {
     const fetchUserData = async () => {
       const name = localStorage.getItem("userName") || "Guest"
@@ -224,26 +271,48 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       const phone = localStorage.getItem("userPhone") || ""
       const photo = localStorage.getItem("userPhoto") || ""
 
-      let finalAccNum = localStorage.getItem("accountNumber") || ""
+      let finalAccNum = ""
 
-      // 1. Fetch exact accountId directly from Firestore 'users' collection
       if (uid && uid !== "N/A") {
+        // Direct Supabase se account_id fetch karo
         try {
-          const userDocRef = doc(db, "users", uid)
-          const docSnap = await getDoc(userDocRef)
-          if (docSnap.exists() && docSnap.data().accountId) {
-            finalAccNum = String(docSnap.data().accountId)
-            localStorage.setItem("accountNumber", finalAccNum)
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('account_id, name, avatar_url, photo, gender, country, country_code')
+            .eq('id', uid)
+            .single()
+
+          if (userData) {
+            // Account ID from Supabase
+            if (userData.account_id) {
+              finalAccNum = String(userData.account_id).slice(0, 8)
+              localStorage.setItem("accountNumber", finalAccNum)
+              localStorage.setItem(`user_account_number_${uid}`, finalAccNum)
+            }
+
+            // Update other user data from Supabase
+            if (userData.name && !localStorage.getItem("userName")) {
+              localStorage.setItem("userName", userData.name)
+            }
+            if (userData.avatar_url && !localStorage.getItem("userPhoto")) {
+              localStorage.setItem("userPhoto", userData.avatar_url)
+            }
+            if (userData.photo && !localStorage.getItem("userPhoto")) {
+              localStorage.setItem("userPhoto", userData.photo)
+            }
           }
         } catch (err) {
-          console.warn("Firestore user fetch error in MePage:", err)
+          console.warn("Supabase user fetch error in MePage:", err)
         }
-      }
 
-      // Fallback calculation if no Firestore accountId exists
-      if (!finalAccNum) {
-        const { fullAccNum } = getOrCreateAccountNumber(uid)
-        finalAccNum = fullAccNum
+        // Fallback to localStorage if Supabase fails
+        if (!finalAccNum) {
+          finalAccNum = localStorage.getItem(`user_account_number_${uid}`) || 
+                        localStorage.getItem("accountNumber") || 
+                        "N/A"
+        }
+      } else {
+        finalAccNum = "N/A"
       }
 
       setUser({ 
@@ -262,6 +331,59 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     return () => window.removeEventListener("storage", fetchUserData)
   }, [])
 
+  // Real-time subscription for user data
+  useEffect(() => {
+    const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone")
+    
+    if (!uid || uid === "N/A") return
+
+    const subscription = supabase
+      .channel(`me_page_user_${uid}`)
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'users', 
+          filter: `id=eq.${uid}` 
+        }, 
+        (payload) => {
+          const data = payload.new
+          if (data) {
+            // Update account number
+            if (data.account_id) {
+              const accNum = String(data.account_id).slice(0, 8)
+              setUser(prev => ({ 
+                ...prev, 
+                accountNumber: accNum, 
+                displayAccountNumber: accNum 
+              }))
+              localStorage.setItem("accountNumber", accNum)
+            }
+            
+            // Update name
+            if (data.name) {
+              setUser(prev => ({ ...prev, name: data.name }))
+              localStorage.setItem("userName", data.name)
+            }
+            
+            // Update photo
+            if (data.avatar_url) {
+              setUser(prev => ({ ...prev, photo: data.avatar_url }))
+              localStorage.setItem("userPhoto", data.avatar_url)
+            } else if (data.photo) {
+              setUser(prev => ({ ...prev, photo: data.photo }))
+              localStorage.setItem("userPhoto", data.photo)
+            }
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(subscription)
+    }
+  }, [])
+
   const handleCopyAccountNumber = () => {
     if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
       navigator.clipboard.writeText(user.displayAccountNumber)
@@ -274,8 +396,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   // Feedback Page View
   if (showFeedbackPage) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Header */}
+      <div className="min-h-screen bg-gray-50 flex flex-col" style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div className="flex items-center p-4 bg-white border-b border-gray-200">
           <button
             onClick={() => {
@@ -293,7 +414,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           <h1 className="text-lg font-semibold text-gray-900 ml-3">{t.helpFeedback}</h1>
         </div>
 
-        {/* Content */}
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="max-w-md mx-auto">
             {feedbackSuccess ? (
@@ -304,7 +424,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               </div>
             ) : (
               <form onSubmit={handleFeedbackSubmit} className="space-y-6">
-                {/* Type of Issue */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Type of Issue</h2>
                   <div className="grid grid-cols-2 gap-3">
@@ -330,7 +449,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 </div>
 
-                {/* Problem Description */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Problem Description</h2>
                   <div className="relative">
@@ -352,7 +470,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 </div>
 
-                {/* Contact Information */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Contact Information</h2>
                   <input
@@ -364,30 +481,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   />
                 </div>
 
-                {/* Error Message */}
                 {feedbackError && (
                   <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
                     {feedbackError}
                   </div>
                 )}
 
-                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={feedbackSubmitting}
                   className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-2xl transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 text-base"
                 >
-                  {feedbackSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Submitting...
-                    </span>
-                  ) : (
-                    'Submit Feedback'
-                  )}
+                  {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
                 </button>
               </form>
             )}
@@ -414,7 +519,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full min-h-screen bg-white">
+    <div className="w-full min-h-screen bg-white" style={{ maxWidth: '480px', margin: '0 auto' }}>
       {/* Profile Header */}
       <div
         className="px-4 pb-6 relative"
@@ -443,7 +548,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               {/* Name */}
               <h2 className="text-2xl font-bold text-gray-900 mb-0.5">{user.name}</h2>
 
-              {/* Account Number Display */}
+              {/* Account Number Display - Direct from Supabase */}
               <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
                   <div className="relative inline-block w-22">
@@ -610,4 +715,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-    }
+}
