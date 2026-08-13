@@ -2,16 +2,10 @@
 
 import React, { useState } from 'react'
 import { 
-  X, 
   Copy, 
-  ChevronLeft,
   Heart,
   MessageCircle,
-  MoreHorizontal,
-  MapPin,
-  Flag,
-  Shield,
-  Crown
+  MoreHorizontal
 } from 'lucide-react'
 
 interface RoomProfileProps {
@@ -55,7 +49,6 @@ export default function RoomProfile({
     const id = user.accountId || user.id || user.uid || ''
     navigator.clipboard.writeText(id)
     if (onCopyId) onCopyId()
-    // Show toast or feedback
   }
 
   // Default values
@@ -71,9 +64,9 @@ export default function RoomProfile({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* Backdrop */}
+      {/* Transparent Backdrop - NO BLUR */}
       <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-transparent"
         onClick={onClose}
       />
       
@@ -82,15 +75,6 @@ export default function RoomProfile({
         className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up"
         style={{ height: '30vh', minHeight: '280px', maxHeight: '320px' }}
       >
-        {/* Top Left - Warning/Info Icon */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 left-3 z-10 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-          aria-label="Close"
-        >
-          <X size={20} className="text-gray-700" strokeWidth={2.5} />
-        </button>
-
         {/* Top Right - More Options */}
         <div className="absolute top-3 right-3 z-10">
           <button
@@ -118,9 +102,9 @@ export default function RoomProfile({
 
         {/* Content */}
         <div className="flex flex-col items-center px-4 pt-8 pb-4 h-full">
-          {/* Avatar - Half inside sheet */}
-          <div className="relative -mt-12 mb-2">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-gray-100">
+          {/* Avatar - Half inside sheet - SIZE INCREASED */}
+          <div className="relative -mt-14 mb-2">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md bg-gray-100">
               <img 
                 src={displayImage} 
                 alt={displayName}
@@ -131,7 +115,7 @@ export default function RoomProfile({
               />
             </div>
             {isOnline && (
-              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 rounded-full border-2 border-white" />
             )}
           </div>
 
@@ -142,30 +126,30 @@ export default function RoomProfile({
               {displayName}
             </h3>
 
-            {/* Gender + Tags - Row 2 */}
+            {/* Gender + Tags - Row 2 - IMAGES SIZE INCREASED */}
             <div className="flex items-center justify-center gap-1.5 mt-0.5 flex-wrap">
               <span className="text-sm font-medium text-gray-700">
                 {displayGender} {displayAge}
               </span>
               
-              {/* Level Badge */}
+              {/* Level Badge - SIZE INCREASED */}
               <div className="relative inline-flex items-center">
                 <img 
                   src="/1785137410522.png" 
                   alt="Level" 
-                  className="h-5 w-auto object-contain"
+                  className="h-6 w-auto object-contain"
                 />
-                <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white drop-shadow-sm">
+                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow-sm">
                   Lv.1
                 </span>
               </div>
 
-              {/* Additional Tags */}
-              <img src="/1785486414756.png" alt="" className="h-5 w-auto object-contain" />
-              <img src="/1785131462125.png" alt="" className="h-5 w-auto object-contain" />
-              <img src="/1785131792693.png" alt="" className="h-5 w-auto object-contain" />
-              <img src="/1785469775751.png" alt="" className="h-4 w-auto object-contain" />
-              <img src="/1785469365805.png" alt="" className="h-4 w-auto object-contain" />
+              {/* Additional Tags - SIZE INCREASED */}
+              <img src="/1785486414756.png" alt="" className="h-6 w-auto object-contain" />
+              <img src="/1785131462125.png" alt="" className="h-6 w-auto object-contain" />
+              <img src="/1785131792693.png" alt="" className="h-6 w-auto object-contain" />
+              <img src="/1785469775751.png" alt="" className="h-5 w-auto object-contain" />
+              <img src="/1785469365805.png" alt="" className="h-5 w-auto object-contain" />
             </div>
 
             {/* ID, Followers, Country - Row 4 */}
@@ -247,4 +231,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-}
+              }
