@@ -97,22 +97,44 @@ const FEEDBACK_TYPES = [
   { id: 'others', label: 'Others', icon: '' }
 ]
 
-// Get Account Number from Supabase directly
-export const getAccountNumberFromSupabase = async (uid: string): Promise<string> => {
+// EXPORT: getOrCreateAccountNumber - HomePage.tsx ke liye
+export const getOrCreateAccountNumber = (uid: string): string => {
   if (!uid || uid === 'N/A') return 'N/A'
 
-  // Check if official/admin
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return uid
   }
 
-  // Check special accounts
+  if (SPECIAL_ACCOUNTS[uid]) {
+    return SPECIAL_ACCOUNTS[uid]
+  }
+
+  const savedAcc = localStorage.getItem('accountNumber')
+  if (savedAcc) {
+    return String(savedAcc).slice(0, 8)
+  }
+
+  const savedUserAcc = localStorage.getItem(`user_account_number_${uid}`)
+  if (savedUserAcc) {
+    return savedUserAcc
+  }
+
+  return uid
+}
+
+// EXPORT: getAccountNumberFromSupabase - Direct Supabase se
+export const getAccountNumberFromSupabase = async (uid: string): Promise<string> => {
+  if (!uid || uid === 'N/A') return 'N/A'
+
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
+    return uid
+  }
+
   if (SPECIAL_ACCOUNTS[uid]) {
     return SPECIAL_ACCOUNTS[uid]
   }
 
   try {
-    // Direct Supabase query
     const { data, error } = await supabase
       .from('users')
       .select('account_id')
@@ -121,13 +143,11 @@ export const getAccountNumberFromSupabase = async (uid: string): Promise<string>
 
     if (data?.account_id) {
       const accountId = String(data.account_id).slice(0, 8)
-      // Save to localStorage for quick access
       localStorage.setItem('accountNumber', accountId)
       localStorage.setItem(`user_account_number_${uid}`, accountId)
       return accountId
     }
 
-    // Fallback to localStorage
     const savedId = localStorage.getItem(`user_account_number_${uid}`)
     if (savedId) {
       return savedId
@@ -136,7 +156,6 @@ export const getAccountNumberFromSupabase = async (uid: string): Promise<string>
     return 'N/A'
   } catch (error) {
     console.error("Error fetching account number from Supabase:", error)
-    // Fallback to localStorage
     const savedId = localStorage.getItem(`user_account_number_${uid}`) || 
                     localStorage.getItem('accountNumber')
     return savedId || 'N/A'
@@ -176,7 +195,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
     meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover')
 
-    // Mobile view force
     document.documentElement.style.setProperty('max-width', '480px')
     document.documentElement.style.setProperty('margin', '0 auto')
     document.body.style.setProperty('max-width', '480px')
@@ -548,7 +566,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               {/* Name */}
               <h2 className="text-2xl font-bold text-gray-900 mb-0.5">{user.name}</h2>
 
-              {/* Account Number Display - Direct from Supabase */}
+              {/* Account Number Display */}
               <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
                   <div className="relative inline-block w-22">
@@ -715,4 +733,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-}
+          }
