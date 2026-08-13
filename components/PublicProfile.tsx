@@ -13,9 +13,11 @@ import {
   MessageCircle,
   MoreHorizontal,
 } from 'lucide-react'
-import { supabase } from '../src/lib/supabase'
-import ChatScreen from './ChatScreen'
-import { generateStableId } from '../lib/hash'
+import { db } from '../src/lib/firebase'
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
+
+// Import the WebRTC ChatScreen component
+import ChatScreen from './ChatScreen' // adjust path if necessary
 
 export interface TargetUser {
   id?: string
@@ -89,6 +91,37 @@ const getDefaultAvatar = (gender: string): string => {
   return '/IMG_20260804_211031.jpg'
 }
 
+const getOrCreateAccountNumber = (uid: string) => {
+  if (!uid || uid === 'N/A') return '100379620'
+
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
+    return uid
+  }
+
+  if (SPECIAL_ACCOUNTS[uid]) {
+    return SPECIAL_ACCOUNTS[uid]
+  }
+
+  const storageKey = `user_account_number_${uid}`
+  let savedAccountNumber =
+    typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
+
+  if (!savedAccountNumber) {
+    let hash = 0
+    for (let i = 0; i < uid.length; i++) {
+      hash = (hash << 5) - hash + uid.charCodeAt(i)
+      hash |= 0
+    }
+    const positiveHash = Math.abs(hash)
+    savedAccountNumber = String(10000000 + (positiveHash % 90000000))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(storageKey, savedAccountNumber)
+    }
+  }
+
+  return savedAccountNumber
+}
+
 const compressImage = (
   file: File,
   maxWidth: number,
@@ -143,7 +176,7 @@ export default function PublicProfile({
   const [user, setUser] = useState({
     name: 'Hurry User',
     uid: '',
-    displayAccountNumber: '', // Will be dynamically populated
+    displayAccountNumber: '100379620',
     photo: '',
     coverPhoto: '',
     gender: '♂',
@@ -156,77 +189,57 @@ export default function PublicProfile({
   })
 
   const [albumImages, setAlbumImages] = useState<string[]>([])
+
   const [showEditSheet, setShowEditSheet] = useState(false)
   const [editName, setEditName] = useState('')
   const [editAge, setEditAge] = useState('')
   const [editBio, setEditBio] = useState('')
+
   const [editGender, setEditGender] = useState('')
   const [genderLocked, setGenderLocked] = useState(false)
+
   const [editCountry, setEditCountry] = useState('India')
   const [editCountryCode, setEditCountryCode] = useState('IN')
   const [countryLocked, setCountryLocked] = useState(false)
+
   const [showBioInput, setShowBioInput] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
+
   const [fullImageView, setFullImageView] = useState<string | null>(null)
+
   const [isFollowing, setIsFollowing] = useState(false)
+
   const [showThreeDotMenu, setShowThreeDotMenu] = useState(false)
+
+  // ---- NEW: Chat screen state ----
   const [showChat, setShowChat] = useState(false)
 
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
-  // Force Mobile Viewport
-  useEffect(() => {
-    let meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement
-    if (!meta) {
-      meta = document.createElement('meta')
-      meta.name = 'viewport'
-      document.head.appendChild(meta)
-    }
-    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover')
-
-    document.documentElement.style.setProperty('max-width', '480px')
-    document.documentElement.style.setProperty('margin', '0 auto')
-    document.body.style.setProperty('max-width', '480px')
-    document.body.style.setProperty('margin', '0 auto')
-    document.body.style.setProperty('overflow-x', 'hidden')
-  }, [])
-
-  const saveToSupabase = async (updateData: Record<string, any>) => {
+  const saveToFirestore = async (updateData: Record<string, any>) => {
     const currentUid =
       user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone')
-    if (currentUid) {
+    if (currentUid && currentUid !== 'N/A') {
       try {
-        // Update users table
-        const { error: userError } = await supabase
-          .from('users')
-          .upsert({ id: currentUid, ...updateData }, { onConflict: 'id' })
+        const userDocRef = doc(db, 'users', currentUid)
+        await setDoc(userDocRef, updateData, { merge: true })
 
-        if (userError) throw userError
-
-        // Update global_rooms table
-        const { error: roomError } = await supabase
-          .from('global_rooms')
-          .upsert({ id: currentUid, ...updateData }, { onConflict: 'id' })
-
-        if (roomError) throw roomError
+        const globalRoomRef = doc(db, 'globalRooms', currentUid)
+        await setDoc(globalRoomRef, updateData, { merge: true })
       } catch (err) {
-        console.error('Error saving data to Supabase:', err)
+        console.error('Error saving data to Firestore collections:', err)
       }
     }
   }
 
   useEffect(() => {
-    let subscription: any
+    let unsubscribe: () => void
 
     const loadProfileData = async () => {
       if (isOtherUser && targetUser) {
-        const targetUid = targetUser.uid || targetUser.id || ''
+        const targetUid = targetUser.uid || targetUser.id || 'N/A'
 
         let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
-        if (!displayAccNum && targetUid && targetUid !== 'N/A') {
-          displayAccNum = generateStableId(targetUid)
-        }
-
         let initialName = targetUser.name || 'User'
         let photo = targetUser.photo || targetUser.image || ''
         let coverPhoto = targetUser.coverPhoto || ''
@@ -244,122 +257,68 @@ export default function PublicProfile({
 
         if (targetUid && targetUid !== 'N/A') {
           try {
-            // Direct Supabase fetch
-            const { data: supabaseData } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', targetUid)
-              .single()
+            const userDocRef = doc(db, 'users', targetUid)
 
-            if (supabaseData) {
-              // ID from Supabase (8 digits)
-              displayAccNum = supabaseData.account_id
-                ? String(supabaseData.account_id).slice(0, 8)
-                : displayAccNum
+            unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+              if (docSnap.exists()) {
+                const data = docSnap.data()
 
-              initialName = supabaseData.name || initialName
-              photo = supabaseData.avatar_url || supabaseData.photo || photo
-              coverPhoto = supabaseData.cover_photo || coverPhoto
-              bio = supabaseData.bio || bio
-              country = supabaseData.country || country
-              countryCode = supabaseData.country_code || countryCode
-              gender = supabaseData.gender || gender
-              age = supabaseData.age ? parseInt(supabaseData.age) : age
-              followers = supabaseData.followers !== undefined ? supabaseData.followers : followers
+                displayAccNum = data.accountId
+                  ? String(data.accountId)
+                  : data.displayAccountNumber || displayAccNum
+                const docName = data.name || data.displayName || data.userName || data.fullName
+                const finalName = docName || initialName
 
-              if (supabaseData.album_images && Array.isArray(supabaseData.album_images)) {
-                album = supabaseData.album_images
-              }
-            }
+                photo = data.photo || data.photoURL || data.image || data.avatar || photo
+                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
+                bio = data.bio || data.about || bio
+                country = data.country || data.location || country
+                countryCode = data.countryCode || countryCode
+                gender = data.gender || gender
+                age = data.age ? parseInt(data.age) : age
+                followers = data.followers !== undefined ? data.followers : followers
 
-            // Real-time subscription
-            subscription = supabase
-              .channel(`public_profile_${targetUid}`)
-              .on('postgres_changes',
-                {
-                  event: '*',
-                  schema: 'public',
-                  table: 'users',
-                  filter: `id=eq.${targetUid}`
-                },
-                (payload) => {
-                  const data = payload.new
-                  if (data) {
-                    displayAccNum = data.account_id
-                      ? String(data.account_id).slice(0, 8)
-                      : displayAccNum
-
-                    const finalName = data.name || initialName
-                    photo = data.avatar_url || data.photo || photo
-                    coverPhoto = data.cover_photo || coverPhoto
-                    bio = data.bio || bio
-                    country = data.country || country
-                    countryCode = data.country_code || countryCode
-                    gender = data.gender || gender
-                    age = data.age ? parseInt(data.age) : age
-                    followers = data.followers !== undefined ? data.followers : followers
-
-                    if (data.album_images && Array.isArray(data.album_images)) {
-                      album = data.album_images
-                    }
-
-                    const matchedCountry = COUNTRIES.find(
-                      (c) =>
-                        c.code === countryCode || c.name === country || c.flag === country
-                    ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-                    setAlbumImages(album)
-                    setUser({
-                      name: finalName,
-                      uid: targetUid,
-                      displayAccountNumber: displayAccNum,
-                      photo,
-                      coverPhoto,
-                      gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
-                      age,
-                      followers,
-                      bio,
-                      location: matchedCountry.name,
-                      flag: matchedCountry.flag,
-                      countryCode: matchedCountry.code,
-                    })
-                  }
+                if (data.albumImages && Array.isArray(data.albumImages)) {
+                  album = data.albumImages
+                } else if (data.album && Array.isArray(data.album)) {
+                  album = data.album
                 }
-              )
-              .subscribe()
 
-            // Set initial state
-            const matchedCountry = COUNTRIES.find(
-              (c) =>
-                c.code === countryCode || c.name === country || c.flag === country
-            ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
+                if (!displayAccNum) {
+                  displayAccNum = getOrCreateAccountNumber(targetUid)
+                }
 
-            setAlbumImages(album)
-            setUser({
-              name: initialName,
-              uid: targetUid,
-              displayAccountNumber: displayAccNum,
-              photo,
-              coverPhoto,
-              gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
-              age,
-              followers,
-              bio,
-              location: matchedCountry.name,
-              flag: matchedCountry.flag,
-              countryCode: matchedCountry.code,
+                const matchedCountry = COUNTRIES.find(
+                  (c) =>
+                    c.code === countryCode || c.name === country || c.flag === country
+                ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
+
+                setAlbumImages(album)
+                setUser({
+                  name: finalName,
+                  uid: targetUid,
+                  displayAccountNumber: displayAccNum,
+                  photo,
+                  coverPhoto,
+                  gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
+                  age,
+                  followers,
+                  bio,
+                  location: matchedCountry.name,
+                  flag: matchedCountry.flag,
+                  countryCode: matchedCountry.code,
+                })
+              }
             })
           } catch (err) {
-            console.warn('Supabase fetch error for Target User:', err)
+            console.warn('Firestore fetch error for Target User:', err)
           }
         }
         return
       }
 
-      // For current user - ID from localStorage (MePage se aaygi)
       const uid =
-        localStorage.getItem('userUID') || localStorage.getItem('userPhone') || ''
-      
+        localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
       let storedName = localStorage.getItem('userName') || ''
       let photo = localStorage.getItem('userPhoto') || ''
       let coverPhoto = localStorage.getItem('userCoverPhoto') || ''
@@ -380,178 +339,123 @@ export default function PublicProfile({
         setAlbumImages(JSON.parse(storedAlbum))
       }
 
-      // Compute display ID from hash logic
-      let displayAccNum = (uid && uid !== 'N/A') ? generateStableId(uid) : ''
+      let displayAccNum = localStorage.getItem('accountNumber') || ''
 
       if (uid && uid !== 'N/A') {
         try {
-          // Supabase se fresh data fetch karo
-          const { data: supabaseData } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', uid)
-            .single()
+          const userDocRef = doc(db, 'users', uid)
 
-          if (supabaseData) {
-            if (supabaseData.account_id) {
-              displayAccNum = String(supabaseData.account_id).slice(0, 8)
-              localStorage.setItem('accountNumber', displayAccNum)
-              localStorage.setItem(`user_account_number_${uid}`, displayAccNum)
-            }
-            if (supabaseData.name) {
-              storedName = supabaseData.name
-              localStorage.setItem('userName', storedName)
-            }
-            if (supabaseData.avatar_url) {
-              photo = supabaseData.avatar_url
-              localStorage.setItem('userPhoto', photo)
-            } else if (supabaseData.photo) {
-              photo = supabaseData.photo
-              localStorage.setItem('userPhoto', photo)
-            }
-            if (supabaseData.cover_photo) {
-              coverPhoto = supabaseData.cover_photo
-              localStorage.setItem('userCoverPhoto', coverPhoto)
-            }
-            if (supabaseData.bio) {
-              storedBio = supabaseData.bio
-              localStorage.setItem('userBio', storedBio)
-            }
-            if (supabaseData.country) {
-              storedCountry = supabaseData.country
-              localStorage.setItem('userCountry', storedCountry)
-            }
-            if (supabaseData.country_code) {
-              storedCountryCode = supabaseData.country_code
-              localStorage.setItem('userCountryCode', storedCountryCode)
-            }
-            if (supabaseData.gender) {
-              storedGender = supabaseData.gender
-              localStorage.setItem('userGender', storedGender)
-            }
-            if (supabaseData.age) {
-              storedAge = String(supabaseData.age)
-              localStorage.setItem('userAge', storedAge)
-            }
-            if (supabaseData.album_images && Array.isArray(supabaseData.album_images)) {
-              setAlbumImages(supabaseData.album_images)
-              localStorage.setItem('userAlbumImages', JSON.stringify(supabaseData.album_images))
-            }
-          }
-
-          // Real-time subscription
-          subscription = supabase
-            .channel(`public_profile_own_${uid}`)
-            .on('postgres_changes',
-              {
-                event: '*',
-                schema: 'public',
-                table: 'users',
-                filter: `id=eq.${uid}`
-              },
-              (payload) => {
-                const data = payload.new
-                if (data) {
-                  if (data.account_id) {
-                    displayAccNum = String(data.account_id).slice(0, 8)
-                    localStorage.setItem('accountNumber', displayAccNum)
-                  }
-                  if (data.name) {
-                    storedName = data.name
-                    localStorage.setItem('userName', storedName)
-                  }
-                  if (data.avatar_url) {
-                    photo = data.avatar_url
-                    localStorage.setItem('userPhoto', photo)
-                  }
-                  if (data.cover_photo) {
-                    coverPhoto = data.cover_photo
-                    localStorage.setItem('userCoverPhoto', coverPhoto)
-                  }
-                  if (data.bio) {
-                    storedBio = data.bio
-                    localStorage.setItem('userBio', storedBio)
-                  }
-
-                  const matchedCountry = COUNTRIES.find(
-                    (c) =>
-                      c.code === storedCountryCode ||
-                      c.flag === storedCountry ||
-                      c.name === storedCountry
-                  ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-                  setUser({
-                    name: storedName || 'Hurry User',
-                    uid: uid,
-                    displayAccountNumber: displayAccNum,
-                    photo,
-                    coverPhoto,
-                    bio: storedBio,
-                    location: matchedCountry.name,
-                    flag: matchedCountry.flag,
-                    countryCode: matchedCountry.code,
-                    gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
-                    age: storedAge ? parseInt(storedAge) : 24,
-                    followers: data.followers || 0,
-                  })
-                }
+          unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data()
+              if (data.accountId) {
+                displayAccNum = String(data.accountId)
+                localStorage.setItem('accountNumber', displayAccNum)
               }
-            )
-            .subscribe()
+              if (data.name || data.displayName || data.userName) {
+                storedName = data.name || data.displayName || data.userName
+                localStorage.setItem('userName', storedName)
+              }
+              if (data.photo || data.photoURL || data.image) {
+                photo = data.photo || data.photoURL || data.image || photo
+                localStorage.setItem('userPhoto', photo)
+              }
+              if (data.coverPhoto || data.coverImage) {
+                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
+                localStorage.setItem('userCoverPhoto', coverPhoto)
+              }
+              if (data.bio) {
+                storedBio = data.bio
+                localStorage.setItem('userBio', storedBio)
+              }
+              if (data.country || data.location) {
+                storedCountry = data.country || data.location
+                localStorage.setItem('userCountry', storedCountry)
+              }
+              if (data.countryCode) {
+                storedCountryCode = data.countryCode
+                localStorage.setItem('userCountryCode', storedCountryCode)
+              }
+              if (data.countryLocked !== undefined) {
+                isCountryLockedInStorage = data.countryLocked
+                if (data.countryLocked) localStorage.setItem('userCountryLocked', 'true')
+              }
+              if (data.setupComplete) {
+                isCountryLockedInStorage = true
+                localStorage.setItem('userCountryLocked', 'true')
+              }
+              if (data.gender) {
+                storedGender = data.gender
+                localStorage.setItem('userGender', storedGender)
+              }
+              if (data.age) {
+                storedAge = String(data.age)
+                localStorage.setItem('userAge', storedAge)
+              }
+              if (data.albumImages && Array.isArray(data.albumImages)) {
+                setAlbumImages(data.albumImages)
+                localStorage.setItem(
+                  'userAlbumImages',
+                  JSON.stringify(data.albumImages)
+                )
+              }
+
+              if (!displayAccNum) {
+                displayAccNum = getOrCreateAccountNumber(uid)
+              }
+
+              const matchedCountry = COUNTRIES.find(
+                (c) =>
+                  c.code === storedCountryCode ||
+                  c.flag === storedCountry ||
+                  c.name === storedCountry
+              ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
+
+              setUser({
+                name: storedName || 'Hurry User',
+                uid: uid,
+                displayAccountNumber: displayAccNum,
+                photo,
+                coverPhoto,
+                bio: storedBio,
+                location: matchedCountry.name,
+                flag: matchedCountry.flag,
+                countryCode: matchedCountry.code,
+                gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
+                age: storedAge ? parseInt(storedAge) : 24,
+                followers: data.followers || 0,
+              })
+
+              setEditName(storedName || 'Hurry User')
+              setEditAge(storedAge || '24')
+              setEditBio(storedBio || '')
+              setEditCountry(matchedCountry.name)
+              setEditCountryCode(matchedCountry.code)
+              setCountryLocked(isCountryLockedInStorage)
+
+              if (storedGender) {
+                setEditGender(
+                  storedGender === 'female' || storedGender === '♀' ? 'female' : 'male'
+                )
+                setGenderLocked(true)
+              }
+            }
+          })
         } catch (err) {
-          console.warn('Supabase fetch error in PublicProfile:', err)
+          console.warn('Firestore fetch error in PublicProfile:', err)
         }
-      }
-
-      // Set initial state from localStorage
-      const matchedCountry = COUNTRIES.find(
-        (c) =>
-          c.code === storedCountryCode ||
-          c.flag === storedCountry ||
-          c.name === storedCountry
-      ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-      setUser({
-        name: storedName || 'Hurry User',
-        uid: uid,
-        displayAccountNumber: displayAccNum,
-        photo,
-        coverPhoto,
-        bio: storedBio,
-        location: matchedCountry.name,
-        flag: matchedCountry.flag,
-        countryCode: matchedCountry.code,
-        gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
-        age: storedAge ? parseInt(storedAge) : 24,
-        followers: 0,
-      })
-
-      setEditName(storedName || 'Hurry User')
-      setEditAge(storedAge || '24')
-      setEditBio(storedBio || '')
-      setEditCountry(matchedCountry.name)
-      setEditCountryCode(matchedCountry.code)
-      setCountryLocked(isCountryLockedInStorage)
-
-      if (storedGender) {
-        setEditGender(
-          storedGender === 'female' || storedGender === '♀' ? 'female' : 'male'
-        )
-        setGenderLocked(true)
       }
     }
 
     loadProfileData()
 
     return () => {
-      if (subscription) {
-        supabase.removeChannel(subscription)
-      }
+      if (unsubscribe) unsubscribe()
     }
   }, [isOtherUser, targetUser])
 
   const handleCopyID = () => {
-    if (user.displayAccountNumber) {
+    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
       navigator.clipboard.writeText(user.displayAccountNumber)
       alert('ID Copied!')
     }
@@ -581,7 +485,7 @@ export default function PublicProfile({
     localStorage.setItem('userGenderLocked', gender)
     setUser((prev) => ({ ...prev, gender: formattedGender }))
 
-    await saveToSupabase({ gender: formattedGender })
+    await saveToFirestore({ gender: formattedGender })
   }
 
   const handleCountrySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -602,9 +506,10 @@ export default function PublicProfile({
         localStorage.setItem('userPhoto', compressedBase64)
         setUser((prev) => ({ ...prev, photo: compressedBase64 }))
 
-        await saveToSupabase({
+        await saveToFirestore({
           photo: compressedBase64,
-          avatar_url: compressedBase64,
+          image: compressedBase64,
+          photoURL: compressedBase64,
         })
       } catch (err) {
         console.error('Avatar compression error:', err)
@@ -620,8 +525,9 @@ export default function PublicProfile({
         localStorage.setItem('userCoverPhoto', compressedBase64)
         setUser((prev) => ({ ...prev, coverPhoto: compressedBase64 }))
 
-        await saveToSupabase({
-          cover_photo: compressedBase64,
+        await saveToFirestore({
+          coverPhoto: compressedBase64,
+          coverImage: compressedBase64,
         })
       } catch (err) {
         console.error('Cover compression error:', err)
@@ -632,7 +538,7 @@ export default function PublicProfile({
   const handleRemoveCoverPhoto = async () => {
     localStorage.removeItem('userCoverPhoto')
     setUser((prev) => ({ ...prev, coverPhoto: '' }))
-    await saveToSupabase({ cover_photo: '' })
+    await saveToFirestore({ coverPhoto: '', coverImage: '' })
   }
 
   const handleAlbumUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -648,7 +554,7 @@ export default function PublicProfile({
         setAlbumImages(updatedAlbum)
         localStorage.setItem('userAlbumImages', JSON.stringify(updatedAlbum))
 
-        await saveToSupabase({ album_images: updatedAlbum })
+        await saveToFirestore({ albumImages: updatedAlbum, album: updatedAlbum })
       } catch (err) {
         console.error('Album image compression error:', err)
       }
@@ -659,7 +565,7 @@ export default function PublicProfile({
     const updated = albumImages.filter((_, index) => index !== indexToRemove)
     setAlbumImages(updated)
     localStorage.setItem('userAlbumImages', JSON.stringify(updated))
-    await saveToSupabase({ album_images: updated })
+    await saveToFirestore({ albumImages: updated, album: updated })
   }
 
   const handleSaveEdit = async () => {
@@ -688,14 +594,17 @@ export default function PublicProfile({
       countryCode: matchedCountry.code,
     }))
 
-    await saveToSupabase({
+    await saveToFirestore({
       name: editName,
+      displayName: editName,
+      userName: editName,
       age: parseInt(editAge) || user.age,
       bio: editBio,
+      about: editBio,
       country: matchedCountry.flag,
-      country_code: matchedCountry.code,
+      countryCode: matchedCountry.code,
       location: matchedCountry.name,
-      country_locked: true,
+      countryLocked: true,
     })
 
     setShowEditSheet(false)
@@ -706,7 +615,7 @@ export default function PublicProfile({
     localStorage.setItem('userBio', editBio)
     setUser((prev) => ({ ...prev, bio: editBio }))
     setShowBioInput(false)
-    await saveToSupabase({ bio: editBio })
+    await saveToFirestore({ bio: editBio, about: editBio })
   }
 
   const getDisplayID = () => {
@@ -724,9 +633,10 @@ export default function PublicProfile({
     })
   }
 
+  // ---- NEW: Current user data helper for ChatScreen ----
   const getCurrentUserData = () => {
     const uid =
-      user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone') || ''
+      user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
     const name = user.name || localStorage.getItem('userName') || 'Me'
     const photo = user.photo || localStorage.getItem('userPhoto') || ''
     return { uid, name, photo }
@@ -737,7 +647,6 @@ export default function PublicProfile({
       className={`w-full bg-white min-h-screen text-gray-900 relative ${
         isOtherUser ? 'pb-24' : 'pb-10'
       }`}
-      style={{ maxWidth: '480px', margin: '0 auto' }}
     >
       {/* Cover Image & Header Section */}
       <div className="relative w-full h-[340px] bg-gray-800">
@@ -997,6 +906,7 @@ export default function PublicProfile({
           </button>
 
           <button
+            // ---- NEW: Open ChatScreen instead of alert ----
             onClick={() => setShowChat(true)}
             className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#1dc4e9] to-[#1de9b6] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-cyan-200"
           >
@@ -1269,7 +1179,7 @@ export default function PublicProfile({
         </div>
       )}
 
-      {/* ChatScreen Overlay */}
+      {/* ---- NEW: ChatScreen Overlay ---- */}
       {isOtherUser && showChat && targetUser && (
         <ChatScreen
           currentUser={getCurrentUserData()}
@@ -1297,4 +1207,4 @@ export default function PublicProfile({
       `}</style>
     </div>
   )
-                                      }
+}
