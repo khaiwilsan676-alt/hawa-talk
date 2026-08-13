@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import HomePage from '@/components/HomePage'
 import LoginPage from '@/components/LoginPage'
-import { account } from '@/src/lib/appwrite' // Path updated to @/src/lib/appwrite
+import { supabase } from '@/src/lib/supabase'
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -12,15 +12,15 @@ export default function Page() {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // 1. Appwrite Active Session Check (Specially for OAuth/Google Redirects)
-        const user = await account.get()
-        if (user) {
+        // 1. Supabase Active Session Check (Specially for OAuth/Google Redirects)
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session) {
           setIsLoggedIn(true)
           setLoading(false)
           return
         }
       } catch (error) {
-        // Appwrite active session nahi mila
+        // Supabase active session nahi mila
       }
 
       // 2. LocalStorage Fallback Check
@@ -64,10 +64,10 @@ export default function Page() {
     const uid = localStorage.getItem("userUID")
 
     try {
-      // Clear Appwrite Session
-      await account.deleteSession('current')
+      // Clear Supabase Session
+      await supabase.auth.signOut()
     } catch (error) {
-      console.log("Appwrite logout error:", error)
+      console.log("Supabase logout error:", error)
     }
 
     // Clear Local Storage
