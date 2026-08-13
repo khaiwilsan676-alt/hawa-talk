@@ -7,8 +7,10 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-import { supabase } from "../src/lib/supabase"
-import { generateStableId } from "../lib/hash"
+
+// 🔥 Firestore Imports (Supabase DB hata diya)
+import { doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { db } from "../src/lib/firebase"
 
 interface MenuItem {
   id: string
@@ -98,52 +100,46 @@ const FEEDBACK_TYPES = [
   { id: 'others', label: 'Others', icon: '' }
 ]
 
-// EXPORT: getOrCreateAccountNumber - HomePage.tsx ke liye
-export const getOrCreateAccountNumber = (uid: string): string => {
-  if (!uid || uid === 'N/A') return '' // No N/A or Default ID for unauthenticated
-
-  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
-    return uid
+// 🔢 SIMPLE 8-DIGIT GENERATOR (UID se 8 digit number)
+const generate8DigitId = (uid: string): string => {
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    const char = uid.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; 
   }
-
-  if (SPECIAL_ACCOUNTS[uid]) {
-    return SPECIAL_ACCOUNTS[uid]
-  }
-
-  return generateStableId(uid)
+  const eightDigit = Math.abs(hash) % 90000000 + 10000000;
+  return eightDigit.toString();
 }
 
-// EXPORT: getAccountNumberFromSupabase - Direct Supabase se
-export const getAccountNumberFromSupabase = async (uid: string): Promise<string> => {
-  if (!uid || uid === 'N/A') return '' // No N/A or Default ID for unauthenticated
-
-  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
-    return uid
+// 🔥 Firestore se Account Number fetch karna (Agar nhi mila toh generate karke save)
+const getAccountNumber = async (uid: string): Promise<string> => {
+  if (!uid || uid === 'N/A') return ''
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
+    return SPECIAL_ACCOUNTS[uid] || uid
   }
 
-  if (SPECIAL_ACCOUNTS[uid]) {
-    return SPECIAL_ACCOUNTS[uid]
-  }
-
+  // 1. Firestore se dhundh
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('account_id')
-      .eq('id', uid)
-      .single()
-
-    if (data?.account_id) {
-      const accountId = String(data.account_id).slice(0, 8)
-      localStorage.setItem('accountNumber', accountId)
-      localStorage.setItem(`user_account_number_${uid}`, accountId)
-      return accountId
+    const userRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists() && userSnap.data()?.account_id) {
+      const accId = String(userSnap.data().account_id).slice(0, 8);
+      localStorage.setItem('accountNumber', accId);
+      localStorage.setItem(`user_account_number_${uid}`, accId);
+      return accId;
     }
+  } catch (e) { /* ignore */ }
 
-    return generateStableId(uid)
-  } catch (error) {
-    console.error("Error fetching account number from Supabase:", error)
-    return generateStableId(uid)
-  }
+  // 2. Naya 8-digit generate karo aur save karo
+  const newId = generate8DigitId(uid);
+  try {
+    await setDoc(doc(db, 'users', uid), { account_id: newId }, { merge: true });
+  } catch (e) { /* ignore */ }
+
+  localStorage.setItem('accountNumber', newId);
+  localStorage.setItem(`user_account_number_${uid}`, newId);
+  return newId;
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
@@ -212,7 +208,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   }
 
-  // Handle Feedback Submit
+  // 🔥 Handle Feedback Submit (Firestore me save)
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
@@ -233,19 +229,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     setFeedbackSubmitting(true);
 
     try {
-      const { error } = await supabase
-        .from('feedbacks')
-        .insert({
-          type: selectedType,
-          type_label: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
-          description: problemDescription.trim(),
-          contact_info: contactInfo.trim(),
-          created_at: new Date().toISOString(),
-          timestamp: Date.now(),
-          status: 'pending'
-        })
-
-      if (error) throw error
+      await addDoc(collection(db, 'feedbacks'), {
+        type: selectedType,
+        type_label: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
+        description: problemDescription.trim(),
+        contact_info: contactInfo.trim(),
+        created_at: serverTimestamp(),
+        timestamp: Date.now(),
+        status: 'pending'
+      });
       
       setFeedbackSuccess(true);
       setSelectedType('');
@@ -265,7 +257,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   };
 
-  // Fetch User Data from Supabase
+  // 🔥 Fetch User Data from Firestore
   useEffect(() => {
     const fetchUserData = async () => {
       const name = localStorage.getItem("userName") || "Guest"
@@ -273,38 +265,47 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       const phone = localStorage.getItem("userPhone") || ""
       const photo = localStorage.getItem("userPhoto") || ""
 
-      let finalAccNum = getOrCreateAccountNumber(uid)
-
+      let finalAccNum = "";
       if (uid && uid !== "N/A") {
-        // Direct Supabase se account_id fetch karo
         try {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('account_id, name, avatar_url, photo, gender, country, country_code')
-            .eq('id', uid)
-            .single()
+          const userRef = doc(db, 'users', uid);
+          const userSnap = await getDoc(userRef);
 
-          if (userData) {
-            // Account ID from Supabase
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            
+            // Account ID from Firestore
             if (userData.account_id) {
-              finalAccNum = String(userData.account_id).slice(0, 8)
-              localStorage.setItem("accountNumber", finalAccNum)
-              localStorage.setItem(`user_account_number_${uid}`, finalAccNum)
+              finalAccNum = String(userData.account_id).slice(0, 8);
+              localStorage.setItem("accountNumber", finalAccNum);
+              localStorage.setItem(`user_account_number_${uid}`, finalAccNum);
             }
 
-            // Update other user data from Supabase
+            // Update other user data from Firestore
             if (userData.name && !localStorage.getItem("userName")) {
-              localStorage.setItem("userName", userData.name)
+              localStorage.setItem("userName", userData.name);
             }
             if (userData.avatar_url && !localStorage.getItem("userPhoto")) {
-              localStorage.setItem("userPhoto", userData.avatar_url)
+              localStorage.setItem("userPhoto", userData.avatar_url);
             }
             if (userData.photo && !localStorage.getItem("userPhoto")) {
-              localStorage.setItem("userPhoto", userData.photo)
+              localStorage.setItem("userPhoto", userData.photo);
             }
           }
         } catch (err) {
-          console.warn("Supabase user fetch error in MePage:", err)
+          console.warn("Firestore user fetch error in MePage:", err)
+        }
+        
+        // Agar account number abhi bhi nahi mila toh naya generate karo
+        if (!finalAccNum) {
+          const newId = generate8DigitId(uid);
+          finalAccNum = newId;
+          localStorage.setItem("accountNumber", finalAccNum);
+          localStorage.setItem(`user_account_number_${uid}`, finalAccNum);
+          // Background me Firestore me save kar do
+          try {
+            await setDoc(doc(db, 'users', uid), { account_id: finalAccNum }, { merge: true });
+          } catch (e) { /* ignore */ }
         }
       }
 
@@ -324,57 +325,46 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     return () => window.removeEventListener("storage", fetchUserData)
   }, [])
 
-  // Real-time subscription for user data
+  // 🔥 Real-time subscription for user data (using Firestore onSnapshot)
   useEffect(() => {
     const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone")
-    
     if (!uid || uid === "N/A") return
 
-    const subscription = supabase
-      .channel(`me_page_user_${uid}`)
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'users', 
-          filter: `id=eq.${uid}` 
-        }, 
-        (payload) => {
-          const data = payload.new
-          if (data) {
-            // Update account number
-            if (data.account_id) {
-              const accNum = String(data.account_id).slice(0, 8)
-              setUser(prev => ({ 
-                ...prev, 
-                accountNumber: accNum, 
-                displayAccountNumber: accNum 
-              }))
-              localStorage.setItem("accountNumber", accNum)
-            }
-            
-            // Update name
-            if (data.name) {
-              setUser(prev => ({ ...prev, name: data.name }))
-              localStorage.setItem("userName", data.name)
-            }
-            
-            // Update photo
-            if (data.avatar_url) {
-              setUser(prev => ({ ...prev, photo: data.avatar_url }))
-              localStorage.setItem("userPhoto", data.avatar_url)
-            } else if (data.photo) {
-              setUser(prev => ({ ...prev, photo: data.photo }))
-              localStorage.setItem("userPhoto", data.photo)
-            }
-          }
+    const userRef = doc(db, 'users', uid);
+    const unsubscribe = onSnapshot(userRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        // Update account number
+        if (data.account_id) {
+          const accNum = String(data.account_id).slice(0, 8);
+          setUser(prev => ({ 
+            ...prev, 
+            accountNumber: accNum, 
+            displayAccountNumber: accNum 
+          }));
+          localStorage.setItem("accountNumber", accNum);
         }
-      )
-      .subscribe()
+        
+        // Update name
+        if (data.name) {
+          setUser(prev => ({ ...prev, name: data.name }));
+          localStorage.setItem("userName", data.name);
+        }
+        
+        // Update photo
+        if (data.avatar_url) {
+          setUser(prev => ({ ...prev, photo: data.avatar_url }));
+          localStorage.setItem("userPhoto", data.avatar_url);
+        } else if (data.photo) {
+          setUser(prev => ({ ...prev, photo: data.photo }));
+          localStorage.setItem("userPhoto", data.photo);
+        }
+      }
+    }, (error) => {
+      console.error("Firestore onSnapshot error:", error);
+    });
 
-    return () => {
-      supabase.removeChannel(subscription)
-    }
+    return () => unsubscribe();
   }, [])
 
   const handleCopyAccountNumber = () => {
@@ -706,4 +696,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-          }
+    }
