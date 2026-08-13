@@ -147,7 +147,7 @@ const checkIfNewUser = async (uid: string): Promise<boolean> => {
   }
 }
 
-// Gender Selection Page Component (Compact - Avatars in one row)
+// Gender Selection Page Component (Cards stacked vertically)
 function GenderSelectionPage({ 
   userData, 
   onContinue 
@@ -165,91 +165,93 @@ function GenderSelectionPage({
         <p className="text-sm text-gray-500 text-center mt-2">Select your gender to get started</p>
       </div>
 
-      {/* Gender Cards - One Row */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4">
-        <div className="flex gap-4 items-center justify-center">
-          {/* Female Card */}
-          <button
-            onClick={() => setSelectedGender('female')}
-            className={`relative w-40 transition-all duration-300 transform ${
-              selectedGender === 'female' ? 'scale-105' : 'hover:scale-102'
+      {/* Gender Cards - Stacked Vertically */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-4">
+        {/* Female Card - 1st Row */}
+        <button
+          onClick={() => setSelectedGender('female')}
+          className={`relative w-full max-w-xs transition-all duration-300 transform ${
+            selectedGender === 'female' ? 'scale-105' : 'hover:scale-102'
+          }`}
+        >
+          <div 
+            className={`relative rounded-2xl overflow-hidden cursor-pointer ${
+              selectedGender === 'female' 
+                ? 'ring-4 ring-pink-400 shadow-2xl shadow-pink-400/30' 
+                : 'ring-2 ring-gray-200 shadow-lg hover:shadow-xl'
             }`}
+            style={{
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(244, 114, 182, 0.2) 50%, rgba(251, 207, 232, 0.3) 100%)',
+            }}
           >
-            <div 
-              className={`relative rounded-2xl overflow-hidden cursor-pointer ${
-                selectedGender === 'female' 
-                  ? 'ring-4 ring-pink-400 shadow-2xl shadow-pink-400/30' 
-                  : 'ring-2 ring-gray-200 shadow-lg hover:shadow-xl'
-              }`}
-              style={{
-                background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(244, 114, 182, 0.2) 50%, rgba(251, 207, 232, 0.3) 100%)',
-              }}
-            >
-              <div className="relative p-4 flex flex-col items-center">
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-pink-300 shadow-lg mb-3">
-                  <img 
-                    src="/IMG_20260804_211013.jpg" 
-                    alt="Female" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                
-                <div className="bg-pink-500/80 backdrop-blur-sm px-5 py-1.5 rounded-full">
-                  <span className="text-white font-semibold text-sm">Female</span>
-                </div>
-                
-                {selectedGender === 'female' && (
-                  <div className="absolute top-3 right-3 w-7 h-7 bg-pink-500 rounded-full flex items-center justify-center shadow-lg">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                )}
+            <div className="flex items-center gap-4 p-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-pink-300 shadow-lg flex-shrink-0">
+                <img 
+                  src="/IMG_20260804_211013.jpg" 
+                  alt="Female" 
+                  className="w-full h-full object-cover"
+                />
               </div>
+              
+              <div className="flex-1 text-left">
+                <div className="inline-block bg-pink-500/80 backdrop-blur-sm px-5 py-2 rounded-full">
+                  <span className="text-white font-semibold text-base">Female</span>
+                </div>
+              </div>
+              
+              {selectedGender === 'female' && (
+                <div className="absolute top-3 right-3 w-7 h-7 bg-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
             </div>
-          </button>
+          </div>
+        </button>
 
-          {/* Male Card */}
-          <button
-            onClick={() => setSelectedGender('male')}
-            className={`relative w-40 transition-all duration-300 transform ${
-              selectedGender === 'male' ? 'scale-105' : 'hover:scale-102'
+        {/* Male Card - 2nd Row */}
+        <button
+          onClick={() => setSelectedGender('male')}
+          className={`relative w-full max-w-xs transition-all duration-300 transform ${
+            selectedGender === 'male' ? 'scale-105' : 'hover:scale-102'
+          }`}
+        >
+          <div 
+            className={`relative rounded-2xl overflow-hidden cursor-pointer ${
+              selectedGender === 'male' 
+                ? 'ring-4 ring-blue-400 shadow-2xl shadow-blue-400/30' 
+                : 'ring-2 ring-gray-200 shadow-lg hover:shadow-xl'
             }`}
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.2) 50%, rgba(191, 219, 254, 0.3) 100%)',
+            }}
           >
-            <div 
-              className={`relative rounded-2xl overflow-hidden cursor-pointer ${
-                selectedGender === 'male' 
-                  ? 'ring-4 ring-blue-400 shadow-2xl shadow-blue-400/30' 
-                  : 'ring-2 ring-gray-200 shadow-lg hover:shadow-xl'
-              }`}
-              style={{
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.2) 50%, rgba(191, 219, 254, 0.3) 100%)',
-              }}
-            >
-              <div className="relative p-4 flex flex-col items-center">
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-300 shadow-lg mb-3">
-                  <img 
-                    src="/IMG_20260804_211031.jpg" 
-                    alt="Male" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                
-                <div className="bg-blue-500/80 backdrop-blur-sm px-5 py-1.5 rounded-full">
-                  <span className="text-white font-semibold text-sm">Male</span>
-                </div>
-                
-                {selectedGender === 'male' && (
-                  <div className="absolute top-3 right-3 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                )}
+            <div className="flex items-center gap-4 p-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-blue-300 shadow-lg flex-shrink-0">
+                <img 
+                  src="/IMG_20260804_211031.jpg" 
+                  alt="Male" 
+                  className="w-full h-full object-cover"
+                />
               </div>
+              
+              <div className="flex-1 text-left">
+                <div className="inline-block bg-blue-500/80 backdrop-blur-sm px-5 py-2 rounded-full">
+                  <span className="text-white font-semibold text-base">Male</span>
+                </div>
+              </div>
+              
+              {selectedGender === 'male' && (
+                <div className="absolute top-3 right-3 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
             </div>
-          </button>
-        </div>
+          </div>
+        </button>
       </div>
 
       {/* Next Button */}
