@@ -7,10 +7,8 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-
-// 🔥 Firestore Imports (Supabase DB hata diya)
-import { doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp } from "firebase/firestore"
 import { db } from "../src/lib/firebase"
+import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
 
 interface MenuItem {
   id: string
@@ -86,12 +84,6 @@ const bottomMenuItems: MenuItem[] = [
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-// Special Accounts
-const SPECIAL_ACCOUNTS: { [key: string]: string } = {
-  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
-  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
-}
-
 // Feedback Types
 const FEEDBACK_TYPES = [
   { id: 'app_bug', label: 'App Bug', icon: '' },
@@ -100,46 +92,30 @@ const FEEDBACK_TYPES = [
   { id: 'others', label: 'Others', icon: '' }
 ]
 
-// 🔢 SIMPLE 8-DIGIT GENERATOR (UID se 8 digit number)
-const generate8DigitId = (uid: string): string => {
-  let hash = 0;
+export const getOrCreateAccountNumber = (uid: string) => {
+  if (!uid || uid === 'N/A') return { fullAccNum: 'N/A', displayAccNum: 'N/A' }
+
+  // Check if it's an official or admin ID
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
+    return { fullAccNum: uid, displayAccNum: uid }
+  }
+
+  // Check stored account number first
+  const savedAcc = localStorage.getItem('accountNumber')
+  if (savedAcc) {
+    return { fullAccNum: savedAcc, displayAccNum: savedAcc }
+  }
+
+  // Consistent 8-digit calculation based on UID
+  let hash = 0
   for (let i = 0; i < uid.length; i++) {
-    const char = uid.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0; 
+    hash = (hash << 5) - hash + uid.charCodeAt(i)
+    hash |= 0
   }
-  const eightDigit = Math.abs(hash) % 90000000 + 10000000;
-  return eightDigit.toString();
-}
-
-// 🔥 Firestore se Account Number fetch karna (Agar nhi mila toh generate karke save)
-const getAccountNumber = async (uid: string): Promise<string> => {
-  if (!uid || uid === 'N/A') return ''
-  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
-    return SPECIAL_ACCOUNTS[uid] || uid
-  }
-
-  // 1. Firestore se dhundh
-  try {
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists() && userSnap.data()?.account_id) {
-      const accId = String(userSnap.data().account_id).slice(0, 8);
-      localStorage.setItem('accountNumber', accId);
-      localStorage.setItem(`user_account_number_${uid}`, accId);
-      return accId;
-    }
-  } catch (e) { /* ignore */ }
-
-  // 2. Naya 8-digit generate karo aur save karo
-  const newId = generate8DigitId(uid);
-  try {
-    await setDoc(doc(db, 'users', uid), { account_id: newId }, { merge: true });
-  } catch (e) { /* ignore */ }
-
-  localStorage.setItem('accountNumber', newId);
-  localStorage.setItem(`user_account_number_${uid}`, newId);
-  return newId;
+  const positiveHash = Math.abs(hash)
+  const generated = String(10000000 + (positiveHash % 90000000))
+  
+  return { fullAccNum: generated, displayAccNum: generated }
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
@@ -155,34 +131,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [feedbackSuccess, setFeedbackSuccess] = useState(false)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
 
-  // User State
-  const [user, setUser] = useState({
-    name: "Guest",
-    uid: "",
-    accountNumber: "",
-    displayAccountNumber: "",
-    phone: "",
-    photo: "",
-  })
-
-  // Force Mobile Viewport
-  useEffect(() => {
-    let meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement
-    if (!meta) {
-      meta = document.createElement('meta')
-      meta.name = 'viewport'
-      document.head.appendChild(meta)
-    }
-    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover')
-
-    document.documentElement.style.setProperty('max-width', '480px')
-    document.documentElement.style.setProperty('margin', '0 auto')
-    document.body.style.setProperty('max-width', '480px')
-    document.body.style.setProperty('margin', '0 auto')
-    document.body.style.setProperty('overflow-x', 'hidden')
-  }, [])
-
-  // Language Setup
   useEffect(() => {
     const savedLang = localStorage.getItem('appLanguage') as LanguageCode
     if (savedLang) {
@@ -201,6 +149,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const t = getTranslation(appLang)
 
+  const [user, setUser] = useState({
+    name: "Guest",
+    uid: "",
+    accountNumber: "",
+    displayAccountNumber: "",
+    phone: "",
+    photo: "",
+  })
+
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
@@ -208,7 +165,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   }
 
-  // 🔥 Handle Feedback Submit (Firestore me save)
+  // Handle Feedback Submit
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
@@ -229,21 +186,24 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     setFeedbackSubmitting(true);
 
     try {
-      await addDoc(collection(db, 'feedbacks'), {
+      const feedbackData = {
         type: selectedType,
-        type_label: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
+        typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
         description: problemDescription.trim(),
-        contact_info: contactInfo.trim(),
-        created_at: serverTimestamp(),
+        contactInfo: contactInfo.trim(),
+        createdAt: new Date().toISOString(),
         timestamp: Date.now(),
         status: 'pending'
-      });
+      };
+
+      await addDoc(collection(db, "feedbacks"), feedbackData);
       
       setFeedbackSuccess(true);
       setSelectedType('');
       setProblemDescription('');
       setContactInfo('');
       
+      // Auto close after 2 seconds
       setTimeout(() => {
         setShowFeedbackPage(false);
         setFeedbackSuccess(false);
@@ -257,7 +217,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   };
 
-  // 🔥 Fetch User Data from Firestore
   useEffect(() => {
     const fetchUserData = async () => {
       const name = localStorage.getItem("userName") || "Guest"
@@ -265,48 +224,26 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       const phone = localStorage.getItem("userPhone") || ""
       const photo = localStorage.getItem("userPhoto") || ""
 
-      let finalAccNum = "";
+      let finalAccNum = localStorage.getItem("accountNumber") || ""
+
+      // 1. Fetch exact accountId directly from Firestore 'users' collection
       if (uid && uid !== "N/A") {
         try {
-          const userRef = doc(db, 'users', uid);
-          const userSnap = await getDoc(userRef);
-
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
-            
-            // Account ID from Firestore
-            if (userData.account_id) {
-              finalAccNum = String(userData.account_id).slice(0, 8);
-              localStorage.setItem("accountNumber", finalAccNum);
-              localStorage.setItem(`user_account_number_${uid}`, finalAccNum);
-            }
-
-            // Update other user data from Firestore
-            if (userData.name && !localStorage.getItem("userName")) {
-              localStorage.setItem("userName", userData.name);
-            }
-            if (userData.avatar_url && !localStorage.getItem("userPhoto")) {
-              localStorage.setItem("userPhoto", userData.avatar_url);
-            }
-            if (userData.photo && !localStorage.getItem("userPhoto")) {
-              localStorage.setItem("userPhoto", userData.photo);
-            }
+          const userDocRef = doc(db, "users", uid)
+          const docSnap = await getDoc(userDocRef)
+          if (docSnap.exists() && docSnap.data().accountId) {
+            finalAccNum = String(docSnap.data().accountId)
+            localStorage.setItem("accountNumber", finalAccNum)
           }
         } catch (err) {
           console.warn("Firestore user fetch error in MePage:", err)
         }
-        
-        // Agar account number abhi bhi nahi mila toh naya generate karo
-        if (!finalAccNum) {
-          const newId = generate8DigitId(uid);
-          finalAccNum = newId;
-          localStorage.setItem("accountNumber", finalAccNum);
-          localStorage.setItem(`user_account_number_${uid}`, finalAccNum);
-          // Background me Firestore me save kar do
-          try {
-            await setDoc(doc(db, 'users', uid), { account_id: finalAccNum }, { merge: true });
-          } catch (e) { /* ignore */ }
-        }
+      }
+
+      // Fallback calculation if no Firestore accountId exists
+      if (!finalAccNum) {
+        const { fullAccNum } = getOrCreateAccountNumber(uid)
+        finalAccNum = fullAccNum
       }
 
       setUser({ 
@@ -325,50 +262,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     return () => window.removeEventListener("storage", fetchUserData)
   }, [])
 
-  // 🔥 Real-time subscription for user data (using Firestore onSnapshot)
-  useEffect(() => {
-    const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone")
-    if (!uid || uid === "N/A") return
-
-    const userRef = doc(db, 'users', uid);
-    const unsubscribe = onSnapshot(userRef, (docSnapshot) => {
-      if (docSnapshot.exists()) {
-        const data = docSnapshot.data();
-        // Update account number
-        if (data.account_id) {
-          const accNum = String(data.account_id).slice(0, 8);
-          setUser(prev => ({ 
-            ...prev, 
-            accountNumber: accNum, 
-            displayAccountNumber: accNum 
-          }));
-          localStorage.setItem("accountNumber", accNum);
-        }
-        
-        // Update name
-        if (data.name) {
-          setUser(prev => ({ ...prev, name: data.name }));
-          localStorage.setItem("userName", data.name);
-        }
-        
-        // Update photo
-        if (data.avatar_url) {
-          setUser(prev => ({ ...prev, photo: data.avatar_url }));
-          localStorage.setItem("userPhoto", data.avatar_url);
-        } else if (data.photo) {
-          setUser(prev => ({ ...prev, photo: data.photo }));
-          localStorage.setItem("userPhoto", data.photo);
-        }
-      }
-    }, (error) => {
-      console.error("Firestore onSnapshot error:", error);
-    });
-
-    return () => unsubscribe();
-  }, [])
-
   const handleCopyAccountNumber = () => {
-    if (user.displayAccountNumber) {
+    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
       navigator.clipboard.writeText(user.displayAccountNumber)
       alert("ID Copied to clipboard!")
     }
@@ -379,7 +274,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   // Feedback Page View
   if (showFeedbackPage) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col" style={{ maxWidth: '480px', margin: '0 auto' }}>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header */}
         <div className="flex items-center p-4 bg-white border-b border-gray-200">
           <button
             onClick={() => {
@@ -397,6 +293,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           <h1 className="text-lg font-semibold text-gray-900 ml-3">{t.helpFeedback}</h1>
         </div>
 
+        {/* Content */}
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="max-w-md mx-auto">
             {feedbackSuccess ? (
@@ -407,6 +304,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               </div>
             ) : (
               <form onSubmit={handleFeedbackSubmit} className="space-y-6">
+                {/* Type of Issue */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Type of Issue</h2>
                   <div className="grid grid-cols-2 gap-3">
@@ -432,6 +330,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 </div>
 
+                {/* Problem Description */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Problem Description</h2>
                   <div className="relative">
@@ -453,6 +352,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 </div>
 
+                {/* Contact Information */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Contact Information</h2>
                   <input
@@ -464,18 +364,30 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   />
                 </div>
 
+                {/* Error Message */}
                 {feedbackError && (
                   <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
                     {feedbackError}
                   </div>
                 )}
 
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={feedbackSubmitting}
                   className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-2xl transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 text-base"
                 >
-                  {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                  {feedbackSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Submitting...
+                    </span>
+                  ) : (
+                    'Submit Feedback'
+                  )}
                 </button>
               </form>
             )}
@@ -502,7 +414,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full min-h-screen bg-white" style={{ maxWidth: '480px', margin: '0 auto' }}>
+    <div className="w-full min-h-screen bg-white">
       {/* Profile Header */}
       <div
         className="px-4 pb-6 relative"
@@ -550,13 +462,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </p>
                 )}
 
-                <button
-                  onClick={handleCopyAccountNumber}
-                  className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
-                  title="Copy ID"
-                >
-                  <Copy size={14} />
-                </button>
+                {user.accountNumber !== 'N/A' && (
+                  <button
+                    onClick={handleCopyAccountNumber}
+                    className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
+                    title="Copy ID"
+                  >
+                    <Copy size={14} />
+                  </button>
+                )}
               </div>
 
               {user.phone && (
@@ -697,3 +611,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     </div>
   )
     }
+
