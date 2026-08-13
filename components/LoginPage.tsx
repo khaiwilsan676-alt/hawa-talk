@@ -77,7 +77,6 @@ export const getOrCreateAccountNumber = (uid: string) => {
     return SPECIAL_ACCOUNTS[uid]
   }
 
-  // Appwrite UID ki exact length calculate karein
   const targetLength = uid.length || 20;
 
   let hash = 0
@@ -87,10 +86,8 @@ export const getOrCreateAccountNumber = (uid: string) => {
   }
   const positiveHash = Math.abs(hash)
 
-  // First digit should non-zero (1-9)
   let numericId = String((positiveHash % 9) + 1);
 
-  // Remaining digits generate karne ke liye loop based on Appwrite ID length
   for (let i = 1; i < targetLength; i++) {
     const digit = Math.abs((positiveHash + i * 31) % 10);
     numericId += digit;
@@ -99,7 +96,7 @@ export const getOrCreateAccountNumber = (uid: string) => {
   return numericId;
 }
 
-// HELPER: Sync and Lock User Profile in Supabase
+// HELPER: Sync User Profile to Supabase
 const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
   try {
     let finalAccountId = ""
@@ -113,7 +110,6 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
       if (userDocSnap.exists() && userDocSnap.data().accountId) {
         finalAccountId = String(userDocSnap.data().accountId)
       } else {
-        // Appwrite ID ki same digit length ka ID generate hoga
         finalAccountId = getOrCreateAccountNumber(uid)
       }
     }
@@ -134,7 +130,6 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     localStorage.setItem("accountNumber", finalAccountId)
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
 
-    console.log("User synced successfully with same-length ID:", finalAccountId)
     return finalAccountId
   } catch (err) {
     console.error("Error syncing user to Supabase:", err)
@@ -142,7 +137,7 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
   }
 }
 
-// HELPER: Check if user is new (hasn't selected gender yet)
+// HELPER: Check if user is new
 const checkIfNewUser = async (uid: string): Promise<boolean> => {
   try {
     const userDocRef = doc(db, "users", uid)
@@ -150,7 +145,6 @@ const checkIfNewUser = async (uid: string): Promise<boolean> => {
     
     if (userDocSnap.exists()) {
       const userData = userDocSnap.data()
-      // Setup complete status ya gender field check karein
       return !(userData.gender && userData.setupComplete)
     }
     return true
@@ -221,7 +215,6 @@ function GenderSelectionPage({
           setupComplete: true
         }
 
-        // Save complete profile to Supabase
         await setDoc(userRef, userDocData, { merge: true })
 
         const globalRoomRef = doc(db, "globalRooms", userId)
@@ -453,6 +446,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [feedbackSuccess, setFeedbackSuccess] = useState(false)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
 
+  // Force Mobile Viewport dynamically
+  useEffect(() => {
+    let meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = 'viewport'
+      document.head.appendChild(meta)
+    }
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
+  }, [])
+
   // Preload video
   useEffect(() => {
     const video = document.createElement('video');
@@ -460,7 +464,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     video.preload = 'auto';
   }, []);
 
-  // Check for active appwrite session on mount (for OAuth redirects)
+  // Check for active appwrite session on mount
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -546,7 +550,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   }
 
-  // FIXED: Clean Origin passed to Appwrite OAuth Session
   const handleActualGmailLogin = async () => {
     setShowGoogleSheet(false);
     setLoading(true);
@@ -683,7 +686,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
-  // Handle Feedback Submit
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
