@@ -65,7 +65,7 @@ const COUNTRIES = [
   { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
 ]
 
-// HELPER: Account ID Generator
+// HELPER: Exact Same Length Account ID Generator
 export const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
 
@@ -77,16 +77,29 @@ export const getOrCreateAccountNumber = (uid: string) => {
     return SPECIAL_ACCOUNTS[uid]
   }
 
+  // Appwrite UID ki exact length calculate karein
+  const targetLength = uid.length || 20;
+
   let hash = 0
   for (let i = 0; i < uid.length; i++) {
     hash = (hash << 5) - hash + uid.charCodeAt(i)
     hash |= 0
   }
   const positiveHash = Math.abs(hash)
-  return String(10000000 + (positiveHash % 90000000))
+
+  // First digit should non-zero (1-9)
+  let numericId = String((positiveHash % 9) + 1);
+
+  // Remaining digits generate karne ke liye loop based on Appwrite ID length
+  for (let i = 1; i < targetLength; i++) {
+    const digit = Math.abs((positiveHash + i * 31) % 10);
+    numericId += digit;
+  }
+
+  return numericId;
 }
 
-// HELPER: Sync and Lock User Profile in Firestore
+// HELPER: Sync and Lock User Profile in Supabase
 const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
   try {
     let finalAccountId = ""
@@ -100,6 +113,7 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
       if (userDocSnap.exists() && userDocSnap.data().accountId) {
         finalAccountId = String(userDocSnap.data().accountId)
       } else {
+        // Appwrite ID ki same digit length ka ID generate hoga
         finalAccountId = getOrCreateAccountNumber(uid)
       }
     }
@@ -107,6 +121,7 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     const userData = {
       id: uid,
       name: name || email.split('@')[0] || 'User',
+      email: email || '',
       country: '🇮🇳',
       image: photo || '/default-avatar.png',
       accountId: finalAccountId,
@@ -119,10 +134,10 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     localStorage.setItem("accountNumber", finalAccountId)
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
 
-    console.log("User synced successfully with ID:", finalAccountId)
+    console.log("User synced successfully with same-length ID:", finalAccountId)
     return finalAccountId
   } catch (err) {
-    console.error("Error syncing user to Firestore:", err)
+    console.error("Error syncing user to Supabase:", err)
     return getOrCreateAccountNumber(uid)
   }
 }
@@ -135,7 +150,8 @@ const checkIfNewUser = async (uid: string): Promise<boolean> => {
     
     if (userDocSnap.exists()) {
       const userData = userDocSnap.data()
-      return !userData.gender
+      // Setup complete status ya gender field check karein
+      return !(userData.gender && userData.setupComplete)
     }
     return true
   } catch (error) {
@@ -187,8 +203,8 @@ function GenderSelectionPage({
 
       const countryFlag = COUNTRIES.find(c => c.code === selectedCountry)?.flag || '🇮🇳'
 
-      if (userData?.id || userData?.uid) {
-        const userId = userData.id || userData.uid
+      if (userData?.id || userData?.$id || userData?.uid) {
+        const userId = userData.id || userData.$id || userData.uid
         const userRef = doc(db, "users", userId)
         
         const userDocData = {
@@ -205,10 +221,12 @@ function GenderSelectionPage({
           setupComplete: true
         }
 
+        // Save complete profile to Supabase
         await setDoc(userRef, userDocData, { merge: true })
 
         const globalRoomRef = doc(db, "globalRooms", userId)
         await setDoc(globalRoomRef, {
+          id: userId,
           name: defaultData.name,
           image: defaultData.image,
           gender: selectedGender,
@@ -447,8 +465,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     const checkSession = async () => {
       try {
         const user = await account.get();
-        if (user && !localStorage.getItem("userUID")) {
-          const userName = user.name || "Google User";
+        if (user) {
+          const userName = user.name || user.email.split('@')[0] || "User";
           const userEmail = user.email || "";
           const userPhoto = "/default-avatar.png";
           const userUID = user.$id;
@@ -482,7 +500,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   }
 
   const processLoginSuccess = async (userData: any) => {
-    const userId = userData?.id || userData?.uid
+    const userId = userData?.id || userData?.$id || userData?.uid
     
     if (!userId) {
       if (onLoginSuccess) onLoginSuccess(userData)
