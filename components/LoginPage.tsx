@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
-import { db } from "../src/lib/supabase";
-import { account } from "../src/lib/appwrite";
-import { OAuthProvider } from "appwrite";
+import { db, supabase } from "../src/lib/supabase";
 import { doc, getDoc, setDoc, collection, addDoc } from "../src/lib/supabase";
 
 interface LoginPageProps {
@@ -464,16 +462,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     video.preload = 'auto';
   }, []);
 
-  // Check for active appwrite session on mount
+  // Check for active supabase session on mount
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const user = await account.get();
+        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const userName = user.name || user.email.split('@')[0] || "User";
+          const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || "User";
           const userEmail = user.email || "";
-          const userPhoto = "/default-avatar.png";
-          const userUID = user.$id;
+          const userPhoto = user.user_metadata?.avatar_url || "/default-avatar.png";
+          const userUID = user.id;
 
           const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto);
 
@@ -555,11 +553,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
     try {
       const origin = window.location.origin;
-      account.createOAuth2Session(
-        OAuthProvider.Google, 
-        origin, 
-        `${origin}/login`
-      );
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: origin
+        }
+      });
+      if (error) throw error;
     } catch (error: any) {
       console.error("OAuth Error:", error);
       setLoading(false);
@@ -647,13 +647,20 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return;
       }
 
-      await account.createEmailPasswordSession(email, password);
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      const user = await account.get();
-      const userName = user.name || email.split('@')[0]
+      if (signInError) throw signInError;
+
+      const user = data.user;
+      if (!user) throw new Error("No user found after sign in");
+
+      const userName = user.user_metadata?.full_name || email.split('@')[0]
       const userEmail = user.email || ""
-      const userPhoto = "/default-avatar.png"
-      const userUID = user.$id
+      const userPhoto = user.user_metadata?.avatar_url || "/default-avatar.png"
+      const userUID = user.id
 
       const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
 
