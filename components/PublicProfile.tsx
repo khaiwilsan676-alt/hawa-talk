@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '../src/lib/supabase'
 import ChatScreen from './ChatScreen'
+import { generateStableId } from '../lib/hash'
 
 export interface TargetUser {
   id?: string
@@ -142,7 +143,7 @@ export default function PublicProfile({
   const [user, setUser] = useState({
     name: 'Hurry User',
     uid: '',
-    displayAccountNumber: '10037962',
+    displayAccountNumber: '', // Will be dynamically populated
     photo: '',
     coverPhoto: '',
     gender: '♂',
@@ -193,7 +194,7 @@ export default function PublicProfile({
   const saveToSupabase = async (updateData: Record<string, any>) => {
     const currentUid =
       user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone')
-    if (currentUid && currentUid !== 'N/A') {
+    if (currentUid) {
       try {
         // Update users table
         const { error: userError } = await supabase
@@ -219,9 +220,13 @@ export default function PublicProfile({
 
     const loadProfileData = async () => {
       if (isOtherUser && targetUser) {
-        const targetUid = targetUser.uid || targetUser.id || 'N/A'
+        const targetUid = targetUser.uid || targetUser.id || ''
 
         let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
+        if (!displayAccNum && targetUid && targetUid !== 'N/A') {
+          displayAccNum = generateStableId(targetUid)
+        }
+
         let initialName = targetUser.name || 'User'
         let photo = targetUser.photo || targetUser.image || ''
         let coverPhoto = targetUser.coverPhoto || ''
@@ -353,7 +358,7 @@ export default function PublicProfile({
 
       // For current user - ID from localStorage (MePage se aaygi)
       const uid =
-        localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
+        localStorage.getItem('userUID') || localStorage.getItem('userPhone') || ''
       
       let storedName = localStorage.getItem('userName') || ''
       let photo = localStorage.getItem('userPhoto') || ''
@@ -375,10 +380,8 @@ export default function PublicProfile({
         setAlbumImages(JSON.parse(storedAlbum))
       }
 
-      // ID from localStorage (MePage ne set kiya hai)
-      let displayAccNum = localStorage.getItem('accountNumber') || 
-                          localStorage.getItem(`user_account_number_${uid}`) || 
-                          '10037962'
+      // Compute display ID from hash logic
+      let displayAccNum = (uid && uid !== 'N/A') ? generateStableId(uid) : ''
 
       if (uid && uid !== 'N/A') {
         try {
@@ -548,7 +551,7 @@ export default function PublicProfile({
   }, [isOtherUser, targetUser])
 
   const handleCopyID = () => {
-    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
+    if (user.displayAccountNumber) {
       navigator.clipboard.writeText(user.displayAccountNumber)
       alert('ID Copied!')
     }
@@ -723,7 +726,7 @@ export default function PublicProfile({
 
   const getCurrentUserData = () => {
     const uid =
-      user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
+      user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone') || ''
     const name = user.name || localStorage.getItem('userName') || 'Me'
     const photo = user.photo || localStorage.getItem('userPhoto') || ''
     return { uid, name, photo }

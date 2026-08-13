@@ -8,6 +8,7 @@ import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { supabase } from "../src/lib/supabase"
+import { generateStableId } from "../lib/hash"
 
 interface MenuItem {
   id: string
@@ -99,7 +100,7 @@ const FEEDBACK_TYPES = [
 
 // EXPORT: getOrCreateAccountNumber - HomePage.tsx ke liye
 export const getOrCreateAccountNumber = (uid: string): string => {
-  if (!uid || uid === 'N/A') return 'N/A'
+  if (!uid || uid === 'N/A') return '' // No N/A or Default ID for unauthenticated
 
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return uid
@@ -109,22 +110,12 @@ export const getOrCreateAccountNumber = (uid: string): string => {
     return SPECIAL_ACCOUNTS[uid]
   }
 
-  const savedAcc = localStorage.getItem('accountNumber')
-  if (savedAcc) {
-    return String(savedAcc).slice(0, 8)
-  }
-
-  const savedUserAcc = localStorage.getItem(`user_account_number_${uid}`)
-  if (savedUserAcc) {
-    return savedUserAcc
-  }
-
-  return uid
+  return generateStableId(uid)
 }
 
 // EXPORT: getAccountNumberFromSupabase - Direct Supabase se
 export const getAccountNumberFromSupabase = async (uid: string): Promise<string> => {
-  if (!uid || uid === 'N/A') return 'N/A'
+  if (!uid || uid === 'N/A') return '' // No N/A or Default ID for unauthenticated
 
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return uid
@@ -148,17 +139,10 @@ export const getAccountNumberFromSupabase = async (uid: string): Promise<string>
       return accountId
     }
 
-    const savedId = localStorage.getItem(`user_account_number_${uid}`)
-    if (savedId) {
-      return savedId
-    }
-
-    return 'N/A'
+    return generateStableId(uid)
   } catch (error) {
     console.error("Error fetching account number from Supabase:", error)
-    const savedId = localStorage.getItem(`user_account_number_${uid}`) || 
-                    localStorage.getItem('accountNumber')
-    return savedId || 'N/A'
+    return generateStableId(uid)
   }
 }
 
@@ -289,7 +273,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       const phone = localStorage.getItem("userPhone") || ""
       const photo = localStorage.getItem("userPhoto") || ""
 
-      let finalAccNum = ""
+      let finalAccNum = getOrCreateAccountNumber(uid)
 
       if (uid && uid !== "N/A") {
         // Direct Supabase se account_id fetch karo
@@ -322,15 +306,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         } catch (err) {
           console.warn("Supabase user fetch error in MePage:", err)
         }
-
-        // Fallback to localStorage if Supabase fails
-        if (!finalAccNum) {
-          finalAccNum = localStorage.getItem(`user_account_number_${uid}`) || 
-                        localStorage.getItem("accountNumber") || 
-                        "N/A"
-        }
-      } else {
-        finalAccNum = "N/A"
       }
 
       setUser({ 
@@ -403,7 +378,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }, [])
 
   const handleCopyAccountNumber = () => {
-    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
+    if (user.displayAccountNumber) {
       navigator.clipboard.writeText(user.displayAccountNumber)
       alert("ID Copied to clipboard!")
     }
@@ -585,15 +560,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </p>
                 )}
 
-                {user.accountNumber !== 'N/A' && (
-                  <button
-                    onClick={handleCopyAccountNumber}
-                    className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
-                    title="Copy ID"
-                  >
-                    <Copy size={14} />
-                  </button>
-                )}
+                <button
+                  onClick={handleCopyAccountNumber}
+                  className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
+                  title="Copy ID"
+                >
+                  <Copy size={14} />
+                </button>
               </div>
 
               {user.phone && (
