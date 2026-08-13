@@ -259,8 +259,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           const parsed = JSON.parse(roomData)
           let finalAccNum = storedAccNum || parsed.accountId;
           if (!finalAccNum) {
-            const accObj = getOrCreateAccountNumber(uid);
-            finalAccNum = accObj.fullAccNum;
+            finalAccNum = getOrCreateAccountNumber(uid);
           }
           setMyRoom({
             ...parsed,
@@ -564,8 +563,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const createUserRoom = useCallback(async () => {
     if (!userUID || !userName) return null;
 
-    const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID);
-    const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum;
+    const storedAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID);
 
     const createdRoomCard: UserCard = {
       id: userUID,
@@ -627,8 +625,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       if (!created) return;
       roomCard = created;
     } else {
-      const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID);
-      const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum;
+      const storedAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID);
       roomCard = {
         id: userUID,
         accountId: storedAccNum,
@@ -1746,10 +1743,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             currentUser={{
               id: userUID,
               uid: userUID,
-              accountId: (() => {
-                const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
-                return typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
-              })(),
+              accountId: localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID),
               name: userName,
               image: userPhoto
             }}

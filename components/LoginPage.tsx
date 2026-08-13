@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
 import { supabase } from "../src/lib/supabase"
+import { generateStableId } from "../lib/hash"
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -76,36 +77,11 @@ export const getOrCreateAccountNumber = (uid: string): string => {
     return SPECIAL_ACCOUNTS[uid]
   }
 
-  // IMPORTANT: Pehle localStorage check karo - permanent ID ke liye
-  const storageKey = `user_account_number_${uid}`
-  const savedAccountNumber = localStorage.getItem(storageKey)
-  
-  if (savedAccountNumber) {
-    return savedAccountNumber
-  }
-
-  // Check global accountNumber (for current session)
-  const globalAccountNumber = localStorage.getItem('accountNumber')
-  if (globalAccountNumber && globalAccountNumber !== 'N/A') {
-    localStorage.setItem(storageKey, globalAccountNumber)
-    return globalAccountNumber
-  }
-
-  // Generate new 8-digit number (sirf pehli baar)
-  let hash = 0
-  for (let i = 0; i < uid.length; i++) {
-    hash = (hash << 5) - hash + uid.charCodeAt(i)
-    hash |= 0
-  }
-  const positiveHash = Math.abs(hash)
-
-  let numericId = String((positiveHash % 9) + 1)
-  for (let i = 1; i < 8; i++) {
-    const digit = Math.abs((positiveHash + i * 31) % 10)
-    numericId += digit
-  }
+  // Generate using hash based on UID deterministically
+  const numericId = generateStableId(uid)
 
   // Save permanently
+  const storageKey = `user_account_number_${uid}`
   localStorage.setItem(storageKey, numericId)
   localStorage.setItem('accountNumber', numericId)
 
@@ -120,29 +96,7 @@ const syncUserToSupabase = async (uid: string, name: string, email: string, phot
     if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
       finalAccountId = SPECIAL_ACCOUNTS[uid] || uid
     } else {
-      // PEHLE localStorage check karo (permanent ID)
-      const storageKey = `user_account_number_${uid}`
-      const savedId = localStorage.getItem(storageKey)
-      
-      if (savedId) {
-        finalAccountId = savedId
-      } else {
-        // Phir Supabase check karo
-        const { data: existingUser } = await supabase
-          .from('users')
-          .select('account_id')
-          .eq('id', uid)
-          .single()
-
-        if (existingUser?.account_id) {
-          finalAccountId = String(existingUser.account_id).slice(0, 8)
-          // Save to localStorage for future
-          localStorage.setItem(storageKey, finalAccountId)
-        } else {
-          // Generate new (sirf pehli baar)
-          finalAccountId = getOrCreateAccountNumber(uid)
-        }
-      }
+      finalAccountId = getOrCreateAccountNumber(uid)
     }
 
     const userData = {
@@ -246,9 +200,7 @@ function GenderSelectionPage({
         const userId = userData.id || userData.uid
         
         // IMPORTANT: ID already generated hai, use wahi rakho
-        const existingAccountId = localStorage.getItem(`user_account_number_${userId}`) || 
-                                  localStorage.getItem("accountNumber") || 
-                                  getOrCreateAccountNumber(userId)
+        const existingAccountId = getOrCreateAccountNumber(userId)
 
         const userDocData = {
           id: userId,
@@ -258,7 +210,7 @@ function GenderSelectionPage({
           country: countryFlag,
           country_code: selectedCountry,
           email: userData.email || '',
-          account_id: existingAccountId.slice(0, 8), // Permanent ID
+          account_id: existingAccountId, // Permanent ID
           updated_at: new Date().toISOString(),
           is_new_user: false,
           setup_complete: true
@@ -278,7 +230,7 @@ function GenderSelectionPage({
             avatar_url: defaultData.avatar_url,
             gender: selectedGender,
             country: countryFlag,
-            account_id: existingAccountId.slice(0, 8),
+            account_id: existingAccountId,
           }, { onConflict: 'id' })
 
         localStorage.setItem("userName", defaultData.name)

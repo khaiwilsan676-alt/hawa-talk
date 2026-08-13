@@ -8,6 +8,7 @@ import MessagePage from './MessagePage'
 import { db } from "../src/lib/supabase"
 import { doc, setDoc, getDoc } from "../src/lib/supabase"
 import Image from 'next/image'
+import { generateStableId } from '../lib/hash'
 
 declare global {
   interface Window {
@@ -82,8 +83,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [isFollowed, setIsFollowed] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest"
-  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || ""
+  const userAccountId = currentUser.accountId || (currentUser.uid ? generateStableId(currentUser.uid) : (currentUser.id ? generateStableId(currentUser.id) : "guest"))
+  const roomOwnerId = roomOwner.accountId || (roomOwner.uid ? generateStableId(roomOwner.uid) : (roomOwner.id ? generateStableId(roomOwner.id) : ""))
   const isRoomOwner = userAccountId === roomOwnerId
 
   const [message, setMessage] = useState("")
@@ -392,7 +393,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const handleCopyId = (e: React.MouseEvent) => {
     e.stopPropagation()
-    navigator.clipboard.writeText(roomOwner.accountId || '')
+    navigator.clipboard.writeText(roomOwnerId || '')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -631,7 +632,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const handleKeep = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' }
+    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwnerId || '' }
     localStorage.setItem('keptRoom', JSON.stringify(roomData))
     setShowExitMenu(false)
     if (onKeepRoom) onKeepRoom(roomData)
@@ -808,7 +809,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                   )}
                 </button>
               </div>
-              <p className="text-xs text-gray-300">ID: {roomOwner.accountId || roomOwner.id || ''}</p>
+              <p className="text-xs text-gray-300">ID: {roomOwnerId}</p>
             </div>
           </div>
 
@@ -1060,7 +1061,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div>
                       <h3 className="font-semibold text-gray-800">{roomName || roomOwner.name}</h3>
                       <div className="flex items-center gap-1 text-xs text-gray-400">
-                        <span>ID: {roomOwner.accountId}</span>
+                        <span>ID: {roomOwnerId}</span>
                         <button onClick={handleCopyId} className="p-0.5 hover:bg-gray-100 rounded transition-colors cursor-pointer" title="Copy ID">
                           <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
