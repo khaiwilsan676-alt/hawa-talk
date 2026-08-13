@@ -1,42 +1,26 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { supabase } from "../src/lib/supabase"
+import { db } from "../src/lib/firebase"
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  getDocs,
+  getDoc
+} from "firebase/firestore"
+
 import MessagePage from './MessagePage'
 import MePage from './MePage';
+import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
 import PublicProfile from './PublicProfile'
+import { generateStableId } from '../lib/hash'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-
-// 🔢 SIMPLE 8-DIGIT GENERATOR (Directly inside HomePage)
-const generate8DigitId = (uid: string): string => {
-  let hash = 0;
-  for (let i = 0; i < uid.length; i++) {
-    const char = uid.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0; 
-  }
-  const eightDigit = Math.abs(hash) % 90000000 + 10000000;
-  return eightDigit.toString();
-}
-
-// Official/Admin IDs list
-const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
-const ADMIN_IDS = ['700001', '700002', '700003']
-
-// Special Accounts
-const SPECIAL_ACCOUNTS: { [key: string]: string } = {
-  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
-  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
-}
-
-// ✅ Common export function (Ab yahi local hai)
-const getOrCreateAccountNumber = (uid: string): string => {
-  if (!uid || uid === 'N/A') return ''
-  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) return uid
-  if (SPECIAL_ACCOUNTS[uid]) return SPECIAL_ACCOUNTS[uid]
-  return generate8DigitId(uid)
-}
 
 interface HomePageProps {
   onLogout?: () => void;
@@ -66,12 +50,16 @@ interface GlobalRoom {
   country: string
   image: string
   accountId: string
-  created_at: string
+  createdAt: number
 }
 
 const BANNERS = [
-  { image: '/1784458869444~2.jpg' },
-  { image: '/1784458869444~2.jpg' }
+  {
+    image: '/1784458869444~2.jpg'
+  },
+  {
+    image: '/1784458869444~2.jpg'
+  }
 ]
 
 type Tab = 'mine' | 'popular'
@@ -109,6 +97,7 @@ const CATEGORY_CARDS = [
   },
 ];
 
+// Sign-in rewards data
 const SIGN_IN_REWARDS = [
   { day: 1, reward: '50 💎', icon: '💎', color: '#FF6B6B' },
   { day: 2, reward: '100 🪙', icon: '🪙', color: '#FFA726' },
@@ -147,6 +136,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
 
+  // Search Sheet State & Results
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSearchTab, setActiveSearchTab] = useState<SearchTab>('user')
@@ -167,6 +157,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
   const [enteredFromKept, setEnteredFromKept] = useState(false)
 
+  // --- NEW: Recent & Following Rooms ---
   const [recentRooms, setRecentRooms] = useState<RecentRoom[]>([])
   const [followingRooms, setFollowingRooms] = useState<KeptRoomData[]>([])
 
@@ -212,28 +203,19 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // Supabase Realtime Listener for globalRooms table
+  // Firebase Realtime Listener for globalRooms collection
   useEffect(() => {
-    const fetchRooms = async () => {
-      const { data, error } = await supabase.from('globalRooms').select('*')
-      if (!error && data) {
-        setGlobalRooms(data as GlobalRoom[])
-      }
-    }
-    fetchRooms()
+    const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
+      const rooms = snapshot.docs.map((d) => ({
+        ...(d.data() as GlobalRoom)
+      }));
+      setGlobalRooms(rooms);
+    });
 
-    const channel = supabase
-      .channel('globalRooms-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'globalRooms' }, () => {
-        fetchRooms()
-      })
-      .subscribe()
+    return () => unsub();
+  }, []);
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
-
+  // Calculate initial position for kept room circle
   useEffect(() => {
     if (typeof window !== 'undefined') {
       circleStartPos.current = {
@@ -244,6 +226,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
+  // Check if dragged circle is over delete zone
   const checkOverlap = useCallback((circleX: number, circleY: number) => {
     if (!deleteZoneRef.current) return false
 
@@ -268,6 +251,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return distance < 60
   }, [])
 
+  // --- Load profile, room state, kept room, recent rooms, following rooms ---
   useEffect(() => {
     const loadProfile = () => {
       const name = localStorage.getItem('userName') || 'JIYA'
@@ -288,7 +272,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
           const parsed = JSON.parse(roomData)
           let finalAccNum = storedAccNum || parsed.accountId;
           if (!finalAccNum) {
-            finalAccNum = getOrCreateAccountNumber(uid);
+            const accObj = getOrCreateAccountNumber(uid);
+            finalAccNum = accObj.fullAccNum;
           }
           setMyRoom({
             ...parsed,
@@ -313,10 +298,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       }
 
+      // Load recent rooms
       const storedRecent = localStorage.getItem('recentRooms')
       if (storedRecent) {
         try { setRecentRooms(JSON.parse(storedRecent)) } catch {}
       }
+      // Load following rooms
       const storedFollowing = localStorage.getItem('followingRooms')
       if (storedFollowing) {
         try { setFollowingRooms(JSON.parse(storedFollowing)) } catch {}
@@ -328,6 +315,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => window.removeEventListener('storage', loadProfile)
   }, [])
 
+  // Save recent and following rooms when they change
   useEffect(() => {
     localStorage.setItem('recentRooms', JSON.stringify(recentRooms))
   }, [recentRooms])
@@ -336,6 +324,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     localStorage.setItem('followingRooms', JSON.stringify(followingRooms))
   }, [followingRooms])
 
+  // Listen for storage changes (e.g., keptRoom removed)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'keptRoom') {
@@ -362,6 +351,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => clearInterval(interval)
   }, [])
 
+  // Load sign-in day from localStorage
   useEffect(() => {
     const savedDay = localStorage.getItem('signInDay')
     if (savedDay) {
@@ -369,6 +359,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
+  // --- Helper functions for recent and following rooms ---
   const addToRecent = (room: KeptRoomData) => {
     setRecentRooms(prev => {
       const filtered = prev.filter(r => r.accountId !== room.accountId)
@@ -381,12 +372,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
       if (prev.some(r => r.accountId === room.accountId)) return prev
       return [...prev, room]
     })
+    // Optionally update Firestore followers array here
   }
 
   const handleUnfollowRoom = (roomId: string) => {
     setFollowingRooms(prev => prev.filter(r => r.accountId !== roomId))
+    // Optionally update Firestore followers array here
   }
 
+  // Mouse & Touch drag handlers for kept room circle
   const handleCircleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -488,6 +482,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [isDragging, dragPosition, checkOverlap])
 
+  // Touch swipe handlers for banner
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchEndX.current = e.touches[0].clientX
@@ -574,7 +569,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const handleKeptRoomClick = () => {
     if (isDragging) return
     if (keptRoom) {
-      addToRecent(keptRoom)
+      addToRecent(keptRoom)   // Add to recent when entering via kept room
       setEnteredFromKept(true)
       const roomUser: UserCard = {
         id: keptRoom.accountId,
@@ -588,91 +583,58 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // NEW: createUserRoom function
-  const createUserRoom = useCallback(async () => {
-    if (!userUID || !userName) return null;
+  // ✅ STRICT BINDING: Mine Tab Card click strictly opens logged-in user's room
+  const handleCardClick = async () => {
+    setEnteredFromKept(false)
 
-    const storedAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID);
+    const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+    const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
 
     const createdRoomCard: UserCard = {
       id: userUID,
       accountId: storedAccNum,
       name: userName,
       country: '🇮🇳',
-      image: userPhoto,
-    };
-
-    // Update local state and localStorage
-    localStorage.setItem('isRoomCreated', 'true');
-    localStorage.setItem('myRoom', JSON.stringify(createdRoomCard));
-    setIsRoomCreated(true);
-    setMyRoom(createdRoomCard);
-
-    // Sync to Supabase
-    try {
-      await supabase.from('globalRooms').upsert({
-        id: userUID,
-        name: userName,
-        country: '🇮🇳',
-        image: userPhoto,
-        accountId: storedAccNum,
-        created_at: new Date().toISOString(),
-      });
-
-      await supabase.from('users').upsert({
-        id: userUID,
-        name: userName,
-        country: '🇮🇳',
-        image: userPhoto,
-        accountId: storedAccNum,
-        created_at: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.error('Error syncing room:', err);
+      image: userPhoto
     }
 
-    return createdRoomCard;
-  }, [userUID, userName, userPhoto]);
-
-  // NEW: Auto-create room on mount if not created
-  const autoCreatedRef = useRef(false);
-
-  useEffect(() => {
-    if (userUID && !isRoomCreated && !autoCreatedRef.current) {
-      autoCreatedRef.current = true;
-      createUserRoom();
-    }
-  }, [userUID, isRoomCreated, createUserRoom]);
-
-  // MODIFIED handleCardClick to use createUserRoom
-  const handleCardClick = async () => {
-    setEnteredFromKept(false);
-
-    let roomCard: UserCard;
     if (!isRoomCreated) {
-      const created = await createUserRoom();
-      if (!created) return;
-      roomCard = created;
-    } else {
-      const storedAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID);
-      roomCard = {
+      localStorage.setItem('isRoomCreated', 'true')
+      localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
+      setIsRoomCreated(true)
+      setMyRoom(createdRoomCard)
+
+      // Save room data to Firestore
+      await setDoc(doc(db, "globalRooms", userUID), {
         id: userUID,
-        accountId: storedAccNum,
         name: userName,
-        country: '🇮🇳',
+        country: "🇮🇳",
         image: userPhoto,
-      };
+        accountId: storedAccNum,
+        createdAt: Date.now()
+      }, { merge: true });
+
+      // Save user data to Firestore
+      await setDoc(doc(db, "users", userUID), {
+        id: userUID,
+        name: userName,
+        country: "🇮🇳",
+        image: userPhoto,
+        accountId: storedAccNum,
+        createdAt: Date.now()
+      }, { merge: true });
     }
 
-    addToRecent({ name: roomCard.name, image: roomCard.image, accountId: roomCard.accountId });
-    setSelectedUser(roomCard);
-    setCurrentPage('room');
-  };
+    addToRecent({ name: userName, image: userPhoto, accountId: storedAccNum }) // Add own room to recent
+    setSelectedUser(createdRoomCard)
+    setCurrentPage('room')
+  }
 
   const handleHouseClick = () => {
     handleCardClick()
   }
 
+  // Handle Room Card Click from Search Overlay or Home Grid
   const handleUserCardClick = (user: UserCard) => {
     setEnteredFromKept(false)
     addToRecent({ name: user.name, image: user.image, accountId: user.accountId || user.id })
@@ -683,6 +645,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
+  // Handle User Search Item Click -> Opens Target User's Public Profile
   const handleUserProfileClick = (user: UserCard) => {
     setSelectedUser(user)
     setIsPublicProfileActive(true)
@@ -708,6 +671,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setSelectedUser(null)
   }
 
+  // ROBUST SEARCH FUNCTION FOR FIRESTORE
   const handlePerformSearch = async () => {
     if (!searchQuery.trim()) {
       setSearchResults([])
@@ -723,55 +687,88 @@ export default function HomePage({ onLogout }: HomePageProps) {
       const foundList: GlobalRoom[] = []
       const addedIds = new Set<string>()
 
-      const addResult = (id: string, data: any) => {
-        const accId = String(data.accountId || data.id || id)
-        if (!addedIds.has(id) && !addedIds.has(accId)) {
-          addedIds.add(id)
+      const addResult = (docId: string, uData: any) => {
+        const accId = String(uData.accountId || uData.id || docId)
+        if (!addedIds.has(docId) && !addedIds.has(accId)) {
+          addedIds.add(docId)
           addedIds.add(accId)
           foundList.push({
-            id,
-            name: data.name || 'User',
-            country: data.country || '🇮🇳',
-            image: data.image || data.photo || '/default-avatar.png',
+            id: docId,
+            name: uData.name || 'User',
+            country: uData.country || '🇮🇳',
+            image: uData.image || uData.photo || '/default-avatar.png',
             accountId: accId,
-            created_at: data.created_at || new Date().toISOString()
+            createdAt: uData.createdAt || Date.now()
           })
         }
       }
 
-      globalRooms.forEach((room) => {
-        const accId = String(room.accountId || room.id || '')
-        const name = String(room.name || '')
-        if (accId.toLowerCase().includes(queryLower) || name.toLowerCase().includes(queryLower)) {
+      // 1. Local globalRooms search (case-insensitive)
+      globalRooms.forEach((r) => {
+        const accId = String(r.accountId || r.id || '')
+        const rName = String(r.name || '')
+        if (
+          accId.toLowerCase().includes(queryLower) ||
+          rName.toLowerCase().includes(queryLower)
+        ) {
           if (!addedIds.has(accId)) {
             addedIds.add(accId)
-            foundList.push(room)
+            foundList.push(r)
           }
         }
       })
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*')
-        .or(`accountId.ilike.%${queryRaw}%,name.ilike.%${queryRaw}%`)
-      if (userData) userData.forEach((u: any) => addResult(u.id, u))
+      // 2. Direct Document ID Search in 'users'
+      try {
+        const userDocRef = doc(db, "users", queryRaw)
+        const userDocSnap = await getDoc(userDocRef)
+        if (userDocSnap.exists()) {
+          addResult(userDocSnap.id, userDocSnap.data())
+        }
+      } catch (e) {
+        console.warn("Direct doc search skipped:", e)
+      }
 
-      const { data: roomData } = await supabase
-        .from('globalRooms')
-        .select('*')
-        .or(`accountId.ilike.%${queryRaw}%,name.ilike.%${queryRaw}%`)
-      if (roomData) roomData.forEach((r: any) => addResult(r.id, r))
+      // 3. 'users' collection accountId query
+      try {
+        const usersRef = collection(db, "users")
+        const qRange = query(
+          usersRef,
+          where("accountId", ">=", queryRaw),
+          where("accountId", "<=", queryRaw + '\uf8ff')
+        )
+        const snapRange = await getDocs(qRange)
+        snapRange.docs.forEach((d) => addResult(d.id, d.data()))
+      } catch (err) {
+        console.warn("Users query error:", err)
+      }
 
+      // 4. 'globalRooms' collection query
+      try {
+        const roomsRef = collection(db, "globalRooms")
+        const qRooms = query(
+          roomsRef,
+          where("accountId", ">=", queryRaw),
+          where("accountId", "<=", queryRaw + '\uf8ff')
+        )
+        const snapRooms = await getDocs(qRooms)
+        snapRooms.docs.forEach((d) => addResult(d.id, d.data()))
+      } catch (err) {
+        console.warn("globalRooms query error:", err)
+      }
+
+      // Sort exact match first
       foundList.sort((a, b) => {
         const aExact = String(a.accountId).toLowerCase() === queryLower || a.id.toLowerCase() === queryLower
         const bExact = String(b.accountId).toLowerCase() === queryLower || b.id.toLowerCase() === queryLower
         if (aExact && !bExact) return -1
         if (!aExact && bExact) return 1
-        return (b.created_at || '').localeCompare(a.created_at || '')
+        return (b.createdAt || 0) - (a.createdAt || 0)
       })
 
       setSearchResults(foundList.slice(0, 20))
       setHasSearched(true)
+
     } catch (err) {
       console.error("Search error:", err)
     } finally {
@@ -779,6 +776,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
+  // Sign-in modal handlers
   const handleImageClick = () => {
     setIsSignInModalOpen(true)
   }
@@ -824,6 +822,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
+  // Filter out fake rooms like "Jiys" from the Popular tab
   const allRooms = globalRooms.filter(room =>
     !/jiys/i.test(room.name) && room.name !== 'User'
   )
@@ -927,6 +926,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </button>
       </div>
 
+      {/* Following rooms */}
       {activeMineTab === 'following' && (
         followingRooms.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5">
@@ -949,12 +949,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     src={room.image}
                     alt={room.name}
                     className="w-full h-full object-cover"
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className="text-base">🇮🇳</span>
-                      <div className="flex-1">
-                        <div className="text-white font-semibold text-xs">{room.name}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-semibold text-xs truncate">
+                          {room.name}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -982,6 +985,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )
       )}
 
+      {/* Recent rooms */}
       {activeMineTab === 'recent' && (
         recentRooms.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5">
@@ -1004,12 +1008,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     src={room.image}
                     alt={room.name}
                     className="w-full h-full object-cover"
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className="text-base">🇮🇳</span>
-                      <div className="flex-1">
-                        <div className="text-white font-semibold text-xs">{room.name}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-semibold text-xs truncate">
+                          {room.name}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1127,12 +1134,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   src={room.image}
                   alt={room.name}
                   className="w-full h-full object-cover"
+                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                   <div className="flex items-center gap-1.5">
                     <span className="text-base">{room.country}</span>
-                    <div className="flex-1">
-                      <div className="text-white font-semibold text-xs">{room.name}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white font-semibold text-xs truncate">
+                        {room.name}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1205,6 +1215,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
+
+        .truncate {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
       `}</style>
 
       {/* SEARCH OVERLAY SHEET */}
@@ -1216,6 +1232,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
           }}
         >
+          {/* Top Row Header */}
           <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100 safe-top">
             <button
               onClick={() => setIsSearchOpen(false)}
@@ -1251,6 +1268,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </button>
           </div>
 
+          {/* User / Room Tabs */}
           <div className="flex px-4 border-b border-gray-100 mt-1">
             <button
               type="button"
@@ -1278,6 +1296,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </button>
           </div>
 
+          {/* Search Results */}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 hide-scrollbar">
             {isSearching ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -1772,7 +1791,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
             currentUser={{
               id: userUID,
               uid: userUID,
-              accountId: localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID),
+              accountId: (() => {
+                const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+                return typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
+              })(),
               name: userName,
               image: userPhoto
             }}
@@ -1887,4 +1909,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-}
+  }
