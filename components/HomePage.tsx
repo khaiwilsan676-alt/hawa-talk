@@ -560,34 +560,37 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  const handleCardClick = async () => {
-    setEnteredFromKept(false)
+  // NEW: createUserRoom function
+  const createUserRoom = useCallback(async () => {
+    if (!userUID || !userName) return null;
 
-    const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
-    const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
+    const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID);
+    const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum;
 
     const createdRoomCard: UserCard = {
       id: userUID,
       accountId: storedAccNum,
       name: userName,
       country: '🇮🇳',
-      image: userPhoto
-    }
+      image: userPhoto,
+    };
 
-    if (!isRoomCreated) {
-      localStorage.setItem('isRoomCreated', 'true')
-      localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
-      setIsRoomCreated(true)
-      setMyRoom(createdRoomCard)
+    // Update local state and localStorage
+    localStorage.setItem('isRoomCreated', 'true');
+    localStorage.setItem('myRoom', JSON.stringify(createdRoomCard));
+    setIsRoomCreated(true);
+    setMyRoom(createdRoomCard);
 
+    // Sync to Supabase
+    try {
       await supabase.from('globalRooms').upsert({
         id: userUID,
         name: userName,
         country: '🇮🇳',
         image: userPhoto,
         accountId: storedAccNum,
-        created_at: new Date().toISOString()
-      })
+        created_at: new Date().toISOString(),
+      });
 
       await supabase.from('users').upsert({
         id: userUID,
@@ -595,14 +598,50 @@ export default function HomePage({ onLogout }: HomePageProps) {
         country: '🇮🇳',
         image: userPhoto,
         accountId: storedAccNum,
-        created_at: new Date().toISOString()
-      })
+        created_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('Error syncing room:', err);
     }
 
-    addToRecent({ name: userName, image: userPhoto, accountId: storedAccNum })
-    setSelectedUser(createdRoomCard)
-    setCurrentPage('room')
-  }
+    return createdRoomCard;
+  }, [userUID, userName, userPhoto]);
+
+  // NEW: Auto-create room on mount if not created
+  const autoCreatedRef = useRef(false);
+
+  useEffect(() => {
+    if (userUID && !isRoomCreated && !autoCreatedRef.current) {
+      autoCreatedRef.current = true;
+      createUserRoom();
+    }
+  }, [userUID, isRoomCreated, createUserRoom]);
+
+  // MODIFIED handleCardClick to use createUserRoom
+  const handleCardClick = async () => {
+    setEnteredFromKept(false);
+
+    let roomCard: UserCard;
+    if (!isRoomCreated) {
+      const created = await createUserRoom();
+      if (!created) return;
+      roomCard = created;
+    } else {
+      const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID);
+      const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum;
+      roomCard = {
+        id: userUID,
+        accountId: storedAccNum,
+        name: userName,
+        country: '🇮🇳',
+        image: userPhoto,
+      };
+    }
+
+    addToRecent({ name: roomCard.name, image: roomCard.image, accountId: roomCard.accountId });
+    setSelectedUser(roomCard);
+    setCurrentPage('room');
+  };
 
   const handleHouseClick = () => {
     handleCardClick()
@@ -1825,4 +1864,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-         }
+}
