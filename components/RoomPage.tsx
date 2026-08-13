@@ -5,6 +5,7 @@ import EmojiPicker from './Emojipicker'
 import GiftPicker from './GiftPicker'
 import RoomSettingPage from './RoomSettingPage'
 import MessagePage from './MessagePage'
+import RoomProfile from './RoomProfile'
 import { db } from "../src/lib/firebase"
 import { doc, setDoc, getDoc } from "firebase/firestore"
 import Image from 'next/image'
@@ -82,6 +83,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [isFollowed, setIsFollowed] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // ----- PROFILE STATE -----
+  const [showUserProfile, setShowUserProfile] = useState(false)
+  const [profileUser, setProfileUser] = useState<{
+    name: string
+    image: string
+    accountId: string
+  } | null>(null)
+
   const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest"
   const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || ""
   const isRoomOwner = userAccountId === roomOwnerId
@@ -146,6 +155,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const displayRoomName = roomName
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
     : (roomOwner.name?.length > 6 ? roomOwner.name?.substring(0, 6) + '...' : roomOwner.name || 'User')
+
+  const openProfile = (user: { name: string; image: string; accountId: string }) => {
+    setProfileUser(user)
+    setShowUserProfile(true)
+  }
 
   // Fetch room data from Firestore
   useEffect(() => {
@@ -438,6 +452,18 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setShowSeatSheet(true)
   }
 
+  const handleSeatAvatarClick = (seat: Seat) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (seat.isOccupied && seat.user) {
+      openProfile({
+        name: seat.user.name,
+        image: seat.user.image,
+        accountId: seat.user.accountId
+      })
+    }
+  }
+
   const handleTakeSeat = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault()
@@ -652,13 +678,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return (
         <>
           <div className="flex justify-center">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
       )
@@ -667,20 +693,20 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return (
         <>
           <div className="flex justify-center gap-4">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} onAvatarClick={handleSeatAvatarClick(seats[9])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
       )
@@ -689,25 +715,25 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return (
         <>
           <div className="flex justify-center">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
           <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} onAvatarClick={handleSeatAvatarClick(seats[9])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} onAvatarClick={handleSeatAvatarClick(seats[10])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} onAvatarClick={handleSeatAvatarClick(seats[11])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} onAvatarClick={handleSeatAvatarClick(seats[12])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
       )
@@ -716,19 +742,19 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     return (
       <>
         <div className="flex justify-center">
-          <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
         </div>
         <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
         </div>
         <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
         </div>
       </>
     )
@@ -879,7 +905,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                 <div key={msg.id} className="leading-[1.9rem]">
                   {msg.type === 'join' ? (
                     <div className="flex items-start gap-1.5 px-1">
-                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <div
+                        className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                      >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col bg-white/8 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/5">
@@ -889,7 +918,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     </div>
                   ) : msg.imageUrl ? (
                     <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.9rem)' }}>
-                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <div
+                        className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                      >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -901,7 +933,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     </div>
                   ) : (
                     <div className="flex items-start gap-2">
-                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <div
+                        className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                      >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -995,7 +1030,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                 <div className="space-y-2">
                   {roomUsers.map((user) => (
                     <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      <div
+                        className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+                        onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}
+                      >
                         <img
                           src={user.image || "/default-avatar.png"}
                           alt={user.name}
@@ -1036,14 +1074,19 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-2 flex items-center justify-center gap-2">
-              {/* Warning icon - only show for non-room owners */}
-              {!isRoomOwner && (
-                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              )}
+            {/* Warning icon top-left (only for non‑owners) */}
+            {!isRoomOwner && (
+              <svg
+                viewBox="0 0 24 24"
+                className="absolute top-3 left-3 w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round"
+              >
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            )}
+
+            <div className="px-6 pt-6 pb-2 flex items-center justify-center">
               <h2 className="text-lg font-bold text-gray-800">Room Information</h2>
             </div>
             <div className="flex border-b border-gray-200 px-6">
@@ -1081,8 +1124,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                 </div>
               ) : (
                 <div className="space-y-2">
+                  {/* Owner row with clickable avatar */}
                   <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                    <div
+                      className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+                      onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}
+                    >
                       <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                     </div>
                     <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -1094,7 +1141,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                   </div>
                   {roomFollowers.map(follower => (
                     <div key={follower.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                      <div
+                        className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+                        onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}
+                      >
                         <img src={follower.image || "/default-avatar.png"} alt={follower.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1108,6 +1158,21 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             </div>
           </div>
         </div>
+      )}
+
+      {/* ---------- RoomProfile Bottom Sheet ---------- */}
+      {showUserProfile && profileUser && (
+        <RoomProfile
+          user={{
+            name: profileUser.name,
+            image: profileUser.image,
+            accountId: profileUser.accountId,
+          }}
+          onClose={() => setShowUserProfile(false)}
+          onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
+          onMessage={() => console.log('Message clicked for', profileUser.accountId)}
+          onCopyId={() => console.log('Copy ID clicked')}
+        />
       )}
 
       {/* ---------- Exit Menu ---------- */}
@@ -1206,7 +1271,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 }
 
 // ---------- SeatItem Component ----------
-function SeatItem({ seatNumber, seatData, onClick, accountId, isRoomOwner }: { seatNumber: number; seatData?: Seat; onClick: (e: React.MouseEvent) => void; accountId: string; isRoomOwner: boolean }) {
+function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isRoomOwner }: {
+  seatNumber: number;
+  seatData?: Seat;
+  onClick: (e: React.MouseEvent) => void;
+  onAvatarClick?: (e: React.MouseEvent) => void;
+  accountId: string;
+  isRoomOwner: boolean;
+}) {
   const isLocked = seatData?.isLocked ?? false
   const isOccupied = seatData?.isOccupied ?? false
   const isSpeaking = seatData?.isSpeaking ?? false
@@ -1231,7 +1303,15 @@ function SeatItem({ seatNumber, seatData, onClick, accountId, isRoomOwner }: { s
             </div>
           ) : isOccupied && user ? (
             <>
-              <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full rounded-full object-cover pointer-events-none" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+              <img
+                src={user.image || "/default-avatar.png"}
+                alt={user.name}
+                className="w-full h-full rounded-full object-cover pointer-events-none"
+                draggable={false}
+                onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
+                onClick={onAvatarClick}
+                style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+              />
               {isMuted && (
                 <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
                   <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
@@ -1263,4 +1343,4 @@ function SeatItem({ seatNumber, seatData, onClick, accountId, isRoomOwner }: { s
       </span>
     </div>
   )
-}
+    }
