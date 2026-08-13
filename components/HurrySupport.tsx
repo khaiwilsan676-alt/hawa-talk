@@ -9,9 +9,16 @@ interface HurrySupportProps {
   onBack?: () => void;
 }
 
+interface MessageType {
+  text?: string;
+  image?: string;
+  isBot: boolean;
+  timestamp?: number;
+}
+
 export default function HurrySupport({ onBack }: HurrySupportProps) {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Array<{ text: string; isBot: boolean; timestamp?: number }>>([]);
+  const [messages, setMessages] = useState<Array<MessageType>>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [userId, setUserId] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
@@ -68,7 +75,6 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
-          // Load existing chat
           const docSnap = querySnapshot.docs[0];
           const data = docSnap.data();
           setChatDocId(docSnap.id);
@@ -76,17 +82,16 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
           if (data.messages && data.messages.length > 0) {
             setMessages(data.messages);
           } else {
-            const welcomeMessage = {
-              text: "Welcome to Hurry Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hurry App — I'm here to help! 😊",
+            const welcomeMessage: MessageType = {
+              text: "Welcome to Hurry Support 👋\n\nI am Daisy, your Official Customer Support Assistant.\n\nHow can I help you today? Aap Hurry App se juda koi bhi sawal pooch sakte hain! 😊",
               isBot: true,
               timestamp: Date.now()
             };
             setMessages([welcomeMessage]);
           }
         } else {
-          // Create new chat
-          const welcomeMessage = {
-            text: "Welcome to Hurry Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hurry App — I'm here to help! 😊",
+          const welcomeMessage: MessageType = {
+            text: "Welcome to Hurry Support 👋\n\nI am Daisy, your Official Customer Support Assistant.\n\nHow can I help you today? Aap Hurry App se juda koi bhi sawal pooch sakte hain! 😊",
             isBot: true,
             timestamp: Date.now()
           };
@@ -104,8 +109,8 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
         chatLoadedRef.current = true;
       } catch (error) {
         console.error("Error loading/creating chat:", error);
-        const welcomeMessage = {
-          text: "Welcome to Hurry Support! 👋\n\nI'm Daisy, your AI Customer Support Assistant.\n\nHow may I assist you today? Feel free to ask any questions related to the Hurry App — I'm here to help! 😊",
+        const welcomeMessage: MessageType = {
+          text: "Welcome to Hurry Support 👋\n\nI am Daisy, your Official Customer Support Assistant.\n\nHow can I help you today? Aap Hurry App se juda koi bhi sawal pooch sakte hain! 😊",
           isBot: true,
           timestamp: Date.now()
         };
@@ -117,7 +122,7 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
   }, [userId, userName, userEmail]);
 
   // Save messages to Firestore
-  const saveChatToFirestore = async (updatedMessages: Array<{ text: string; isBot: boolean; timestamp?: number }>) => {
+  const saveChatToFirestore = async (updatedMessages: Array<MessageType>) => {
     if (!chatDocId || !userId) return;
     
     try {
@@ -184,26 +189,67 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
     });
   };
 
-  // Professional response generation
-  const generateBotResponse = (userMsg: string) => {
+  // Response generation logic
+  const generateBotResponse = (userMsg: string): MessageType => {
     const msg = userMsg.toLowerCase().trim();
     const isHindi = /[\u0900-\u097F]/.test(msg);
+    
+    // Check if question asks for Yes / No confirmation
+    const isYesNoQuestion = 
+      msg.startsWith("can i") || msg.startsWith("can we") || msg.startsWith("is it") || 
+      msg.startsWith("is there") || msg.startsWith("do you") || msg.startsWith("kya ") || 
+      msg.includes("ho sakta h") || msg.includes("ho sakta hai") || msg.includes("kya main") ||
+      msg.includes("kya room") || msg.includes("kya coin") || msg.includes("kya hum");
+
+    // Helper for Yes / No Prefix
+    const getYesPrefix = () => {
+      if (isHindi) return "हाँ, बिल्कुल! ";
+      if (msg.includes("kya") || msg.includes("ho sakta")) return "Yes, bilkul! ";
+      return "Yes, absolutely! ";
+    };
+
+    // SELLER POLICY (Shows Policy Image)
+    if (msg.includes("seller") || msg.includes("seller policy") || msg.includes("become seller") || 
+        msg.includes("seller lena") || msg.includes("seller banna") || msg.includes("seller ki policy")) {
+      let policyText = "Here is our Official Seller Policy. Please check the policy image below:";
+      if (isHindi) {
+        policyText = "यह हमारी ऑफिसियल सेलर पॉलिसी है। कृपया नीचे दी गई इमेज देखें:";
+      } else if (msg.includes("kya") || msg.includes("hai")) {
+        policyText = "Yeh hai hamari Official Seller Policy! Aap niche di gayi image check kar sakte hain:";
+      }
+
+      return {
+        text: policyText,
+        image: "/file_00000000a4a882089e08989f17098062.png",
+        isBot: true
+      };
+    }
 
     // GREETINGS
     if (msg.includes("hi") || msg.includes("hello") || msg.includes("hlw") || 
         msg.includes("hey") || msg.includes("नमस्ते") || msg.includes("नमस्कार") ||
         msg.includes("good morning") || msg.includes("good evening")) {
-      return isHindi
-        ? "नमस्ते! 🙏\n\nहवा सपोर्ट में आपका स्वागत है।\n\nमैं Daisy हूँ, आपकी AI कस्टमर सपोर्ट असिस्टेंट।\n\nकृपया बताएं मैं आपकी किस प्रकार सहायता कर सकती हूँ?"
-        : "Hello! 👋\n\nWelcome to Hurry Support. I'm Daisy, your AI Customer Support Assistant.\n\nPlease let me know how I can assist you today.";
+      if (isHindi) {
+        return {
+          text: "नमस्ते! 🙏\n\nHurry Support में आपका स्वागत है। मैं Daisy हूँ, आपकी AI कस्टमर सपोर्ट असिस्टेंट।\n\nबताएं, मैं आज आपकी क्या सहायता कर सकती हूँ?",
+          isBot: true
+        };
+      }
+      return {
+        text: "Hello! 👋\n\nWelcome to Hurry Support. I am Daisy, your AI Customer Support Assistant.\n\nKaise help kar sakti hoon aaj aapki? Please feel free to ask!",
+        isBot: true
+      };
     }
 
     // THANK YOU
     if (msg.includes("thank") || msg.includes("thanks") || msg.includes("thx") ||
         msg.includes("धन्यवाद") || msg.includes("शुक्रिया")) {
-      return isHindi
-        ? "आपका स्वागत है! 😊\n\nहमें मदद करके खुशी हुई।\n\nअगर आपको किसी और चीज़ की ज़रूरत हो तो कृपया बेझिझक पूछें।"
-        : "You're welcome! 😊\n\nGlad I could help you.\n\nIf you need anything else, please feel free to ask.";
+      return {
+        text: isHindi 
+          ? "आपका स्वागत है! 😊\n\nआपकी मदद करके ख़ुशी हुई। अगर कोई और सवाल हो तो बेझिझक पूछें।"
+          : "You're most welcome! 😊\n\nHelp karke khushi hui. Agar koi aur doubt ho toh zaroor batayein!",
+        isBot: true
+      };
     }
 
     // COIN RATES & RECHARGE INFO
@@ -213,262 +259,213 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
         msg.includes("रिचार्ज") || msg.includes("सिक्का") || msg.includes("खरीद") || 
         msg.includes("payment") || msg.includes("pay") || msg.includes("google play") || 
         msg.includes("phonepay") || msg.includes("paytm")) {
-      return "💎 **Hurry App Coins Rates & Recharge Info**\n\n" +
-             "💰 **Coins Exchange Rates:**\n" +
-             "• **Offline (Through Official Seller):**\n" +
-             "  👉 **1$ = 1,050,000 Coins**\n\n" +
-             "• **Online Recharge (In-App Wallet):**\n" +
-             "  👉 **1$ = 1,000,000 Coins (+30,000 Bonus Coins)**\n" +
-             "  *(Total: 1,030,000 Coins will show in your Wallet option)*\n\n" +
-             "📲 **How to Recharge Online:**\n" +
-             "📌 **Step 1:** Go to **Profile** section.\n" +
-             "📌 **Step 2:** Tap on **Coins** / **Wallet**.\n" +
-             "📌 **Step 3:** Select your package & preferred payment method.\n\n" +
-             "💳 **Accepted Payment Methods:** Google Play, PhonePe, Paytm & Official Site.\n\n" +
-             "🤝 **Want to buy Offline via Seller?**\n" +
-             "Contact our Official Team for verified seller options.";
-    }
-
-    // SELLER POLICY & PACKAGES
-    if (msg.includes("seller") || msg.includes("seller policy") || msg.includes("become seller") || 
-        msg.includes("earning") || msg.includes("earn") || msg.includes("sell coin") || 
-        msg.includes("विक्रेता") || msg.includes("कमाई") || msg.includes("seller lena") || 
-        msg.includes("seller banna") || msg.includes("100$") || msg.includes("200$") || msg.includes("300$")) {
-      return "💼 **Hurry Official Seller Policy & Packages**\n\n" +
-             "Become an Official Seller to buy in bulk, get special privileges, and earn by reselling coins!\n\n" +
-             "📊 **Seller Coin Packages (Rate: 1$ = 1,050,000 Coins):**\n\n" +
-             "💵 **$100 Package:**\n" +
-             "• Total Coins: **105,000,000 Coins** (10.5 Crore)\n\n" +
-             "💵 **$200 Package:**\n" +
-             "• Total Coins: **210,000,000 Coins** (21 Crore)\n\n" +
-             "💵 **$300 Package:**\n" +
-             "• Total Coins: **315,000,000 Coins** (31.5 Crore)\n\n" +
-             "📋 **Policy & Benefits:**\n" +
-             "• Instant Coin transfers to your seller dashboard.\n" +
-             "• Exclusive seller badge & customer priority.\n" +
-             "• Dedicated Official Admin support.\n\n" +
-             "📩 Contact Official Admin (**Hurry_IN** - ID: 100002) to apply for Seller Status!";
+      
+      const prefix = isYesNoQuestion ? getYesPrefix() : "";
+      
+      return {
+        text: prefix + "💎 Hurry App Coins Rates & Recharge Info\n\n" +
+               "💰 Coins Exchange Rates:\n" +
+               "• Offline (Through Official Seller):\n" +
+               "  👉 1$ = 1,050,000 Coins\n\n" +
+               "• Online Recharge (In-App Wallet):\n" +
+               "  👉 1$ = 1,000,000 Coins (+30,000 Bonus Coins)\n" +
+               "  (Total: 1,030,000 Coins aapke Wallet me show honge)\n\n" +
+               "📲 Online Recharge Kaise Karein:\n" +
+               "📌 Step 1: Profile section me jayein.\n" +
+               "📌 Step 2: Coins / Wallet par tap karein.\n" +
+               "📌 Step 3: Package & preferred payment method select karein.\n\n" +
+               "💳 Payment Methods: Google Play, PhonePe, Paytm & Official Site.\n\n" +
+               "🤝 Offline Seller se buy karne ke liye Official Team se contact karein.",
+        isBot: true
+      };
     }
 
     // ROOM MUSIC
     if (msg.includes("music") || msg.includes("song") || msg.includes("play music") ||
         msg.includes("music play") || msg.includes("room music") || msg.includes("संगीत") ||
         msg.includes("गाना") || msg.includes("म्यूजिक") || msg.includes("dj")) {
-      return "🎵 **How to Play Music in Your Room**\n\n" +
-             "📌 **Step 1:** Open your room.\n" +
-             "📌 **Step 2:** At the bottom, tap on the **4-Grid Option** (four square icon).\n" +
-             "📌 **Step 3:** Tap on **Music Play** option.\n" +
-             "📌 **Step 4:** Select your music, add it, and press **Play**.\n\n" +
-             "🎶 Enjoy the music with your room members!";
+      
+      const prefix = isYesNoQuestion ? getYesPrefix() : "";
+
+      return {
+        text: prefix + "🎵 Room Me Music Kaise Play Karein:\n\n" +
+               "📌 Step 1: Apna room open karein.\n" +
+               "📌 Step 2: Bottom me 4-Grid Option (4 squares icon) par tap karein.\n" +
+               "📌 Step 3: Music Play option par click karein.\n" +
+               "📌 Step 4: Song select karke add karein aur Play dabaayein.\n\n" +
+               "🎶 Room members ke saath music enjoy karein!",
+        isBot: true
+      };
     }
 
     // PLAY GAMES
     if (msg.includes("game") || msg.includes("play game") || msg.includes("खेल") ||
         msg.includes("गेम") || msg.includes("khel") || msg.includes("gaming")) {
-      return "🎮 **How to Play Games & Win Coins**\n\n" +
-             "📌 **Step 1:** Open your room.\n" +
-             "📌 **Step 2:** At the bottom, tap on the **4-Grid Option**.\n" +
-             "📌 **Step 3:** You will see **Game Remote** options.\n" +
-             "📌 **Step 4:** Select any game and start playing.\n\n" +
-             "🎯 Play more, win more! Enjoy with your friends!";
+      
+      const prefix = isYesNoQuestion ? getYesPrefix() : "";
+
+      return {
+        text: prefix + "🎮 Games Khelkar Coins Kaise Jeetein:\n\n" +
+               "📌 Step 1: Room open karein.\n" +
+               "📌 Step 2: Bottom me 4-Grid Option par tap karein.\n" +
+               "📌 Step 3: Game Remote icon choose karein.\n" +
+               "📌 Step 4: Kisi bhi game ko select karke dosto ke saath khele!",
+        isBot: true
+      };
     }
 
     // CREATE ROOM
     if (msg.includes("create room") || msg.includes("open room") || msg.includes("new room") ||
         msg.includes("रूम") || msg.includes("कमरा") || msg.includes("room banao") ||
         msg.includes("room open") || msg.includes("room create") || msg.includes("room kholo")) {
-      return "🏠 **How to Create Your Own Room**\n\n" +
-             "📌 **Step 1:** Go to the **Homepage**.\n" +
-             "📌 **Step 2:** At the top, tap on the **Mine** tab.\n" +
-             "📌 **Step 3:** You will see a **+ Icon Card** — tap on it.\n" +
-             "📌 **Step 4:** Now you can enter your own room and customize it.\n\n" +
-             "🎉 Your room is ready! Invite friends and enjoy!";
+      
+      const prefix = isYesNoQuestion ? getYesPrefix() : "";
+
+      return {
+        text: prefix + "🏠 Apna Room Kaise Banayein:\n\n" +
+               "📌 Step 1: Homepage par jayein.\n" +
+               "📌 Step 2: Top me Mine tab par tap karein.\n" +
+               "📌 Step 3: + Icon Card par click karein.\n" +
+               "📌 Step 4: Room me enter karke apne hisab se customize karein.",
+        isBot: true
+      };
     }
 
     // ABUSE / COMPLAINT
     if (msg.includes("abuse") || msg.includes("gali") || msg.includes("गाली") ||
         msg.includes("complain") || msg.includes("report") || msg.includes("शिकायत") ||
-        msg.includes("bad word") || msg.includes("ban") || msg.includes("harass") ||
-        msg.includes("गाली दे") || msg.includes("gali de")) {
-      return "⚠️ **Reporting Abuse or Misconduct**\n\n" +
-             "📌 **Step 1:** Go to **Help & Feedback** section.\n" +
-             "📌 **Step 2:** Upload a **video or screenshot** as evidence.\n" +
-             "📌 **Step 3:** Submit your complaint to our **Admin / Official Team**.\n\n" +
-             "🚫 **Important Warning:**\n" +
-             "• Do **NOT** respond with abusive language.\n" +
-             "• If both parties use abuse, **both User IDs will be banned**.\n\n" +
-             "📋 **Reason for Ban:** Violation of App Policy (Abusing)\n\n" +
-             "✅ Report and let our team handle it professionally.";
+        msg.includes("bad word") || msg.includes("ban") || msg.includes("harass")) {
+      return {
+        text: "⚠️ Complaint & Report Kaise Karein:\n\n" +
+               "📌 Step 1: Help & Feedback section me jayein.\n" +
+               "📌 Step 2: Clear video ya screenshot proof upload karein.\n" +
+               "📌 Step 3: Official Team ko complaint submit karein.\n\n" +
+               "🚫 Rules & Warning:\n" +
+               "Kripya khud abusive language use na karein. Agar dono side se gali di gayi ho, toh dono IDs ban ho sakti hain.",
+        isBot: true
+      };
     }
 
-    // WHAT IS HAWA
+    // WHAT IS HURRY APP
     if (msg.includes("hawa kya") || msg.includes("what is hawa") || msg.includes("about hawa") ||
-        msg.includes("hawa app") || msg.includes("app kya") || msg.includes("hawa kya hai")) {
-      return "🌟 **About Hurry App**\n\n" +
-             "Hurry is a **Social Dating & Live Party App** for entertainment and connecting with people.\n\n" +
-             "✨ **Key Features:**\n" +
-             "• Connect with like-minded people\n" +
-             "• Host and join Live Parties\n" +
-             "• Play interactive games\n" +
-             "• Make new friends\n" +
-             "• Earn rewards and coins\n\n" +
-             "💰 For earning, you can become a **Seller** and sell coins.";
+        msg.includes("hawa app") || msg.includes("app kya") || msg.includes("what is hurry") || msg.includes("hurry app")) {
+      return {
+        text: "🌟 About Hurry App:\n\n" +
+               "Hurry ek Social Dating & Live Party Platform hai jahan aap naye dosto se mil sakte hain, party rooms join kar sakte hain aur games khel sakte hain.\n\n" +
+               "✨ Key Features:\n" +
+               "• Live Audio Party Rooms\n" +
+               "• Interactive Mini Games\n" +
+               "• Family Creation System\n" +
+               "• Social Dating & Chatting",
+        isBot: true
+      };
     }
 
     // OFFICIALS
     if (msg.includes("official") || msg.includes("admin") || msg.includes("contact") ||
         msg.includes("officer") || msg.includes("अधिकारी") || msg.includes("मालिक") ||
         msg.includes("owner") || msg.includes("team")) {
-      return "👑 **Hurry Official Team**\n\n" +
-             "• **Hurry_IN**\n" +
-             "  🆔 ID: 100002\n\n" +
-             "• **Paras**\n" +
-             "  🆔 ID: 100003\n\n" +
-             "📞 Contact them for: Seller registration, payment issues, business inquiries & serious complaints.";
+      return {
+        text: "👑 Hurry Official Team Details:\n\n" +
+               "• Hurry_IN\n" +
+               "  🆔 ID: 100002\n\n" +
+               "• Paras\n" +
+               "  🆔 ID: 100003\n\n" +
+               "Seller Registration, Payment issues ya Serious Complaints ke liye Official Team se contact karein.",
+        isBot: true
+      };
     }
 
     // FAMILY FEATURE
     if (msg.includes("family") || msg.includes("परिवार") || msg.includes("fam") ||
         msg.includes("family tag") || msg.includes("family create") || msg.includes("parivaar")) {
-      return "👨‍👩‍👧‍👦 **Family Feature — Create Your Family**\n\n" +
-             "📌 **How to Create:**\n" +
-             "• **Step 1:** Go to your **Profile**.\n" +
-             "• **Step 2:** Tap on the **Family** option.\n" +
-             "• **Step 3:** Add your Family **Image** and **Name**.\n" +
-             "• **Step 4:** Confirm and create.\n\n" +
-             "💰 **Cost:** 13,00,000 Coins\n\n" +
-             "🏷️ **Benefits:**\n" +
-             "• Get a **Family Tag** on your public profile\n" +
-             "• Invite members to join\n" +
-             "• Exclusive family features";
+      
+      const prefix = isYesNoQuestion ? getYesPrefix() : "";
+
+      return {
+        text: prefix + "👨‍👩‍👧‍👦 Family Kaise Banayein:\n\n" +
+               "📌 Steps:\n" +
+               "• Step 1: Profile me jayein.\n" +
+               "• Step 2: Family option par tap karein.\n" +
+               "• Step 3: Family Name & Banner Image set karein.\n" +
+               "• Step 4: Confirm karke create karein.\n\n" +
+               "💰 Cost: 1,300,000 Coins\n" +
+               "🏷️ Benefits: Public Profile par Custom Family Tag milega aur exclusive privileges milenge.",
+        isBot: true
+      };
     }
 
     // PROFILE EDIT
     if (msg.includes("name change") || msg.includes("dp change") || msg.includes("profile picture") ||
         msg.includes("bio") || msg.includes("cover") || msg.includes("age") ||
-        msg.includes("name badlo") || msg.includes("dp badlo") || msg.includes("नाम") ||
-        msg.includes("फोटो") || msg.includes("edit profile") || msg.includes("change name") ||
-        msg.includes("change dp") || msg.includes("cover photo") || msg.includes("background")) {
-      return "✏️ **How to Edit Your Profile**\n\n" +
-             "📌 **Step 1:** Go to your **Profile**.\n" +
-             "📌 **Step 2:** Tap on the **Top Right Arrow** option.\n" +
-             "📌 **Step 3:** You will see your **Public Profile**.\n" +
-             "📌 **Step 4:** Tap on the **Pencil Icon (✏️)** at top right corner.\n" +
-             "📌 **Step 5:** Now you can edit:\n\n" +
-             "✏️ • **Name** — Change your display name\n" +
-             "🖼️ • **Profile Picture (DP)** — Upload new photo\n" +
-             "📝 • **Bio** — Write about yourself\n" +
-             "🎂 • **Age** — Update your age\n\n" +
-             "🖼️ **Background Cover Photo:**\n" +
-             "• Cover photo unlocks at **Level 24**.\n" +
-             "• After Level 24, go to same Pencil Icon > Upload Cover.";
+        msg.includes("name badlo") || msg.includes("dp badlo") || msg.includes("edit profile") || 
+        msg.includes("change name") || msg.includes("change dp")) {
+      
+      const prefix = isYesNoQuestion ? getYesPrefix() : "";
+
+      return {
+        text: prefix + "✏️ Profile Details Edit Kaise Karein:\n\n" +
+               "📌 Step 1: Profile open karein.\n" +
+               "📌 Step 2: Top Right Arrow click karke Public Profile me jayein.\n" +
+               "📌 Step 3: Top-Right corner me Pencil Icon (✏️) par click karein.\n" +
+               "📌 Step 4: Yahan se Name, DP, Bio, aur Age change karein.\n\n" +
+               "🖼️ Cover Photo: Level 24 achieve hone par unlock hoti hai.",
+        isBot: true
+      };
     }
 
-    // WALLET / BALANCE
-    if (msg.includes("wallet") || msg.includes("balance") || msg.includes("बटुआ") ||
-        msg.includes("बैलेंस") || msg.includes("coin balance") || msg.includes("check balance")) {
-      return "💰 **Wallet & Balance**\n\n" +
-             "📌 **Check Balance:** Go to Profile > My Wallet / Coins.\n" +
-             "📌 **Transaction History:** Inside Wallet, tap on 'History'.\n" +
-             "📌 **Withdraw:** Available for Sellers in Wallet > Withdraw.\n\n" +
-             "💎 Balance updates in real-time after every transaction.";
+    // FALLBACK FOR YES / NO QUESTIONS
+    if (isYesNoQuestion) {
+      return {
+        text: isHindi 
+          ? "जी हाँ! इसके बारे में अधिक जानकारी पाने के लिए कृपया अपना सवाल विस्तार से पूछें। 😊"
+          : "Yes! Aap aisa kar sakte hain. Thoda aur details me batayein taaki main sahi guide kar sakoon. 😊",
+        isBot: true
+      };
     }
 
-    // BLOCK / UNBLOCK
-    if (msg.includes("block") || msg.includes("unblock") || msg.includes("ब्लॉक") ||
-        msg.includes("अनब्लॉक") || msg.includes("block list")) {
-      return "🚫 **Block & Unblock Users**\n\n" +
-             "📌 **Block:** Go to their Profile > 3-dot menu > Block User.\n" +
-             "📌 **Unblock:** Settings > Privacy > Blocked Users > Unblock.\n\n" +
-             "⚠️ Blocked users cannot message you, join your room, or see your profile.";
-    }
-
-    // FOLLOW / UNFOLLOW
-    if (msg.includes("follow") || msg.includes("unfollow") || msg.includes("फॉलो") ||
-        msg.includes("अनफॉलो") || msg.includes("follower") || msg.includes("following")) {
-      return "👥 **Follow & Unfollow**\n\n" +
-             "📌 **Follow:** Go to their Profile > Tap 'Follow'.\n" +
-             "📌 **Unfollow:** Go to their Profile > Tap 'Following' > Confirm.\n" +
-             "📌 **Follower List:** Your Profile > 'Followers'.\n" +
-             "📌 **Following List:** Your Profile > 'Following'.";
-    }
-
-    // DELETE ACCOUNT
-    if (msg.includes("delete") || msg.includes("delete account") || msg.includes("हटाएं") ||
-        msg.includes("खाता हटाएं") || msg.includes("account delete")) {
-      return "🗑️ **Delete Account**\n\n" +
-             "📌 **Step 1:** Go to **Settings**.\n" +
-             "📌 **Step 2:** Tap on **Account**.\n" +
-             "📌 **Step 3:** Select **Delete Account**.\n" +
-             "📌 **Step 4:** Confirm.\n\n" +
-             "⚠️ **Warning:** This is **permanent and irreversible**. All data, coins & purchases will be lost.";
-    }
-
-    // REFERRAL
-    if (msg.includes("refer") || msg.includes("invite") || msg.includes("रेफर") ||
-        msg.includes("आमंत्रित") || msg.includes("referral")) {
-      return "🎁 **Referral Program — Earn Rewards!**\n\n" +
-             "📌 **How to Refer:** Profile > Refer & Earn > Share your code/link.\n" +
-             "💰 **Bonus:** You & your friend both get bonus coins on successful referral.";
-    }
-
-    // HELP / PROBLEM
-    if (msg.includes("problem") || msg.includes("issue") || msg.includes("help") ||
-        msg.includes("not working") || msg.includes("error") || msg.includes("समस्या") ||
-        msg.includes("मदद") || msg.includes("सहायता") || msg.includes("दिक्कत") ||
-        msg.includes("bug") || msg.includes("crash") || msg.includes("stuck")) {
-      return "🔧 **We're Here to Help!**\n\n" +
-             "Please provide details:\n" +
-             "• What exactly is the problem?\n" +
-             "• When did it start?\n" +
-             "• Any error message?\n" +
-             "• Your User ID\n\n" +
-             "Our support team is available **24/7**. We'll resolve your issue ASAP!";
-    }
-
-    // DEFAULT
-    return "Thank you for reaching out! 😊\n\n" +
-           "I'm here to help with any Hurry App questions:\n\n" +
-           "💎 • Coins Rates (Offline 1$=1.05M | Online 1$=1M+30k)\n" +
-           "💼 • Seller Policy ($100, $200, $300 Packages)\n" +
-           "🎵 • Playing Music in Room\n" +
-           "🎮 • Playing Games & Winning Coins\n" +
-           "🏠 • Creating a Room\n" +
-           "⚠️ • Reporting Abuse\n" +
-           "👑 • Contacting Officials\n" +
-           "👨‍👩‍👧‍👦 • Family Feature (13L Coins)\n" +
-           "✏️ • Edit Profile (Name, DP, Bio, Cover)\n" +
-           "💰 • Wallet & Balance\n" +
-           "🚫 • Block & Unblock\n\n" +
-           "Feel free to ask!";
+    // DEFAULT RESPONSE
+    return {
+      text: "Thank you for reaching out! 😊\n\n" +
+             "Main aapki kya help kar sakti hoon? Aap in topics ke bare me pooch sakte hain:\n\n" +
+             "💎 • Coin Rates & Online Recharge\n" +
+             "💼 • Official Seller Policy\n" +
+             "🎵 • Room Me Song Play Karna\n" +
+             "🎮 • Games Khelna\n" +
+             "🏠 • Room Create Karna\n" +
+             "⚠️ • Misconduct Report Karna\n" +
+             "👑 • Official Team Support\n" +
+             "👨‍👩‍👧‍👦 • Family Tag Option\n" +
+             "✏️ • Profile Edit Options",
+      isBot: true
+    };
   };
 
   const handleSend = () => {
     if (!message.trim()) return;
     
-    // Silent block - no warning, just clear input and do nothing
+    // Silent filter for abusive words
     if (containsBadWords(message)) {
       setMessage("");
       return;
     }
     
-    const userMessage = { text: message, isBot: false, timestamp: Date.now() };
+    const userMessage: MessageType = { text: message, isBot: false, timestamp: Date.now() };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setMessage("");
     setIsTyping(true);
 
-    // Save user message
     saveChatToFirestore(updatedMessages);
 
     setTimeout(() => {
-      const botResponse = generateBotResponse(message);
-      const botMessage = { text: botResponse, isBot: true, timestamp: Date.now() };
-      const finalMessages = [...updatedMessages, botMessage];
+      const botResponse = generateBotResponse(userMessage.text || "");
+      botResponse.timestamp = Date.now();
+      
+      const finalMessages = [...updatedMessages, botResponse];
       setMessages(finalMessages);
       setIsTyping(false);
       
-      // Save bot message
       saveChatToFirestore(finalMessages);
     }, 1000);
   };
@@ -500,7 +497,7 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
       </header>
 
       {/* CHAT AREA */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-0">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-4">
         {messages.map((msg, index) => (
           <div key={index} className={`flex items-start gap-2 ${msg.isBot ? '' : 'flex-row-reverse'}`}>
             {msg.isBot && (
@@ -513,9 +510,20 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
               </div>
             )}
             <div className={`max-w-[85%] ${msg.isBot ? 'bg-white rounded-2xl rounded-tl-none shadow-sm border border-slate-100' : 'bg-blue-500 text-white rounded-2xl rounded-tr-none'} p-3`}>
-              <p className={`text-sm whitespace-pre-line ${msg.isBot ? 'text-slate-700' : 'text-white'}`}>
-                {msg.text}
-              </p>
+              {msg.text && (
+                <p className={`text-sm whitespace-pre-line ${msg.isBot ? 'text-slate-700' : 'text-white'}`}>
+                  {msg.text}
+                </p>
+              )}
+              {msg.image && (
+                <div className="mt-2 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+                  <img 
+                    src={msg.image} 
+                    alt="Seller Policy" 
+                    className="w-full max-h-80 object-contain bg-slate-100" 
+                  />
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -562,3 +570,4 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
     </div>
   );
 }
+
