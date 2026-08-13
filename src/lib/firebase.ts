@@ -1,4 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
+// 🔥 Ye 2 lines add kiye hain:
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'fake-api-key',
@@ -10,6 +13,9 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || 'fake-measurement-id',
 };
 
+// Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+// 🔥 Ye 2 lines export bhi add kiye hain:
 export const auth = getAuth(app);
 export const db = getFirestore(app);
