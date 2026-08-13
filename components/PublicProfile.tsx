@@ -258,7 +258,7 @@ export default function PublicProfile({
           try {
             const userDocRef = doc(db, 'users', targetUid)
 
-            unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            unsubscribe = onSnapshot(userDocRef, (docSnap: any) => {
               if (docSnap.exists()) {
                 const data = docSnap.data()
 
@@ -344,7 +344,7 @@ export default function PublicProfile({
         try {
           const userDocRef = doc(db, 'users', uid)
 
-          unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+          unsubscribe = onSnapshot(userDocRef, (docSnap: any) => {
             if (docSnap.exists()) {
               const data = docSnap.data()
               if (data.accountId) {

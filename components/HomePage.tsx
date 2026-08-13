@@ -205,7 +205,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // Firebase Realtime Listener for globalRooms collection
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
+    const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot: any) => {
       const rooms = snapshot.docs.map((d) => ({
         ...(d.data() as GlobalRoom)
       }));

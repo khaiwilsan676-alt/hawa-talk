@@ -68,7 +68,7 @@ export default function OwnerPanel() {
     const docRef = doc(db, "adminSettings", "credentials");
     const unsubscribe = onSnapshot(
       docRef,
-      (docSnap) => {
+      (docSnap: any) => {
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
           const mergedData = getDefaultIdsData();
@@ -106,7 +106,7 @@ export default function OwnerPanel() {
           isLoadedFromFirestore.current = true;
         }
       },
-      (error) => {
+      (error: any) => {
         console.error("Error fetching credentials:", error);
         isLoadedFromFirestore.current = true;
       }
@@ -121,7 +121,7 @@ export default function OwnerPanel() {
   useEffect(() => {
     const unsubscribes = Object.keys(idsData).map(id => {
       const docRef = doc(db, "adminSettings", `sessions_${id}`);
-      return onSnapshot(docRef, (docSnap) => {
+      return onSnapshot(docRef, (docSnap: any) => {
         if (docSnap.exists()) {
           setOnlineStatus(prev => ({
             ...prev,
@@ -148,7 +148,7 @@ export default function OwnerPanel() {
       const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
       const querySnapshot = await getDocs(q);
       const feedbackList: any[] = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         feedbackList.push({ id: doc.id, ...doc.data() });
       });
       setFeedbacks(feedbackList);
@@ -166,7 +166,7 @@ export default function OwnerPanel() {
       const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
       const querySnapshot = await getDocs(q);
       const chatList: any[] = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         chatList.push({ id: doc.id, ...doc.data() });
       });
       setAiChats(chatList);
