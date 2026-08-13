@@ -1036,11 +1036,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-2 flex items-center gap-2">
-              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
+            <div className="px-6 pt-6 pb-2 text-center">
+              {/* Warning icon - only show to non-owners */}
+              {!isRoomOwner && (
+                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round mx-auto mb-1">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              )}
               <h2 className="text-lg font-bold text-gray-800">Room Information</h2>
             </div>
             <div className="flex border-b border-gray-200 px-6">
@@ -1203,12 +1206,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 }
 
 // ---------- SeatItem Component ----------
+// ---------- SeatItem Component ----------
 function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: number; seatData?: Seat; onClick: (e: React.MouseEvent) => void; accountId: string }) {
   const isLocked = seatData?.isLocked ?? false
   const isOccupied = seatData?.isOccupied ?? false
   const isSpeaking = seatData?.isSpeaking ?? false
   const isMuted = seatData?.isMuted ?? false
   const user = seatData?.user
+  const isRoomOwner = user?.accountId === accountId
 
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
@@ -1249,7 +1254,12 @@ function SeatItem({ seatNumber, seatData, onClick, accountId }: { seatNumber: nu
           )}
         </div>
       </div>
-      <span className="text-[10px] font-medium text-white/80 pointer-events-none">
+      <span className="text-[10px] font-medium text-white/80 pointer-events-none flex items-center gap-1">
+        {isRoomOwner && isOccupied && (
+          <svg viewBox="0 0 24 24" className="w-3 h-3 fill-blue-400 flex-shrink-0">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          </svg>
+        )}
         {isLocked ? `No ${seatNumber}` : (isOccupied && user ? user.name : `No ${seatNumber}`)}
       </span>
     </div>
