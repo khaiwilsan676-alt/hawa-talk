@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
-import { db, supabase } from "../src/lib/supabase";
-import { doc, getDoc, setDoc, collection, addDoc } from "../src/lib/supabase";
+import { supabase } from "../src/lib/supabase"
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -63,20 +62,36 @@ const COUNTRIES = [
   { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
 ]
 
-// HELPER: Exact Same Length Account ID Generator
-export const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid || uid === 'N/A') return '100379620'
+// HELPER: Generate 8-digit Account ID from UID (PERMANENT - ek baar generate hui toh wahi rahegi)
+export const getOrCreateAccountNumber = (uid: string): string => {
+  if (!uid || uid === 'N/A') return '10037962'
 
+  // Check if it's official/admin ID
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return uid
   }
 
+  // Check special accounts
   if (SPECIAL_ACCOUNTS[uid]) {
     return SPECIAL_ACCOUNTS[uid]
   }
 
-  const targetLength = uid.length || 20;
+  // IMPORTANT: Pehle localStorage check karo - permanent ID ke liye
+  const storageKey = `user_account_number_${uid}`
+  const savedAccountNumber = localStorage.getItem(storageKey)
+  
+  if (savedAccountNumber) {
+    return savedAccountNumber
+  }
 
+  // Check global accountNumber (for current session)
+  const globalAccountNumber = localStorage.getItem('accountNumber')
+  if (globalAccountNumber && globalAccountNumber !== 'N/A') {
+    localStorage.setItem(storageKey, globalAccountNumber)
+    return globalAccountNumber
+  }
+
+  // Generate new 8-digit number (sirf pehli baar)
   let hash = 0
   for (let i = 0; i < uid.length; i++) {
     hash = (hash << 5) - hash + uid.charCodeAt(i)
@@ -84,31 +99,49 @@ export const getOrCreateAccountNumber = (uid: string) => {
   }
   const positiveHash = Math.abs(hash)
 
-  let numericId = String((positiveHash % 9) + 1);
-
-  for (let i = 1; i < targetLength; i++) {
-    const digit = Math.abs((positiveHash + i * 31) % 10);
-    numericId += digit;
+  let numericId = String((positiveHash % 9) + 1)
+  for (let i = 1; i < 8; i++) {
+    const digit = Math.abs((positiveHash + i * 31) % 10)
+    numericId += digit
   }
 
-  return numericId;
+  // Save permanently
+  localStorage.setItem(storageKey, numericId)
+  localStorage.setItem('accountNumber', numericId)
+
+  return numericId
 }
 
-// HELPER: Sync User Profile to Supabase
-const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
+// HELPER: Sync User Profile to Supabase (ID permanent rakhta hai)
+const syncUserToSupabase = async (uid: string, name: string, email: string, photo: string) => {
   try {
     let finalAccountId = ""
 
     if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
       finalAccountId = SPECIAL_ACCOUNTS[uid] || uid
     } else {
-      const userDocRef = doc(db, "users", uid)
-      const userDocSnap = await getDoc(userDocRef)
-
-      if (userDocSnap.exists() && userDocSnap.data().accountId) {
-        finalAccountId = String(userDocSnap.data().accountId)
+      // PEHLE localStorage check karo (permanent ID)
+      const storageKey = `user_account_number_${uid}`
+      const savedId = localStorage.getItem(storageKey)
+      
+      if (savedId) {
+        finalAccountId = savedId
       } else {
-        finalAccountId = getOrCreateAccountNumber(uid)
+        // Phir Supabase check karo
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('account_id')
+          .eq('id', uid)
+          .single()
+
+        if (existingUser?.account_id) {
+          finalAccountId = String(existingUser.account_id).slice(0, 8)
+          // Save to localStorage for future
+          localStorage.setItem(storageKey, finalAccountId)
+        } else {
+          // Generate new (sirf pehli baar)
+          finalAccountId = getOrCreateAccountNumber(uid)
+        }
       }
     }
 
@@ -117,14 +150,26 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
       name: name || email.split('@')[0] || 'User',
       email: email || '',
       country: '🇮🇳',
-      image: photo || '/default-avatar.png',
-      accountId: finalAccountId,
-      createdAt: Date.now()
+      avatar_url: photo || '/default-avatar.png',
+      account_id: finalAccountId,
+      created_at: new Date().toISOString()
     }
 
-    await setDoc(doc(db, "users", uid), userData, { merge: true })
-    await setDoc(doc(db, "globalRooms", uid), userData, { merge: true })
+    // Upsert to users table
+    const { error: userError } = await supabase
+      .from('users')
+      .upsert(userData, { onConflict: 'id' })
 
+    if (userError) throw userError
+
+    // Upsert to global_rooms table
+    const { error: roomError } = await supabase
+      .from('global_rooms')
+      .upsert(userData, { onConflict: 'id' })
+
+    if (roomError) throw roomError
+
+    // Save permanently
     localStorage.setItem("accountNumber", finalAccountId)
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
 
@@ -138,12 +183,14 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
 // HELPER: Check if user is new
 const checkIfNewUser = async (uid: string): Promise<boolean> => {
   try {
-    const userDocRef = doc(db, "users", uid)
-    const userDocSnap = await getDoc(userDocRef)
-    
-    if (userDocSnap.exists()) {
-      const userData = userDocSnap.data()
-      return !(userData.gender && userData.setupComplete)
+    const { data: userData } = await supabase
+      .from('users')
+      .select('gender, setup_complete')
+      .eq('id', uid)
+      .single()
+
+    if (userData) {
+      return !(userData.gender && userData.setup_complete)
     }
     return true
   } catch (error) {
@@ -184,53 +231,65 @@ function GenderSelectionPage({
       const defaultData = selectedGender === 'female' 
         ? {
             name: 'Barrey',
-            image: '/IMG_20260804_211013.jpg',
+            avatar_url: '/IMG_20260804_211013.jpg',
             gender: 'female'
           }
         : {
             name: 'Simpson',
-            image: '/IMG_20260804_211031.jpg',
+            avatar_url: '/IMG_20260804_211031.jpg',
             gender: 'male'
           }
 
       const countryFlag = COUNTRIES.find(c => c.code === selectedCountry)?.flag || '🇮🇳'
 
-      if (userData?.id || userData?.$id || userData?.uid) {
-        const userId = userData.id || userData.$id || userData.uid
-        const userRef = doc(db, "users", userId)
+      if (userData?.id || userData?.uid) {
+        const userId = userData.id || userData.uid
         
+        // IMPORTANT: ID already generated hai, use wahi rakho
+        const existingAccountId = localStorage.getItem(`user_account_number_${userId}`) || 
+                                  localStorage.getItem("accountNumber") || 
+                                  getOrCreateAccountNumber(userId)
+
         const userDocData = {
           id: userId,
           name: defaultData.name,
-          image: defaultData.image,
+          avatar_url: defaultData.avatar_url,
           gender: selectedGender,
           country: countryFlag,
-          countryCode: selectedCountry,
+          country_code: selectedCountry,
           email: userData.email || '',
-          accountId: localStorage.getItem("accountNumber") || getOrCreateAccountNumber(userId),
-          updatedAt: Date.now(),
-          isNewUser: false,
-          setupComplete: true
+          account_id: existingAccountId.slice(0, 8), // Permanent ID
+          updated_at: new Date().toISOString(),
+          is_new_user: false,
+          setup_complete: true
         }
 
-        await setDoc(userRef, userDocData, { merge: true })
+        // Update users table
+        await supabase
+          .from('users')
+          .upsert(userDocData, { onConflict: 'id' })
 
-        const globalRoomRef = doc(db, "globalRooms", userId)
-        await setDoc(globalRoomRef, {
-          id: userId,
-          name: defaultData.name,
-          image: defaultData.image,
-          gender: selectedGender,
-          country: countryFlag,
-        }, { merge: true })
+        // Update global_rooms table
+        await supabase
+          .from('global_rooms')
+          .upsert({
+            id: userId,
+            name: defaultData.name,
+            avatar_url: defaultData.avatar_url,
+            gender: selectedGender,
+            country: countryFlag,
+            account_id: existingAccountId.slice(0, 8),
+          }, { onConflict: 'id' })
 
         localStorage.setItem("userName", defaultData.name)
-        localStorage.setItem("userPhoto", defaultData.image)
+        localStorage.setItem("userPhoto", defaultData.avatar_url)
         localStorage.setItem("userGender", selectedGender)
         localStorage.setItem("userCountry", countryFlag)
         localStorage.setItem("userCountryCode", selectedCountry)
         localStorage.setItem("isNewUser", "false")
         localStorage.setItem("setupComplete", "true")
+        localStorage.setItem(`user_account_number_${userId}`, existingAccountId.slice(0, 8))
+        localStorage.setItem("accountNumber", existingAccountId.slice(0, 8))
       }
 
       onComplete(selectedGender, selectedCountry)
@@ -245,7 +304,7 @@ function GenderSelectionPage({
   const selectedCountryData = COUNTRIES.find(c => c.code === selectedCountry)
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col" style={{ maxWidth: '480px', margin: '0 auto' }}>
       <div className="px-4 pt-12 pb-2">
         <h1 className="text-2xl font-bold text-gray-900 text-center">Welcome! 🎉</h1>
         <p className="text-sm text-gray-500 text-center mt-2">Select your gender to get started</p>
@@ -266,18 +325,9 @@ function GenderSelectionPage({
             }`}
             style={{
               background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(244, 114, 182, 0.2) 50%, rgba(251, 207, 232, 0.3) 100%)',
-              backdropFilter: 'blur(10px)',
             }}
           >
-            <div 
-              className="absolute inset-0 z-10"
-              style={{
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(255,182,193,0.2) 70%, rgba(236,72,153,0.3) 100%)',
-                borderRadius: '1.5rem',
-              }}
-            />
-            
-            <div className="relative z-0 p-6 flex flex-col items-center">
+            <div className="relative p-6 flex flex-col items-center">
               <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-pink-300 shadow-lg mb-4">
                 <img 
                   src="/IMG_20260804_211013.jpg" 
@@ -286,12 +336,12 @@ function GenderSelectionPage({
                 />
               </div>
               
-              <div className="relative z-20 bg-pink-500/80 backdrop-blur-sm px-6 py-2 rounded-full">
+              <div className="bg-pink-500/80 backdrop-blur-sm px-6 py-2 rounded-full">
                 <span className="text-white font-bold text-lg">Female</span>
               </div>
               
               {selectedGender === 'female' && (
-                <div className="absolute top-4 right-4 z-20 w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                <div className="absolute top-4 right-4 w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center shadow-lg">
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
@@ -321,18 +371,9 @@ function GenderSelectionPage({
             }`}
             style={{
               background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.2) 50%, rgba(191, 219, 254, 0.3) 100%)',
-              backdropFilter: 'blur(10px)',
             }}
           >
-            <div 
-              className="absolute inset-0 z-10"
-              style={{
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(191,219,254,0.2) 70%, rgba(59,130,246,0.3) 100%)',
-                borderRadius: '1.5rem',
-              }}
-            />
-            
-            <div className="relative z-0 p-6 flex flex-col items-center">
+            <div className="relative p-6 flex flex-col items-center">
               <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-blue-300 shadow-lg mb-4">
                 <img 
                   src="/IMG_20260804_211031.jpg" 
@@ -341,12 +382,12 @@ function GenderSelectionPage({
                 />
               </div>
               
-              <div className="relative z-20 bg-blue-500/80 backdrop-blur-sm px-6 py-2 rounded-full">
+              <div className="bg-blue-500/80 backdrop-blur-sm px-6 py-2 rounded-full">
                 <span className="text-white font-bold text-lg">Male</span>
               </div>
               
               {selectedGender === 'male' && (
-                <div className="absolute top-4 right-4 z-20 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                <div className="absolute top-4 right-4 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
@@ -374,7 +415,7 @@ function GenderSelectionPage({
           </button>
 
           {showCountryPicker && (
-            <div className="mt-2 border-2 border-gray-200 rounded-2xl bg-white max-h-48 overflow-y-auto shadow-lg absolute left-4 right-4 z-50" style={{ bottom: '160px' }}>
+            <div className="mt-2 border-2 border-gray-200 rounded-2xl bg-white max-h-48 overflow-y-auto shadow-lg">
               {COUNTRIES.map((country) => (
                 <button
                   key={country.code}
@@ -444,15 +485,23 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [feedbackSuccess, setFeedbackSuccess] = useState(false)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
 
-  // Force Mobile Viewport dynamically
+  // FORCE MOBILE VIEWPORT - Desktop site nahi dikhega
   useEffect(() => {
+    // Viewport meta tag set karo
     let meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement
     if (!meta) {
       meta = document.createElement('meta')
       meta.name = 'viewport'
       document.head.appendChild(meta)
     }
-    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover')
+
+    // Mobile view force karo
+    document.documentElement.style.setProperty('max-width', '480px')
+    document.documentElement.style.setProperty('margin', '0 auto')
+    document.body.style.setProperty('max-width', '480px')
+    document.body.style.setProperty('margin', '0 auto')
+    document.body.style.setProperty('overflow-x', 'hidden')
   }, [])
 
   // Preload video
@@ -473,7 +522,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           const userPhoto = user.user_metadata?.avatar_url || "/default-avatar.png";
           const userUID = user.id;
 
-          const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto);
+          const accNum = await syncUserToSupabase(userUID, userName, userEmail, userPhoto);
 
           localStorage.setItem("userName", userName);
           localStorage.setItem("userEmail", userEmail);
@@ -518,16 +567,27 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         setPendingUserData(userData)
         setShowGenderPage(true)
       } else {
-        const userDocRef = doc(db, "users", userId)
-        const userDocSnap = await getDoc(userDocRef)
-        
-        if (userDocSnap.exists()) {
-          const existingData = userDocSnap.data()
+        // Fetch existing user data from Supabase
+        const { data: existingData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .single()
+
+        if (existingData) {
           if (existingData.name) localStorage.setItem("userName", existingData.name)
-          if (existingData.image) localStorage.setItem("userPhoto", existingData.image)
+          if (existingData.avatar_url) localStorage.setItem("userPhoto", existingData.avatar_url)
+          if (existingData.photo) localStorage.setItem("userPhoto", existingData.photo)
           if (existingData.gender) localStorage.setItem("userGender", existingData.gender)
           if (existingData.country) localStorage.setItem("userCountry", existingData.country)
-          if (existingData.countryCode) localStorage.setItem("userCountryCode", existingData.countryCode)
+          if (existingData.country_code) localStorage.setItem("userCountryCode", existingData.country_code)
+          
+          // PERMANENT ID - Supabase se wahi ID use karo
+          if (existingData.account_id) {
+            const permanentId = String(existingData.account_id).slice(0, 8)
+            localStorage.setItem("accountNumber", permanentId)
+            localStorage.setItem(`user_account_number_${userId}`, permanentId)
+          }
         }
         
         if (onLoginSuccess) {
@@ -568,14 +628,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   const checkOfficialCredentials = async (emailStr: string, passwordStr: string) => {
     try {
-      const docRef = doc(db, "adminSettings", "credentials");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists() && docSnap.data().officialCredentials) {
-        const credentials = docSnap.data().officialCredentials;
+      const { data: credentialsData } = await supabase
+        .from('admin_settings')
+        .select('official_credentials')
+        .eq('id', 'credentials')
+        .single()
+
+      if (credentialsData?.official_credentials) {
+        const credentials = credentialsData.official_credentials
         const matched = credentials.find(
           (cred: any) => cred.email === emailStr && cred.password === passwordStr
-        );
-        if (matched) return matched;
+        )
+        if (matched) return matched
       }
 
       const savedCredentials = localStorage.getItem('officialCredentials');
@@ -608,11 +672,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       if (officialCred) {
         try {
-          const sessionRef = doc(db, "adminSettings", `sessions_${officialCred.id}`);
-          await setDoc(sessionRef, {
-            isLoggedIn: true,
-            lastLogin: Date.now()
-          }, { merge: true });
+          await supabase
+            .from('admin_settings')
+            .upsert({
+              id: `sessions_${officialCred.id}`,
+              is_logged_in: true,
+              last_login: new Date().toISOString()
+            })
         } catch (err) {
           console.error("Error updating session status:", err);
         }
@@ -620,7 +686,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         const userName = `${officialCred.type.toUpperCase()} - ${officialCred.id}`
         const officialID = officialCred.id
 
-        await syncUserToFirestore(officialID, userName, officialCred.email, "")
+        await syncUserToSupabase(officialID, userName, officialCred.email, "")
 
         const userData = {
           id: officialID,
@@ -635,10 +701,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         localStorage.setItem("accountNumber", officialID);
         localStorage.setItem("userType", officialCred.type);
         localStorage.setItem("userPhoto", "");
-
-        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-        loggedInSessions[officialID] = true
-        localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions));
 
         if (onLoginSuccess) {
           onLoginSuccess(userData);
@@ -662,7 +724,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const userPhoto = user.user_metadata?.avatar_url || "/default-avatar.png"
       const userUID = user.id
 
-      const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
+      const accNum = await syncUserToSupabase(userUID, userName, userEmail, userPhoto)
 
       localStorage.setItem("userName", userName);
       localStorage.setItem("userEmail", userEmail);
@@ -674,13 +736,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     } catch (error: any) {
       console.error('Auth error:', error);
       let errorMessage = "Authentication failed. Please check your credentials.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "An account already exists with this email address.";
-      } else if (error.code === 'auth/invalid-credential') {
-        errorMessage = "Invalid email or password.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password should be at least 6 characters.";
-      } else if (error.message) {
+      if (error.message) {
         errorMessage = error.message;
       }
       setAuthError(errorMessage);
@@ -713,17 +769,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setFeedbackSubmitting(true);
 
     try {
-      const feedbackData = {
-        type: selectedType,
-        typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
-        description: problemDescription.trim(),
-        contactInfo: contactInfo.trim(),
-        createdAt: new Date().toISOString(),
-        timestamp: Date.now(),
-        status: 'pending'
-      };
+      const { error } = await supabase
+        .from('feedbacks')
+        .insert({
+          type: selectedType,
+          type_label: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
+          description: problemDescription.trim(),
+          contact_info: contactInfo.trim(),
+          created_at: new Date().toISOString(),
+          timestamp: Date.now(),
+          status: 'pending'
+        })
 
-      await addDoc(collection(db, "feedbacks"), feedbackData);
+      if (error) throw error
       
       setFeedbackSuccess(true);
       setSelectedType('');
@@ -745,7 +803,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   if (checkingNewUser) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center" style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div className="text-center">
           <svg className="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -768,7 +826,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   if (showFeedbackPage) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-gray-50 flex flex-col" style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div className="flex items-center p-4 bg-white border-b border-gray-200">
           <button
             onClick={() => {
@@ -864,17 +922,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   disabled={feedbackSubmitting}
                   className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-2xl transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 text-base"
                 >
-                  {feedbackSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Submitting...
-                    </span>
-                  ) : (
-                    'Submit Feedback'
-                  )}
+                  {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
                 </button>
               </form>
             )}
@@ -886,7 +934,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   if (showPrivacyPolicy) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col" style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div className="flex items-center p-4 border-b border-gray-100">
           <button
             onClick={() => setShowPrivacyPolicy(false)}
@@ -903,31 +951,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">1. Information We Collect</h3>
-              <p>We collect information you provide directly to us, including your name, email address, and profile information when you create an account. We also collect information about your use of our services.</p>
+              <p>We collect information you provide directly to us, including your name, email address, and profile information when you create an account.</p>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">2. How We Use Your Information</h3>
-              <p>We use the information we collect to provide, maintain, and improve our services, to communicate with you, and to develop new features.</p>
+              <p>We use the information we collect to provide, maintain, and improve our services.</p>
             </section>
 
             <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">3. Information Sharing</h3>
-              <p>We do not share your personal information with third parties except as described in this privacy policy or with your consent.</p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">4. Data Security</h3>
-              <p>We take reasonable measures to help protect your personal information from loss, theft, misuse, and unauthorized access.</p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">5. Your Choices</h3>
-              <p>You can access, update, or delete your account information at any time through your account settings. You may also opt out of receiving promotional communications from us.</p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">6. Contact Us</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">3. Contact Us</h3>
               <p>If you have any questions about this Privacy Policy, please contact us at support@hawaapp.com.</p>
             </section>
           </div>
@@ -938,7 +971,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   if (showLoginPage) {
     return (
-      <div className="min-h-screen relative flex flex-col bg-gray-900">
+      <div className="min-h-screen relative flex flex-col bg-gray-900" style={{ maxWidth: '480px', margin: '0 auto' }}>
         <video 
           autoPlay 
           loop 
@@ -949,7 +982,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
         >
           <source src="/VID_20260804_011114_027_bsl.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
         </video>
 
         <div className="absolute inset-0 bg-black/40 z-0"></div>
@@ -1000,9 +1032,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     className="w-full px-4 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl focus:outline-none focus:border-white/50 transition-colors text-white placeholder-white/50"
                     required
                   />
-                  {email && !isValidEmail(email) && (
-                    <p className="text-xs text-red-300 mt-1">Please enter a valid email</p>
-                  )}
                 </div>
 
                 <div>
@@ -1029,39 +1058,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   </div>
                 </div>
 
-                <div className="text-center">
-                  <p className="text-sm text-white/70">
-                    Do you have account?{' '}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEmail('');
-                        setPassword('');
-                        setAuthError(null);
-                      }}
-                      className="text-blue-300 hover:text-blue-200 font-semibold cursor-pointer"
-                    >
-                      Sign In
-                    </button>
-                  </p>
-                </div>
-
                 <button
                   type="submit"
                   disabled={loading || !email || !password || !isValidEmail(email)}
                   className="w-full bg-white text-blue-600 font-semibold py-3 rounded-xl transition-all hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-black/20 text-base"
                 >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Signing In...
-                    </span>
-                  ) : (
-                    'Login'
-                  )}
+                  {loading ? 'Signing In...' : 'Login'}
                 </button>
               </form>
             </div>
@@ -1072,7 +1074,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen relative flex flex-col items-center justify-between px-4 overflow-hidden bg-gray-900">
+    <div className="min-h-screen relative flex flex-col items-center justify-between px-4 overflow-hidden bg-gray-900" style={{ maxWidth: '480px', margin: '0 auto' }}>
       
       <video 
         autoPlay 
@@ -1084,7 +1086,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
       >
         <source src="/VID_20260804_011114_027_bsl.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
       </video>
 
       <div className="absolute inset-0 bg-black/30 z-0"></div>
@@ -1166,7 +1167,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
       {showGoogleSheet && (
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50 transition-all">
-          <div className="w-full max-w-md h-[40vh] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl p-6 flex flex-col justify-between border-t border-white animate-in slide-in-from-bottom duration-300">
+          <div className="w-full max-w-md h-[40vh] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl p-6 flex flex-col justify-between border-t border-white">
             <div>
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
@@ -1176,15 +1177,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   >
                     <ArrowLeft size={20} />
                   </button>
-                  <div className="flex items-center gap-2">
-                    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                    <h3 className="font-bold text-gray-800 text-lg">Choose an account</h3>
-                  </div>
+                  <h3 className="font-bold text-gray-800 text-lg">Choose an account</h3>
                 </div>
               </div>
               <p className="text-xs text-gray-500 mb-3">to continue</p>
@@ -1216,5 +1209,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-}
-
+          }
