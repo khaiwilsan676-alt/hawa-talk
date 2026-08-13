@@ -135,14 +135,11 @@ const checkIfNewUser = async (uid: string): Promise<boolean> => {
     
     if (userDocSnap.exists()) {
       const userData = userDocSnap.data()
-      // If gender field exists, user has already completed setup
       return !userData.gender
     }
-    // No document exists = new user
     return true
   } catch (error) {
     console.error("Error checking if new user:", error)
-    // Check localStorage as fallback
     const localGender = localStorage.getItem("userGender")
     return !localGender
   }
@@ -176,7 +173,6 @@ function GenderSelectionPage({
     setIsSubmitting(true)
     
     try {
-      // Default data based on gender
       const defaultData = selectedGender === 'female' 
         ? {
             name: 'Barrey',
@@ -191,12 +187,10 @@ function GenderSelectionPage({
 
       const countryFlag = COUNTRIES.find(c => c.code === selectedCountry)?.flag || '🇮🇳'
 
-      // Update user data in Firebase
       if (userData?.id || userData?.uid) {
         const userId = userData.id || userData.uid
         const userRef = doc(db, "users", userId)
         
-        // Set default user data with gender
         const userDocData = {
           id: userId,
           name: defaultData.name,
@@ -207,13 +201,12 @@ function GenderSelectionPage({
           email: userData.email || '',
           accountId: localStorage.getItem("accountNumber") || getOrCreateAccountNumber(userId),
           updatedAt: Date.now(),
-          isNewUser: false, // Mark as no longer new user
+          isNewUser: false,
           setupComplete: true
         }
 
         await setDoc(userRef, userDocData, { merge: true })
 
-        // Also update globalRooms
         const globalRoomRef = doc(db, "globalRooms", userId)
         await setDoc(globalRoomRef, {
           name: defaultData.name,
@@ -222,7 +215,6 @@ function GenderSelectionPage({
           country: countryFlag,
         }, { merge: true })
 
-        // Update localStorage
         localStorage.setItem("userName", defaultData.name)
         localStorage.setItem("userPhoto", defaultData.image)
         localStorage.setItem("userGender", selectedGender)
@@ -232,11 +224,9 @@ function GenderSelectionPage({
         localStorage.setItem("setupComplete", "true")
       }
 
-      // Call the completion handler
       onComplete(selectedGender, selectedCountry)
     } catch (error) {
       console.error("Error updating gender:", error)
-      // Still proceed even if there's an error
       onComplete(selectedGender, selectedCountry)
     } finally {
       setIsSubmitting(false)
@@ -247,16 +237,12 @@ function GenderSelectionPage({
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Simple Header */}
       <div className="px-4 pt-12 pb-2">
         <h1 className="text-2xl font-bold text-gray-900 text-center">Welcome! 🎉</h1>
         <p className="text-sm text-gray-500 text-center mt-2">Select your gender to get started</p>
       </div>
 
-      {/* Gender Cards */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
-        
-        {/* Female Card */}
         <button
           onClick={() => handleGenderSelect('female')}
           className={`relative w-full max-w-xs transition-all duration-300 transform ${
@@ -274,7 +260,6 @@ function GenderSelectionPage({
               backdropFilter: 'blur(10px)',
             }}
           >
-            {/* Glossy overlay */}
             <div 
               className="absolute inset-0 z-10"
               style={{
@@ -283,7 +268,6 @@ function GenderSelectionPage({
               }}
             />
             
-            {/* Image Container */}
             <div className="relative z-0 p-6 flex flex-col items-center">
               <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-pink-300 shadow-lg mb-4">
                 <img 
@@ -293,12 +277,10 @@ function GenderSelectionPage({
                 />
               </div>
               
-              {/* Gender Tag */}
               <div className="relative z-20 bg-pink-500/80 backdrop-blur-sm px-6 py-2 rounded-full">
                 <span className="text-white font-bold text-lg">Female</span>
               </div>
               
-              {/* Check indicator */}
               {selectedGender === 'female' && (
                 <div className="absolute top-4 right-4 z-20 w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center shadow-lg">
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -310,14 +292,12 @@ function GenderSelectionPage({
           </div>
         </button>
 
-        {/* OR Divider */}
         <div className="flex items-center gap-3 w-full max-w-xs">
           <div className="flex-1 h-px bg-gray-300"></div>
           <span className="text-sm text-gray-400 font-medium">OR</span>
           <div className="flex-1 h-px bg-gray-300"></div>
         </div>
 
-        {/* Male Card */}
         <button
           onClick={() => handleGenderSelect('male')}
           className={`relative w-full max-w-xs transition-all duration-300 transform ${
@@ -335,7 +315,6 @@ function GenderSelectionPage({
               backdropFilter: 'blur(10px)',
             }}
           >
-            {/* Glossy overlay */}
             <div 
               className="absolute inset-0 z-10"
               style={{
@@ -344,7 +323,6 @@ function GenderSelectionPage({
               }}
             />
             
-            {/* Image Container */}
             <div className="relative z-0 p-6 flex flex-col items-center">
               <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-blue-300 shadow-lg mb-4">
                 <img 
@@ -354,12 +332,10 @@ function GenderSelectionPage({
                 />
               </div>
               
-              {/* Gender Tag */}
               <div className="relative z-20 bg-blue-500/80 backdrop-blur-sm px-6 py-2 rounded-full">
                 <span className="text-white font-bold text-lg">Male</span>
               </div>
               
-              {/* Check indicator */}
               {selectedGender === 'male' && (
                 <div className="absolute top-4 right-4 z-20 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -372,9 +348,7 @@ function GenderSelectionPage({
         </button>
       </div>
 
-      {/* Bottom Section */}
       <div className="px-4 pb-8 pt-4">
-        {/* Country Selector */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Your Country</label>
           <button
@@ -390,7 +364,6 @@ function GenderSelectionPage({
             </svg>
           </button>
 
-          {/* Country Dropdown */}
           {showCountryPicker && (
             <div className="mt-2 border-2 border-gray-200 rounded-2xl bg-white max-h-48 overflow-y-auto shadow-lg absolute left-4 right-4 z-50" style={{ bottom: '160px' }}>
               {COUNTRIES.map((country) => (
@@ -416,7 +389,6 @@ function GenderSelectionPage({
           )}
         </div>
 
-        {/* Continue Button */}
         <button
           onClick={handleContinue}
           disabled={!selectedGender || isSubmitting}
@@ -476,7 +448,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       try {
         const user = await account.get();
         if (user && !localStorage.getItem("userUID")) {
-          // New login from OAuth redirect
           const userName = user.name || "Google User";
           const userEmail = user.email || "";
           const userPhoto = "/default-avatar.png";
@@ -514,7 +485,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     const userId = userData?.id || userData?.uid
     
     if (!userId) {
-      // No user ID, just proceed
       if (onLoginSuccess) onLoginSuccess(userData)
       return
     }
@@ -522,21 +492,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setCheckingNewUser(true)
     
     try {
-      // Check if this is a new user (first time login)
       const isNew = await checkIfNewUser(userId)
       
       if (isNew) {
-        // New user - show gender selection page
         setPendingUserData(userData)
         setShowGenderPage(true)
       } else {
-        // Returning user - get existing data from Firebase
         const userDocRef = doc(db, "users", userId)
         const userDocSnap = await getDoc(userDocRef)
         
         if (userDocSnap.exists()) {
           const existingData = userDocSnap.data()
-          // Update localStorage with existing data
           if (existingData.name) localStorage.setItem("userName", existingData.name)
           if (existingData.image) localStorage.setItem("userPhoto", existingData.image)
           if (existingData.gender) localStorage.setItem("userGender", existingData.gender)
@@ -544,14 +510,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           if (existingData.countryCode) localStorage.setItem("userCountryCode", existingData.countryCode)
         }
         
-        // Proceed directly to app
         if (onLoginSuccess) {
           onLoginSuccess(userData)
         }
       }
     } catch (error) {
       console.error("Error checking new user status:", error)
-      // Fallback: check localStorage
       const localGender = localStorage.getItem("userGender")
       if (!localGender) {
         setPendingUserData(userData)
@@ -564,14 +528,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   }
 
+  // FIXED: Clean Origin passed to Appwrite OAuth Session
   const handleActualGmailLogin = async () => {
     setShowGoogleSheet(false);
     setLoading(true);
     try {
-      account.createOAuth2Session(OAuthProvider.Google, window.location.href, window.location.href);
-      // It will redirect the user to Google OAuth page.
+      const origin = window.location.origin;
+      account.createOAuth2Session(
+        OAuthProvider.Google, 
+        origin, 
+        `${origin}/login`
+      );
     } catch (error: any) {
-      console.error(error);
+      console.error("OAuth Error:", error);
       setLoading(false);
     }
   };
@@ -650,7 +619,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         loggedInSessions[officialID] = true
         localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions));
 
-        // Official accounts skip gender selection
         if (onLoginSuccess) {
           onLoginSuccess(userData);
         }
@@ -658,8 +626,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return;
       }
 
-      let appwriteSession;
-      appwriteSession = await account.createEmailPasswordSession(email, password);
+      await account.createEmailPasswordSession(email, password);
 
       const user = await account.get();
       const userName = user.name || email.split('@')[0]
@@ -749,7 +716,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   };
 
-  // Loading state while checking if new user
   if (checkingNewUser) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -764,7 +730,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     )
   }
 
-  // Gender Selection Page
   if (showGenderPage && pendingUserData) {
     return (
       <GenderSelectionPage 
@@ -774,7 +739,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     );
   }
 
-  // Feedback Page
   if (showFeedbackPage) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -893,7 +857,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     );
   }
 
-  // Privacy Policy Page
   if (showPrivacyPolicy) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -946,7 +909,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     );
   }
 
-  // Login Page
   if (showLoginPage) {
     return (
       <div className="min-h-screen relative flex flex-col bg-gray-900">
@@ -1082,7 +1044,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     );
   }
 
-  // Main Landing Page
   return (
     <div className="min-h-screen relative flex flex-col items-center justify-between px-4 overflow-hidden bg-gray-900">
       
@@ -1120,7 +1081,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               className="w-20 h-20 rounded-2xl drop-shadow-lg" 
             />
           </div>
-
         </div>
 
         <div style={{ marginTop: '23vh' }}></div>
@@ -1229,4 +1189,5 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-            }
+}
+
