@@ -4,10 +4,39 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from "../src/lib/supabase"
 import MessagePage from './MessagePage'
 import MePage from './MePage';
-import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
 import PublicProfile from './PublicProfile'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
+
+// 🔢 SIMPLE 8-DIGIT GENERATOR (Directly inside HomePage)
+const generate8DigitId = (uid: string): string => {
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) {
+    const char = uid.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; 
+  }
+  const eightDigit = Math.abs(hash) % 90000000 + 10000000;
+  return eightDigit.toString();
+}
+
+// Official/Admin IDs list
+const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
+const ADMIN_IDS = ['700001', '700002', '700003']
+
+// Special Accounts
+const SPECIAL_ACCOUNTS: { [key: string]: string } = {
+  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
+  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
+}
+
+// ✅ Common export function (Ab yahi local hai)
+const getOrCreateAccountNumber = (uid: string): string => {
+  if (!uid || uid === 'N/A') return ''
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) return uid
+  if (SPECIAL_ACCOUNTS[uid]) return SPECIAL_ACCOUNTS[uid]
+  return generate8DigitId(uid)
+}
 
 interface HomePageProps {
   onLogout?: () => void;
