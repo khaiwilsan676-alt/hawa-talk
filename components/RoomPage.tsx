@@ -4,11 +4,12 @@ import React, { useState, useEffect, useRef } from 'react'
 import EmojiPicker from './Emojipicker'
 import GiftPicker from './GiftPicker'
 import RoomSettingPage from './RoomSettingPage'
+import MessagePage from './MessagePage'
+import RoomProfile from './RoomProfile'
 import { db } from "../src/lib/firebase"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, setDoc, getDoc } from "firebase/firestore"
 import Image from 'next/image'
 
-// Jitsi Meet External API
 declare global {
   interface Window {
     JitsiMeetExternalAPI: any;
@@ -16,16 +17,24 @@ declare global {
 }
 
 interface RoomPageProps {
-  user: {
+  roomOwner: {
     id?: string
     uid?: string
     accountId?: string
     name: string
     image: string
   }
+  currentUser: {
+    id?: string
+    uid?: string
+    accountId: string
+    name: string
+    image: string
+  }
   onClose?: () => void
   onBack?: () => void
   onKeepRoom?: (roomData: { name: string; image: string; accountId: string }) => void
+  onFollowToggle?: (roomId: string, follow: boolean) => void
 }
 
 const SPECIAL_ACCOUNTS: { [key: string]: string } = {
@@ -63,19 +72,14 @@ interface RoomUser {
   image: string
 }
 
-interface ChatItem {
-  id: string
-  name: string
-  image: string
-}
-
-export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPageProps) {
+export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGiftPicker, setShowGiftPicker] = useState(false)
   const [showMessageSheet, setShowMessageSheet] = useState(false)
   const [showSettingPage, setShowSettingPage] = useState(false)
   const [showRoomInfo, setShowRoomInfo] = useState(false)
+  const [showActiveUsers, setShowActiveUsers] = useState(false)
   const [isFollowed, setIsFollowed] = useState(false)
   const [copied, setCopied] = useState(false)
   const [accountId, setAccountId] = useState<string>("Loading...")
@@ -87,6 +91,19 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     const storedAccNum = localStorage.getItem('accountNumber') || localStorage.getItem('userUID') || '10000000'
     setLocalUser({ name, image, accountId: storedAccNum })
   }, [])
+
+  // ----- PROFILE STATE -----
+  const [showUserProfile, setShowUserProfile] = useState(false)
+  const [profileUser, setProfileUser] = useState<{
+    name: string
+    image: string
+    accountId: string
+  } | null>(null)
+
+  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest"
+  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || ""
+  const isRoomOwner = userAccountId === roomOwnerId
+
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [fullImageModal, setFullImageModal] = useState<string | null>(null)
@@ -94,25 +111,31 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const [roomName, setRoomName] = useState<string>("")
   const [roomAnnouncement, setRoomAnnouncement] = useState<string>("Welcome to Hurry. Any Content related to Fraud, Abusing, violence Breaking a Hurry Rules Will be Ban.")
   const [roomImage, setRoomImage] = useState<string>(user.image || "/1784533036732~2.jpg")
+  const [roomAnnouncement, setRoomAnnouncement] = useState<string>("")
+  const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg")
   const [micMode, setMicMode] = useState<number>(9)
-  const [roomInfoTab, setRoomInfoTab] = useState<'info' | 'members'>('info')
+  const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile')
+
+  const backgroundImage = "/1784533036732~2.jpg"
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputContainerRef = useRef<HTMLDivElement>(null)
-  
+
   const [showChatInput, setShowChatInput] = useState(false)
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([])
-  
+
   const jitsiContainerRef = useRef<HTMLDivElement>(null)
   const jitsiApiRef = useRef<any>(null)
   const [jitsiLoaded, setJitsiLoaded] = useState(false)
-  
+
   const speakingUsersRef = useRef<Set<string>>(new Set())
   const speakingTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
-  
+
+  const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([])
+
   const getInitialSeats = (mode: number): Seat[] => {
     const seats: Seat[] = []
     for (let i = 1; i <= mode; i++) {
@@ -124,17 +147,15 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   const [seats, setSeats] = useState<Seat[]>(getInitialSeats(9))
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
   const [showSeatSheet, setShowSeatSheet] = useState(false)
-  const [activeChat, setActiveChat] = useState<ChatItem | null>(null)
 
-  const chats: ChatItem[] = [
-    { id: 'hawa-team', name: 'Hurry Team', image: '/logo.png' },
-    { id: 'hawa-system', name: 'Hurry System', image: '/1784465161302~2.jpg' }
-  ]
+  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId)
+  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId)
 
   const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === localUser.accountId)
   const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === localUser.accountId)
 
   const jitsiRoomName = `hurry-room-${Math.abs(hashCode(accountId + 'room')) % 100000}`
+  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomOwner.id || roomOwner.accountId || 'default')) % 100000}`
 
   function hashCode(str: string): number {
     let hash = 0
@@ -146,12 +167,46 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     return Math.abs(hash)
   }
 
-  // Display room name - max 6 characters for header
-  const displayRoomName = roomName 
+  const displayRoomName = roomName
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
-    : (user.name?.length > 6 ? user.name?.substring(0, 6) + '...' : user.name || 'User')
+    : (roomOwner.name?.length > 6 ? roomOwner.name?.substring(0, 6) + '...' : roomOwner.name || 'User')
 
-  // Load Jitsi
+  const openProfile = (user: { name: string; image: string; accountId: string }) => {
+    setProfileUser(user)
+    setShowUserProfile(true)
+  }
+
+  // Fetch room data from Firestore
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      if (roomOwner.id && db) {
+        try {
+          const snap = await getDoc(doc(db, "globalRooms", roomOwner.id))
+          if (snap.exists()) {
+            const data = snap.data()
+            setRoomName(data.name || "")
+            setRoomAnnouncement(data.announcement || "")
+            setRoomImage(data.image || roomOwner.image)
+            if (data.micMode && data.micMode !== micMode) {
+              setMicMode(data.micMode)
+            }
+            const followerIds: string[] = data.followers || []
+            const followersList: RoomUser[] = followerIds.map((id: string) => ({
+              accountId: id,
+              name: `User ${id.slice(0, 5)}`,
+              image: ''
+            }))
+            setRoomFollowers(followersList)
+          }
+        } catch (err) {
+          console.error("Error loading room data:", err)
+        }
+      }
+    }
+    fetchRoomData()
+  }, [roomOwner.id, roomOwner.image])
+
+  // Load Jitsi script
   useEffect(() => {
     if (!document.getElementById('jitsi-script')) {
       const script = document.createElement('script')
@@ -169,6 +224,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setSeats(prev => prev.map(seat => {
       if (seat.isOccupied && seat.user) {
         if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === localUser.accountId)) {
+        if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === userAccountId)) {
           return { ...seat, isSpeaking: speaking }
         }
       }
@@ -176,6 +232,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }))
   }
 
+  // Initialize Jitsi
   useEffect(() => {
     if (!jitsiLoaded || !jitsiContainerRef.current || accountId === "Loading...") return
 
@@ -256,10 +313,102 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         })
       } catch (error) {
         console.error('Error initializing Jitsi:', error)
+    if (!jitsiLoaded || !jitsiContainerRef.current) return
+
+    const domain = 'meet.jit.si'
+    const options = {
+      roomName: jitsiRoomName,
+      width: '100%',
+      height: '100%',
+      parentNode: jitsiContainerRef.current,
+      userInfo: { displayName: currentUser.name, email: userAccountId + '@hurry.app' },
+      configOverrides: {
+        startWithAudioMuted: true,
+        startWithVideoMuted: true,
+        disableDeepLinking: true,
+        prejoinPageEnabled: false,
+        enableNoisyMicDetection: true,
+        disableAudioLevels: false,
+        toolbarButtons: [],
+        disableInviteFunctions: true,
+        disablePolls: true,
+        disableSelfView: true,
+        hideConferenceSubject: true,
+        hideConferenceTimer: true,
+        doNotStoreRoom: true,
+        resolution: 180,
+        constraints: { video: { height: { ideal: 180, max: 180, min: 180 } } },
+      },
+      interfaceConfigOverrides: {
+        filmStripOnly: false,
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        SHOW_BRAND_WATERMARK: false,
+        SHOW_POWERED_BY: false,
+        SHOW_PROMOTIONAL_CLOSE_PAGE: false,
+        TOOLBAR_ALWAYS_VISIBLE: false,
+        DISABLE_VIDEO_BACKGROUND: true,
+        HIDE_INVITE_MORE_HEADER: true,
+        MOBILE_APP_PROMO: false,
+        APP_NAME: 'Hurry',
+        NATIVE_APP_NAME: 'Hurry',
+        PROVIDER_NAME: 'Hurry'
       }
     }
 
-    initJitsi()
+    try {
+      const api = new window.JitsiMeetExternalAPI(domain, options)
+      jitsiApiRef.current = api
+
+      api.addListener('videoConferenceJoined', () => {
+        api.executeCommand('toggleAudio', false)
+      })
+
+      api.addListener('dominantSpeakerChanged', (data: any) => {
+        const speakerId = data?.id || 'local'
+        speakingUsersRef.current.add(speakerId)
+        setUserSpeaking(speakerId, true)
+        const existingTimer = speakingTimersRef.current.get(speakerId)
+        if (existingTimer) clearTimeout(existingTimer)
+        const timer = setTimeout(() => {
+          speakingUsersRef.current.delete(speakerId)
+          setUserSpeaking(speakerId, false)
+          speakingTimersRef.current.delete(speakerId)
+        }, 1500)
+        speakingTimersRef.current.set(speakerId, timer)
+      })
+
+      api.addListener('audioLevelsChanged', (data: any) => {
+        if (data && data.length > 0) {
+          data.forEach((participant: any) => {
+            if (participant.id && participant.level > 0.03) {
+              const targetKey = participant.id
+              speakingUsersRef.current.add(targetKey)
+              setUserSpeaking(targetKey, true)
+              const existingTimer = speakingTimersRef.current.get(targetKey)
+              if (existingTimer) clearTimeout(existingTimer)
+              const timer = setTimeout(() => {
+                speakingUsersRef.current.delete(targetKey)
+                setUserSpeaking(targetKey, false)
+                speakingTimersRef.current.delete(targetKey)
+              }, 800)
+              speakingTimersRef.current.set(targetKey, timer)
+            }
+          })
+        }
+      })
+
+      api.addListener('participantLeft', (data: any) => {
+        if (data && data.id) {
+          speakingUsersRef.current.delete(data.id)
+          setUserSpeaking(data.id, false)
+          const timer = speakingTimersRef.current.get(data.id)
+          if (timer) { clearTimeout(timer); speakingTimersRef.current.delete(data.id) }
+        }
+      })
+    } catch (error) {
+      console.error('Error initializing Jitsi:', error)
+    }
 
     return () => {
       speakingTimersRef.current.forEach(timer => clearTimeout(timer))
@@ -267,17 +416,23 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       speakingUsersRef.current.clear()
       if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null }
     }
-  }, [jitsiLoaded, accountId, jitsiRoomName])
+  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name])
 
+  // Toggle audio when seat status changes
   useEffect(() => {
     if (!jitsiApiRef.current) return
-    if (hasSeat) {
-      jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted)
-    } else {
-      jitsiApiRef.current.executeCommand('toggleAudio', false)
+    try {
+      if (hasSeat) {
+        jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted)
+      } else {
+        jitsiApiRef.current.executeCommand('toggleAudio', false)
+      }
+    } catch (e) {
+      console.warn("Jitsi audio execute error:", e)
     }
   }, [hasSeat, currentUserSeat?.isMuted])
 
+  // Update seats when mic mode changes
   useEffect(() => {
     setSeats(prev => {
       const newSeats = getInitialSeats(micMode)
@@ -291,6 +446,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     })
   }, [micMode])
 
+  // Add current user to room users (live count)
   useEffect(() => {
     if (localUser.accountId && localUser.name && localUser.image && accountId !== "Loading...") {
       const userExists = roomUsers.find(u => u.accountId === localUser.accountId)
@@ -299,6 +455,17 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         setMessages(prev => [...prev, {
           id: `join-${Date.now()}`, text: 'Enter the Room', sender: localUser.name,
           senderImage: localUser.image, timestamp: Date.now(), type: 'join'
+    if (userAccountId !== "guest" && currentUser.name && currentUser.image) {
+      const userExists = roomUsers.find(u => u.accountId === userAccountId)
+      if (!userExists) {
+        setRoomUsers(prev => [...prev, { accountId: userAccountId, name: currentUser.name, image: currentUser.image }])
+        setMessages(prev => [...prev, {
+          id: `join-${Date.now()}`,
+          text: 'Enter the Room',
+          sender: currentUser.name,
+          senderImage: currentUser.image,
+          timestamp: Date.now(),
+          type: 'join'
         }])
       }
     }
@@ -324,14 +491,16 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         } catch (err) { console.warn("Firestore fetch error:", err) }
       }
       setAccountId(user?.accountId || "100379620")
+      setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId))
     }
-    fetchRoomOwnerID()
-  }, [user])
+  }, [userAccountId, currentUser.name, currentUser.image])
 
+  // Scroll messages to bottom
   useEffect(() => {
     if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Focus input when chat opens
   useEffect(() => {
     if (showChatInput && inputRef.current) {
       const timer = setTimeout(() => { if (inputRef.current) inputRef.current.focus() }, 100)
@@ -339,16 +508,19 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }, [showChatInput])
 
+  // Handle click outside chat input
   useEffect(() => {
     if (!showChatInput) return
     const handleClickOutside = (e: MouseEvent) => {
       if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
-        setShowChatInput(false); setMessage("")
+        setShowChatInput(false)
+        setMessage("")
       }
     }
     const handleTouchOutside = (e: TouchEvent) => {
       if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
-        setShowChatInput(false); setMessage("")
+        setShowChatInput(false)
+        setMessage("")
       }
     }
     const timer = setTimeout(() => {
@@ -362,7 +534,17 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     }
   }, [showChatInput])
 
-  const handleCopyId = () => {
+  // ---------- All handler functions ----------
+
+  const handleCopyId = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(roomOwner.accountId || '')
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleCopyUserId = (accountId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
     navigator.clipboard.writeText(accountId)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -384,6 +566,13 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       setMessages(prev => [...prev, {
         id: Date.now().toString(), text: '', sender: localUser.name,
         senderImage: localUser.image, timestamp: Date.now(), type: 'message', imageUrl
+        id: Date.now().toString(),
+        text: '',
+        sender: currentUser.name,
+        senderImage: currentUser.image,
+        timestamp: Date.now(),
+        type: 'message',
+        imageUrl
       }])
     }
     reader.readAsDataURL(file)
@@ -391,18 +580,38 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   const handleSeatClick = (seatNumber: number) => (e: React.MouseEvent) => {
-    e.stopPropagation(); setSelectedSeat(seatNumber); setShowSeatSheet(true)
+    e.preventDefault()
+    e.stopPropagation()
+    setSelectedSeat(seatNumber)
+    setShowSeatSheet(true)
+  }
+
+  const handleSeatAvatarClick = (seat: Seat) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (seat.isOccupied && seat.user) {
+      openProfile({
+        name: seat.user.name,
+        image: seat.user.image,
+        accountId: seat.user.accountId
+      })
+    }
   }
 
   const handleTakeSeat = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     const targetSeat = seats.find(s => s.number === selectedSeat)
     if (targetSeat?.isLocked && !targetSeat.isOccupied) { alert("This seat is locked!"); return }
-    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== accountId) { alert("This seat is already taken!"); return }
+    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== userAccountId) { alert("This seat is already taken!"); return }
 
     let updatedSeats = seats.map(s => {
       if (s.isOccupied && s.user?.accountId === localUser.accountId) return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
+      if (s.isOccupied && s.user?.accountId === userAccountId)
+        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
       return s
     })
 
@@ -410,33 +619,59 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
       if (s.number === selectedSeat) {
         if (jitsiApiRef.current) jitsiApiRef.current.executeCommand('toggleAudio', true)
         return { ...s, isOccupied: true, user: { name: localUser.name, image: localUser.image, accountId: localUser.accountId }, isMuted: false, isSpeaking: false }
+        if (jitsiApiRef.current) {
+          try { jitsiApiRef.current.executeCommand('toggleAudio', true) } catch (err) {}
+        }
+        return {
+          ...s,
+          isOccupied: true,
+          user: { name: currentUser.name, image: currentUser.image, accountId: userAccountId },
+          isMuted: false,
+          isSpeaking: false
+        }
       }
       return s
     })
 
-    setSeats(updatedSeats); setShowSeatSheet(false); setSelectedSeat(null)
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
   const handleLeaveSeat = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     if (jitsiApiRef.current && localUser.accountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
       jitsiApiRef.current.executeCommand('toggleAudio', false)
+    if (jitsiApiRef.current && userAccountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
+      try { jitsiApiRef.current.executeCommand('toggleAudio', false) } catch (err) {}
     }
     const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
+      if (s.number === selectedSeat)
+        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
       return s
     })
-    setSeats(updatedSeats); setShowSeatSheet(false); setSelectedSeat(null)
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
   const handleToggleMute = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
         const newMuteState = !s.isMuted
         if (s.user?.accountId === localUser.accountId && jitsiApiRef.current) jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState)
+        if (s.user?.accountId === userAccountId && jitsiApiRef.current) {
+          try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState) } catch (err) {}
+        }
         return { ...s, isMuted: newMuteState }
       }
       return s
@@ -448,7 +683,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     if (e) e.stopPropagation()
     if (!currentUserSeat || !jitsiApiRef.current) return
     const newMuteState = !currentUserSeat.isMuted
-    jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState)
+    try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState) } catch (err) {}
     const updatedSeats = seats.map(s => {
       if (s.number === currentUserSeat.number) return { ...s, isMuted: newMuteState }
       return s
@@ -457,23 +692,33 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   const handleToggleLock = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked }
       return s
     })
-    setSeats(updatedSeats); setShowSeatSheet(false); setSelectedSeat(null)
+    setSeats(updatedSeats)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
   const handleInvite = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (selectedSeat === null) return
     alert(`Invite sent to join seat ${selectedSeat}!`)
-    setShowSeatSheet(false); setSelectedSeat(null)
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
 
   const isCurrentUsersSeat = (seat: Seat) => seat.isOccupied && seat.user?.accountId === localUser.accountId
+  const isCurrentUsersSeat = (seat?: Seat) => Boolean(seat && seat.isOccupied && seat.user?.accountId === userAccountId)
 
   const handleSendMessage = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
@@ -481,6 +726,12 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
     setMessages(prev => [...prev, {
       id: Date.now().toString(), text: message.trim(), sender: localUser.name,
       senderImage: localUser.image, timestamp: Date.now(), type: 'message'
+      id: Date.now().toString(),
+      text: message.trim(),
+      sender: currentUser.name,
+      senderImage: currentUser.image,
+      timestamp: Date.now(),
+      type: 'message'
     }])
     setMessage("")
     if (inputRef.current) inputRef.current.focus()
@@ -499,28 +750,50 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
   }
 
   const closeBottomSheet = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation(); setShowSeatSheet(false); setSelectedSeat(null)
+    if (e) e.stopPropagation()
+    setShowSeatSheet(false)
+    setSelectedSeat(null)
   }
-  const closeExitMenu = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setShowExitMenu(false) }
-  const openExitMenu = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setShowExitMenu(true) }
-  const openSettings = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setShowSettingPage(true) }
+
+  const closeExitMenu = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowExitMenu(false)
+  }
+
+  const openExitMenu = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowExitMenu(true)
+  }
+
+  const openSettings = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setShowSettingPage(true)
+  }
+
   const closeSettings = () => setShowSettingPage(false)
 
-  const handleSaveSettings = (data: any) => {
+  const handleSaveSettings = async (data: any) => {
     if (data.roomName) setRoomName(data.roomName)
-    if (data.announcement) setRoomAnnouncement(data.announcement)
+    if (data.announcement !== undefined) setRoomAnnouncement(data.announcement)
     if (data.roomImage) setRoomImage(data.roomImage)
     if (data.micMode) setMicMode(data.micMode)
-  }
 
-  const openMessageSheet = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setActiveChat(null); setShowMessageSheet(true) }
-  const closeMessageSheet = (e?: React.MouseEvent) => { if (e) e.stopPropagation(); setShowMessageSheet(false); setActiveChat(null) }
+    if (roomOwner.id && db) {
+      await setDoc(doc(db, "globalRooms", roomOwner.id), {
+        name: data.roomName,
+        image: data.roomImage,
+        announcement: data.announcement,
+        micMode: data.micMode
+      }, { merge: true })
+    }
+  }
 
   const handleExit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setShowExitMenu(false)
     localStorage.removeItem('keptRoom')
     setRoomUsers(prev => prev.filter(u => u.accountId !== localUser.accountId))
+    setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId))
     if (jitsiApiRef.current) jitsiApiRef.current.dispose()
     if (onBack) onBack()
     if (onClose) onClose()
@@ -528,7 +801,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   const handleKeep = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    const roomData = { name: user.name, image: user.image, accountId }
+    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' }
     localStorage.setItem('keptRoom', JSON.stringify(roomData))
     setShowExitMenu(false)
     if (onKeepRoom) onKeepRoom(roomData)
@@ -537,11 +810,13 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
   const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji)
 
+  // Derived values
   const liveUserCount = roomUsers.length
   const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false
-  const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isCurrentUsersSeat(selectedSeatData)) : false
+  const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false
 
+  // ---------- Render seats based on mic mode ----------
   const renderSeats = () => {
     if (micMode === 5) {
       return (
@@ -552,6 +827,14 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} localAccountId={localUser.accountId} />
             <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} localAccountId={localUser.accountId} />
             <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} localAccountId={localUser.accountId} />
+          <div className="flex justify-center">
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          </div>
+          <div className="flex justify-around items-center px-1">
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
       )
@@ -574,6 +857,20 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} localAccountId={localUser.accountId} />
             <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} localAccountId={localUser.accountId} />
             <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} localAccountId={localUser.accountId} />
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          </div>
+          <div className="flex justify-around items-center px-1">
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          </div>
+          <div className="flex justify-around items-center px-1">
+            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} onAvatarClick={handleSeatAvatarClick(seats[9])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
       )
@@ -599,6 +896,26 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} localAccountId={localUser.accountId} />
             <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} localAccountId={localUser.accountId} />
             <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} localAccountId={localUser.accountId} />
+          <div className="flex justify-center">
+            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          </div>
+          <div className="flex justify-around items-center px-1">
+            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          </div>
+          <div className="flex justify-around items-center px-1">
+            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          </div>
+          <div className="flex justify-around items-center px-1">
+            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} onAvatarClick={handleSeatAvatarClick(seats[9])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} onAvatarClick={handleSeatAvatarClick(seats[10])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} onAvatarClick={handleSeatAvatarClick(seats[11])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} onAvatarClick={handleSeatAvatarClick(seats[12])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
       )
@@ -618,42 +935,64 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} localAccountId={localUser.accountId} />
           <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} localAccountId={localUser.accountId} />
           <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} localAccountId={localUser.accountId} />
+        <div className="flex justify-center">
+          <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+        </div>
+        <div className="flex justify-around items-center px-1">
+          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+        </div>
+        <div className="flex justify-around items-center px-1">
+          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
+          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
         </div>
       </>
     )
   }
 
+  // Settings page
   if (showSettingPage) {
     return (
-      <RoomSettingPage 
+      <RoomSettingPage
         onBack={closeSettings}
+        roomOwnerId={roomOwner.id}
         roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode }}
         onSave={handleSaveSettings}
       />
     )
   }
 
+  // ---------- Main Return JSX ----------
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <img 
         src="/1784533036732~2.jpg"
         alt="Room Background" 
         className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" 
+      {/* Fixed background image */}
+      <img
+        src={backgroundImage}
+        alt="Room Background"
+        className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
         draggable={false}
       />
-      
+
+      {/* Hidden Jitsi container */}
       <div ref={jitsiContainerRef} className="absolute inset-0 z-0 opacity-0 pointer-events-none" style={{ width: '1px', height: '1px' }} />
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
-      
+
       <div className="relative z-10 flex flex-col h-full px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
-        
-        {/* Top Header Section */}
+
+        {/* ---------- Top Header Section ---------- */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
-          
-          {/* Room Cover + Name + Follow Button */}
+          {/* Room Cover + Name + Follow */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => { setRoomInfoTab('info'); setShowRoomInfo(true); }}
+              onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
               className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer hover:border-white/50 transition-colors"
             >
               <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" draggable={false} />
@@ -661,44 +1000,66 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-lg">{displayRoomName}</h2>
-                {/* Follow Button - Outside Sheet, Next to Room Name */}
+                {/* Follow button */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); setIsFollowed(!isFollowed); }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const newFollow = !isFollowed
+                    setIsFollowed(newFollow)
+                    if (onFollowToggle) {
+                      onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow)
+                    }
+                  }}
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                    isFollowed ? 'bg-blue-500' : 'bg-blue-500'
+                    isFollowed ? 'bg-gray-500' : 'bg-blue-500'
                   }`}
                   title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                 >
-                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 absolute">
-                    <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                    <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                  </svg>
+                  {isFollowed ? (
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white absolute">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </svg>
+                      <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 relative">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               </div>
-              <p className="text-xs text-gray-300">ID: {accountId}</p>
+              <p className="text-xs text-gray-300">ID: {roomOwner.accountId || roomOwner.id || ''}</p>
             </div>
           </div>
 
           {/* Top Right Icons */}
           <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7">
+            {/* User count button - opens Active Users sheet */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }}
+              className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7 cursor-pointer hover:bg-black/60 transition-colors"
+            >
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
                 <line x1="18" y1="8" x2="21" y2="8" /><line x1="18" y1="12" x2="21" y2="12" /><line x1="18" y1="16" x2="20" y2="16" />
               </svg>
               <span className="text-white text-xs font-semibold leading-none">{liveUserCount}</span>
-            </div>
-
-            <button onClick={openSettings} aria-label="Settings" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
-                <circle cx="12" cy="12" r="2.8" />
-              </svg>
             </button>
+
+            {/* Settings icon – ONLY visible to room owner */}
+            {isRoomOwner && (
+              <button onClick={openSettings} aria-label="Settings" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                  <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
+                  <circle cx="12" cy="12" r="2.8" />
+                </svg>
+              </button>
+            )}
 
             <button onClick={(e) => e.stopPropagation()} aria-label="Share" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
@@ -714,28 +1075,38 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           </div>
         </div>
 
-        {/* Scrollable Middle Content */}
-        <div className="flex-1 flex flex-col overflow-y-auto scrollbar-none min-h-0">
+        {/* ---------- Middle Section: Seats (fixed) + Scrollable Content ---------- */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Seats - FIXED (no scroll) */}
           <div className="flex-shrink-0 flex flex-col gap-2 pt-4">
             {renderSeats()}
           </div>
 
-          {/* Announcement Card - 3 Rows: Welcome, Divider, Announcement */}
-          <div className="mx-4 mt-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3 flex-shrink-0">
-            <div className="flex flex-col gap-1">
-              <div className="text-white/60 text-[10px] text-center">Welcome to Hurry</div>
-              <div className="h-px bg-white/10 w-full"></div>
-              <p className="text-white/80 text-[11px] text-center leading-relaxed">{roomAnnouncement}</p>
-            </div>
-          </div>
-
+          {/* Messages + Welcome - SCROLLABLE */}
           <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
+            {/* Fixed Welcome + Announcement Card */}
+            <div className="mx-2 mb-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3">
+              <p className="text-white/80 text-[11px] leading-relaxed">
+                Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban
+              </p>
+              {roomAnnouncement && (
+                <div className="flex items-start gap-2 mt-2">
+                  <span className="text-white/60 text-[10px] font-medium whitespace-nowrap">ANNOUNCEMENT:</span>
+                  <p className="text-white/80 text-[11px] leading-relaxed">{roomAnnouncement}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Chat Messages */}
             <div className="space-y-0.5">
               {messages.map((msg) => (
                 <div key={msg.id} className="leading-[1.9rem]">
                   {msg.type === 'join' ? (
                     <div className="flex items-start gap-1.5 px-1">
-                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <div
+                        className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                      >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col bg-white/8 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/5">
@@ -745,7 +1116,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                     </div>
                   ) : msg.imageUrl ? (
                     <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.9rem)' }}>
-                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <div
+                        className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                      >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -757,7 +1131,10 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
                     </div>
                   ) : (
                     <div className="flex items-start gap-2">
-                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                      <div
+                        className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                      >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -775,7 +1152,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
           </div>
         </div>
 
-        {/* Footer Controls */}
+        {/* ---------- Footer Controls ---------- */}
         <div className="flex-shrink-0 pt-2">
           {showChatInput && (
             <div ref={inputContainerRef} className="flex items-center gap-0 mb-2 -mx-4 w-screen">
@@ -817,7 +1194,11 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
               <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 overflow-hidden cursor-pointer">
                 <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover" draggable={false} />
               </button>
-              <button onClick={openMessageSheet} aria-label="Message Box Menu" className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
+                aria-label="Message Box Menu"
+                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
+              >
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round"><rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" /></svg>
               </button>
               <button onClick={(e) => e.stopPropagation()} aria-label="Apps Menu" className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer">
@@ -828,77 +1209,57 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       </div>
 
-      {/* Room Info Bottom Sheet - 50vh */}
-      {showRoomInfo && (
+      {/* ---------- Active Users Sheet ---------- */}
+      {showActiveUsers && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
-          
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            
-            {/* Header - Room Info title only */}
-            <div className="px-6 pt-6 pb-2">
-              <h2 className="text-lg font-bold text-gray-800 text-center">Room Info</h2>
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
+          <div
+            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+            style={{ height: '30vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 pt-6 pb-3 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
             </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-gray-200 px-6">
-              <button onClick={() => setRoomInfoTab('info')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'info' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>Room Info</button>
-              <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {roomInfoTab === 'info' ? (
-                <div className="space-y-4">
-                  {/* Room DP Icon + Name + ID */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
-                      <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{roomName || user.name || "Room"}</h3>
-                      <p className="text-xs text-gray-400">ID: {accountId}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5">
-                    <span className="text-sm text-gray-600">ID: {accountId}</span>
-                    <button onClick={handleCopyId} className="p-1.5 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
-                      {copied ? (
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-green-500 stroke-[2.5]"><polyline points="20 6 9 17 4 12" /></svg>
-                      ) : (
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-                      )}
-                    </button>
-                  </div>
-
-                  <div>
-                    <span className="text-xs text-gray-400 font-medium">Host</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="w-7 h-7 rounded-full overflow-hidden"><img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" /></div>
-                      <span className="text-sm font-medium text-gray-800">{user.name || "Unknown"}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-xs text-gray-400 font-medium">Announcement</span>
-                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement}</p>
-                  </div>
-                </div>
-              ) : (
+            {/* Users list */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {roomUsers.length > 0 ? (
                 <div className="space-y-2">
-                  {roomUsers.map((roomUser, index) => (
-                    <div key={index} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                        <img src={roomUser.image || "/default-avatar.png"} alt={roomUser.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+                  {roomUsers.map((user) => (
+                    <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                      <div
+                        className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+                        onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}
+                      >
+                        <img
+                          src={user.image || "/default-avatar.png"}
+                          alt={user.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-800 truncate">{roomUser.name}</h4>
-                        <p className="text-xs text-gray-400">ID: {roomUser.accountId}</p>
+                        <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-gray-400">ID: {user.accountId}</p>
+                          <button
+                            onClick={(e) => handleCopyUserId(user.accountId, e)}
+                            className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                            title="Copy ID"
+                          >
+                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
-                  {roomUsers.length === 0 && <p className="text-center text-gray-400 text-sm py-8">No members yet</p>}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-400 text-sm">No active users</p>
                 </div>
               )}
             </div>
@@ -906,7 +1267,113 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Exit Menu */}
+      {/* ---------- Room Info Sheet ---------- */}
+      {showRoomInfo && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
+            {/* Warning icon top-left (only for non‑owners) */}
+            {!isRoomOwner && (
+              <svg
+                viewBox="0 0 24 24"
+                className="absolute top-3 left-3 w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round"
+              >
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            )}
+
+            <div className="px-6 pt-6 pb-2 flex items-center justify-center">
+              <h2 className="text-lg font-bold text-gray-800">Room Information</h2>
+            </div>
+            <div className="flex border-b border-gray-200 px-6">
+              <button onClick={() => setRoomInfoTab('profile')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'profile' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Profile</button>
+              <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {roomInfoTab === 'profile' ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                      <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-800">{roomName || roomOwner.name}</h3>
+                      <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <span>ID: {roomOwner.accountId}</span>
+                        <button onClick={handleCopyId} className="p-0.5 hover:bg-gray-100 rounded transition-colors cursor-pointer" title="Copy ID">
+                          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                        </button>
+                        {copied && <span className="text-green-500 text-xs">Copied!</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-400 font-medium">Host</span>
+                    <p className="text-sm font-medium text-gray-800 mt-1">{roomOwner.name || "Unknown"}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-400 font-medium">Announcement:</span>
+                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement || '—'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* Owner row with clickable avatar */}
+                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                    <div
+                      className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+                      onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}
+                    >
+                      <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+                    </div>
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <h4 className="text-sm font-medium text-gray-800 truncate">{roomOwner.name}</h4>
+                      <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+                      </span>
+                    </div>
+                  </div>
+                  {roomFollowers.map(follower => (
+                    <div key={follower.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                      <div
+                        className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+                        onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}
+                      >
+                        <img src={follower.image || "/default-avatar.png"} alt={follower.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-800 truncate">{follower.name}</h4>
+                      </div>
+                    </div>
+                  ))}
+                  {roomFollowers.length === 0 && <p className="text-center text-gray-400 text-sm py-8">No followers yet</p>}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- RoomProfile Bottom Sheet ---------- */}
+      {showUserProfile && profileUser && (
+        <RoomProfile
+          user={{
+            name: profileUser.name,
+            image: profileUser.image,
+            accountId: profileUser.accountId,
+          }}
+          onClose={() => setShowUserProfile(false)}
+          onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
+          onMessage={() => console.log('Message clicked for', profileUser.accountId)}
+          onCopyId={() => console.log('Copy ID clicked')}
+        />
+      )}
+
+      {/* ---------- Exit Menu ---------- */}
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40" onClick={closeExitMenu}>
           <div className="flex flex-col items-center gap-8" onClick={(e) => e.stopPropagation()}>
@@ -929,7 +1396,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Seat Actions Sheet */}
+      {/* ---------- Seat Actions Sheet ---------- */}
       {showSeatSheet && selectedSeat !== null && (
         <div className="absolute inset-0 z-30 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
@@ -947,7 +1414,7 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Full Image Modal */}
+      {/* ---------- Full Image Modal ---------- */}
       {fullImageModal && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
           <div className="relative max-w-full max-h-full">
@@ -959,50 +1426,31 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
         </div>
       )}
 
-      {/* Message Sheet */}
+      {/* ---------- Message Sheet ---------- */}
       {showMessageSheet && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={closeMessageSheet} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '60vh' }} onClick={(e) => e.stopPropagation()}>
-            {!activeChat ? (
-              <div className="flex flex-col h-full">
-                <div className="px-4 pb-4 flex items-center justify-between flex-shrink-0 relative" style={{ background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)', paddingTop: '24px' }}>
-                  <button onClick={closeMessageSheet} className="p-1.5 hover:bg-black/10 rounded-full transition-colors cursor-pointer z-10" aria-label="Back">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><polyline points="15 18 9 12 15 6" /></svg>
-                  </button>
-                  <h1 className="text-xl font-bold text-gray-800 absolute inset-x-0 text-center pointer-events-none">Message</h1>
-                  <div className="w-9" />
-                </div>
-                <div className="flex-1 px-4 pt-2 overflow-y-auto">
-                  <div className="flex flex-col gap-2">
-                    {chats.map((chat) => (
-                      <div key={chat.id} onClick={() => setActiveChat(chat)} className="flex items-center gap-3 bg-gray-100 px-3 py-2.5 rounded-xl cursor-pointer active:bg-gray-200 transition-colors">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"><Image src={chat.image} alt={chat.name} width={40} height={40} className="object-cover" /></div>
-                        <div className="flex-1 min-w-0"><h3 className="font-semibold text-gray-800 text-sm">{chat.name}</h3></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col h-full">
-                <div className="px-4 pb-4 flex-shrink-0" style={{ background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)', paddingTop: '24px' }}>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setActiveChat(null)} className="flex-shrink-0 hover:bg-white/30 rounded-full p-1 transition-colors cursor-pointer">
-                      <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-800 stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><polyline points="15 18 9 12 15 6" /></svg>
-                    </button>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"><Image src={activeChat.image} alt={activeChat.name} width={40} height={40} className="object-cover" /></div>
-                    <div className="flex-1 min-w-0"><h2 className="text-lg font-bold text-gray-800">{activeChat.name}</h2></div>
-                    <div className="w-9" />
-                  </div>
-                </div>
-                <div className="flex-1 px-4 py-4 overflow-y-auto"><p className="text-center text-gray-400 mt-20">No messages yet</p></div>
-              </div>
-            )}
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
+          <div
+            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+            style={{ height: '60vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowMessageSheet(false)}
+              className="absolute top-3 left-3 z-20 p-1.5 bg-white/80 rounded-full shadow hover:bg-white transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-700 stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <div className="h-full overflow-y-auto">
+              <MessagePage />
+            </div>
           </div>
         </div>
       )}
 
+      {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
 
@@ -1022,26 +1470,53 @@ export default function RoomPage({ user, onClose, onBack, onKeepRoom }: RoomPage
 
 // SeatItem Component
 function SeatItem({ seatNumber, seatData, onClick, localAccountId }: { seatNumber: number; seatData: Seat; onClick: (e: React.MouseEvent) => void; localAccountId: string }) {
+// ---------- SeatItem Component ----------
+function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isRoomOwner }: {
+  seatNumber: number;
+  seatData?: Seat;
+  onClick: (e: React.MouseEvent) => void;
+  onAvatarClick?: (e: React.MouseEvent) => void;
+  accountId: string;
+  isRoomOwner: boolean;
+}) {
+  const isLocked = seatData?.isLocked ?? false
+  const isOccupied = seatData?.isOccupied ?? false
+  const isSpeaking = seatData?.isSpeaking ?? false
+  const isMuted = seatData?.isMuted ?? false
+  const user = seatData?.user
+  const isRoomOwnerSeat = isOccupied && user?.accountId !== accountId && isRoomOwner
+
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
       <div className="relative overflow-visible">
-        {seatData.isSpeaking && (
+        {isSpeaking && (
           <>
             <div className="absolute rounded-full bg-blue-400 wave-ripple pointer-events-none" style={{ width: '60px', height: '60px', left: '50%', top: '50%', zIndex: 0 }} />
             <div className="absolute rounded-full bg-blue-500 wave-ripple-delayed pointer-events-none" style={{ width: '60px', height: '60px', left: '50%', top: '50%', zIndex: 0 }} />
             <div className="absolute rounded-full pointer-events-none" style={{ width: '64px', height: '64px', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
           </>
         )}
-        <div className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${seatData.isSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
-          {seatData.isLocked ? (
+        <div className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${isSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
+          {isLocked ? (
             <div className="w-8 h-8 flex items-center justify-center">
               <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="5" y="11" width="14" height="10" rx="2.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><circle cx="12" cy="16" r="1.2" fill="#94a7be" /></svg>
             </div>
-          ) : seatData.isOccupied && seatData.user ? (
+          ) : isOccupied && user ? (
             <>
               <img src={seatData.user.image || "/default-avatar.png"} alt={seatData.user.name} className="w-full h-full rounded-full object-cover pointer-events-none" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
               {seatData.isMuted && (
                 <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${seatData.user.accountId === localAccountId ? 'bg-gray-400' : 'bg-red-500'}`}>
+              <img
+                src={user.image || "/default-avatar.png"}
+                alt={user.name}
+                className="w-full h-full rounded-full object-cover pointer-events-none"
+                draggable={false}
+                onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
+                onClick={onAvatarClick}
+                style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+              />
+              {isMuted && (
+                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
                   <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
@@ -1052,7 +1527,7 @@ function SeatItem({ seatNumber, seatData, onClick, localAccountId }: { seatNumbe
                 <g fill="none" stroke="#94a7be" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"><path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" /><path d="M 50 74 L 50 86" /><path d="M 38 90 L 62 90" /></g>
                 <g fill="#94a7be" stroke="#5a6d89" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" transform="translate(0, 6)"><path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" /></g>
               </svg>
-              {seatData.isMuted && (
+              {isMuted && (
                 <div className="absolute -right-2 -bottom-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
                   <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
@@ -1061,8 +1536,13 @@ function SeatItem({ seatNumber, seatData, onClick, localAccountId }: { seatNumbe
           )}
         </div>
       </div>
-      <span className="text-[10px] font-medium text-white/80 pointer-events-none">
-        {seatData.isLocked ? `No ${seatNumber}` : (seatData.isOccupied && seatData.user ? seatData.user.name : `No ${seatNumber}`)}
+      <span className="text-[10px] font-medium text-white/80 pointer-events-none flex items-center gap-1">
+        {isRoomOwnerSeat && (
+          <span className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center inline-flex">
+            <svg viewBox="0 0 24 24" className="w-2 h-2 fill-white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+          </span>
+        )}
+        {isLocked ? `No ${seatNumber}` : (isOccupied && user ? user.name : `No ${seatNumber}`)}
       </span>
     </div>
   )

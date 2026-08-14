@@ -3,20 +3,41 @@
 import { useState, useEffect } from 'react'
 import HomePage from '@/components/HomePage'
 import LoginPage from '@/components/LoginPage'
+import { supabase } from '@/src/lib/supabase'
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user is already logged in
-    const userEmail = localStorage.getItem('userEmail')
-    const userPhone = localStorage.getItem('userPhone')
-    
-    if (userEmail || userPhone) {
-      setIsLoggedIn(true)
+    const initAuth = async () => {
+      try {
+        // 1. Supabase Active Session Check (Specially for OAuth/Google Redirects)
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session) {
+          setIsLoggedIn(true)
+          setLoading(false)
+          return
+        }
+      } catch (error) {
+        // Supabase active session nahi mila
+      }
+
+      // 2. LocalStorage Fallback Check
+      const userUID = localStorage.getItem('userUID')
+      const userEmail = localStorage.getItem('userEmail')
+      const userPhone = localStorage.getItem('userPhone')
+
+      if (userUID || userEmail || userPhone) {
+        setIsLoggedIn(true)
+      } else {
+        setIsLoggedIn(false)
+      }
+
+      setLoading(false)
     }
-    setLoading(false)
+
+    initAuth()
   }, [])
 
   useEffect(() => {
@@ -39,14 +60,23 @@ export default function Page() {
     setIsLoggedIn(true)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const uid = localStorage.getItem("userUID")
 
+    try {
+      // Clear Supabase Session
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.log("Supabase logout error:", error)
+    }
+
+    // Clear Local Storage
     localStorage.removeItem('userEmail')
     localStorage.removeItem('userPhone')
     localStorage.removeItem("userName")
     localStorage.removeItem("userUID")
     localStorage.removeItem("userPhoto")
+    localStorage.removeItem("accountNumber")
 
     if (uid) {
       localStorage.removeItem(`user_data_${uid}`)
@@ -66,7 +96,7 @@ export default function Page() {
       <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex items-center justify-center">
         <div className="text-center">
           <img src="/logo.png" alt="Hurry" className="w-20 h-20 mx-auto mb-4 animate-bounce" />
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600 font-medium">Loading...</p>
         </div>
       </div>
     )
@@ -78,3 +108,4 @@ export default function Page() {
 
   return <HomePage onLogout={handleLogout} />
 }
+

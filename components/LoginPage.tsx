@@ -147,30 +147,149 @@ const checkIfNewUser = async (uid: string): Promise<boolean> => {
   }
 }
 
-// Gender Selection Page Component
+// Gender Selection Page Component (Cards stacked vertically)
 function GenderSelectionPage({ 
   userData, 
-  onComplete 
+  onContinue 
 }: { 
   userData: any, 
-  onComplete: (gender: string, country: string) => void 
+  onContinue: (gender: string) => void 
 }) {
   const [selectedGender, setSelectedGender] = useState<string>('')
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Simple Header */}
+      <div className="px-4 pt-12 pb-6">
+        <h1 className="text-2xl font-bold text-gray-900 text-center">Welcome! 🎉</h1>
+        <p className="text-sm text-gray-500 text-center mt-2">Select your gender to get started</p>
+      </div>
+
+      {/* Gender Cards - Stacked Vertically */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-4">
+        {/* Female Card - 1st Row */}
+        <button
+          onClick={() => setSelectedGender('female')}
+          className={`relative w-full max-w-xs transition-all duration-300 transform ${
+            selectedGender === 'female' ? 'scale-105' : 'hover:scale-102'
+          }`}
+        >
+          <div 
+            className={`relative rounded-2xl overflow-hidden cursor-pointer ${
+              selectedGender === 'female' 
+                ? 'ring-4 ring-pink-400 shadow-2xl shadow-pink-400/30' 
+                : 'ring-2 ring-gray-200 shadow-lg hover:shadow-xl'
+            }`}
+            style={{
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(244, 114, 182, 0.2) 50%, rgba(251, 207, 232, 0.3) 100%)',
+            }}
+          >
+            <div className="flex items-center gap-4 p-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-pink-300 shadow-lg flex-shrink-0">
+                <img 
+                  src="/IMG_20260804_211013.jpg" 
+                  alt="Female" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              <div className="flex-1 text-left">
+                <div className="inline-block bg-pink-500/80 backdrop-blur-sm px-5 py-2 rounded-full">
+                  <span className="text-white font-semibold text-base">Female</span>
+                </div>
+              </div>
+              
+              {selectedGender === 'female' && (
+                <div className="absolute top-3 right-3 w-7 h-7 bg-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          </div>
+        </button>
+
+        {/* Male Card - 2nd Row */}
+        <button
+          onClick={() => setSelectedGender('male')}
+          className={`relative w-full max-w-xs transition-all duration-300 transform ${
+            selectedGender === 'male' ? 'scale-105' : 'hover:scale-102'
+          }`}
+        >
+          <div 
+            className={`relative rounded-2xl overflow-hidden cursor-pointer ${
+              selectedGender === 'male' 
+                ? 'ring-4 ring-blue-400 shadow-2xl shadow-blue-400/30' 
+                : 'ring-2 ring-gray-200 shadow-lg hover:shadow-xl'
+            }`}
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.2) 50%, rgba(191, 219, 254, 0.3) 100%)',
+            }}
+          >
+            <div className="flex items-center gap-4 p-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-blue-300 shadow-lg flex-shrink-0">
+                <img 
+                  src="/IMG_20260804_211031.jpg" 
+                  alt="Male" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              <div className="flex-1 text-left">
+                <div className="inline-block bg-blue-500/80 backdrop-blur-sm px-5 py-2 rounded-full">
+                  <span className="text-white font-semibold text-base">Male</span>
+                </div>
+              </div>
+              
+              {selectedGender === 'male' && (
+                <div className="absolute top-3 right-3 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Next Button */}
+      <div className="px-4 pb-8 pt-4">
+        <button
+          onClick={() => selectedGender && onContinue(selectedGender)}
+          disabled={!selectedGender}
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-4 rounded-2xl transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3"
+        >
+          <span className="text-lg">Next</span>
+          <ArrowRight size={24} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Country Selection Page Component
+function CountrySelectionPage({ 
+  userData,
+  selectedGender,
+  onComplete 
+}: { 
+  userData: any,
+  selectedGender: string,
+  onComplete: (gender: string, country: string) => void 
+}) {
   const [selectedCountry, setSelectedCountry] = useState<string>('IN')
   const [showCountryPicker, setShowCountryPicker] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleGenderSelect = (gender: string) => {
-    setSelectedGender(gender)
-  }
 
   const handleCountrySelect = (countryCode: string) => {
     setSelectedCountry(countryCode)
     setShowCountryPicker(false)
   }
 
-  const handleContinue = async () => {
-    if (!selectedGender || isSubmitting) return
+  const handleComplete = async () => {
+    if (isSubmitting) return
     
     setIsSubmitting(true)
     
@@ -195,7 +314,6 @@ function GenderSelectionPage({
         const userId = userData.id || userData.uid
         const userRef = doc(db, "users", userId)
         
-        // Set default user data with gender
         const userDocData = {
           id: userId,
           name: defaultData.name,
@@ -206,13 +324,12 @@ function GenderSelectionPage({
           email: userData.email || '',
           accountId: localStorage.getItem("accountNumber") || getOrCreateAccountNumber(userId),
           updatedAt: Date.now(),
-          isNewUser: false, // Mark as no longer new user
+          isNewUser: false,
           setupComplete: true
         }
 
         await setDoc(userRef, userDocData, { merge: true })
 
-        // Also update globalRooms
         const globalRoomRef = doc(db, "globalRooms", userId)
         await setDoc(globalRoomRef, {
           name: defaultData.name,
@@ -221,7 +338,6 @@ function GenderSelectionPage({
           country: countryFlag,
         }, { merge: true })
 
-        // Update localStorage
         localStorage.setItem("userName", defaultData.name)
         localStorage.setItem("userPhoto", defaultData.image)
         localStorage.setItem("userGender", selectedGender)
@@ -231,11 +347,9 @@ function GenderSelectionPage({
         localStorage.setItem("setupComplete", "true")
       }
 
-      // Call the completion handler
       onComplete(selectedGender, selectedCountry)
     } catch (error) {
       console.error("Error updating gender:", error)
-      // Still proceed even if there's an error
       onComplete(selectedGender, selectedCountry)
     } finally {
       setIsSubmitting(false)
@@ -246,162 +360,51 @@ function GenderSelectionPage({
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Simple Header */}
-      <div className="px-4 pt-12 pb-2">
-        <h1 className="text-2xl font-bold text-gray-900 text-center">Welcome! 🎉</h1>
-        <p className="text-sm text-gray-500 text-center mt-2">Select your gender to get started</p>
+      {/* Header with back button */}
+      <div className="flex items-center p-4">
+        <button
+          onClick={() => window.history.back()}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+        >
+          <ArrowLeft size={24} className="text-gray-700" />
+        </button>
       </div>
 
-      {/* Gender Cards */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
-        
-        {/* Female Card */}
-        <button
-          onClick={() => handleGenderSelect('female')}
-          className={`relative w-full max-w-xs transition-all duration-300 transform ${
-            selectedGender === 'female' ? 'scale-105' : 'hover:scale-102'
-          }`}
-        >
-          <div 
-            className={`relative rounded-3xl overflow-hidden cursor-pointer ${
-              selectedGender === 'female' 
-                ? 'ring-4 ring-pink-400 shadow-2xl shadow-pink-400/30' 
-                : 'ring-2 ring-gray-200 shadow-lg hover:shadow-xl'
-            }`}
-            style={{
-              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(244, 114, 182, 0.2) 50%, rgba(251, 207, 232, 0.3) 100%)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            {/* Glossy overlay */}
-            <div 
-              className="absolute inset-0 z-10"
-              style={{
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(255,182,193,0.2) 70%, rgba(236,72,153,0.3) 100%)',
-                borderRadius: '1.5rem',
-              }}
-            />
-            
-            {/* Image Container */}
-            <div className="relative z-0 p-6 flex flex-col items-center">
-              <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-pink-300 shadow-lg mb-4">
-                <img 
-                  src="/IMG_20260804_211013.jpg" 
-                  alt="Female" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              {/* Gender Tag */}
-              <div className="relative z-20 bg-pink-500/80 backdrop-blur-sm px-6 py-2 rounded-full">
-                <span className="text-white font-bold text-lg">Female</span>
-              </div>
-              
-              {/* Check indicator */}
-              {selectedGender === 'female' && (
-                <div className="absolute top-4 right-4 z-20 w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              )}
-            </div>
-          </div>
-        </button>
-
-        {/* OR Divider */}
-        <div className="flex items-center gap-3 w-full max-w-xs">
-          <div className="flex-1 h-px bg-gray-300"></div>
-          <span className="text-sm text-gray-400 font-medium">OR</span>
-          <div className="flex-1 h-px bg-gray-300"></div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col px-4">
+        <div className="text-center mb-8 pt-4">
+          <h1 className="text-2xl font-bold text-gray-900">Select Your Country</h1>
+          <p className="text-sm text-gray-500 mt-2">Choose your location to continue</p>
         </div>
 
-        {/* Male Card */}
-        <button
-          onClick={() => handleGenderSelect('male')}
-          className={`relative w-full max-w-xs transition-all duration-300 transform ${
-            selectedGender === 'male' ? 'scale-105' : 'hover:scale-102'
-          }`}
-        >
-          <div 
-            className={`relative rounded-3xl overflow-hidden cursor-pointer ${
-              selectedGender === 'male' 
-                ? 'ring-4 ring-blue-400 shadow-2xl shadow-blue-400/30' 
-                : 'ring-2 ring-gray-200 shadow-lg hover:shadow-xl'
-            }`}
-            style={{
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.2) 50%, rgba(191, 219, 254, 0.3) 100%)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            {/* Glossy overlay */}
-            <div 
-              className="absolute inset-0 z-10"
-              style={{
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(191,219,254,0.2) 70%, rgba(59,130,246,0.3) 100%)',
-                borderRadius: '1.5rem',
-              }}
-            />
-            
-            {/* Image Container */}
-            <div className="relative z-0 p-6 flex flex-col items-center">
-              <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-blue-300 shadow-lg mb-4">
-                <img 
-                  src="/IMG_20260804_211031.jpg" 
-                  alt="Male" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              {/* Gender Tag */}
-              <div className="relative z-20 bg-blue-500/80 backdrop-blur-sm px-6 py-2 rounded-full">
-                <span className="text-white font-bold text-lg">Male</span>
-              </div>
-              
-              {/* Check indicator */}
-              {selectedGender === 'male' && (
-                <div className="absolute top-4 right-4 z-20 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              )}
-            </div>
-          </div>
-        </button>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="px-4 pb-8 pt-4">
         {/* Country Selector */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select Your Country</label>
+        <div className="max-w-sm mx-auto w-full mb-8">
           <button
             onClick={() => setShowCountryPicker(!showCountryPicker)}
-            className="w-full flex items-center justify-between px-4 py-3 border-2 border-gray-200 rounded-2xl bg-white hover:border-gray-300 transition-colors cursor-pointer"
+            className="w-full flex items-center justify-between px-5 py-4 border-2 border-gray-200 rounded-2xl bg-white hover:border-gray-300 transition-colors cursor-pointer shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{selectedCountryData?.flag}</span>
-              <span className="text-gray-800 font-medium">{selectedCountryData?.name}</span>
+              <span className="text-3xl">{selectedCountryData?.flag}</span>
+              <span className="text-gray-800 font-medium text-lg">{selectedCountryData?.name}</span>
             </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
           {/* Country Dropdown */}
           {showCountryPicker && (
-            <div className="mt-2 border-2 border-gray-200 rounded-2xl bg-white max-h-48 overflow-y-auto shadow-lg absolute left-4 right-4 z-50" style={{ bottom: '160px' }}>
+            <div className="mt-2 border-2 border-gray-200 rounded-2xl bg-white max-h-64 overflow-y-auto shadow-xl z-50">
               {COUNTRIES.map((country) => (
                 <button
                   key={country.code}
                   onClick={() => handleCountrySelect(country.code)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${
+                  className={`w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer ${
                     selectedCountry === country.code ? 'bg-blue-50' : ''
                   }`}
                 >
                   <span className="text-2xl">{country.flag}</span>
-                  <span className={`text-sm ${selectedCountry === country.code ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>
+                  <span className={`text-base ${selectedCountry === country.code ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>
                     {country.name}
                   </span>
                   {selectedCountry === country.code && (
@@ -414,25 +417,29 @@ function GenderSelectionPage({
             </div>
           )}
         </div>
+      </div>
 
-        {/* Continue Button */}
-        <button
-          onClick={handleContinue}
-          disabled={!selectedGender || isSubmitting}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-4 rounded-2xl transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3"
-        >
-          {isSubmitting ? (
-            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-          ) : (
-            <>
-              <span className="text-lg">Let's Go!</span>
-              <ArrowRight size={24} />
-            </>
-          )}
-        </button>
+      {/* Let's Go Button */}
+      <div className="px-4 pb-8">
+        <div className="max-w-sm mx-auto">
+          <button
+            onClick={handleComplete}
+            disabled={isSubmitting}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-4 rounded-2xl transition-all hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3"
+          >
+            {isSubmitting ? (
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <>
+                <span className="text-lg">Let's Go!</span>
+                <ArrowRight size={24} />
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -448,8 +455,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [showLoginPage, setShowLoginPage] = useState(false)
   const [showFeedbackPage, setShowFeedbackPage] = useState(false)
   const [showGenderPage, setShowGenderPage] = useState(false)
+  const [showCountryPage, setShowCountryPage] = useState(false)
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [pendingUserData, setPendingUserData] = useState<any>(null)
+  const [pendingGender, setPendingGender] = useState<string>('')
   const [checkingNewUser, setCheckingNewUser] = useState(false)
   
   const [showGoogleSheet, setShowGoogleSheet] = useState(false)
@@ -473,8 +482,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setShowGoogleSheet(true);
   };
 
-  const handleGenderComplete = (gender: string, country: string) => {
+  const handleGenderContinue = (gender: string) => {
+    setPendingGender(gender)
     setShowGenderPage(false)
+    setShowCountryPage(true)
+  }
+
+  const handleGenderComplete = (gender: string, country: string) => {
+    setShowCountryPage(false)
     if (pendingUserData && onLoginSuccess) {
       onLoginSuccess(pendingUserData)
     }
@@ -754,12 +769,23 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     )
   }
 
+  // Country Selection Page
+  if (showCountryPage && pendingUserData) {
+    return (
+      <CountrySelectionPage 
+        userData={pendingUserData}
+        selectedGender={pendingGender}
+        onComplete={handleGenderComplete} 
+      />
+    );
+  }
+
   // Gender Selection Page
   if (showGenderPage && pendingUserData) {
     return (
       <GenderSelectionPage 
         userData={pendingUserData} 
-        onComplete={handleGenderComplete} 
+        onContinue={handleGenderContinue} 
       />
     );
   }
@@ -1219,4 +1245,4 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       )}
     </div>
   )
-            }
+      }
