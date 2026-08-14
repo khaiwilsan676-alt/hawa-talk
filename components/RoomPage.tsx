@@ -6,7 +6,7 @@ import GiftPicker from './GiftPicker';
 import RoomSettingPage from './RoomSettingPage';
 import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
-import Fourgride from './Fourgride'; // ← Added import
+import Fourgride from './Fourgride';
 import { db } from "../src/lib/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import Image from 'next/image';
@@ -73,7 +73,6 @@ interface RoomUser {
   image: string;
 }
 
-// Theme mapping: id -> background image URL
 const THEME_BACKGROUNDS: { [key: string]: string } = {
   'forest-night': '/1784875884052~2.jpg',
   'mood-light': '/1784533036732~2.jpg',
@@ -87,11 +86,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [showSettingPage, setShowSettingPage] = useState(false);
   const [showRoomInfo, setShowRoomInfo] = useState(false);
   const [showActiveUsers, setShowActiveUsers] = useState(false);
-  const [showFourGride, setShowFourGride] = useState(false); // ← New state
+  const [showFourGride, setShowFourGride] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [accountId, setAccountId] = useState<string>("Loading...");
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
+
+  // NEW: public message restriction states
+  const [publicMsgOff, setPublicMsgOff] = useState(false);
+  const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
 
   useEffect(() => {
     const name = localStorage.getItem('userName') || 'User';
@@ -100,7 +103,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setLocalUser({ name, image, accountId: storedAccNum });
   }, []);
 
-  // ----- PROFILE STATE -----
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<{
     name: string;
@@ -121,7 +123,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
   const [micMode, setMicMode] = useState<number>(9);
   const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
-  const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg"); // dynamic background
+  const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -191,11 +193,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             if (data.micMode && data.micMode !== micMode) {
               setMicMode(data.micMode);
             }
-            // Set background based on theme
             if (data.theme && THEME_BACKGROUNDS[data.theme]) {
               setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
             } else {
-              setBackgroundImage('/1784533036732~2.jpg'); // default
+              setBackgroundImage('/1784533036732~2.jpg');
             }
             const followerIds: string[] = data.followers || [];
             const followersList: RoomUser[] = followerIds.map((id: string) => ({
@@ -610,8 +611,17 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const isCurrentUsersSeat = (seat?: Seat) => Boolean(seat && seat.isOccupied && seat.user?.accountId === userAccountId);
 
+  // Show modal when public msg is off
+  const showPublicMsgOffAlert = () => {
+    setShowPublicMsgModal(true);
+  };
+
   const handleSendMessage = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (publicMsgOff && !isRoomOwner) {
+      showPublicMsgOffAlert();
+      return;
+    }
     if (!message.trim()) return;
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
@@ -633,6 +643,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const openChatInput = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (publicMsgOff && !isRoomOwner) {
+      showPublicMsgOffAlert();
+      return;
+    }
     setShowChatInput(true);
     setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 100);
   };
@@ -665,7 +679,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (data.announcement !== undefined) setRoomAnnouncement(data.announcement);
     if (data.roomImage) setRoomImage(data.roomImage);
     if (data.micMode) setMicMode(data.micMode);
-    // Update background based on theme
     if (data.theme && THEME_BACKGROUNDS[data.theme]) {
       setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
     }
@@ -702,18 +715,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji);
 
-  // NEW: Clear chat handler for Fourgride
   const handleClearChat = () => {
     setMessages([]);
   };
 
-  // Derived values
   const liveUserCount = roomUsers.length;
   const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null;
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false;
   const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false;
 
-  // ---------- Render seats based on mic mode ----------
   const renderSeats = () => {
     if (micMode === 5) {
       return (
@@ -779,7 +789,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </>
       );
     }
-    // Default 9 seats
     return (
       <>
         <div className="flex justify-center">
@@ -801,7 +810,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     );
   };
 
-  // Settings page
   if (showSettingPage) {
     return (
       <RoomSettingPage
@@ -813,10 +821,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     );
   }
 
-  // ---------- Main Return JSX ----------
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* Dynamic background image */}
       <img
         src={backgroundImage}
         alt="Room Background"
@@ -824,15 +830,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         draggable={false}
       />
 
-      {/* Hidden Jitsi container */}
       <div ref={jitsiContainerRef} className="absolute inset-0 z-0 opacity-0 pointer-events-none" style={{ width: '1px', height: '1px' }} />
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
       <div className="relative z-10 flex flex-col h-full px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
 
-        {/* ---------- Top Header Section ---------- */}
+        {/* Top Header */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
-          {/* Room Cover + Name + Follow */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
@@ -843,19 +847,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-lg">{displayRoomName}</h2>
-                {/* Follow button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     const newFollow = !isFollowed;
                     setIsFollowed(newFollow);
-                    if (onFollowToggle) {
-                      onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow);
-                    }
+                    if (onFollowToggle) onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow);
                   }}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                    isFollowed ? 'bg-gray-500' : 'bg-blue-500'
-                  }`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-gray-500' : 'bg-blue-500'}`}
                   title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                 >
                   {isFollowed ? (
@@ -879,13 +878,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             </div>
           </div>
 
-          {/* Top Right Icons */}
           <div className="flex items-center gap-1.5">
-            {/* User count button - opens Active Users sheet */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }}
-              className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7 cursor-pointer hover:bg-black/60 transition-colors"
-            >
+            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7 cursor-pointer hover:bg-black/60 transition-colors">
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
@@ -894,7 +888,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               <span className="text-white text-xs font-semibold leading-none">{liveUserCount}</span>
             </button>
 
-            {/* Settings icon – ONLY visible to room owner */}
             {isRoomOwner && (
               <button onClick={openSettings} aria-label="Settings" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
                 <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
@@ -918,16 +911,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           </div>
         </div>
 
-        {/* ---------- Middle Section: Seats (fixed) + Scrollable Content ---------- */}
+        {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Seats - FIXED (no scroll) */}
           <div className="flex-shrink-0 flex flex-col gap-2 pt-4">
             {renderSeats()}
           </div>
 
-          {/* Messages + Welcome - SCROLLABLE */}
           <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
-            {/* Fixed Welcome + Announcement Card */}
             <div className="mx-2 mb-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3">
               <p className="text-white/80 text-[11px] leading-relaxed">
                 Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban
@@ -940,7 +930,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               )}
             </div>
 
-            {/* Chat Messages */}
             <div className="space-y-0.5">
               {messages.map((msg) => (
                 <div key={msg.id} className="leading-[1.9rem]">
@@ -995,7 +984,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           </div>
         </div>
 
-        {/* ---------- Footer Controls ---------- */}
+        {/* Footer Controls */}
         <div className="flex-shrink-0 pt-2">
           {showChatInput && (
             <div ref={inputContainerRef} className="flex items-center gap-0 mb-2 -mx-4 w-screen">
@@ -1005,8 +994,21 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
                   </svg>
                 </button>
-                <input ref={inputRef} type="text" value={message} onChange={(e) => setMessage(e.target.value)} onKeyPress={handleKeyPress} onFocus={handleInputFocus} placeholder="Type a message..." className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-2 text-base outline-none border-none" />
-                <button onMouseDown={(e) => e.preventDefault()} onClick={handleSendMessage} disabled={!message.trim()} className="p-1.5 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  onFocus={handleInputFocus}
+                  placeholder="Type a message..."
+                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-2 text-base outline-none border-none"
+                />
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={handleSendMessage}
+                  className="p-1.5 hover:bg-blue-50 rounded-full transition-colors cursor-pointer flex-shrink-0"
+                >
                   <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                     <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
@@ -1016,7 +1018,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           )}
 
           <div className="flex items-center justify-between gap-2">
-            <button onClick={openChatInput} className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer">Say Hi</button>
+            <button
+              onClick={openChatInput}
+              className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
+            >
+              Say Hi
+            </button>
             <div className="flex items-center gap-2">
               {hasSeat && (
                 <button onClick={handleBottomMicToggle} className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer">
@@ -1044,7 +1051,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               >
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round"><rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" /></svg>
               </button>
-              {/* Apps Menu - opens Fourgride sheet */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
                 aria-label="Apps Menu"
@@ -1057,45 +1063,44 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       </div>
 
-      {/* ---------- Active Users Sheet ---------- */}
+      {/* Public Msg Off Modal */}
+      {showPublicMsgModal && (
+        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
+          <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="text-4xl mb-3">🔒</div>
+            <h3 className="text-lg font-bold text-gray-800 mb-1">Public msg are off</h3>
+            <p className="text-sm text-gray-500 mb-4">Only the room owner can send messages right now.</p>
+            <button
+              onClick={() => setShowPublicMsgModal(false)}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full transition-colors cursor-pointer"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Active Users Sheet */}
       {showActiveUsers && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
-          <div
-            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
-            style={{ height: '30vh' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '30vh' }} onClick={(e) => e.stopPropagation()}>
             <div className="px-6 pt-6 pb-3 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
             </div>
-            {/* Users list */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {roomUsers.length > 0 ? (
                 <div className="space-y-2">
                   {roomUsers.map((user) => (
                     <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div
-                        className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
-                        onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}
-                      >
-                        <img
-                          src={user.image || "/default-avatar.png"}
-                          alt={user.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
-                        />
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
+                        <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
                         <div className="flex items-center gap-1">
                           <p className="text-xs text-gray-400">ID: {user.accountId}</p>
-                          <button
-                            onClick={(e) => handleCopyUserId(user.accountId, e)}
-                            className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer"
-                            title="Copy ID"
-                          >
+                          <button onClick={(e) => handleCopyUserId(user.accountId, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer" title="Copy ID">
                             <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                             </svg>
@@ -1115,17 +1120,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* ---------- Room Info Sheet ---------- */}
+      {/* Room Info Sheet */}
       {showRoomInfo && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            {/* Warning icon top-left (only for non‑owners) */}
             {!isRoomOwner && (
-              <svg
-                viewBox="0 0 24 24"
-                className="absolute top-3 left-3 w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round"
-              >
+              <svg viewBox="0 0 24 24" className="absolute top-3 left-3 w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -1170,12 +1171,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {/* Owner row with clickable avatar */}
                   <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                    <div
-                      className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
-                      onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}
-                    >
+                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}>
                       <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                     </div>
                     <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -1187,10 +1184,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                   </div>
                   {roomFollowers.map(follower => (
                     <div key={follower.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div
-                        className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
-                        onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}
-                      >
+                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}>
                         <img src={follower.image || "/default-avatar.png"} alt={follower.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1206,14 +1200,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* ---------- RoomProfile Bottom Sheet ---------- */}
+      {/* RoomProfile Bottom Sheet */}
       {showUserProfile && profileUser && (
         <RoomProfile
-          user={{
-            name: profileUser.name,
-            image: profileUser.image,
-            accountId: profileUser.accountId,
-          }}
+          user={{ name: profileUser.name, image: profileUser.image, accountId: profileUser.accountId }}
           onClose={() => setShowUserProfile(false)}
           onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
           onMessage={() => console.log('Message clicked for', profileUser.accountId)}
@@ -1221,7 +1211,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         />
       )}
 
-      {/* ---------- Exit Menu ---------- */}
+      {/* Exit Menu */}
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40" onClick={closeExitMenu}>
           <div className="flex flex-col items-center gap-8" onClick={(e) => e.stopPropagation()}>
@@ -1244,7 +1234,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* ---------- Seat Actions Sheet ---------- */}
+      {/* Seat Actions Sheet */}
       {showSeatSheet && selectedSeat !== null && (
         <div className="absolute inset-0 z-30 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
@@ -1262,7 +1252,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* ---------- Full Image Modal ---------- */}
+      {/* Full Image Modal */}
       {fullImageModal && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
           <div className="relative max-w-full max-h-full">
@@ -1274,19 +1264,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* ---------- Message Sheet ---------- */}
+      {/* Message Sheet */}
       {showMessageSheet && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
-          <div
-            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
-            style={{ height: '60vh' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setShowMessageSheet(false)}
-              className="absolute top-3 left-3 z-20 p-1.5 bg-white/80 rounded-full shadow hover:bg-white transition-colors"
-            >
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '60vh' }} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowMessageSheet(false)} className="absolute top-3 left-3 z-20 p-1.5 bg-white/80 rounded-full shadow hover:bg-white transition-colors">
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-700 stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
@@ -1298,11 +1281,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* ---------- Four Grid Tools Sheet (Apps Menu) ---------- */}
+      {/* Four Grid Tools Sheet (Apps Menu) */}
       {showFourGride && (
         <Fourgride
           onClose={() => setShowFourGride(false)}
           onClearChat={handleClearChat}
+          publicMsgOff={publicMsgOff}
+          onTogglePublicMsg={() => setPublicMsgOff(prev => !prev)}
         />
       )}
 
@@ -1324,7 +1309,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   );
 }
 
-// ---------- SeatItem Component ----------
+// SeatItem Component (unchanged)
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isRoomOwner }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1397,4 +1382,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
       </span>
     </div>
   );
-      }
+            }
