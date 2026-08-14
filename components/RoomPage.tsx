@@ -129,12 +129,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [showChatInput, setShowChatInput] = useState(false);
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
 
-  // Jitsi refs
+  // --- STEPS 1 & 2: Jitsi Refs and applyAudioState ---
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<any>(null);
-  const [jitsiLoaded, setJitsiLoaded] = useState(false);
   const jitsiJoinedRef = useRef(false);
   const desiredAudioStateRef = useRef(false); // true = unmuted, false = muted
+
+  const [jitsiLoaded, setJitsiLoaded] = useState(false);
   const [isJitsiJoined, setIsJitsiJoined] = useState(false);
   const [hasJoinedSeat, setHasJoinedSeat] = useState(false);
   const isUpdatingSeatRef = useRef(false);
@@ -173,7 +174,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     return Math.abs(hash);
   }
 
-  // Display room name
   const displayRoomName = roomName
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
     : 'Room';
@@ -243,158 +243,108 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }));
   };
 
-  // Apply desired audio state to Jitsi
+  // --- STEP 2: applyAudioState definition ---
   const applyAudioState = useCallback(async () => {
-    if (!jitsiApiRef.current || !jitsiJoinedRef.current) return;
+    const api = jitsiApiRef.current;
+    if (!api || !jitsiJoinedRef.current) return;
+
     try {
-      jitsiApiRef.current.executeCommand('toggleAudio', desiredAudioStateRef.current);
-      const isMuted = await jitsiApiRef.current.isAudioMuted();
-      const shouldBeMuted = !desiredAudioStateRef.current;
-      if (isMuted !== shouldBeMuted) {
-        jitsiApiRef.current.executeCommand('toggleAudio');
+      const shouldUnmute = desiredAudioStateRef.current;
+      const isMuted = await api.isAudioMuted();
+
+      if (shouldUnmute && isMuted) {
+        api.executeCommand('toggleAudio');
+      } else if (!shouldUnmute && !isMuted) {
+        api.executeCommand('toggleAudio');
       }
-    } catch (err) {
-      console.warn("Jitsi audio execute error:", err);
+    } catch (error) {
+      console.error('Jitsi audio state error:', error);
     }
   }, []);
 
-  // Update desired audio state based on seat status
-  const updateDesiredAudioState = useCallback(() => {
-    const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
-    if (currentUserSeat && !currentUserSeat.isMuted) {
-      desiredAudioStateRef.current = true; // unmuted - can speak
-    } else {
-      desiredAudioStateRef.current = false; // muted - listen only
-    }
-    applyAudioState();
-  }, [seats, userAccountId, applyAudioState]);
-
-  // Trigger update when seats or mute state changes
-  useEffect(() => {
-    updateDesiredAudioState();
-  }, [updateDesiredAudioState]);
-
-  // Initialize Jitsi for listening (on room enter)
+  // --- STEP 3: Updated initialize function ---
   const initializeJitsiForListening = useCallback(() => {
     if (!jitsiLoaded || !jitsiContainerRef.current || jitsiApiRef.current) return;
 
-    const domain = 'meet.jit.si';
-    const options = {
-      roomName: jitsiRoomName,
-      width: '100%',
-      height: '100%',
-      parentNode: jitsiContainerRef.current,
-      userInfo: { displayName: currentUser.name, email: userAccountId + '@hurry.app' },
-      configOverrides: {
-        startWithAudioMuted: true, // Start muted for listening only
-        startWithVideoMuted: true,
-        disableDeepLinking: true,
-        prejoinPageEnabled: false,
-        enableNoisyMicDetection: true,
-        disableAudioLevels: false,
-        toolbarButtons: [],
-        disableInviteFunctions: true,
-        disablePolls: true,
-        disableSelfView: true,
-        hideConferenceSubject: true,
-        hideConferenceTimer: true,
-        doNotStoreRoom: true,
-        resolution: 180,
-        constraints: { video: { height: { ideal: 180, max: 180, min: 180 } } },
-      },
-      interfaceConfigOverrides: {
-        filmStripOnly: false,
-        SHOW_JITSI_WATERMARK: false,
-        SHOW_WATERMARK_FOR_GUESTS: false,
-        SHOW_BRAND_WATERMARK: false,
-        SHOW_POWERED_BY: false,
-        SHOW_PROMOTIONAL_CLOSE_PAGE: false,
-        TOOLBAR_ALWAYS_VISIBLE: false,
-        DISABLE_VIDEO_BACKGROUND: true,
-        HIDE_INVITE_MORE_HEADER: true,
-        MOBILE_APP_PROMO: false,
-        APP_NAME: 'Hurry',
-        NATIVE_APP_NAME: 'Hurry',
-        PROVIDER_NAME: 'Hurry'
-      }
-    };
-
     try {
-      const api = new window.JitsiMeetExternalAPI(domain, options);
-      jitsiApiRef.current = api;
-      jitsiJoinedRef.current = false;
+      const api = new window.JitsiMeetExternalAPI('meet.jit.si', {
+        roomName: jitsiRoomName,
+        width: '100%',
+        height: '100%',
+        parentNode: jitsiContainerRef.current,
+        userInfo: {
+          displayName: currentUser.name,
+          email: `${userAccountId}@hurry.app`,
+        },
+        configOverrides: {
+          startWithAudioMuted: true,
+          startWithVideoMuted: true,
+          prejoinPageEnabled: false,
+          disableDeepLinking: true,
+          disableAudioLevels: false,
+          enableNoisyMicDetection: true,
+          toolbarButtons: [],
+          disableInviteFunctions: true,
+          disablePolls: true,
+          disableSelfView: true,
+          hideConferenceSubject: true,
+          hideConferenceTimer: true,
+          doNotStoreRoom: true,
+        },
+        interfaceConfigOverrides: {
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_WATERMARK_FOR_GUESTS: false,
+          SHOW_BRAND_WATERMARK: false,
+          SHOW_POWERED_BY: false,
+          TOOLBAR_ALWAYS_VISIBLE: false,
+          MOBILE_APP_PROMO: false,
+        },
+      });
 
-      api.addListener('videoConferenceJoined', () => {
+      jitsiApiRef.current = api;
+
+      api.addListener('videoConferenceJoined', async () => {
+        console.log('Jitsi joined');
         jitsiJoinedRef.current = true;
         setIsJitsiJoined(true);
-        // Keep muted initially for listening only
+
+        // Everyone enters muted
         desiredAudioStateRef.current = false;
-        applyAudioState();
-      });
 
-      api.addListener('dominantSpeakerChanged', (data: any) => {
-        const speakerId = data?.id || 'local';
-        speakingUsersRef.current.add(speakerId);
-        setUserSpeaking(speakerId, true);
-        const existingTimer = speakingTimersRef.current.get(speakerId);
-        if (existingTimer) clearTimeout(existingTimer);
-        const timer = setTimeout(() => {
-          speakingUsersRef.current.delete(speakerId);
-          setUserSpeaking(speakerId, false);
-          speakingTimersRef.current.delete(speakerId);
-        }, 1500);
-        speakingTimersRef.current.set(speakerId, timer);
-      });
-
-      api.addListener('audioLevelsChanged', (data: any) => {
-        if (data && data.length > 0) {
-          data.forEach((participant: any) => {
-            if (participant.id && participant.level > 0.03) {
-              const targetKey = participant.id;
-              speakingUsersRef.current.add(targetKey);
-              setUserSpeaking(targetKey, true);
-              const existingTimer = speakingTimersRef.current.get(targetKey);
-              if (existingTimer) clearTimeout(existingTimer);
-              const timer = setTimeout(() => {
-                speakingUsersRef.current.delete(targetKey);
-                setUserSpeaking(targetKey, false);
-                speakingTimersRef.current.delete(targetKey);
-              }, 800);
-              speakingTimersRef.current.set(targetKey, timer);
-            }
-          });
+        try {
+          const muted = await api.isAudioMuted();
+          if (!muted) {
+            api.executeCommand('toggleAudio');
+          }
+        } catch (error) {
+          console.error('Initial audio mute error:', error);
         }
+      });
+
+      api.addListener('audioMuteStatusChanged', (data: any) => {
+        console.log('Jitsi audio status:', data);
+      });
+
+      api.addListener('participantJoined', (data: any) => {
+        console.log('Jitsi participant joined:', data);
       });
 
       api.addListener('participantLeft', (data: any) => {
-        if (data && data.id) {
-          speakingUsersRef.current.delete(data.id);
-          setUserSpeaking(data.id, false);
-          const timer = speakingTimersRef.current.get(data.id);
-          if (timer) { clearTimeout(timer); speakingTimersRef.current.delete(data.id); }
-        }
+        console.log('Jitsi participant left:', data);
+      });
+
+      api.addListener('readyToClose', () => {
+        jitsiJoinedRef.current = false;
+        setIsJitsiJoined(false);
       });
 
     } catch (error) {
-      console.error('Error initializing Jitsi:', error);
+      console.error('Jitsi initialization error:', error);
     }
-  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name, applyAudioState]);
+  }, [jitsiLoaded, jitsiRoomName, currentUser.name, userAccountId]);
 
-  // Toggle audio when seat status changes
-  useEffect(() => {
-    if (!jitsiApiRef.current) return;
-    try {
-      if (hasSeat) {
-        jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted);
-      } else {
-        jitsiApiRef.current.executeCommand('toggleAudio', false);
-      }
-    } catch (e) {
-      console.warn("Jitsi audio execute error:", e);
-    }
-  }, [hasSeat, currentUserSeat?.isMuted]);
-
-  // Initialize Jitsi on room enter (for listening)
+  // --- STEP 4: The "updateDesiredAudioState" Effect and removal of old "toggleAudio" effect ---
+  // Initialize Jitsi on room enter
   useEffect(() => {
     if (jitsiLoaded && !jitsiApiRef.current) {
       initializeJitsiForListening();
@@ -643,6 +593,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
+  // --- STEP 5: Updated handleTakeSeat ---
   const handleTakeSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -663,28 +614,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         return; 
       }
 
-      // Create updated seats array
       const updatedSeats = seats.map(s => {
-        // Clear current user's old seat
         if (s.isOccupied && s.user?.accountId === userAccountId) {
-          return { 
-            ...s, 
-            isOccupied: false, 
-            user: undefined, 
-            isSpeaking: false,
-            isMuted: false 
-          };
+          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
         }
-        // Occupy new seat
         if (s.number === selectedSeat) {
           return {
             ...s,
             isOccupied: true,
-            user: { 
-              name: currentUser.name, 
-              image: currentUser.image, 
-              accountId: userAccountId 
-            },
+            user: { name: currentUser.name, image: currentUser.image, accountId: userAccountId },
             isMuted: false,
             isSpeaking: false
           };
@@ -692,19 +630,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         return s;
       });
 
-      // Update local state first
       setSeats(updatedSeats);
       setHasJoinedSeat(true);
 
-      // Update Firestore for all changed seats
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
       // Unmute audio since user now has a seat
-      if (jitsiApiRef.current && jitsiJoinedRef.current) {
-        desiredAudioStateRef.current = true;
-        applyAudioState();
-      }
+      desiredAudioStateRef.current = true;
+      applyAudioState();
 
       setShowSeatSheet(false);
       setSelectedSeat(null);
@@ -713,6 +647,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
+  // --- STEP 6: Updated handleLeaveSeat ---
   const handleLeaveSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -725,13 +660,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     try {
       const updatedSeats = seats.map(s => {
         if (s.number === selectedSeat && s.user?.accountId === userAccountId) {
-          return { 
-            ...s, 
-            isOccupied: false, 
-            user: undefined, 
-            isSpeaking: false,
-            isMuted: false 
-          };
+          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
         }
         return s;
       });
@@ -739,21 +668,45 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       setSeats(updatedSeats);
       setHasJoinedSeat(false);
       
-      // Update Firestore
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
       // Mute audio since user left the seat (listen only)
-      if (jitsiApiRef.current && jitsiJoinedRef.current) {
-        desiredAudioStateRef.current = false;
-        applyAudioState();
-      }
+      desiredAudioStateRef.current = false;
+      applyAudioState();
 
       setShowSeatSheet(false);
       setSelectedSeat(null);
     } finally {
       isUpdatingSeatRef.current = false;
     }
+  };
+
+  // --- STEP 7: Updated handleBottomMicToggle ---
+  const handleBottomMicToggle = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    if (!currentUserSeat || !jitsiApiRef.current) return;
+
+    const newMuteState = !currentUserSeat.isMuted;
+
+    // Update desired state
+    desiredAudioStateRef.current = !newMuteState;
+    
+    // Apply to Jitsi
+    await applyAudioState();
+
+    // Sync seat
+    const updatedSeats = seats.map(seat => 
+      seat.number === currentUserSeat.number 
+        ? { ...seat, isMuted: newMuteState } 
+        : seat
+    );
+    
+    setSeats(updatedSeats);
+    
+    // Update Firestore
+    await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
   };
 
   const handleToggleMute = async (e?: React.MouseEvent) => {
@@ -766,36 +719,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
         const newMuteState = !s.isMuted;
-        if (s.user?.accountId === userAccountId && jitsiApiRef.current) {
-          try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
-          // Update Jitsi audio state
-          if (s.user?.accountId === userAccountId) {
-            desiredAudioStateRef.current = !newMuteState;
-            applyAudioState();
-          }
+        if (s.user?.accountId === userAccountId) {
+          desiredAudioStateRef.current = !newMuteState;
+          applyAudioState();
         }
         return { ...s, isMuted: newMuteState };
       }
-      return s;
-    });
-    
-    setSeats(updatedSeats);
-    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
-  };
-
-  const handleBottomMicToggle = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!currentUserSeat) return;
-    
-    const newMuteState = !currentUserSeat.isMuted;
-    try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
-    
-    // Update Jitsi audio state
-    desiredAudioStateRef.current = !newMuteState;
-    applyAudioState();
-    
-    const updatedSeats = seats.map(s => {
-      if (s.number === currentUserSeat.number) return { ...s, isMuted: newMuteState };
       return s;
     });
     
@@ -936,7 +865,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false;
   const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false;
 
-  // Render seats based on micMode
   const renderSeats = () => {
     const renderSeatItems = (seatNumbers: number[]) => {
       return seatNumbers.map(num => {
@@ -982,7 +910,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </>
       );
     }
-    // Default: 9 seats
     return (
       <>
         <div className="flex justify-center">{renderSeatItems([1])}</div>
@@ -1027,7 +954,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         draggable={false}
       />
 
-      <div ref={jitsiContainerRef} className="absolute inset-0 z-0 opacity-0 pointer-events-none" style={{ width: '1px', height: '1px' }} />
+      {/* --- STEP 8: Updated Jitsi container size --- */}
+      <div 
+        ref={jitsiContainerRef} 
+        className="absolute inset-0 z-0 opacity-0 pointer-events-none"
+        style={{ width: '100%', height: '100%', opacity: 0 }}
+      />
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
       <div className="relative z-10 flex flex-col h-full px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
@@ -1579,4 +1511,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
       </span>
     </div>
   );
-                                                                      }
+                                                   }
