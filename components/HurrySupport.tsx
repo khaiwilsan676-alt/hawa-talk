@@ -48,7 +48,7 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
         const q = query(collection(db, "aiChats"));
         const querySnapshot = await getDocs(q);
         
-        querySnapshot.forEach(async (document) => {
+        querySnapshot.docs.forEach(async (document: any) => {
           const data = document.data();
           const chatTime = data.timestamp || 0;
           if (now - chatTime > twentyFourHours) {
