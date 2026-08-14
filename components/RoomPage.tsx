@@ -1,14 +1,15 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect, useRef } from 'react'
-import EmojiPicker from './Emojipicker'
-import GiftPicker from './GiftPicker'
-import RoomSettingPage from './RoomSettingPage'
-import MessagePage from './MessagePage'
-import RoomProfile from './RoomProfile'
-import { db } from "../src/lib/firebase"
-import { doc, setDoc, getDoc } from "firebase/firestore"
-import Image from 'next/image'
+import React, { useState, useEffect, useRef } from 'react';
+import EmojiPicker from './Emojipicker';
+import GiftPicker from './GiftPicker';
+import RoomSettingPage from './RoomSettingPage';
+import MessagePage from './MessagePage';
+import RoomProfile from './RoomProfile';
+import Fourgride from './Fourgride'; // ← Added import
+import { db } from "../src/lib/firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import Image from 'next/image';
 
 declare global {
   interface Window {
@@ -18,23 +19,23 @@ declare global {
 
 interface RoomPageProps {
   roomOwner: {
-    id?: string
-    uid?: string
-    accountId?: string
-    name: string
-    image: string
-  }
+    id?: string;
+    uid?: string;
+    accountId?: string;
+    name: string;
+    image: string;
+  };
   currentUser: {
-    id?: string
-    uid?: string
-    accountId: string
-    name: string
-    image: string
-  }
-  onClose?: () => void
-  onBack?: () => void
-  onKeepRoom?: (roomData: { name: string; image: string; accountId: string }) => void
-  onFollowToggle?: (roomId: string, follow: boolean) => void
+    id?: string;
+    uid?: string;
+    accountId: string;
+    name: string;
+    image: string;
+  };
+  onClose?: () => void;
+  onBack?: () => void;
+  onKeepRoom?: (roomData: { name: string; image: string; accountId: string }) => void;
+  onFollowToggle?: (roomId: string, follow: boolean) => void;
 }
 
 const SPECIAL_ACCOUNTS: { [key: string]: string } = {
@@ -42,205 +43,206 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
   'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
   '100002': '100002',
   '100003': '100003'
-}
+};
 
-const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
-const ADMIN_IDS = ['700001', '700002', '700003']
+const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005'];
+const ADMIN_IDS = ['700001', '700002', '700003'];
 
 interface Seat {
-  number: number
-  isOccupied: boolean
-  isLocked?: boolean
-  user?: { name: string; image: string; accountId: string }
-  isMuted?: boolean
-  isSpeaking?: boolean
+  number: number;
+  isOccupied: boolean;
+  isLocked?: boolean;
+  user?: { name: string; image: string; accountId: string };
+  isMuted?: boolean;
+  isSpeaking?: boolean;
 }
 
 interface Message {
-  id: string
-  text: string
-  sender: string
-  senderImage: string
-  timestamp: number
-  type?: 'message' | 'join' | 'leave'
-  imageUrl?: string
+  id: string;
+  text: string;
+  sender: string;
+  senderImage: string;
+  timestamp: number;
+  type?: 'message' | 'join' | 'leave';
+  imageUrl?: string;
 }
 
 interface RoomUser {
-  accountId: string
-  name: string
-  image: string
+  accountId: string;
+  name: string;
+  image: string;
 }
 
 // Theme mapping: id -> background image URL
 const THEME_BACKGROUNDS: { [key: string]: string } = {
   'forest-night': '/1784875884052~2.jpg',
   'mood-light': '/1784533036732~2.jpg',
-}
+};
 
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
-  const [showExitMenu, setShowExitMenu] = useState(false)
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-  const [showGiftPicker, setShowGiftPicker] = useState(false)
-  const [showMessageSheet, setShowMessageSheet] = useState(false)
-  const [showSettingPage, setShowSettingPage] = useState(false)
-  const [showRoomInfo, setShowRoomInfo] = useState(false)
-  const [showActiveUsers, setShowActiveUsers] = useState(false)
-  const [isFollowed, setIsFollowed] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [accountId, setAccountId] = useState<string>("Loading...")
-  const [localUser, setLocalUser] = useState<{name: string, image: string, accountId: string}>({ name: 'User', image: '/default-avatar.png', accountId: '' })
+  const [showExitMenu, setShowExitMenu] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showGiftPicker, setShowGiftPicker] = useState(false);
+  const [showMessageSheet, setShowMessageSheet] = useState(false);
+  const [showSettingPage, setShowSettingPage] = useState(false);
+  const [showRoomInfo, setShowRoomInfo] = useState(false);
+  const [showActiveUsers, setShowActiveUsers] = useState(false);
+  const [showFourGride, setShowFourGride] = useState(false); // ← New state
+  const [isFollowed, setIsFollowed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [accountId, setAccountId] = useState<string>("Loading...");
+  const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
 
   useEffect(() => {
-    const name = localStorage.getItem('userName') || 'User'
-    const image = localStorage.getItem('userPhoto') || '/default-avatar.png'
-    const storedAccNum = localStorage.getItem('accountNumber') || localStorage.getItem('userUID') || '10000000'
-    setLocalUser({ name, image, accountId: storedAccNum })
-  }, [])
+    const name = localStorage.getItem('userName') || 'User';
+    const image = localStorage.getItem('userPhoto') || '/default-avatar.png';
+    const storedAccNum = localStorage.getItem('accountNumber') || localStorage.getItem('userUID') || '10000000';
+    setLocalUser({ name, image, accountId: storedAccNum });
+  }, []);
 
   // ----- PROFILE STATE -----
-  const [showUserProfile, setShowUserProfile] = useState(false)
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<{
-    name: string
-    image: string
-    accountId: string
-  } | null>(null)
+    name: string;
+    image: string;
+    accountId: string;
+  } | null>(null);
 
-  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest"
-  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || ""
-  const isRoomOwner = userAccountId === roomOwnerId
+  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
+  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
+  const isRoomOwner = userAccountId === roomOwnerId;
 
-  const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState<Message[]>([])
-  const [fullImageModal, setFullImageModal] = useState<string | null>(null)
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [fullImageModal, setFullImageModal] = useState<string | null>(null);
 
-  const [roomName, setRoomName] = useState<string>("")
-  const [roomAnnouncement, setRoomAnnouncement] = useState<string>("")
-  const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg")
-  const [micMode, setMicMode] = useState<number>(9)
-  const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile')
-  const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg") // dynamic background
+  const [roomName, setRoomName] = useState<string>("");
+  const [roomAnnouncement, setRoomAnnouncement] = useState<string>("");
+  const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
+  const [micMode, setMicMode] = useState<number>(9);
+  const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
+  const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg"); // dynamic background
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
-  const inputContainerRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
 
-  const [showChatInput, setShowChatInput] = useState(false)
-  const [roomUsers, setRoomUsers] = useState<RoomUser[]>([])
+  const [showChatInput, setShowChatInput] = useState(false);
+  const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
 
-  const jitsiContainerRef = useRef<HTMLDivElement>(null)
-  const jitsiApiRef = useRef<any>(null)
-  const [jitsiLoaded, setJitsiLoaded] = useState(false)
+  const jitsiContainerRef = useRef<HTMLDivElement>(null);
+  const jitsiApiRef = useRef<any>(null);
+  const [jitsiLoaded, setJitsiLoaded] = useState(false);
 
-  const speakingUsersRef = useRef<Set<string>>(new Set())
-  const speakingTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const speakingUsersRef = useRef<Set<string>>(new Set());
+  const speakingTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
-  const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([])
+  const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([]);
 
   const getInitialSeats = (mode: number): Seat[] => {
-    const seats: Seat[] = []
+    const seats: Seat[] = [];
     for (let i = 1; i <= mode; i++) {
-      seats.push({ number: i, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false })
+      seats.push({ number: i, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false });
     }
-    return seats
-  }
+    return seats;
+  };
 
-  const [seats, setSeats] = useState<Seat[]>(getInitialSeats(9))
-  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
-  const [showSeatSheet, setShowSeatSheet] = useState(false)
+  const [seats, setSeats] = useState<Seat[]>(getInitialSeats(9));
+  const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
+  const [showSeatSheet, setShowSeatSheet] = useState(false);
 
-  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId)
-  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId)
+  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId);
+  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
 
-  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomOwner.id || roomOwner.accountId || 'default')) % 100000}`
+  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomOwner.id || roomOwner.accountId || 'default')) % 100000}`;
 
   function hashCode(str: string): number {
-    let hash = 0
+    let hash = 0;
     for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash |= 0
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
     }
-    return Math.abs(hash)
+    return Math.abs(hash);
   }
 
   const displayRoomName = roomName
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
-    : (roomOwner.name?.length > 6 ? roomOwner.name?.substring(0, 6) + '...' : roomOwner.name || 'User')
+    : (roomOwner.name?.length > 6 ? roomOwner.name?.substring(0, 6) + '...' : roomOwner.name || 'User');
 
   const openProfile = (user: { name: string; image: string; accountId: string }) => {
-    setProfileUser(user)
-    setShowUserProfile(true)
-  }
+    setProfileUser(user);
+    setShowUserProfile(true);
+  };
 
   // Fetch room data from Firestore
   useEffect(() => {
     const fetchRoomData = async () => {
       if (roomOwner.id && db) {
         try {
-          const snap = await getDoc(doc(db, "globalRooms", roomOwner.id))
+          const snap = await getDoc(doc(db, "globalRooms", roomOwner.id));
           if (snap.exists()) {
-            const data = snap.data()
-            setRoomName(data.name || "")
-            setRoomAnnouncement(data.announcement || "")
-            setRoomImage(data.image || roomOwner.image)
+            const data = snap.data();
+            setRoomName(data.name || "");
+            setRoomAnnouncement(data.announcement || "");
+            setRoomImage(data.image || roomOwner.image);
             if (data.micMode && data.micMode !== micMode) {
-              setMicMode(data.micMode)
+              setMicMode(data.micMode);
             }
             // Set background based on theme
             if (data.theme && THEME_BACKGROUNDS[data.theme]) {
-              setBackgroundImage(THEME_BACKGROUNDS[data.theme])
+              setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
             } else {
-              setBackgroundImage('/1784533036732~2.jpg') // default
+              setBackgroundImage('/1784533036732~2.jpg'); // default
             }
-            const followerIds: string[] = data.followers || []
+            const followerIds: string[] = data.followers || [];
             const followersList: RoomUser[] = followerIds.map((id: string) => ({
               accountId: id,
               name: `User ${id.slice(0, 5)}`,
               image: ''
-            }))
-            setRoomFollowers(followersList)
+            }));
+            setRoomFollowers(followersList);
           }
         } catch (err) {
-          console.error("Error loading room data:", err)
+          console.error("Error loading room data:", err);
         }
       }
-    }
-    fetchRoomData()
-  }, [roomOwner.id, roomOwner.image])
+    };
+    fetchRoomData();
+  }, [roomOwner.id, roomOwner.image]);
 
   // Load Jitsi script
   useEffect(() => {
     if (!document.getElementById('jitsi-script')) {
-      const script = document.createElement('script')
-      script.id = 'jitsi-script'
-      script.src = 'https://meet.jit.si/external_api.js'
-      script.async = true
-      script.onload = () => { setJitsiLoaded(true) }
-      document.body.appendChild(script)
+      const script = document.createElement('script');
+      script.id = 'jitsi-script';
+      script.src = 'https://meet.jit.si/external_api.js';
+      script.async = true;
+      script.onload = () => { setJitsiLoaded(true); };
+      document.body.appendChild(script);
     } else {
-      setJitsiLoaded(true)
+      setJitsiLoaded(true);
     }
-  }, [])
+  }, []);
 
   const setUserSpeaking = (targetId: string, speaking: boolean) => {
     setSeats(prev => prev.map(seat => {
       if (seat.isOccupied && seat.user) {
         if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === userAccountId)) {
-          return { ...seat, isSpeaking: speaking }
+          return { ...seat, isSpeaking: speaking };
         }
       }
-      return seat
-    }))
-  }
+      return seat;
+    }));
+  };
 
   // Initialize Jitsi
   useEffect(() => {
-    if (!jitsiLoaded || !jitsiContainerRef.current) return
+    if (!jitsiLoaded || !jitsiContainerRef.current) return;
 
-    const domain = 'meet.jit.si'
+    const domain = 'meet.jit.si';
     const options = {
       roomName: jitsiRoomName,
       width: '100%',
@@ -279,104 +281,104 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         NATIVE_APP_NAME: 'Hurry',
         PROVIDER_NAME: 'Hurry'
       }
-    }
+    };
 
     try {
-      const api = new window.JitsiMeetExternalAPI(domain, options)
-      jitsiApiRef.current = api
+      const api = new window.JitsiMeetExternalAPI(domain, options);
+      jitsiApiRef.current = api;
 
       api.addListener('videoConferenceJoined', () => {
-        api.executeCommand('toggleAudio', false)
-      })
+        api.executeCommand('toggleAudio', false);
+      });
 
       api.addListener('dominantSpeakerChanged', (data: any) => {
-        const speakerId = data?.id || 'local'
-        speakingUsersRef.current.add(speakerId)
-        setUserSpeaking(speakerId, true)
-        const existingTimer = speakingTimersRef.current.get(speakerId)
-        if (existingTimer) clearTimeout(existingTimer)
+        const speakerId = data?.id || 'local';
+        speakingUsersRef.current.add(speakerId);
+        setUserSpeaking(speakerId, true);
+        const existingTimer = speakingTimersRef.current.get(speakerId);
+        if (existingTimer) clearTimeout(existingTimer);
         const timer = setTimeout(() => {
-          speakingUsersRef.current.delete(speakerId)
-          setUserSpeaking(speakerId, false)
-          speakingTimersRef.current.delete(speakerId)
-        }, 1500)
-        speakingTimersRef.current.set(speakerId, timer)
-      })
+          speakingUsersRef.current.delete(speakerId);
+          setUserSpeaking(speakerId, false);
+          speakingTimersRef.current.delete(speakerId);
+        }, 1500);
+        speakingTimersRef.current.set(speakerId, timer);
+      });
 
       api.addListener('audioLevelsChanged', (data: any) => {
         if (data && data.length > 0) {
           data.forEach((participant: any) => {
             if (participant.id && participant.level > 0.03) {
-              const targetKey = participant.id
-              speakingUsersRef.current.add(targetKey)
-              setUserSpeaking(targetKey, true)
-              const existingTimer = speakingTimersRef.current.get(targetKey)
-              if (existingTimer) clearTimeout(existingTimer)
+              const targetKey = participant.id;
+              speakingUsersRef.current.add(targetKey);
+              setUserSpeaking(targetKey, true);
+              const existingTimer = speakingTimersRef.current.get(targetKey);
+              if (existingTimer) clearTimeout(existingTimer);
               const timer = setTimeout(() => {
-                speakingUsersRef.current.delete(targetKey)
-                setUserSpeaking(targetKey, false)
-                speakingTimersRef.current.delete(targetKey)
-              }, 800)
-              speakingTimersRef.current.set(targetKey, timer)
+                speakingUsersRef.current.delete(targetKey);
+                setUserSpeaking(targetKey, false);
+                speakingTimersRef.current.delete(targetKey);
+              }, 800);
+              speakingTimersRef.current.set(targetKey, timer);
             }
-          })
+          });
         }
-      })
+      });
 
       api.addListener('participantLeft', (data: any) => {
         if (data && data.id) {
-          speakingUsersRef.current.delete(data.id)
-          setUserSpeaking(data.id, false)
-          const timer = speakingTimersRef.current.get(data.id)
-          if (timer) { clearTimeout(timer); speakingTimersRef.current.delete(data.id) }
+          speakingUsersRef.current.delete(data.id);
+          setUserSpeaking(data.id, false);
+          const timer = speakingTimersRef.current.get(data.id);
+          if (timer) { clearTimeout(timer); speakingTimersRef.current.delete(data.id); }
         }
-      })
+      });
     } catch (error) {
-      console.error('Error initializing Jitsi:', error)
+      console.error('Error initializing Jitsi:', error);
     }
 
     return () => {
-      speakingTimersRef.current.forEach(timer => clearTimeout(timer))
-      speakingTimersRef.current.clear()
-      speakingUsersRef.current.clear()
-      if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null }
-    }
-  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name])
+      speakingTimersRef.current.forEach(timer => clearTimeout(timer));
+      speakingTimersRef.current.clear();
+      speakingUsersRef.current.clear();
+      if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null; }
+    };
+  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name]);
 
   // Toggle audio when seat status changes
   useEffect(() => {
-    if (!jitsiApiRef.current) return
+    if (!jitsiApiRef.current) return;
     try {
       if (hasSeat) {
-        jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted)
+        jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted);
       } else {
-        jitsiApiRef.current.executeCommand('toggleAudio', false)
+        jitsiApiRef.current.executeCommand('toggleAudio', false);
       }
     } catch (e) {
-      console.warn("Jitsi audio execute error:", e)
+      console.warn("Jitsi audio execute error:", e);
     }
-  }, [hasSeat, currentUserSeat?.isMuted])
+  }, [hasSeat, currentUserSeat?.isMuted]);
 
   // Update seats when mic mode changes
   useEffect(() => {
     setSeats(prev => {
-      const newSeats = getInitialSeats(micMode)
+      const newSeats = getInitialSeats(micMode);
       return newSeats.map(newSeat => {
-        const oldSeat = prev.find(s => s.number === newSeat.number)
+        const oldSeat = prev.find(s => s.number === newSeat.number);
         if (oldSeat && oldSeat.isOccupied) {
-          return { ...newSeat, isOccupied: oldSeat.isOccupied, user: oldSeat.user, isMuted: oldSeat.isMuted, isSpeaking: oldSeat.isSpeaking, isLocked: oldSeat.isLocked }
+          return { ...newSeat, isOccupied: oldSeat.isOccupied, user: oldSeat.user, isMuted: oldSeat.isMuted, isSpeaking: oldSeat.isSpeaking, isLocked: oldSeat.isLocked };
         }
-        return newSeat
-      })
-    })
-  }, [micMode])
+        return newSeat;
+      });
+    });
+  }, [micMode]);
 
   // Add current user to room users (live count)
   useEffect(() => {
     if (userAccountId !== "guest" && currentUser.name && currentUser.image) {
-      const userExists = roomUsers.find(u => u.accountId === userAccountId)
+      const userExists = roomUsers.find(u => u.accountId === userAccountId);
       if (!userExists) {
-        setRoomUsers(prev => [...prev, { accountId: userAccountId, name: currentUser.name, image: currentUser.image }])
+        setRoomUsers(prev => [...prev, { accountId: userAccountId, name: currentUser.name, image: currentUser.image }]);
         setMessages(prev => [...prev, {
           id: `join-${Date.now()}`,
           text: 'Enter the Room',
@@ -384,82 +386,82 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           senderImage: currentUser.image,
           timestamp: Date.now(),
           type: 'join'
-        }])
+        }]);
       }
     }
     return () => {
-      setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId))
-    }
-  }, [userAccountId, currentUser.name, currentUser.image])
+      setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId));
+    };
+  }, [userAccountId, currentUser.name, currentUser.image]);
 
   // Scroll messages to bottom
   useEffect(() => {
-    if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Focus input when chat opens
   useEffect(() => {
     if (showChatInput && inputRef.current) {
-      const timer = setTimeout(() => { if (inputRef.current) inputRef.current.focus() }, 100)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [showChatInput])
+  }, [showChatInput]);
 
   // Handle click outside chat input
   useEffect(() => {
-    if (!showChatInput) return
+    if (!showChatInput) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
-        setShowChatInput(false)
-        setMessage("")
+        setShowChatInput(false);
+        setMessage("");
       }
-    }
+    };
     const handleTouchOutside = (e: TouchEvent) => {
       if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
-        setShowChatInput(false)
-        setMessage("")
+        setShowChatInput(false);
+        setMessage("");
       }
-    }
+    };
     const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('touchstart', handleTouchOutside)
-    }, 300)
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleTouchOutside);
+    }, 300);
     return () => {
-      clearTimeout(timer)
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('touchstart', handleTouchOutside)
-    }
-  }, [showChatInput])
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleTouchOutside);
+    };
+  }, [showChatInput]);
 
   // ---------- All handler functions ----------
 
   const handleCopyId = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    navigator.clipboard.writeText(roomOwner.accountId || '')
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    e.stopPropagation();
+    navigator.clipboard.writeText(roomOwner.accountId || '');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleCopyUserId = (accountId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    navigator.clipboard.writeText(accountId)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    e.stopPropagation();
+    navigator.clipboard.writeText(accountId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleImageClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (fileInputRef.current) fileInputRef.current.click()
-  }
+    e.stopPropagation();
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return }
-    if (file.size > 5 * 1024 * 1024) { alert('Image size should be less than 5MB'); return }
-    const reader = new FileReader()
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('Image size should be less than 5MB'); return; }
+    const reader = new FileReader();
     reader.onload = (event) => {
-      const imageUrl = event.target?.result as string
+      const imageUrl = event.target?.result as string;
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         text: '',
@@ -468,51 +470,51 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         timestamp: Date.now(),
         type: 'message',
         imageUrl
-      }])
-    }
-    reader.readAsDataURL(file)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
+      }]);
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSeatClick = (seatNumber: number) => (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setSelectedSeat(seatNumber)
-    setShowSeatSheet(true)
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedSeat(seatNumber);
+    setShowSeatSheet(true);
+  };
 
   const handleSeatAvatarClick = (seat: Seat) => (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
     if (seat.isOccupied && seat.user) {
       openProfile({
         name: seat.user.name,
         image: seat.user.image,
         accountId: seat.user.accountId
-      })
+      });
     }
-  }
+  };
 
   const handleTakeSeat = (e?: React.MouseEvent) => {
     if (e) {
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
     }
-    if (selectedSeat === null) return
-    const targetSeat = seats.find(s => s.number === selectedSeat)
-    if (targetSeat?.isLocked && !targetSeat.isOccupied) { alert("This seat is locked!"); return }
-    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== userAccountId) { alert("This seat is already taken!"); return }
+    if (selectedSeat === null) return;
+    const targetSeat = seats.find(s => s.number === selectedSeat);
+    if (targetSeat?.isLocked && !targetSeat.isOccupied) { alert("This seat is locked!"); return; }
+    if (targetSeat?.isOccupied && targetSeat.user?.accountId !== userAccountId) { alert("This seat is already taken!"); return; }
 
     let updatedSeats = seats.map(s => {
       if (s.isOccupied && s.user?.accountId === userAccountId)
-        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
-      return s
-    })
+        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false };
+      return s;
+    });
 
     updatedSeats = updatedSeats.map(s => {
       if (s.number === selectedSeat) {
         if (jitsiApiRef.current) {
-          try { jitsiApiRef.current.executeCommand('toggleAudio', true) } catch (err) {}
+          try { jitsiApiRef.current.executeCommand('toggleAudio', true); } catch (err) {}
         }
         return {
           ...s,
@@ -520,97 +522,97 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           user: { name: currentUser.name, image: currentUser.image, accountId: userAccountId },
           isMuted: false,
           isSpeaking: false
-        }
+        };
       }
-      return s
-    })
+      return s;
+    });
 
-    setSeats(updatedSeats)
-    setShowSeatSheet(false)
-    setSelectedSeat(null)
-  }
+    setSeats(updatedSeats);
+    setShowSeatSheet(false);
+    setSelectedSeat(null);
+  };
 
   const handleLeaveSeat = (e?: React.MouseEvent) => {
     if (e) {
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
     }
-    if (selectedSeat === null) return
+    if (selectedSeat === null) return;
     if (jitsiApiRef.current && userAccountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
-      try { jitsiApiRef.current.executeCommand('toggleAudio', false) } catch (err) {}
+      try { jitsiApiRef.current.executeCommand('toggleAudio', false); } catch (err) {}
     }
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat)
-        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
-      return s
-    })
-    setSeats(updatedSeats)
-    setShowSeatSheet(false)
-    setSelectedSeat(null)
-  }
+        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false };
+      return s;
+    });
+    setSeats(updatedSeats);
+    setShowSeatSheet(false);
+    setSelectedSeat(null);
+  };
 
   const handleToggleMute = (e?: React.MouseEvent) => {
     if (e) {
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
     }
-    if (selectedSeat === null) return
+    if (selectedSeat === null) return;
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
-        const newMuteState = !s.isMuted
+        const newMuteState = !s.isMuted;
         if (s.user?.accountId === userAccountId && jitsiApiRef.current) {
-          try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState) } catch (err) {}
+          try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
         }
-        return { ...s, isMuted: newMuteState }
+        return { ...s, isMuted: newMuteState };
       }
-      return s
-    })
-    setSeats(updatedSeats)
-  }
+      return s;
+    });
+    setSeats(updatedSeats);
+  };
 
   const handleBottomMicToggle = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    if (!currentUserSeat || !jitsiApiRef.current) return
-    const newMuteState = !currentUserSeat.isMuted
-    try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState) } catch (err) {}
+    if (e) e.stopPropagation();
+    if (!currentUserSeat || !jitsiApiRef.current) return;
+    const newMuteState = !currentUserSeat.isMuted;
+    try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
     const updatedSeats = seats.map(s => {
-      if (s.number === currentUserSeat.number) return { ...s, isMuted: newMuteState }
-      return s
-    })
-    setSeats(updatedSeats)
-  }
+      if (s.number === currentUserSeat.number) return { ...s, isMuted: newMuteState };
+      return s;
+    });
+    setSeats(updatedSeats);
+  };
 
   const handleToggleLock = (e?: React.MouseEvent) => {
     if (e) {
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
     }
-    if (selectedSeat === null) return
+    if (selectedSeat === null) return;
     const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked }
-      return s
-    })
-    setSeats(updatedSeats)
-    setShowSeatSheet(false)
-    setSelectedSeat(null)
-  }
+      if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked };
+      return s;
+    });
+    setSeats(updatedSeats);
+    setShowSeatSheet(false);
+    setSelectedSeat(null);
+  };
 
   const handleInvite = (e?: React.MouseEvent) => {
     if (e) {
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
     }
-    if (selectedSeat === null) return
-    alert(`Invite sent to join seat ${selectedSeat}!`)
-    setShowSeatSheet(false)
-    setSelectedSeat(null)
-  }
+    if (selectedSeat === null) return;
+    alert(`Invite sent to join seat ${selectedSeat}!`);
+    setShowSeatSheet(false);
+    setSelectedSeat(null);
+  };
 
-  const isCurrentUsersSeat = (seat?: Seat) => Boolean(seat && seat.isOccupied && seat.user?.accountId === userAccountId)
+  const isCurrentUsersSeat = (seat?: Seat) => Boolean(seat && seat.isOccupied && seat.user?.accountId === userAccountId);
 
   const handleSendMessage = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    if (!message.trim()) return
+    if (e) e.stopPropagation();
+    if (!message.trim()) return;
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
       text: message.trim(),
@@ -618,54 +620,54 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       senderImage: currentUser.image,
       timestamp: Date.now(),
       type: 'message'
-    }])
-    setMessage("")
-    if (inputRef.current) inputRef.current.focus()
-  }
+    }]);
+    setMessage("");
+    if (inputRef.current) inputRef.current.focus();
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); handleSendMessage() }
-  }
+    if (e.key === 'Enter') { e.preventDefault(); handleSendMessage(); }
+  };
 
-  const handleInputFocus = () => setShowChatInput(true)
+  const handleInputFocus = () => setShowChatInput(true);
 
   const openChatInput = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setShowChatInput(true)
-    setTimeout(() => { if (inputRef.current) inputRef.current.focus() }, 100)
-  }
+    if (e) e.stopPropagation();
+    setShowChatInput(true);
+    setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 100);
+  };
 
   const closeBottomSheet = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setShowSeatSheet(false)
-    setSelectedSeat(null)
-  }
+    if (e) e.stopPropagation();
+    setShowSeatSheet(false);
+    setSelectedSeat(null);
+  };
 
   const closeExitMenu = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setShowExitMenu(false)
-  }
+    if (e) e.stopPropagation();
+    setShowExitMenu(false);
+  };
 
   const openExitMenu = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setShowExitMenu(true)
-  }
+    if (e) e.stopPropagation();
+    setShowExitMenu(true);
+  };
 
   const openSettings = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setShowSettingPage(true)
-  }
+    if (e) e.stopPropagation();
+    setShowSettingPage(true);
+  };
 
-  const closeSettings = () => setShowSettingPage(false)
+  const closeSettings = () => setShowSettingPage(false);
 
   const handleSaveSettings = async (data: any) => {
-    if (data.roomName) setRoomName(data.roomName)
-    if (data.announcement !== undefined) setRoomAnnouncement(data.announcement)
-    if (data.roomImage) setRoomImage(data.roomImage)
-    if (data.micMode) setMicMode(data.micMode)
+    if (data.roomName) setRoomName(data.roomName);
+    if (data.announcement !== undefined) setRoomAnnouncement(data.announcement);
+    if (data.roomImage) setRoomImage(data.roomImage);
+    if (data.micMode) setMicMode(data.micMode);
     // Update background based on theme
     if (data.theme && THEME_BACKGROUNDS[data.theme]) {
-      setBackgroundImage(THEME_BACKGROUNDS[data.theme])
+      setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
     }
 
     if (roomOwner.id && db) {
@@ -675,36 +677,41 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         announcement: data.announcement,
         micMode: data.micMode,
         theme: data.theme,
-      }, { merge: true })
+      }, { merge: true });
     }
-  }
+  };
 
   const handleExit = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    setShowExitMenu(false)
-    localStorage.removeItem('keptRoom')
-    setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId))
-    if (jitsiApiRef.current) jitsiApiRef.current.dispose()
-    if (onBack) onBack()
-    if (onClose) onClose()
-  }
+    if (e) e.stopPropagation();
+    setShowExitMenu(false);
+    localStorage.removeItem('keptRoom');
+    setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId));
+    if (jitsiApiRef.current) jitsiApiRef.current.dispose();
+    if (onBack) onBack();
+    if (onClose) onClose();
+  };
 
   const handleKeep = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
-    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' }
-    localStorage.setItem('keptRoom', JSON.stringify(roomData))
-    setShowExitMenu(false)
-    if (onKeepRoom) onKeepRoom(roomData)
-    if (onBack) onBack()
-  }
+    if (e) e.stopPropagation();
+    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' };
+    localStorage.setItem('keptRoom', JSON.stringify(roomData));
+    setShowExitMenu(false);
+    if (onKeepRoom) onKeepRoom(roomData);
+    if (onBack) onBack();
+  };
 
-  const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji)
+  const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji);
+
+  // NEW: Clear chat handler for Fourgride
+  const handleClearChat = () => {
+    setMessages([]);
+  };
 
   // Derived values
-  const liveUserCount = roomUsers.length
-  const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null
-  const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false
-  const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false
+  const liveUserCount = roomUsers.length;
+  const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null;
+  const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false;
+  const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false;
 
   // ---------- Render seats based on mic mode ----------
   const renderSeats = () => {
@@ -721,7 +728,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
-      )
+      );
     }
     if (micMode === 10) {
       return (
@@ -743,7 +750,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} onAvatarClick={handleSeatAvatarClick(seats[9])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
-      )
+      );
     }
     if (micMode === 13) {
       return (
@@ -770,7 +777,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} onAvatarClick={handleSeatAvatarClick(seats[12])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
         </>
-      )
+      );
     }
     // Default 9 seats
     return (
@@ -791,8 +798,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
         </div>
       </>
-    )
-  }
+    );
+  };
 
   // Settings page
   if (showSettingPage) {
@@ -803,7 +810,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode, theme: Object.keys(THEME_BACKGROUNDS).find(key => THEME_BACKGROUNDS[key] === backgroundImage) || 'mood-light' }}
         onSave={handleSaveSettings}
       />
-    )
+    );
   }
 
   // ---------- Main Return JSX ----------
@@ -839,11 +846,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                 {/* Follow button */}
                 <button
                   onClick={(e) => {
-                    e.stopPropagation()
-                    const newFollow = !isFollowed
-                    setIsFollowed(newFollow)
+                    e.stopPropagation();
+                    const newFollow = !isFollowed;
+                    setIsFollowed(newFollow);
                     if (onFollowToggle) {
-                      onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow)
+                      onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow);
                     }
                   }}
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
@@ -1037,7 +1044,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               >
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round"><rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" /></svg>
               </button>
-              <button onClick={(e) => e.stopPropagation()} aria-label="Apps Menu" className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer">
+              {/* Apps Menu - opens Fourgride sheet */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
+                aria-label="Apps Menu"
+                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
+              >
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><rect x="3" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" /></svg>
               </button>
             </div>
@@ -1286,6 +1298,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
+      {/* ---------- Four Grid Tools Sheet (Apps Menu) ---------- */}
+      {showFourGride && (
+        <Fourgride
+          onClose={() => setShowFourGride(false)}
+          onClearChat={handleClearChat}
+        />
+      )}
+
       {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
@@ -1301,7 +1321,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         .scrollbar-none::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
-  )
+  );
 }
 
 // ---------- SeatItem Component ----------
@@ -1313,12 +1333,12 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
   accountId: string;
   isRoomOwner: boolean;
 }) {
-  const isLocked = seatData?.isLocked ?? false
-  const isOccupied = seatData?.isOccupied ?? false
-  const isSpeaking = seatData?.isSpeaking ?? false
-  const isMuted = seatData?.isMuted ?? false
-  const user = seatData?.user
-  const isRoomOwnerSeat = isOccupied && user?.accountId !== accountId && isRoomOwner
+  const isLocked = seatData?.isLocked ?? false;
+  const isOccupied = seatData?.isOccupied ?? false;
+  const isSpeaking = seatData?.isSpeaking ?? false;
+  const isMuted = seatData?.isMuted ?? false;
+  const user = seatData?.user;
+  const isRoomOwnerSeat = isOccupied && user?.accountId !== accountId && isRoomOwner;
 
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
@@ -1376,5 +1396,5 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
         {isLocked ? `No ${seatNumber}` : (isOccupied && user ? user.name : `No ${seatNumber}`)}
       </span>
     </div>
-  )
-    }
+  );
+      }
