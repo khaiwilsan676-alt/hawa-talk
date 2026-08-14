@@ -297,7 +297,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         disablePolls: true,
         disableSelfView: true,
         hideConferenceSubject: true,
-                hideConferenceSubject: true,
         hideConferenceTimer: true,
         doNotStoreRoom: true,
         resolution: 180,
@@ -394,6 +393,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       console.warn("Jitsi audio execute error:", e);
     }
   }, [hasSeat, currentUserSeat?.isMuted]);
+
   // Initialize Jitsi on room enter (for listening)
   useEffect(() => {
     if (jitsiLoaded && !jitsiApiRef.current) {
@@ -768,10 +768,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         const newMuteState = !s.isMuted;
         if (s.user?.accountId === userAccountId && jitsiApiRef.current) {
           try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
-        // Update Jitsi audio state
-        if (s.user?.accountId === userAccountId) {
-          desiredAudioStateRef.current = !newMuteState;
-          applyAudioState();
+          // Update Jitsi audio state
+          if (s.user?.accountId === userAccountId) {
+            desiredAudioStateRef.current = !newMuteState;
+            applyAudioState();
+          }
         }
         return { ...s, isMuted: newMuteState };
       }
@@ -1578,4 +1579,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
       </span>
     </div>
   );
-}
+                                                                      }
