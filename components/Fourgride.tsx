@@ -40,6 +40,18 @@ async function addMusicToDB(music: { id: string; name: string; blob: Blob }): Pr
   });
 }
 
+async function deleteMusicFromDB(id: string): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    db.close();
+  });
+}
+
 async function getAllMusicFromDB(): Promise<{ id: string; name: string; blob: Blob }[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -69,6 +81,7 @@ export default function Fourgride({
   const [searchQuery, setSearchQuery] = useState('');
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showDeleteCard, setShowDeleteCard] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -104,37 +117,62 @@ export default function Fourgride({
   useEffect(() => {
     return () => {
       musicFiles.forEach((file) => URL.revokeObjectURL(file.url));
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, [musicFiles]);
 
-  // Handle music file selection
+  // Handle music file selection - now supports multiple files
   const handleAddMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    const file = files[0];
-    if (!file.type.startsWith('audio/')) {
-      alert('Please select an audio file');
+    
+    const validFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
+    
+    if (validFiles.length === 0) {
+      alert('Please select audio files');
       return;
     }
-    const id = Date.now().toString();
-    const newMusic = {
-      id,
-      name: file.name,
-      url: URL.createObjectURL(file),
-    };
-    setMusicFiles((prev) => [...prev, newMusic]);
-    // Save to IndexedDB
-    addMusicToDB({ id, name: file.name, blob: file });
+    
+    const newMusicFiles = validFiles.map(file => {
+      const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      return {
+        id,
+        name: file.name,
+        url: URL.createObjectURL(file),
+        blob: file
+      };
+    });
+    
+    setMusicFiles(prev => [...prev, ...newMusicFiles.map(({ blob, ...rest }) => rest)]);
+    
+    // Save all files to IndexedDB
+    newMusicFiles.forEach(({ id, name, blob }) => {
+      addMusicToDB({ id, name, blob });
+    });
+    
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Play/pause handler
+  // Play/pause handler - fixed logic
   const togglePlay = (id: string, url: string) => {
-    if (currentlyPlaying === id && isPlaying) {
-      audioRef.current?.pause();
-      setIsPlaying(false);
-    } else {
+    if (currentlyPlaying === id) {
+      // Same track - toggle play/pause
       if (audioRef.current) {
+        if (isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          audioRef.current.play();
+          setIsPlaying(true);
+        }
+      }
+    } else {
+      // Different track - stop current and play new
+      if (audioRef.current) {
+        audioRef.current.pause();
         audioRef.current.src = url;
         audioRef.current.play();
       } else {
@@ -144,6 +182,41 @@ export default function Fourgride({
       }
       setCurrentlyPlaying(id);
       setIsPlaying(true);
+    }
+  };
+
+  // Handle audio ended
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.onended = () => {
+        setIsPlaying(false);
+        setCurrentlyPlaying(null);
+      };
+    }
+  }, [audioRef.current]);
+
+  // Delete music handler
+  const handleDeleteMusic = async (id: string) => {
+    try {
+      await deleteMusicFromDB(id);
+      setMusicFiles(prev => {
+        const fileToDelete = prev.find(f => f.id === id);
+        if (fileToDelete) {
+          URL.revokeObjectURL(fileToDelete.url);
+        }
+        return prev.filter(f => f.id !== id);
+      });
+      if (currentlyPlaying === id) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        setCurrentlyPlaying(null);
+        setIsPlaying(false);
+      }
+      setShowDeleteCard(null);
+    } catch (error) {
+      console.error('Error deleting music:', error);
     }
   };
 
@@ -388,32 +461,63 @@ export default function Fourgride({
             </div>
 
             {/* Music list */}
-            <div className="flex-1 overflow-y-auto px-4 py-3">
+            <div className="flex-1 overflow-y-auto px-4 py-3" style={{ maxHeight: 'calc(50vh - 120px)' }}>
               {filteredMusic.length === 0 ? (
                 <p className="text-center text-gray-400 text-sm py-8">No music added yet</p>
               ) : (
                 <div className="space-y-2">
                   {filteredMusic.map((file) => (
-                    <div key={file.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
+                    <div key={file.id} className="relative">
+                      <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
+                        </div>
+                        <button
+                          onClick={() => togglePlay(file.id, file.url)}
+                          className="p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+                          aria-label={currentlyPlaying === file.id && isPlaying ? 'Pause' : 'Play'}
+                        >
+                          {currentlyPlaying === file.id && isPlaying ? (
+                            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                              <rect x="6" y="4" width="4" height="16" rx="1" />
+                              <rect x="14" y="4" width="4" height="16" rx="1" />
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                              <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteCard(showDeleteCard === file.id ? null : file.id)}
+                          className="p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+                          aria-label="More options"
+                        >
+                          <svg viewBox="0 0 24 24" className="w-5 h-5 fill-gray-600">
+                            <circle cx="12" cy="5" r="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <circle cx="12" cy="19" r="2" />
+                          </svg>
+                        </button>
                       </div>
-                      <button
-                        onClick={() => togglePlay(file.id, file.url)}
-                        className="p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
-                        aria-label={currentlyPlaying === file.id && isPlaying ? 'Pause' : 'Play'}
-                      >
-                        {currentlyPlaying === file.id && isPlaying ? (
-                          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                            <rect x="6" y="4" width="4" height="16" rx="1" />
-                            <rect x="14" y="4" width="4" height="16" rx="1" />
-                          </svg>
-                        ) : (
-                          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                            <polygon points="5 3 19 12 5 21 5 3" />
-                          </svg>
-                        )}
-                      </button>
+                      
+                      {/* Delete Card */}
+                      {showDeleteCard === file.id && (
+                        <div className="absolute right-0 top-full mt-1 z-10 bg-white rounded-lg shadow-lg border border-gray-200 p-2">
+                          <button
+                            onClick={() => handleDeleteMusic(file.id)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer w-full"
+                          >
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-red-600 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -423,14 +527,15 @@ export default function Fourgride({
         </div>
       )}
 
-      {/* Hidden file input for music */}
+      {/* Hidden file input for music - now supports multiple files */}
       <input
         ref={fileInputRef}
         type="file"
         accept="audio/*"
+        multiple
         onChange={handleAddMusic}
         className="hidden"
       />
     </div>
   );
-      }
+}
