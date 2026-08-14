@@ -3,41 +3,34 @@
 import { useState, useEffect } from 'react'
 import HomePage from '@/components/HomePage'
 import LoginPage from '@/components/LoginPage'
-import { supabase } from '@/src/lib/supabase'
+import { auth } from '@/src/lib/firebase'
+import { signOut, onAuthStateChanged } from 'firebase/auth'
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        // 1. Supabase Active Session Check (Specially for OAuth/Google Redirects)
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (session) {
-          setIsLoggedIn(true)
-          setLoading(false)
-          return
-        }
-      } catch (error) {
-        // Supabase active session nahi mila
-      }
-
-      // 2. LocalStorage Fallback Check
-      const userUID = localStorage.getItem('userUID')
-      const userEmail = localStorage.getItem('userEmail')
-      const userPhone = localStorage.getItem('userPhone')
-
-      if (userUID || userEmail || userPhone) {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
         setIsLoggedIn(true)
+        setLoading(false)
       } else {
-        setIsLoggedIn(false)
+        // Fallback to LocalStorage Check
+        const userUID = localStorage.getItem('userUID')
+        const userEmail = localStorage.getItem('userEmail')
+        const userPhone = localStorage.getItem('userPhone')
+
+        if (userUID || userEmail || userPhone) {
+          setIsLoggedIn(true)
+        } else {
+          setIsLoggedIn(false)
+        }
+        setLoading(false)
       }
+    });
 
-      setLoading(false)
-    }
-
-    initAuth()
+    return () => unsubscribe();
   }, [])
 
   useEffect(() => {
@@ -64,10 +57,10 @@ export default function Page() {
     const uid = localStorage.getItem("userUID")
 
     try {
-      // Clear Supabase Session
-      await supabase.auth.signOut()
+      // Clear Firebase Session
+      await signOut(auth)
     } catch (error) {
-      console.log("Supabase logout error:", error)
+      console.log("Firebase logout error:", error)
     }
 
     // Clear Local Storage
