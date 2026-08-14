@@ -1,152 +1,132 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useRef } from 'react'
-import { ArrowLeft, Send, ImageIcon, MoreHorizontal } from 'lucide-react'
-import { initializeApp, getApps, getApp } from 'firebase/app'
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Send, ImageIcon, MoreHorizontal } from 'lucide-react';
 import {
-  getFirestore,
   collection,
   onSnapshot,
   query,
   orderBy,
   addDoc,
   serverTimestamp,
-} from 'firebase/firestore'
+  doc,
+  setDoc,
+  updateDoc,
+  getDoc,
+} from 'firebase/firestore';
+import { db } from './firebase'; // path adjust karein
 
 interface Message {
-  id: string
-  text: string
-  sender: 'me' | 'other'
-  timestamp: number
+  id: string;
+  text: string;
+  sender: 'me' | 'other';
+  timestamp: number;
 }
 
 interface ChatScreenProps {
-  currentUser: {
-    uid: string
-    name: string
-    photo: string
-  }
-  targetUser: {
-    uid: string
-    name: string
-    photo: string
-  }
-  onClose: () => void
+  currentUser: { uid: string; name: string; photo: string };
+  targetUser: { uid: string; name: string; photo: string };
+  onClose: () => void;
 }
 
-// Firebase configuration – replace with your own
-const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_AUTH_DOMAIN',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_STORAGE_BUCKET',
-  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-  appId: 'YOUR_APP_ID',
-}
-
-const FIXED_CHAT_UIDS = ['hurry_team_official', 'hurry_system_official']
+const FIXED_CHAT_UIDS = ['hurry_team_official', 'hurry_system_official'];
 
 export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScreenProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [newMessage, setNewMessage] = useState('')
-  const [connected, setConnected] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [connected, setConnected] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid)
+  const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid);
 
-  // Compute a unique chat ID (same for both users, regardless of order)
-  const chatId = [currentUser.uid, targetUser.uid].sort().join('_')
+  // Unique chat ID for both users
+  const chatId = [currentUser.uid, targetUser.uid].sort().join('_');
 
-  // Lazy Firestore initialization – only on client
-  const getDb = () => {
-    if (typeof window === 'undefined') {
-      throw new Error('Firestore can only be used on the client')
-    }
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
-    return getFirestore(app)
-  }
-
-  // Set up Firestore listener for messages
+  // Firestore listener for messages
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') return;
 
-    const db = getDb()
-    const messagesRef = collection(db, 'chats', chatId, 'messages')
-    const q = query(messagesRef, orderBy('timestamp', 'asc'))
+    const messagesRef = collection(db, 'chats', chatId, 'messages');
+    const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
         const loadedMessages: Message[] = snapshot.docs.map((doc) => {
-          const data = doc.data()
+          const data = doc.data();
           return {
             id: doc.id,
             text: data.text,
             sender: data.senderUid === currentUser.uid ? 'me' : 'other',
             timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
-          }
-        })
-        setMessages(loadedMessages)
-        setConnected(true) // listener is active, we are "connected"
+          };
+        });
+        setMessages(loadedMessages);
+        setConnected(true);
       },
       (error) => {
-        console.error('Firestore listener error:', error)
-        setConnected(false)
+        console.error('Firestore listener error:', error);
+        setConnected(false);
       }
-    )
+    );
 
-    return () => unsubscribe()
-  }, [chatId, currentUser.uid])
+    return () => unsubscribe();
+  }, [chatId, currentUser.uid]);
 
   const handleSend = async () => {
-    if (!newMessage.trim()) return
-
-    const messageText = newMessage.trim()
-    setNewMessage('')
+    if (!newMessage.trim()) return;
+    const messageText = newMessage.trim();
+    setNewMessage('');
 
     try {
-      const db = getDb()
-      const messagesRef = collection(db, 'chats', chatId, 'messages')
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
       await addDoc(messagesRef, {
         text: messageText,
         senderUid: currentUser.uid,
         timestamp: serverTimestamp(),
-      })
+      });
 
-      // Update localStorage (optional, for chat list preview)
-      const chatKey = `chat_${chatId}`
-      const existing = localStorage.getItem(chatKey)
-      let chatData = existing ? JSON.parse(existing) : { messages: [] }
-      chatData.lastMessage = messageText
-      chatData.lastTimestamp = Date.now()
-      chatData.otherUser = {
-        uid: targetUser.uid,
-        name: targetUser.name,
-        photo: targetUser.photo,
+      // Update/create conversation metadata (for chat list preview)
+      const conversationRef = doc(db, 'conversations', chatId);
+      const conversationSnap = await getDoc(conversationRef);
+
+      if (conversationSnap.exists()) {
+        await updateDoc(conversationRef, {
+          lastMessage: messageText,
+          lastTimestamp: serverTimestamp(),
+        });
+      } else {
+        await setDoc(conversationRef, {
+          participants: [currentUser.uid, targetUser.uid],
+          participantsData: [
+            { uid: currentUser.uid, name: currentUser.name, photo: currentUser.photo },
+            { uid: targetUser.uid, name: targetUser.name, photo: targetUser.photo },
+          ],
+          lastMessage: messageText,
+          lastTimestamp: serverTimestamp(),
+        });
       }
-      localStorage.setItem(chatKey, JSON.stringify(chatData))
     } catch (error) {
-      console.error('Error sending message:', error)
-      // Restore input if send fails
-      setNewMessage(messageText)
+      console.error('Error sending message:', error);
+      setNewMessage(messageText); // restore input
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col">
@@ -198,7 +178,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
           </p>
         )}
         {messages.map((msg) => {
-          const isMine = msg.sender === 'me'
+          const isMine = msg.sender === 'me';
 
           // Fixed chat messages with sender avatar
           if (!isMine && isFixedChat) {
@@ -221,7 +201,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
                   </div>
                 </div>
               </div>
-            )
+            );
           }
 
           // Normal messages
@@ -240,7 +220,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
                 </p>
               </div>
             </div>
-          )
+          );
         })}
         <div ref={messagesEndRef} />
       </div>
@@ -277,5 +257,5 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
         </div>
       )}
     </div>
-  )
+  );
 }
