@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Send, ImageIcon, MoreHorizontal } from 'lucide-react'
-import { initializeApp } from 'firebase/app'
+import { initializeApp, getApps, getApp } from 'firebase/app'
 import {
   getFirestore,
-  doc,
   collection,
   onSnapshot,
   query,
@@ -45,10 +44,6 @@ const firebaseConfig = {
   appId: 'YOUR_APP_ID',
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
-const db = getFirestore(app)
-
 const FIXED_CHAT_UIDS = ['hurry_team_official', 'hurry_system_official']
 
 export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScreenProps) {
@@ -62,8 +57,20 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
   // Compute a unique chat ID (same for both users, regardless of order)
   const chatId = [currentUser.uid, targetUser.uid].sort().join('_')
 
+  // Lazy Firestore initialization – only on client
+  const getDb = () => {
+    if (typeof window === 'undefined') {
+      throw new Error('Firestore can only be used on the client')
+    }
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
+    return getFirestore(app)
+  }
+
   // Set up Firestore listener for messages
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const db = getDb()
     const messagesRef = collection(db, 'chats', chatId, 'messages')
     const q = query(messagesRef, orderBy('timestamp', 'asc'))
 
@@ -97,8 +104,8 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     const messageText = newMessage.trim()
     setNewMessage('')
 
-    // Add message to Firestore
     try {
+      const db = getDb()
       const messagesRef = collection(db, 'chats', chatId, 'messages')
       await addDoc(messagesRef, {
         text: messageText,
@@ -120,7 +127,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
       localStorage.setItem(chatKey, JSON.stringify(chatData))
     } catch (error) {
       console.error('Error sending message:', error)
-      // Optionally restore the input if send fails
+      // Restore input if send fails
       setNewMessage(messageText)
     }
   }
@@ -132,7 +139,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     }
   }
 
-  // Auto‑scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
