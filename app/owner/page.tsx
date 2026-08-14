@@ -68,7 +68,7 @@ export default function OwnerPanel() {
     const docRef = doc(db, "adminSettings", "credentials");
     const unsubscribe = onSnapshot(
       docRef,
-      (docSnap) => {
+      (docSnap: any) => {
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
           const mergedData = getDefaultIdsData();
@@ -106,7 +106,7 @@ export default function OwnerPanel() {
           isLoadedFromFirestore.current = true;
         }
       },
-      (error) => {
+      (error: any) => {
         console.error("Error fetching credentials:", error);
         isLoadedFromFirestore.current = true;
       }
@@ -121,7 +121,7 @@ export default function OwnerPanel() {
   useEffect(() => {
     const unsubscribes = Object.keys(idsData).map(id => {
       const docRef = doc(db, "adminSettings", `sessions_${id}`);
-      return onSnapshot(docRef, (docSnap) => {
+      return onSnapshot(docRef, (docSnap: any) => {
         if (docSnap.exists()) {
           setOnlineStatus(prev => ({
             ...prev,
@@ -148,11 +148,11 @@ export default function OwnerPanel() {
       const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
       const querySnapshot = await getDocs(q);
       const feedbackList: any[] = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.docs.forEach((doc: any) => {
         feedbackList.push({ id: doc.id, ...doc.data() });
       });
       setFeedbacks(feedbackList);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading feedbacks:", error);
     } finally {
       setLoadingFeedbacks(false);
@@ -166,11 +166,11 @@ export default function OwnerPanel() {
       const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
       const querySnapshot = await getDocs(q);
       const chatList: any[] = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.docs.forEach((doc: any) => {
         chatList.push({ id: doc.id, ...doc.data() });
       });
       setAiChats(chatList);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading AI chats:", error);
     } finally {
       setLoadingAiChats(false);
@@ -186,7 +186,7 @@ export default function OwnerPanel() {
         const now = Date.now();
         const fortyEightHours = 48 * 60 * 60 * 1000;
 
-        querySnapshot.forEach(async (document) => {
+        querySnapshot.docs.forEach(async (document: any) => {
           const data = document.data();
           const feedbackTime = data.timestamp || 0;
           
@@ -197,7 +197,7 @@ export default function OwnerPanel() {
         });
 
         loadFeedbacks();
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error cleaning up old feedbacks:", error);
       }
     };
@@ -272,7 +272,7 @@ export default function OwnerPanel() {
 
       setSaveMessage("Credentials saved!");
       setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving credentials:", error);
       setSaveMessage("Error saving credentials!");
       setTimeout(() => setSaveMessage(""), 3000);
@@ -321,7 +321,7 @@ export default function OwnerPanel() {
 
       setSaveMessage(`ID ${id} logged out successfully!`)
       setTimeout(() => setSaveMessage(""), 3000)
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error logging out ID ${id}:`, error);
     }
   }
@@ -345,7 +345,7 @@ export default function OwnerPanel() {
 
       setSaveMessage(`Selected IDs logged out successfully!`)
       setTimeout(() => setSaveMessage(""), 3000)
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error logging out group:`, error);
     }
   }
@@ -383,7 +383,7 @@ export default function OwnerPanel() {
       setFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
       setSaveMessage("Feedback deleted!");
       setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting feedback:", error);
     }
   };

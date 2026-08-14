@@ -60,7 +60,10 @@ class ChatDB {
   }
 }
 
-const chatDB = new ChatDB()
+let chatDB: ChatDB;
+if (typeof window !== 'undefined') {
+  chatDB = new ChatDB();
+}
 
 // ======================
 // Types

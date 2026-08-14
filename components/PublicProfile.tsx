@@ -245,7 +245,7 @@ export default function PublicProfile({
         let coverPhoto = targetUser.coverPhoto || ''
         let bio = targetUser.bio || ''
         let country = targetUser.country || targetUser.location || 'India'
-        let countryCode = targetUser.countryCode || 'IN'
+        let countryCode = (targetUser as any).countryCode || 'IN'
         let gender = targetUser.gender || '♂'
         let age = targetUser.age
           ? typeof targetUser.age === 'number'
