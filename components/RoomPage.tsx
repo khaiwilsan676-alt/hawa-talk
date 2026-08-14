@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import EmojiPicker from './Emojipicker';
 import GiftPicker from './GiftPicker';
 import RoomSettingPage from './RoomSettingPage';
@@ -9,7 +9,6 @@ import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import { db } from "../src/lib/firebase";
 import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
-import Image from 'next/image';
 
 declare global {
   interface Window {
@@ -37,16 +36,6 @@ interface RoomPageProps {
   onKeepRoom?: (roomData: { name: string; image: string; accountId: string }) => void;
   onFollowToggle?: (roomId: string, follow: boolean) => void;
 }
-
-const SPECIAL_ACCOUNTS: { [key: string]: string } = {
-  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
-  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
-  '100002': '100002',
-  '100003': '100003'
-};
-
-const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005'];
-const ADMIN_IDS = ['700001', '700002', '700003'];
 
 interface Seat {
   number: number;
@@ -79,6 +68,7 @@ const THEME_BACKGROUNDS: { [key: string]: string } = {
 };
 
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
+  // UI state
   const [showExitMenu, setShowExitMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
@@ -92,10 +82,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [accountId, setAccountId] = useState<string>("Loading...");
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
 
-  // NEW: public message restriction states
+  // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
 
+  // User data
   useEffect(() => {
     const name = localStorage.getItem('userName') || 'User';
     const image = localStorage.getItem('userPhoto') || '/default-avatar.png';
@@ -114,10 +105,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
   const isRoomOwner = userAccountId === roomOwnerId;
 
+  // Message state
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [fullImageModal, setFullImageModal] = useState<string | null>(null);
 
+  // Room data state
   const [roomName, setRoomName] = useState<string>("");
   const [roomAnnouncement, setRoomAnnouncement] = useState<string>("");
   const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
@@ -125,24 +118,30 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
   const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg");
 
+  // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
 
+  // Presence and users
   const [showChatInput, setShowChatInput] = useState(false);
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
 
+  // Jitsi refs
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<any>(null);
   const [jitsiLoaded, setJitsiLoaded] = useState(false);
+  const jitsiJoinedRef = useRef(false);
+  const desiredAudioStateRef = useRef(false); // true = unmuted, false = muted
 
   const speakingUsersRef = useRef<Set<string>>(new Set());
   const speakingTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([]);
 
+  // Seat helpers
   const getInitialSeats = (mode: number): Seat[] => {
     const seats: Seat[] = [];
     for (let i = 1; i <= mode; i++) {
@@ -151,7 +150,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     return seats;
   };
 
-  const [seats, setSeats] = useState<Seat[]>(getInitialSeats(9));
+  const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   const [showSeatSheet, setShowSeatSheet] = useState(false);
 
@@ -241,6 +240,33 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }));
   };
 
+  // Apply desired audio state to Jitsi
+  const applyAudioState = useCallback(() => {
+    if (!jitsiApiRef.current || !jitsiJoinedRef.current) return;
+    try {
+      jitsiApiRef.current.executeCommand('toggleAudio', desiredAudioStateRef.current);
+    } catch (err) {
+      console.warn("Jitsi audio execute error:", err);
+    }
+  }, []);
+
+  // Update desired audio state based on seat status
+  const updateDesiredAudioState = useCallback(() => {
+    const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId);
+    const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
+    if (hasSeat && !currentUserSeat?.isMuted) {
+      desiredAudioStateRef.current = true; // unmuted
+    } else {
+      desiredAudioStateRef.current = false; // muted
+    }
+    applyAudioState();
+  }, [seats, userAccountId, applyAudioState]);
+
+  // Trigger update when seats or mute state changes
+  useEffect(() => {
+    updateDesiredAudioState();
+  }, [updateDesiredAudioState]);
+
   // Initialize Jitsi
   useEffect(() => {
     if (!jitsiLoaded || !jitsiContainerRef.current) return;
@@ -253,7 +279,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       parentNode: jitsiContainerRef.current,
       userInfo: { displayName: currentUser.name, email: userAccountId + '@hurry.app' },
       configOverrides: {
-        startWithAudioMuted: true,
+        startWithAudioMuted: true, // Start muted, will unmute when seat taken
         startWithVideoMuted: true,
         disableDeepLinking: true,
         prejoinPageEnabled: false,
@@ -289,9 +315,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     try {
       const api = new window.JitsiMeetExternalAPI(domain, options);
       jitsiApiRef.current = api;
+      jitsiJoinedRef.current = false;
 
       api.addListener('videoConferenceJoined', () => {
-        api.executeCommand('toggleAudio', false);
+        jitsiJoinedRef.current = true;
+        // Apply desired audio state once joined
+        applyAudioState();
       });
 
       api.addListener('dominantSpeakerChanged', (data: any) => {
@@ -336,6 +365,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           if (timer) { clearTimeout(timer); speakingTimersRef.current.delete(data.id); }
         }
       });
+
     } catch (error) {
       console.error('Error initializing Jitsi:', error);
     }
@@ -345,8 +375,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       speakingTimersRef.current.clear();
       speakingUsersRef.current.clear();
       if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null; }
+      jitsiJoinedRef.current = false;
     };
-  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name]);
+  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name, applyAudioState]);
 
   // Toggle audio when seat status changes
   useEffect(() => {
@@ -378,15 +409,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   // ---------- REAL-TIME PRESENCE & MESSAGES (Firestore) ----------
 
-  // Presence collection: roomPresence/{roomId}/users
   const presenceCollection = `roomPresence/${roomId}/users`;
   const messagesCollection = `roomMessages/${roomId}/messages`;
+  const seatsCollection = `roomSeats/${roomId}/seats`;
 
   // Set up Firestore listeners for presence and messages
   useEffect(() => {
     if (!db) return;
 
-    // Real-time presence
     const unsubPresence = onSnapshot(collection(db, presenceCollection), (snapshot) => {
       const users = snapshot.docs.map(d => d.data() as RoomUser);
       setRoomUsers(users);
@@ -394,7 +424,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       console.error("Presence listener error:", error);
     });
 
-    // Real-time messages
     const messagesQuery = query(collection(db, messagesCollection), orderBy('timestamp', 'asc'));
     const unsubMessages = onSnapshot(messagesQuery, (snapshot) => {
       const msgs = snapshot.docs.map(d => {
@@ -420,6 +449,46 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     };
   }, [roomId]);
 
+  // Real-time seats sync
+  useEffect(() => {
+    if (!db) return;
+
+    const unsubSeats = onSnapshot(collection(db, seatsCollection), (snapshot) => {
+      const seatMap = new Map<number, Seat>();
+      snapshot.docs.forEach(doc => {
+        const data = doc.data() as Seat;
+        seatMap.set(data.number, {
+          number: data.number,
+          isOccupied: data.isOccupied || false,
+          isLocked: data.isLocked || false,
+          isMuted: data.isMuted || false,
+          isSpeaking: data.isSpeaking || false,
+          user: data.user
+        });
+      });
+
+      const initialSeats = getInitialSeats(micMode);
+      const mergedSeats = initialSeats.map(seat => {
+        const syncedSeat = seatMap.get(seat.number);
+        return syncedSeat ? { ...seat, ...syncedSeat } : seat;
+      });
+      setSeats(mergedSeats);
+    }, (error) => {
+      console.error("Seats listener error:", error);
+    });
+
+    return () => unsubSeats();
+  }, [roomId, micMode]);
+
+  // Initialize seats in Firestore if not present
+  useEffect(() => {
+    if (!db) return;
+    const initialSeats = getInitialSeats(micMode);
+    initialSeats.forEach(seat => {
+      setDoc(doc(db, seatsCollection, String(seat.number)), seat, { merge: true });
+    });
+  }, [micMode, roomId]);
+
   // Add current user to presence when component mounts, remove on unmount
   useEffect(() => {
     if (!db || userAccountId === "guest") return;
@@ -440,7 +509,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   }, [userAccountId, currentUser.name, currentUser.image, roomId]);
 
   // Send a message to Firestore
-  const sendMessageToFirestore = async (text: string, imageUrl?: string) => {
+  const sendMessageToFirestore = async (text: string, imageUrl?: string, type: 'message' | 'join' | 'leave' = 'message') => {
     if (!db) return;
     try {
       await addDoc(collection(db, messagesCollection), {
@@ -448,13 +517,21 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         sender: currentUser.name,
         senderImage: currentUser.image,
         timestamp: serverTimestamp(),
-        type: 'message',
+        type,
         imageUrl: imageUrl || null
       });
     } catch (err) {
       console.error("Error sending message:", err);
     }
   };
+
+  // Send join message once when user enters the room
+  const joinMessageSentRef = useRef(false);
+  useEffect(() => {
+    if (joinMessageSentRef.current || userAccountId === "guest" || !currentUser.name) return;
+    joinMessageSentRef.current = true;
+    sendMessageToFirestore('Enter the Room', undefined, 'join');
+  }, [userAccountId, currentUser.name]);
 
   // Scroll messages to bottom
   useEffect(() => {
@@ -549,7 +626,16 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
-  const handleTakeSeat = (e?: React.MouseEvent) => {
+  const updateSeatInFirestore = async (seat: Seat) => {
+    if (!db) return;
+    try {
+      await setDoc(doc(db, seatsCollection, String(seat.number)), seat, { merge: true });
+    } catch (err) {
+      console.error("Error updating seat:", err);
+    }
+  };
+
+  const handleTakeSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -559,17 +645,17 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (targetSeat?.isLocked && !targetSeat.isOccupied) { alert("This seat is locked!"); return; }
     if (targetSeat?.isOccupied && targetSeat.user?.accountId !== userAccountId) { alert("This seat is already taken!"); return; }
 
+    // Leave current seat if any
     let updatedSeats = seats.map(s => {
-      if (s.isOccupied && s.user?.accountId === userAccountId)
-        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false };
+      if (s.isOccupied && s.user?.accountId === userAccountId) {
+        return { ...s, isOccupied: false, user: undefined, isSpeaking: false };
+      }
       return s;
     });
 
+    // Occupy selected seat
     updatedSeats = updatedSeats.map(s => {
       if (s.number === selectedSeat) {
-        if (jitsiApiRef.current) {
-          try { jitsiApiRef.current.executeCommand('toggleAudio', true); } catch (err) {}
-        }
         return {
           ...s,
           isOccupied: true,
@@ -582,30 +668,32 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     });
 
     setSeats(updatedSeats);
+    // Update Firestore for changed seats
+    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
+
     setShowSeatSheet(false);
     setSelectedSeat(null);
   };
 
-  const handleLeaveSeat = (e?: React.MouseEvent) => {
+  const handleLeaveSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     if (selectedSeat === null) return;
-    if (jitsiApiRef.current && userAccountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
-      try { jitsiApiRef.current.executeCommand('toggleAudio', false); } catch (err) {}
-    }
     const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat)
-        return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false };
+      if (s.number === selectedSeat && s.user?.accountId === userAccountId) {
+        return { ...s, isOccupied: false, user: undefined, isSpeaking: false };
+      }
       return s;
     });
     setSeats(updatedSeats);
+    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
     setShowSeatSheet(false);
     setSelectedSeat(null);
   };
 
-  const handleToggleMute = (e?: React.MouseEvent) => {
+  const handleToggleMute = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -622,9 +710,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return s;
     });
     setSeats(updatedSeats);
+    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
   };
 
-  const handleBottomMicToggle = (e?: React.MouseEvent) => {
+  const handleBottomMicToggle = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!currentUserSeat || !jitsiApiRef.current) return;
     const newMuteState = !currentUserSeat.isMuted;
@@ -634,9 +723,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return s;
     });
     setSeats(updatedSeats);
+    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
   };
 
-  const handleToggleLock = (e?: React.MouseEvent) => {
+  const handleToggleLock = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -647,6 +737,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return s;
     });
     setSeats(updatedSeats);
+    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
     setShowSeatSheet(false);
     setSelectedSeat(null);
   };
@@ -664,7 +755,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const isCurrentUsersSeat = (seat?: Seat) => Boolean(seat && seat.isOccupied && seat.user?.accountId === userAccountId);
 
-  // Show modal when public msg is off
   const showPublicMsgOffAlert = () => {
     setShowPublicMsgModal(true);
   };
@@ -761,7 +851,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji);
 
   const handleClearChat = () => {
-    // Optional: clear local messages only, but real Firestore messages remain
     setMessages([]);
   };
 
@@ -770,88 +859,59 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false;
   const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false;
 
+  // Render seats based on micMode
   const renderSeats = () => {
+    // Same as previous, mapping over seats array directly
+    const renderSeatItems = (seatNumbers: number[]) => {
+      return seatNumbers.map(num => {
+        const seat = seats.find(s => s.number === num);
+        return (
+          <SeatItem
+            key={num}
+            seatNumber={num}
+            seatData={seat}
+            onClick={handleSeatClick(num)}
+            onAvatarClick={handleSeatAvatarClick(seat!)}
+            accountId={userAccountId}
+            isRoomOwner={isRoomOwner}
+          />
+        );
+      });
+    };
+
     if (micMode === 5) {
       return (
         <>
-          <div className="flex justify-center">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
+          <div className="flex justify-center">{renderSeatItems([1])}</div>
+          <div className="flex justify-around items-center px-1">{renderSeatItems([2,3,4,5])}</div>
         </>
       );
     }
     if (micMode === 10) {
       return (
         <>
-          <div className="flex justify-center gap-4">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} onAvatarClick={handleSeatAvatarClick(seats[9])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
+          <div className="flex justify-center gap-4">{renderSeatItems([1,2])}</div>
+          <div className="flex justify-around items-center px-1">{renderSeatItems([3,4,5,6])}</div>
+          <div className="flex justify-around items-center px-1">{renderSeatItems([7,8,9,10])}</div>
         </>
       );
     }
     if (micMode === 13) {
       return (
         <>
-          <div className="flex justify-center">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} onAvatarClick={handleSeatAvatarClick(seats[9])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} onAvatarClick={handleSeatAvatarClick(seats[10])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} onAvatarClick={handleSeatAvatarClick(seats[11])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} onAvatarClick={handleSeatAvatarClick(seats[12])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          </div>
+          <div className="flex justify-center">{renderSeatItems([1])}</div>
+          <div className="flex justify-around items-center px-1">{renderSeatItems([2,3,4,5])}</div>
+          <div className="flex justify-around items-center px-1">{renderSeatItems([6,7,8,9])}</div>
+          <div className="flex justify-around items-center px-1">{renderSeatItems([10,11,12,13])}</div>
         </>
       );
     }
+    // Default: 9 seats
     return (
       <>
-        <div className="flex justify-center">
-          <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-        </div>
-        <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} onAvatarClick={handleSeatAvatarClick(seats[2])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} onAvatarClick={handleSeatAvatarClick(seats[3])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} onAvatarClick={handleSeatAvatarClick(seats[4])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-        </div>
-        <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} onAvatarClick={handleSeatAvatarClick(seats[5])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} onAvatarClick={handleSeatAvatarClick(seats[6])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} onAvatarClick={handleSeatAvatarClick(seats[7])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} onAvatarClick={handleSeatAvatarClick(seats[8])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
-        </div>
+        <div className="flex justify-center">{renderSeatItems([1])}</div>
+        <div className="flex justify-around items-center px-1">{renderSeatItems([2,3,4,5])}</div>
+        <div className="flex justify-around items-center px-1">{renderSeatItems([6,7,8,9])}</div>
       </>
     );
   };
