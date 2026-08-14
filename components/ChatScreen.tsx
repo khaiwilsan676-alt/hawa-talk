@@ -14,7 +14,7 @@ import {
   updateDoc,
   getDoc,
 } from 'firebase/firestore';
-import { db } from './firebase'; // path adjust karein
+import { db } from '../src/lib/firebase';
 
 interface Message {
   id: string;
