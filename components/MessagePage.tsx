@@ -1,9 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircle, Search, ArrowLeft, Plus } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import Image from 'next/image';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+  doc,
+  updateDoc,
+} from 'firebase/firestore';
 import { db } from '../src/lib/firebase';
 import ChatScreen from './ChatScreen';
 
@@ -17,6 +25,7 @@ interface ChatPreview {
   };
   lastMessage: string;
   lastTimestamp: number;
+  unreadCount: number; // NEW: unread messages count
 }
 
 interface FixedChat {
@@ -48,10 +57,8 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
   const [dynamicChats, setDynamicChats] = useState<ChatPreview[]>([]);
   // Active chat screen target
   const [activeChat, setActiveChat] = useState<{ uid: string; name: string; photo: string } | null>(null);
-  // User list overlay state
-  const [showUserList, setShowUserList] = useState(false);
+  // Users list (always visible on main page)
   const [users, setUsers] = useState<AppUser[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Get current user data from localStorage
   const getCurrentUserData = () => {
@@ -90,6 +97,7 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
             },
             lastMessage: data.lastMessage || '',
             lastTimestamp: data.lastTimestamp?.toMillis?.() || 0,
+            unreadCount: data.unreadCounts?.[currentUserUid] || 0, // read unread count from map
           });
         }
       });
@@ -99,9 +107,9 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
     return () => unsubscribe();
   }, [currentUserUid]);
 
-  // Fetch users list when user list overlay is opened
+  // Fetch all users (always)
   useEffect(() => {
-    if (!showUserList || !currentUserUid || currentUserUid === 'N/A') return;
+    if (!currentUserUid || currentUserUid === 'N/A') return;
 
     const usersRef = collection(db, 'users');
     const q = query(usersRef);
@@ -116,7 +124,7 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
     });
 
     return () => unsubscribe();
-  }, [showUserList, currentUserUid]);
+  }, [currentUserUid]);
 
   const formatTime = (timestamp: number) => {
     if (!timestamp) return '';
@@ -133,32 +141,26 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
     setActiveChat({ uid: chat.uid, name: chat.name, photo: chat.image });
   };
 
-  const handleOpenDynamicChat = (chat: ChatPreview) => {
+  const handleOpenDynamicChat = async (chat: ChatPreview) => {
     setActiveChat({ uid: chat.otherUser.uid, name: chat.otherUser.name, photo: chat.otherUser.photo });
-  };
-
-  const handleStartNewChat = () => {
-    setShowUserList(true);
+    // Reset unread count to 0 in Firestore
+    try {
+      const convoRef = doc(db, 'conversations', chat.chatId);
+      await updateDoc(convoRef, {
+        [`unreadCounts.${currentUserUid}`]: 0,
+      });
+    } catch (error) {
+      console.error('Failed to reset unread count:', error);
+    }
   };
 
   const handleSelectUser = (user: AppUser) => {
     setActiveChat({ uid: user.uid, name: user.name, photo: user.photo });
-    setShowUserList(false);
   };
 
   const handleCloseChat = () => {
     setActiveChat(null);
   };
-
-  const handleBackFromUserList = () => {
-    setShowUserList(false);
-    setSearchQuery('');
-  };
-
-  // Filter users based on search
-  const filteredUsers = searchQuery
-    ? users.filter((u) => u.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : users;
 
   useEffect(() => {
     if (onChatOpen) onChatOpen(!!activeChat);
@@ -175,93 +177,73 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
         }}
       >
         <h1 className="text-3xl font-bold text-gray-800">Message</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleStartNewChat}
-            className="bg-white p-2 rounded-full shadow hover:bg-gray-100 active:scale-95 transition-transform"
-          >
-            <Plus size={24} className="text-blue-500" />
-          </button>
-          <CheckCircle size={28} className="text-green-500" />
-        </div>
+        <CheckCircle size={28} className="text-green-500" />
       </div>
 
-      {/* Main content: Chat list or User list */}
-      {!showUserList ? (
-        <div className="px-4 pt-4 pb-24 flex flex-col gap-2">
-          {/* Fixed chats */}
-          {fixedChats.map((chat) => (
-            <div
-              key={chat.id}
-              onClick={() => handleOpenFixedChat(chat)}
-              className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                <Image src={chat.image} alt={chat.name} width={40} height={40} className="object-cover" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm">{chat.name}</h3>
-              </div>
+      {/* Main content: Chats + Users list */}
+      <div className="px-4 pt-4 pb-24 flex flex-col gap-2">
+        {/* Fixed chats */}
+        {fixedChats.map((chat) => (
+          <div
+            key={chat.id}
+            onClick={() => handleOpenFixedChat(chat)}
+            className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <Image src={chat.image} alt={chat.name} width={40} height={40} className="object-cover" />
             </div>
-          ))}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-800 text-sm">{chat.name}</h3>
+            </div>
+          </div>
+        ))}
 
-          {/* Dynamic chats */}
-          {dynamicChats.map((chat) => (
-            <div
-              key={chat.chatId}
-              onClick={() => handleOpenDynamicChat(chat)}
-              className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                <Image
-                  src={chat.otherUser.photo || '/default-avatar.png'}
-                  alt={chat.otherUser.name}
-                  width={40}
-                  height={40}
-                  className="object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 text-sm">{chat.otherUser.name}</h3>
-                <p className="text-xs text-gray-500 truncate">{chat.lastMessage}</p>
-              </div>
+        {/* Dynamic chats with unread badges */}
+        {dynamicChats.map((chat) => (
+          <div
+            key={chat.chatId}
+            onClick={() => handleOpenDynamicChat(chat)}
+            className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <Image
+                src={chat.otherUser.photo || '/default-avatar.png'}
+                alt={chat.otherUser.name}
+                width={40}
+                height={40}
+                className="object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-800 text-sm">{chat.otherUser.name}</h3>
+              <p className="text-xs text-gray-500 truncate">{chat.lastMessage}</p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
               <span className="text-[10px] text-gray-400">{formatTime(chat.lastTimestamp)}</span>
+              {chat.unreadCount > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                  {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                </span>
+              )}
             </div>
-          ))}
-
-          {/* Empty state */}
-          {dynamicChats.length === 0 && (
-            <p className="text-center text-gray-400 mt-10">No conversations yet. Start a new chat!</p>
-          )}
-        </div>
-      ) : (
-        <div className="px-4 pt-4 pb-24">
-          {/* User List Header */}
-          <div className="flex items-center gap-3 mb-4">
-            <button onClick={handleBackFromUserList} className="p-1 hover:bg-gray-100 rounded-full">
-              <ArrowLeft size={24} />
-            </button>
-            <h2 className="text-xl font-bold text-gray-800">New Chat</h2>
           </div>
+        ))}
 
-          {/* Search Bar */}
-          <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 mb-4">
-            <Search size={20} className="text-gray-400 mr-2" />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent outline-none flex-1 text-sm"
-            />
-          </div>
+        {/* Empty state for chats */}
+        {dynamicChats.length === 0 && (
+          <p className="text-center text-gray-400 mt-4">No conversations yet.</p>
+        )}
 
-          {/* User List */}
+        {/* Users section */}
+        <div className="mt-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-3">Start a New Chat</h2>
+          
+          {/* User List (No Search) */}
           <div className="flex flex-col gap-2">
-            {filteredUsers.length === 0 ? (
-              <p className="text-center text-gray-400 mt-10">No users found.</p>
+            {users.length === 0 ? (
+              <p className="text-center text-gray-400 mt-4">No users found.</p>
             ) : (
-              filteredUsers.map((user) => (
+              users.map((user) => (
                 <div
                   key={user.uid}
                   onClick={() => handleSelectUser(user)}
@@ -282,7 +264,7 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
             )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Chat Screen Overlay */}
       {activeChat && (
@@ -294,4 +276,4 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
       )}
     </div>
   );
-            }
+    }
