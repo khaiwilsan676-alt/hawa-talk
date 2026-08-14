@@ -124,7 +124,7 @@ export default function Fourgride({
     };
   }, [musicFiles]);
 
-  // Handle music file selection - now supports multiple files
+  // Handle music file selection - supports multiple files
   const handleAddMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -218,6 +218,12 @@ export default function Fourgride({
     } catch (error) {
       console.error('Error deleting music:', error);
     }
+  };
+
+  // Close music sheet but keep playing
+  const handleCloseMusicSheet = () => {
+    setShowMusicSheet(false);
+    // Don't stop audio - keep playing
   };
 
   // Filter music by search query
@@ -428,7 +434,7 @@ export default function Fourgride({
       {/* ---------- Music Bottom Sheet ---------- */}
       {showMusicSheet && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowMusicSheet(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={handleCloseMusicSheet} />
           <div
             className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
             style={{ height: '50vh' }}
@@ -437,16 +443,27 @@ export default function Fourgride({
             {/* Header */}
             <div className="flex items-center justify-between px-6 pt-4 pb-2 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-800">Music</h2>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-3 py-1 flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-3 py-1 flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add
+                </button>
+                <button
+                  onClick={handleCloseMusicSheet}
+                  className="p-1 hover:bg-gray-100 rounded-full"
+                >
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2.5]">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Search input */}
@@ -463,7 +480,9 @@ export default function Fourgride({
             {/* Music list */}
             <div className="flex-1 overflow-y-auto px-4 py-3" style={{ maxHeight: 'calc(50vh - 120px)' }}>
               {filteredMusic.length === 0 ? (
-                <p className="text-center text-gray-400 text-sm py-8">No music added yet</p>
+                <p className="text-center text-gray-400 text-sm py-8">
+                  {musicFiles.length === 0 ? 'No music added yet. Click Add to select multiple files!' : 'No matching music found'}
+                </p>
               ) : (
                 <div className="space-y-2">
                   {filteredMusic.map((file) => (
@@ -527,7 +546,7 @@ export default function Fourgride({
         </div>
       )}
 
-      {/* Hidden file input for music - now supports multiple files */}
+      {/* Hidden file input for music - supports multiple files */}
       <input
         ref={fileInputRef}
         type="file"
