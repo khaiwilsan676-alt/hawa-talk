@@ -128,7 +128,7 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
               onClick={() => console.log('Music')}
               className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110437.png" alt="Music" className="w-20 h-20 object-contain" />
+              <img src="/IMG_20260814_110437.png" alt="Music" className="w-20 h-18 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1">Music</span>
           </div>
