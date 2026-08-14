@@ -52,20 +52,18 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
           <div className="flex flex-col items-center">
             <button
               onClick={handleClearChat}
-              className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110525.png" alt="Clear Chat" className="w-10 h-10 object-contain" />
+              <img src="/IMG_20260814_110525.png" alt="Clear Chat" className="w-16 h-16 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1 text-center">Clear-Chat</span>
           </div>
 
           {/* 2. Public msg Off with toggle */}
           <div className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-              <img src="/IMG_20260814_110608.png" alt="Public msg Off" className="w-10 h-10 object-contain" />
-            </div>
+            <img src="/IMG_20260814_110608.png" alt="Public msg Off" className="w-16 h-16 object-contain" />
             <div className="flex items-center mt-1 space-x-1">
-              <span className="text-[10px] text-gray-700">Public msg</span>
+              <span className="text-[10px] text-gray-700 whitespace-nowrap">Public msg</span>
               <button
                 onClick={togglePublicMsg}
                 className={`w-8 h-4 rounded-full flex items-center transition-colors ${
@@ -83,11 +81,9 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
 
           {/* 3. Entry Effect with toggle */}
           <div className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-              <img src="/IMG_20260814_110709.png" alt="Entry Effect" className="w-10 h-10 object-contain" />
-            </div>
+            <img src="/IMG_20260814_110709.png" alt="Entry Effect" className="w-16 h-16 object-contain" />
             <div className="flex items-center mt-1 space-x-1">
-              <span className="text-[10px] text-gray-700">Entry Effect</span>
+              <span className="text-[10px] text-gray-700 whitespace-nowrap">Entry Effect</span>
               <button
                 onClick={toggleEntryEffect}
                 className={`w-8 h-4 rounded-full flex items-center transition-colors ${
@@ -105,11 +101,9 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
 
           {/* 4. Gift Effect with toggle */}
           <div className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-              <img src="/IMG_20260814_110727.png" alt="Gift Effect" className="w-10 h-10 object-contain" />
-            </div>
+            <img src="/IMG_20260814_110727.png" alt="Gift Effect" className="w-16 h-16 object-contain" />
             <div className="flex items-center mt-1 space-x-1">
-              <span className="text-[10px] text-gray-700">Gift Effect</span>
+              <span className="text-[10px] text-gray-700 whitespace-nowrap">Gift Effect</span>
               <button
                 onClick={toggleGiftEffect}
                 className={`w-8 h-4 rounded-full flex items-center transition-colors ${
@@ -132,20 +126,18 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
           <div className="flex flex-col items-center">
             <button
               onClick={() => console.log('Music')}
-              className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110437.png" alt="Music" className="w-10 h-10 object-contain" />
+              <img src="/IMG_20260814_110437.png" alt="Music" className="w-16 h-16 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1">Music</span>
           </div>
 
           {/* 6. Speaker with toggle */}
           <div className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-              <img src="/IMG_20260814_110628.png" alt="Speaker" className="w-10 h-10 object-contain" />
-            </div>
+            <img src="/IMG_20260814_110628.png" alt="Speaker" className="w-16 h-16 object-contain" />
             <div className="flex items-center mt-1 space-x-1">
-              <span className="text-[10px] text-gray-700">Speaker</span>
+              <span className="text-[10px] text-gray-700 whitespace-nowrap">Speaker</span>
               <button
                 onClick={toggleSpeaker}
                 className={`w-8 h-4 rounded-full flex items-center transition-colors ${
@@ -165,9 +157,9 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
           <div className="flex flex-col items-center">
             <button
               onClick={() => console.log('Store')}
-              className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110501.png" alt="Store" className="w-10 h-10 object-contain" />
+              <img src="/IMG_20260814_110501.png" alt="Store" className="w-16 h-16 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1">Store</span>
           </div>
@@ -176,9 +168,9 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
           <div className="flex flex-col items-center">
             <button
               onClick={() => console.log('My Item')}
-              className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110545.png" alt="My Item" className="w-10 h-10 object-contain" />
+              <img src="/IMG_20260814_110545.png" alt="My Item" className="w-16 h-16 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1">My-Iteam</span>
           </div>
@@ -194,9 +186,9 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
             <div className="flex flex-col items-center">
               <button
                 onClick={() => console.log('Games')}
-                className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                className="transition-transform hover:scale-105"
               >
-                <img src="/IMG_20260814_111008.png" alt="Games" className="w-10 h-10 object-contain" />
+                <img src="/IMG_20260814_111008.png" alt="Games" className="w-16 h-16 object-contain" />
               </button>
               <span className="text-[10px] text-gray-700 mt-1">Games</span>
             </div>
@@ -205,9 +197,9 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
             <div className="flex flex-col items-center">
               <button
                 onClick={() => console.log('Lucky Bag')}
-                className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                className="transition-transform hover:scale-105"
               >
-                <img src="/IMG_20260814_110743.png" alt="Lucky bag" className="w-10 h-10 object-contain" />
+                <img src="/IMG_20260814_110743.png" alt="Lucky bag" className="w-16 h-16 object-contain" />
               </button>
               <span className="text-[10px] text-gray-700 mt-1">Lucky bag</span>
             </div>
@@ -216,9 +208,9 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
             <div className="flex flex-col items-center">
               <button
                 onClick={() => console.log('PK Battle')}
-                className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                className="transition-transform hover:scale-105"
               >
-                <img src="/IMG_20260814_110802.png" alt="Pk Battle" className="w-10 h-10 object-contain" />
+                <img src="/IMG_20260814_110802.png" alt="Pk Battle" className="w-16 h-16 object-contain" />
               </button>
               <span className="text-[10px] text-gray-700 mt-1">Pk Battle</span>
             </div>
@@ -237,4 +229,4 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
       </div>
     </div>
   );
-            }
+              }
