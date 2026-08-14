@@ -247,6 +247,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const applyAudioState = useCallback(async () => {
     if (!jitsiApiRef.current || !jitsiJoinedRef.current) return;
     try {
+      jitsiApiRef.current.executeCommand('toggleAudio', desiredAudioStateRef.current);
       const isMuted = await jitsiApiRef.current.isAudioMuted();
       const shouldBeMuted = !desiredAudioStateRef.current;
       if (isMuted !== shouldBeMuted) {
@@ -294,6 +295,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         toolbarButtons: [],
         disableInviteFunctions: true,
         disablePolls: true,
+        disableSelfView: true,
+        hideConferenceSubject: true,
                 hideConferenceSubject: true,
         hideConferenceTimer: true,
         doNotStoreRoom: true,
@@ -378,6 +381,19 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name, applyAudioState]);
 
+  // Toggle audio when seat status changes
+  useEffect(() => {
+    if (!jitsiApiRef.current) return;
+    try {
+      if (hasSeat) {
+        jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted);
+      } else {
+        jitsiApiRef.current.executeCommand('toggleAudio', false);
+      }
+    } catch (e) {
+      console.warn("Jitsi audio execute error:", e);
+    }
+  }, [hasSeat, currentUserSeat?.isMuted]);
   // Initialize Jitsi on room enter (for listening)
   useEffect(() => {
     if (jitsiLoaded && !jitsiApiRef.current) {
@@ -750,6 +766,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
         const newMuteState = !s.isMuted;
+        if (s.user?.accountId === userAccountId && jitsiApiRef.current) {
+          try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
         // Update Jitsi audio state
         if (s.user?.accountId === userAccountId) {
           desiredAudioStateRef.current = !newMuteState;
@@ -769,6 +787,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (!currentUserSeat) return;
     
     const newMuteState = !currentUserSeat.isMuted;
+    try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
     
     // Update Jitsi audio state
     desiredAudioStateRef.current = !newMuteState;
