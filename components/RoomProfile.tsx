@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { 
   Copy, 
   AlertTriangle,
@@ -39,10 +39,38 @@ export default function RoomProfile({
   onLeaveSeat,
   onMention
 }: RoomProfileProps) {
+  // Default values
+  const displayName = user.name || 'User'
+  const displayImage = user.image || '/default-avatar.png'
+  const displayGender = user.gender || '♂'
+  const displayAge = user.age || 24
+  const displayCountry = user.country || 'India'
+  const displayFlag = user.flag || '🇮🇳'
+  const followers = user.followers || 0
+  const isOnline = user.isOnline !== undefined ? user.isOnline : true
+  const isInSeat = user.isInSeat !== undefined ? user.isInSeat : false
+
+  // Get user ID correctly
+  const getUserId = () => {
+    // Check all possible ID fields
+    const possibleIds = [
+      user.accountId,
+      user.id,
+      user.uid,
+    ]
+    
+    // Find first non-empty ID
+    const id = possibleIds.find(val => val && val.trim() !== '')
+    
+    // Return the found ID or fallback to name
+    return id || 'User'
+  }
+
+  const accountId = getUserId()
+
   const handleCopyId = () => {
-    const id = getUserId()
-    if (id !== 'N/A') {
-      navigator.clipboard.writeText(id)
+    if (accountId && accountId !== 'N/A' && accountId !== 'User') {
+      navigator.clipboard.writeText(accountId)
       if (onCopyId) onCopyId()
     }
   }
@@ -55,37 +83,6 @@ export default function RoomProfile({
     if (onMention) onMention()
   }
 
-  // Default values
-  const displayName = user.name || 'User'
-  const displayImage = user.image || '/default-avatar.png'
-  const displayGender = user.gender || '♂'
-  const displayAge = user.age || 24
-  const displayCountry = user.country || 'India'
-  const displayFlag = user.flag || '🇮🇳'
-  const followers = user.followers || 0
-  const isOnline = user.isOnline !== undefined ? user.isOnline : true
-  const isInSeat = user.isInSeat !== undefined ? user.isInSeat : false
-
-  // Get user ID with multiple fallbacks
-  const getUserId = () => {
-    // Check all possible ID fields
-    const possibleIds = [
-      user.accountId,
-      user.id,
-      user.uid,
-      user.name, // Fallback to name if no ID exists
-      'User' // Final fallback
-    ]
-    
-    // Find first non-empty ID
-    const id = possibleIds.find(val => val && val.trim() !== '')
-    
-    // Return the found ID or generate a default one
-    return id || `User_${Math.random().toString(36).substring(2, 8)}`
-  }
-
-  const accountId = getUserId()
-
   // Determine gender color
   const getGenderColor = (gender: string) => {
     const lowerGender = gender.toLowerCase()
@@ -94,7 +91,6 @@ export default function RoomProfile({
     } else if (lowerGender === 'female' || lowerGender === 'f' || lowerGender === '♀') {
       return 'bg-pink-500'
     }
-    // Default color if gender is not specified
     return 'bg-gray-500'
   }
 
@@ -102,16 +98,20 @@ export default function RoomProfile({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* Transparent Backdrop - NO BLUR */}
+      {/* Transparent Backdrop */}
       <div 
         className="absolute inset-0 bg-transparent"
         onClick={onClose}
       />
       
-      {/* Bottom Sheet */}
+      {/* Bottom Sheet - Dynamic Height */}
       <div 
         className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up"
-        style={{ height: '30vh', minHeight: '280px', maxHeight: '320px' }}
+        style={{ 
+          height: isInSeat ? '30vh' : '20vh', 
+          minHeight: isInSeat ? '280px' : '220px', 
+          maxHeight: isInSeat ? '320px' : '260px' 
+        }}
       >
         {/* Top Left - Warning Icon */}
         <div className="absolute top-3 left-3 z-10">
@@ -166,8 +166,7 @@ export default function RoomProfile({
             </div>
 
             {/* Row 2: Tags */}
-            <div className="flex items-center justify-center gap-0.5 mt-1.5 flex-wrap">
-              <img src="/1785486414756.png" alt="" className="h-6 w-auto object-contain" />
+            <div className="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
               <img src="/1785131462125.png" alt="" className="h-6 w-auto object-contain" />
               <img src="/1785131792693.png" alt="" className="h-6 w-auto object-contain" />
               <img src="/1785469775751.png" alt="" className="h-5 w-auto object-contain" />
@@ -175,7 +174,7 @@ export default function RoomProfile({
             </div>
 
             {/* Row 3: Level Badge + Additional Image */}
-            <div className="flex items-center justify-center gap-0.5 mt-1.5">
+            <div className="flex items-center justify-center gap-1.5 mt-1.5">
               <div className="relative inline-flex items-center">
                 <img 
                   src="/1785137410522.png" 
@@ -186,7 +185,7 @@ export default function RoomProfile({
                   Lv.1
                 </span>
               </div>
-              <img src="/1785137410522.png" alt="" className="h-6 w-auto object-contain" />
+              <img src="/1785486414756.png" alt="" className="h-6 w-auto object-contain" />
             </div>
 
             {/* Row 4: ID, Followers, Country */}
@@ -259,4 +258,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-    }
+          }
