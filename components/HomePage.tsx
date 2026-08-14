@@ -181,6 +181,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isSwiping, setIsSwiping] = useState(false)
   const [swipeOffset, setSwipeOffset] = useState(0)
 
+  // Jitsi refs for global audio
+  const jitsiContainerRef = useRef<HTMLDivElement>(null)
+  const jitsiApiRef = useRef<any>(null)
+  const [jitsiLoaded, setJitsiLoaded] = useState(false)
+  const jitsiJoinedRef = useRef(false)
+  const [isJitsiJoined, setIsJitsiJoined] = useState(false)
+
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
     return () => clearTimeout(id)
@@ -200,6 +207,104 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => {
       window.removeEventListener('resize', setHeight)
       window.removeEventListener('orientationchange', setHeight)
+    }
+  }, [])
+
+  // Load Jitsi script
+  useEffect(() => {
+    if (!document.getElementById('jitsi-script')) {
+      const script = document.createElement('script')
+      script.id = 'jitsi-script'
+      script.src = 'https://meet.jit.si/external_api.js'
+      script.async = true
+      script.onload = () => { setJitsiLoaded(true) }
+      document.body.appendChild(script)
+    } else {
+      setJitsiLoaded(true)
+    }
+  }, [])
+
+  // Initialize Jitsi for global listening
+  const initializeJitsiForListening = useCallback(() => {
+    if (!jitsiLoaded || !jitsiContainerRef.current || jitsiApiRef.current) return
+
+    const domain = 'meet.jit.si'
+    const options = {
+      roomName: 'hurry-global-lobby',
+      width: '100%',
+      height: '100%',
+      parentNode: jitsiContainerRef.current,
+      userInfo: { 
+        displayName: userName || 'Guest', 
+        email: (userUID || 'guest') + '@hurry.app' 
+      },
+      configOverrides: {
+        startWithAudioMuted: true,
+        startWithVideoMuted: true,
+        disableDeepLinking: true,
+        prejoinPageEnabled: false,
+        toolbarButtons: [],
+        disableInviteFunctions: true,
+        disablePolls: true,
+        disableSelfView: true,
+        hideConferenceSubject: true,
+        hideConferenceTimer: true,
+        doNotStoreRoom: true,
+        resolution: 180,
+        constraints: { video: { height: { ideal: 180, max: 180, min: 180 } } },
+      },
+      interfaceConfigOverrides: {
+        filmStripOnly: false,
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        SHOW_BRAND_WATERMARK: false,
+        SHOW_POWERED_BY: false,
+        SHOW_PROMOTIONAL_CLOSE_PAGE: false,
+        TOOLBAR_ALWAYS_VISIBLE: false,
+        DISABLE_VIDEO_BACKGROUND: true,
+        HIDE_INVITE_MORE_HEADER: true,
+        MOBILE_APP_PROMO: false,
+        APP_NAME: 'Hurry',
+        NATIVE_APP_NAME: 'Hurry',
+        PROVIDER_NAME: 'Hurry'
+      }
+    }
+
+    try {
+      const api = new window.JitsiMeetExternalAPI(domain, options)
+      jitsiApiRef.current = api
+      jitsiJoinedRef.current = false
+
+      api.addListener('videoConferenceJoined', () => {
+        jitsiJoinedRef.current = true
+        setIsJitsiJoined(true)
+      })
+
+      api.addListener('participantLeft', () => {
+        // Handle participant leaving if needed
+      })
+
+    } catch (error) {
+      console.error('Error initializing Jitsi:', error)
+    }
+  }, [jitsiLoaded, userName, userUID])
+
+  // Initialize Jitsi when script loads and user data is available
+  useEffect(() => {
+    if (jitsiLoaded && !jitsiApiRef.current && userName !== 'Guest') {
+      initializeJitsiForListening()
+    }
+  }, [jitsiLoaded, userName, initializeJitsiForListening])
+
+  // Cleanup Jitsi on unmount
+  useEffect(() => {
+    return () => {
+      if (jitsiApiRef.current) {
+        jitsiApiRef.current.dispose()
+        jitsiApiRef.current = null
+      }
+      jitsiJoinedRef.current = false
+      setIsJitsiJoined(false)
     }
   }, [])
 
@@ -1166,6 +1271,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
         WebkitTouchCallout: 'none'
       }}
     >
+      {/* Hidden Jitsi container for global listening */}
+      <div 
+        ref={jitsiContainerRef} 
+        className="absolute inset-0 z-0 opacity-0 pointer-events-none" 
+        style={{ width: '1px', height: '1px' }} 
+      />
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
         * {
@@ -1909,4 +2021,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-  }
+      }
