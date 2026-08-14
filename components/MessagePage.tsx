@@ -16,6 +16,14 @@ import { db } from '../src/lib/firebase';
 import ChatScreen from './ChatScreen';
 
 // Types
+interface FixedChat {
+  id: string;
+  name: string;
+  image: string;
+  uid: string;
+  isFixed: boolean;
+}
+
 interface ChatPreview {
   chatId: string;
   otherUser: {
@@ -25,21 +33,7 @@ interface ChatPreview {
   };
   lastMessage: string;
   lastTimestamp: number;
-  unreadCount: number; // NEW: unread messages count
-}
-
-interface FixedChat {
-  id: string;
-  name: string;
-  image: string;
-  uid: string;
-  isFixed: boolean;
-}
-
-interface AppUser {
-  uid: string;
-  name: string;
-  photo: string;
+  unreadCount: number;
 }
 
 interface MessagePageProps {
@@ -47,20 +41,15 @@ interface MessagePageProps {
 }
 
 export default function MessagePage({ onChatOpen }: MessagePageProps) {
-  // Fixed chats
   const [fixedChats] = useState<FixedChat[]>([
     { id: 'hawa-team', name: 'Hurry Team', image: '/logo.png', uid: 'hurry_team_official', isFixed: true },
     { id: 'hawa-system', name: 'Hurry System', image: '/1784465161302~2.jpg', uid: 'hurry_system_official', isFixed: true }
   ]);
 
-  // Dynamic chats (Firestore)
-  const [dynamicChats, setDynamicChats] = useState<ChatPreview[]>([]);
-  // Active chat screen target
   const [activeChat, setActiveChat] = useState<{ uid: string; name: string; photo: string } | null>(null);
-  // Users list (always visible on main page)
-  const [users, setUsers] = useState<AppUser[]>([]);
+  // Sirf wahi users jinke saath conversation hai
+  const [conversations, setConversations] = useState<ChatPreview[]>([]);
 
-  // Get current user data from localStorage
   const getCurrentUserData = () => {
     const uid = typeof window !== 'undefined' ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A' : 'N/A';
     const name = typeof window !== 'undefined' ? localStorage.getItem('userName') || 'Me' : 'Me';
@@ -70,7 +59,7 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
 
   const currentUserUid = getCurrentUserData().uid;
 
-  // Real-time conversation listener (for chat list)
+  // Sirf conversations fetch karo (jinke saath baat hui hai)
   useEffect(() => {
     if (!currentUserUid || currentUserUid === 'N/A') return;
 
@@ -97,30 +86,11 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
             },
             lastMessage: data.lastMessage || '',
             lastTimestamp: data.lastTimestamp?.toMillis?.() || 0,
-            unreadCount: data.unreadCounts?.[currentUserUid] || 0, // read unread count from map
+            unreadCount: data.unreadCounts?.[currentUserUid] || 0,
           });
         }
       });
-      setDynamicChats(chats);
-    });
-
-    return () => unsubscribe();
-  }, [currentUserUid]);
-
-  // Fetch all users (always)
-  useEffect(() => {
-    if (!currentUserUid || currentUserUid === 'N/A') return;
-
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allUsers = snapshot.docs.map((doc) => ({
-        uid: doc.id,
-        name: doc.data().name,
-        photo: doc.data().photoURL || '',
-      }));
-      // Filter out current user
-      setUsers(allUsers.filter((u) => u.uid !== currentUserUid));
+      setConversations(chats);
     });
 
     return () => unsubscribe();
@@ -141,9 +111,9 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
     setActiveChat({ uid: chat.uid, name: chat.name, photo: chat.image });
   };
 
-  const handleOpenDynamicChat = async (chat: ChatPreview) => {
+  const handleOpenChat = async (chat: ChatPreview) => {
     setActiveChat({ uid: chat.otherUser.uid, name: chat.otherUser.name, photo: chat.otherUser.photo });
-    // Reset unread count to 0 in Firestore
+    // Reset unread count to 0
     try {
       const convoRef = doc(db, 'conversations', chat.chatId);
       await updateDoc(convoRef, {
@@ -152,10 +122,6 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
     } catch (error) {
       console.error('Failed to reset unread count:', error);
     }
-  };
-
-  const handleSelectUser = (user: AppUser) => {
-    setActiveChat({ uid: user.uid, name: user.name, photo: user.photo });
   };
 
   const handleCloseChat = () => {
@@ -180,7 +146,7 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
         <CheckCircle size={28} className="text-green-500" />
       </div>
 
-      {/* Main content: Chats + Users list */}
+      {/* Main content: Fixed chats + Conversation list */}
       <div className="px-4 pt-4 pb-24 flex flex-col gap-2">
         {/* Fixed chats */}
         {fixedChats.map((chat) => (
@@ -198,71 +164,37 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
           </div>
         ))}
 
-        {/* Dynamic chats with unread badges */}
-        {dynamicChats.map((chat) => (
-          <div
-            key={chat.chatId}
-            onClick={() => handleOpenDynamicChat(chat)}
-            className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-              <Image
-                src={chat.otherUser.photo || '/default-avatar.png'}
-                alt={chat.otherUser.name}
-                width={40}
-                height={40}
-                className="object-cover"
-              />
+        {/* Conversations list (sirf wahi jinke saath baat hui hai) */}
+        <div className="flex flex-col gap-2 mt-2">
+          {conversations.map((chat) => (
+            <div
+              key={chat.chatId}
+              onClick={() => handleOpenChat(chat)}
+              className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors relative"
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <Image
+                  src={chat.otherUser.photo || '/default-avatar.png'}
+                  alt={chat.otherUser.name}
+                  width={40}
+                  height={40}
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-800 text-sm">{chat.otherUser.name}</h3>
+                <p className="text-xs text-gray-500 truncate">{chat.lastMessage}</p>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-[10px] text-gray-400">{formatTime(chat.lastTimestamp)}</span>
+                {chat.unreadCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-800 text-sm">{chat.otherUser.name}</h3>
-              <p className="text-xs text-gray-500 truncate">{chat.lastMessage}</p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <span className="text-[10px] text-gray-400">{formatTime(chat.lastTimestamp)}</span>
-              {chat.unreadCount > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                  {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {/* Empty state for chats */}
-        {dynamicChats.length === 0 && (
-          <p className="text-center text-gray-400 mt-4">No conversations yet.</p>
-        )}
-
-        {/* Users section */}
-        <div className="mt-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-3">Start a New Chat</h2>
-          
-          {/* User List (No Search) */}
-          <div className="flex flex-col gap-2">
-            {users.length === 0 ? (
-              <p className="text-center text-gray-400 mt-4">No users found.</p>
-            ) : (
-              users.map((user) => (
-                <div
-                  key={user.uid}
-                  onClick={() => handleSelectUser(user)}
-                  className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    <Image
-                      src={user.photo || '/default-avatar.png'}
-                      alt={user.name}
-                      width={40}
-                      height={40}
-                      className="object-cover"
-                    />
-                  </div>
-                  <span className="font-medium text-gray-800 text-sm">{user.name}</span>
-                </div>
-              ))
-            )}
-          </div>
+          ))}
         </div>
       </div>
 
@@ -276,4 +208,4 @@ export default function MessagePage({ onChatOpen }: MessagePageProps) {
       )}
     </div>
   );
-    }
+                    }
