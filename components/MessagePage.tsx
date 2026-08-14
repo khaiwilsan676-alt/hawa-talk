@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, Search, ArrowLeft, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from './firebase'; // adjust path
+import { db } from '../firebase'; // adjust path
 import ChatScreen from './ChatScreen';
 
 // Types
