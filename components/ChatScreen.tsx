@@ -2,6 +2,17 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ArrowLeft, Send, ImageIcon, MoreHorizontal } from 'lucide-react'
+import { initializeApp } from 'firebase/app'
+import {
+  getFirestore,
+  doc,
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 interface Message {
   id: string
@@ -24,7 +35,19 @@ interface ChatScreenProps {
   onClose: () => void
 }
 
-const SIGNALING_SERVER = 'ws://localhost:3001'
+// Firebase configuration – replace with your own
+const firebaseConfig = {
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_AUTH_DOMAIN',
+  projectId: 'YOUR_PROJECT_ID',
+  storageBucket: 'YOUR_STORAGE_BUCKET',
+  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+  appId: 'YOUR_APP_ID',
+}
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig)
+const db = getFirestore(app)
 
 const FIXED_CHAT_UIDS = ['hurry_team_official', 'hurry_system_official']
 
@@ -34,199 +57,72 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
   const [connected, setConnected] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const wsRef = useRef<WebSocket | null>(null)
-  const pcRef = useRef<RTCPeerConnection | null>(null)
-  const dataChannelRef = useRef<RTCDataChannel | null>(null)
-  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
-
   const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid)
 
-  const connectSignaling = useCallback(() => {
-    const ws = new WebSocket(SIGNALING_SERVER)
-    wsRef.current = ws
+  // Compute a unique chat ID (same for both users, regardless of order)
+  const chatId = [currentUser.uid, targetUser.uid].sort().join('_')
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 'register', uid: currentUser.uid }))
-    }
-
-    ws.onmessage = async (event) => {
-      const data = JSON.parse(event.data)
-      const { type } = data
-
-      if (type === 'offer') {
-        await handleReceiveOffer(data.sdp)
-      } else if (type === 'answer') {
-        await handleReceiveAnswer(data.sdp)
-      } else if (type === 'ice-candidate') {
-        await handleRemoteIceCandidate(data.candidate)
-      }
-    }
-
-    ws.onclose = () => {
-      console.log('Signalling disconnected')
-    }
-
-    return ws
-  }, [currentUser.uid])
-
+  // Set up Firestore listener for messages
   useEffect(() => {
-    const ws = connectSignaling()
-    return () => {
-      ws.close()
-      pcRef.current?.close()
-    }
-  }, [connectSignaling])
+    const messagesRef = collection(db, 'chats', chatId, 'messages')
+    const q = query(messagesRef, orderBy('timestamp', 'asc'))
 
-  const addMessage = (text: string, sender: 'me' | 'other') => {
-    setMessages(prev => [...prev, {
-      id: crypto.randomUUID(),
-      text,
-      sender,
-      timestamp: Date.now()
-    }])
-  }
-
-  const createPeerConnection = useCallback(() => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    })
-    pcRef.current = pc
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        wsRef.current?.send(JSON.stringify({
-          type: 'ice-candidate',
-          from: currentUser.uid,
-          to: targetUser.uid,
-          candidate: event.candidate
-        }))
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const loadedMessages: Message[] = snapshot.docs.map((doc) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            text: data.text,
+            sender: data.senderUid === currentUser.uid ? 'me' : 'other',
+            timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
+          }
+        })
+        setMessages(loadedMessages)
+        setConnected(true) // listener is active, we are "connected"
+      },
+      (error) => {
+        console.error('Firestore listener error:', error)
+        setConnected(false)
       }
-    }
+    )
 
-    pc.ondatachannel = (event) => {
-      const channel = event.channel
-      setupDataChannel(channel)
-    }
+    return () => unsubscribe()
+  }, [chatId, currentUser.uid])
 
-    const channel = pc.createDataChannel('chat')
-    setupDataChannel(channel)
+  const handleSend = async () => {
+    if (!newMessage.trim()) return
 
-    pc.createOffer()
-      .then(offer => pc.setLocalDescription(offer))
-      .then(() => {
-        wsRef.current?.send(JSON.stringify({
-          type: 'offer',
-          from: currentUser.uid,
-          to: targetUser.uid,
-          sdp: pc.localDescription
-        }))
-      })
-      .catch(err => console.error('Error creating offer:', err))
-
-    return pc
-  }, [currentUser.uid, targetUser.uid])
-
-  const setupDataChannel = (channel: RTCDataChannel) => {
-    dataChannelRef.current = channel
-
-    channel.onopen = () => {
-      setConnected(true)
-      while (pendingCandidatesRef.current.length) {
-        const candidate = pendingCandidatesRef.current.shift()!
-        wsRef.current?.send(JSON.stringify({
-          type: 'ice-candidate',
-          from: currentUser.uid,
-          to: targetUser.uid,
-          candidate
-        }))
-      }
-    }
-
-    channel.onmessage = (event) => {
-      addMessage(event.data, 'other')
-    }
-
-    channel.onclose = () => {
-      setConnected(false)
-    }
-  }
-
-  const handleReceiveOffer = async (sdp: RTCSessionDescriptionInit) => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    })
-    pcRef.current = pc
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        wsRef.current?.send(JSON.stringify({
-          type: 'ice-candidate',
-          from: currentUser.uid,
-          to: targetUser.uid,
-          candidate: event.candidate
-        }))
-      }
-    }
-
-    pc.ondatachannel = (event) => {
-      const channel = event.channel
-      setupDataChannel(channel)
-    }
-
-    await pc.setRemoteDescription(new RTCSessionDescription(sdp))
-    const answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
-
-    wsRef.current?.send(JSON.stringify({
-      type: 'answer',
-      from: currentUser.uid,
-      to: targetUser.uid,
-      sdp: pc.localDescription
-    }))
-  }
-
-  const handleReceiveAnswer = async (sdp: RTCSessionDescriptionInit) => {
-    if (pcRef.current) {
-      await pcRef.current.setRemoteDescription(new RTCSessionDescription(sdp))
-    }
-  }
-
-  const handleRemoteIceCandidate = async (candidate: RTCIceCandidateInit) => {
-    if (!pcRef.current?.remoteDescription) {
-      pendingCandidatesRef.current.push(candidate)
-      return
-    }
-    try {
-      await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate))
-    } catch (err) {
-      console.error('Error adding received ICE candidate', err)
-    }
-  }
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      createPeerConnection()
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [createPeerConnection])
-
-  const handleSend = () => {
-    if (!newMessage.trim() || !dataChannelRef.current) return
-    dataChannelRef.current.send(newMessage.trim())
-    addMessage(newMessage.trim(), 'me')
+    const messageText = newMessage.trim()
     setNewMessage('')
 
-    const chatKey = `chat_${[currentUser.uid, targetUser.uid].sort().join('_')}`
-    const existing = localStorage.getItem(chatKey)
-    let chatData = existing ? JSON.parse(existing) : { messages: [] }
-    chatData.lastMessage = newMessage.trim()
-    chatData.lastTimestamp = Date.now()
-    chatData.otherUser = {
-      uid: targetUser.uid,
-      name: targetUser.name,
-      photo: targetUser.photo
+    // Add message to Firestore
+    try {
+      const messagesRef = collection(db, 'chats', chatId, 'messages')
+      await addDoc(messagesRef, {
+        text: messageText,
+        senderUid: currentUser.uid,
+        timestamp: serverTimestamp(),
+      })
+
+      // Update localStorage (optional, for chat list preview)
+      const chatKey = `chat_${chatId}`
+      const existing = localStorage.getItem(chatKey)
+      let chatData = existing ? JSON.parse(existing) : { messages: [] }
+      chatData.lastMessage = messageText
+      chatData.lastTimestamp = Date.now()
+      chatData.otherUser = {
+        uid: targetUser.uid,
+        name: targetUser.name,
+        photo: targetUser.photo,
+      }
+      localStorage.setItem(chatKey, JSON.stringify(chatData))
+    } catch (error) {
+      console.error('Error sending message:', error)
+      // Optionally restore the input if send fails
+      setNewMessage(messageText)
     }
-    localStorage.setItem(chatKey, JSON.stringify(chatData))
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -236,6 +132,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
     }
   }
 
+  // Auto‑scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -295,7 +192,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
         )}
         {messages.map((msg) => {
           const isMine = msg.sender === 'me'
-          
+
           // Fixed chat messages with sender avatar
           if (!isMine && isFixedChat) {
             return (
@@ -341,7 +238,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input bar - Only for normal chats */}
+      {/* Input bar – only for normal chats */}
       {!isFixedChat && (
         <div className="px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-2">
           <button className="text-gray-500 hover:text-gray-700">
@@ -374,4 +271,4 @@ export default function ChatScreen({ currentUser, targetUser, onClose }: ChatScr
       )}
     </div>
   )
-      }
+}
