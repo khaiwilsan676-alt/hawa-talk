@@ -8,7 +8,7 @@ import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import { db } from "../src/lib/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
 import Image from 'next/image';
 
 declare global {
@@ -158,7 +158,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId);
   const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
 
-  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomOwner.id || roomOwner.accountId || 'default')) % 100000}`;
+  const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
+  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomId)) % 100000}`;
 
   function hashCode(str: string): number {
     let hash = 0;
@@ -170,9 +171,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     return Math.abs(hash);
   }
 
+  // Display room name: use only roomName (from Settings), no fallback to owner name
   const displayRoomName = roomName
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
-    : (roomOwner.name?.length > 6 ? roomOwner.name?.substring(0, 6) + '...' : roomOwner.name || 'User');
+    : 'Room'; // fallback to generic 'Room' if not set
 
   const openProfile = (user: { name: string; image: string; accountId: string }) => {
     setProfileUser(user);
@@ -182,9 +184,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   // Fetch room data from Firestore
   useEffect(() => {
     const fetchRoomData = async () => {
-      if (roomOwner.id && db) {
+      if (roomId && db) {
         try {
-          const snap = await getDoc(doc(db, "globalRooms", roomOwner.id));
+          const snap = await getDoc(doc(db, "globalRooms", roomId));
           if (snap.exists()) {
             const data = snap.data();
             setRoomName(data.name || "");
@@ -212,7 +214,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       }
     };
     fetchRoomData();
-  }, [roomOwner.id, roomOwner.image]);
+  }, [roomId, roomOwner.image]);
 
   // Load Jitsi script
   useEffect(() => {
@@ -374,26 +376,85 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     });
   }, [micMode]);
 
-  // Add current user to room users (live count)
+  // ---------- REAL-TIME PRESENCE & MESSAGES (Firestore) ----------
+
+  // Presence collection: roomPresence/{roomId}/users
+  const presenceCollection = `roomPresence/${roomId}/users`;
+  const messagesCollection = `roomMessages/${roomId}/messages`;
+
+  // Set up Firestore listeners for presence and messages
   useEffect(() => {
-    if (userAccountId !== "guest" && currentUser.name && currentUser.image) {
-      const userExists = roomUsers.find(u => u.accountId === userAccountId);
-      if (!userExists) {
-        setRoomUsers(prev => [...prev, { accountId: userAccountId, name: currentUser.name, image: currentUser.image }]);
-        setMessages(prev => [...prev, {
-          id: `join-${Date.now()}`,
-          text: 'Enter the Room',
-          sender: currentUser.name,
-          senderImage: currentUser.image,
-          timestamp: Date.now(),
-          type: 'join'
-        }]);
-      }
-    }
+    if (!db) return;
+
+    // Real-time presence
+    const unsubPresence = onSnapshot(collection(db, presenceCollection), (snapshot) => {
+      const users = snapshot.docs.map(d => d.data() as RoomUser);
+      setRoomUsers(users);
+    }, (error) => {
+      console.error("Presence listener error:", error);
+    });
+
+    // Real-time messages
+    const messagesQuery = query(collection(db, messagesCollection), orderBy('timestamp', 'asc'));
+    const unsubMessages = onSnapshot(messagesQuery, (snapshot) => {
+      const msgs = snapshot.docs.map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          text: data.text || '',
+          sender: data.sender || 'Unknown',
+          senderImage: data.senderImage || '/default-avatar.png',
+          timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : data.timestamp || Date.now(),
+          type: data.type || 'message',
+          imageUrl: data.imageUrl || undefined
+        } as Message;
+      });
+      setMessages(msgs);
+    }, (error) => {
+      console.error("Messages listener error:", error);
+    });
+
     return () => {
-      setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId));
+      unsubPresence();
+      unsubMessages();
     };
-  }, [userAccountId, currentUser.name, currentUser.image]);
+  }, [roomId]);
+
+  // Add current user to presence when component mounts, remove on unmount
+  useEffect(() => {
+    if (!db || userAccountId === "guest") return;
+
+    const presenceDocRef = doc(db, presenceCollection, userAccountId);
+    const userData: RoomUser = {
+      accountId: userAccountId,
+      name: currentUser.name,
+      image: currentUser.image
+    };
+
+    setDoc(presenceDocRef, userData, { merge: true })
+      .catch(err => console.error("Error adding presence:", err));
+
+    return () => {
+      deleteDoc(presenceDocRef).catch(err => console.error("Error removing presence:", err));
+    };
+  }, [userAccountId, currentUser.name, currentUser.image, roomId]);
+
+  // Send a message to Firestore
+  const sendMessageToFirestore = async (text: string, imageUrl?: string) => {
+    if (!db) return;
+    try {
+      await addDoc(collection(db, messagesCollection), {
+        text,
+        sender: currentUser.name,
+        senderImage: currentUser.image,
+        timestamp: serverTimestamp(),
+        type: 'message',
+        imageUrl: imageUrl || null
+      });
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
+  };
 
   // Scroll messages to bottom
   useEffect(() => {
@@ -463,15 +524,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     const reader = new FileReader();
     reader.onload = (event) => {
       const imageUrl = event.target?.result as string;
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        text: '',
-        sender: currentUser.name,
-        senderImage: currentUser.image,
-        timestamp: Date.now(),
-        type: 'message',
-        imageUrl
-      }]);
+      sendMessageToFirestore('', imageUrl);
     };
     reader.readAsDataURL(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -623,14 +676,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return;
     }
     if (!message.trim()) return;
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      text: message.trim(),
-      sender: currentUser.name,
-      senderImage: currentUser.image,
-      timestamp: Date.now(),
-      type: 'message'
-    }]);
+    sendMessageToFirestore(message.trim());
     setMessage("");
     if (inputRef.current) inputRef.current.focus();
   };
@@ -683,8 +729,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
     }
 
-    if (roomOwner.id && db) {
-      await setDoc(doc(db, "globalRooms", roomOwner.id), {
+    if (roomId && db) {
+      await setDoc(doc(db, "globalRooms", roomId), {
         name: data.roomName,
         image: data.roomImage,
         announcement: data.announcement,
@@ -698,7 +744,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (e) e.stopPropagation();
     setShowExitMenu(false);
     localStorage.removeItem('keptRoom');
-    setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId));
     if (jitsiApiRef.current) jitsiApiRef.current.dispose();
     if (onBack) onBack();
     if (onClose) onClose();
@@ -716,6 +761,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji);
 
   const handleClearChat = () => {
+    // Optional: clear local messages only, but real Firestore messages remain
     setMessages([]);
   };
 
@@ -814,7 +860,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     return (
       <RoomSettingPage
         onBack={closeSettings}
-        roomOwnerId={roomOwner.id}
+        roomOwnerId={roomId}
         roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode, theme: Object.keys(THEME_BACKGROUNDS).find(key => THEME_BACKGROUNDS[key] === backgroundImage) || 'mood-light' }}
         onSave={handleSaveSettings}
       />
@@ -852,7 +898,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     e.stopPropagation();
                     const newFollow = !isFollowed;
                     setIsFollowed(newFollow);
-                    if (onFollowToggle) onFollowToggle(roomOwner.id || roomOwner.accountId || '', newFollow);
+                    if (onFollowToggle) onFollowToggle(roomId, newFollow);
                   }}
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-gray-500' : 'bg-blue-500'}`}
                   title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
@@ -1148,7 +1194,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                       <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-800">{roomName || roomOwner.name}</h3>
+                      <h3 className="font-semibold text-gray-800">{roomName || 'Room'}</h3>
                       <div className="flex items-center gap-1 text-xs text-gray-400">
                         <span>ID: {roomOwner.accountId}</span>
                         <button onClick={handleCopyId} className="p-0.5 hover:bg-gray-100 rounded transition-colors cursor-pointer" title="Copy ID">
@@ -1382,4 +1428,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
       </span>
     </div>
   );
-            }
+}
