@@ -244,7 +244,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const applyAudioState = useCallback(() => {
     if (!jitsiApiRef.current || !jitsiJoinedRef.current) return;
     try {
-      jitsiApiRef.current.executeCommand('toggleAudio', desiredAudioStateRef.current);
+      jitsiApiRef.current.isAudioMuted().then((muted: boolean) => {
+        // desiredAudioStateRef.current is true if UNMUTED, false if MUTED
+        const shouldBeMuted = !desiredAudioStateRef.current;
+        if (muted !== shouldBeMuted) {
+          jitsiApiRef.current.executeCommand('toggleAudio');
+        }
+      });
     } catch (err) {
       console.warn("Jitsi audio execute error:", err);
     }
@@ -288,7 +294,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         toolbarButtons: [],
         disableInviteFunctions: true,
         disablePolls: true,
-        disableSelfView: true,
         hideConferenceSubject: true,
         hideConferenceTimer: true,
         doNotStoreRoom: true,
@@ -378,20 +383,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       jitsiJoinedRef.current = false;
     };
   }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name, applyAudioState]);
-
-  // Toggle audio when seat status changes
-  useEffect(() => {
-    if (!jitsiApiRef.current) return;
-    try {
-      if (hasSeat) {
-        jitsiApiRef.current.executeCommand('toggleAudio', !currentUserSeat?.isMuted);
-      } else {
-        jitsiApiRef.current.executeCommand('toggleAudio', false);
-      }
-    } catch (e) {
-      console.warn("Jitsi audio execute error:", e);
-    }
-  }, [hasSeat, currentUserSeat?.isMuted]);
 
   // Update seats when mic mode changes
   useEffect(() => {
@@ -702,9 +693,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
         const newMuteState = !s.isMuted;
-        if (s.user?.accountId === userAccountId && jitsiApiRef.current) {
-          try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
-        }
         return { ...s, isMuted: newMuteState };
       }
       return s;
@@ -717,7 +705,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (e) e.stopPropagation();
     if (!currentUserSeat || !jitsiApiRef.current) return;
     const newMuteState = !currentUserSeat.isMuted;
-    try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState); } catch (err) {}
     const updatedSeats = seats.map(s => {
       if (s.number === currentUserSeat.number) return { ...s, isMuted: newMuteState };
       return s;
