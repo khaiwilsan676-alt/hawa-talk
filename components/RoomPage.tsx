@@ -275,7 +275,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   // Initialize Jitsi
   useEffect(() => {
-    if (!jitsiLoaded || !jitsiContainerRef.current) return;
+    if (!jitsiLoaded || !jitsiContainerRef.current || !hasSeat) return;
 
     const domain = 'meet.jit.si';
     const options = {
@@ -382,7 +382,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null; }
       jitsiJoinedRef.current = false;
     };
-  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name, applyAudioState]);
+  }, [jitsiLoaded, jitsiRoomName, userAccountId, currentUser.name, applyAudioState, hasSeat]);
 
   // Update seats when mic mode changes
   useEffect(() => {
