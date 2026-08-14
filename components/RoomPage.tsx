@@ -244,10 +244,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   };
 
   // Apply desired audio state to Jitsi
-  const applyAudioState = useCallback(() => {
+  const applyAudioState = useCallback(async () => {
     if (!jitsiApiRef.current || !jitsiJoinedRef.current) return;
     try {
-      jitsiApiRef.current.executeCommand('toggleAudio', desiredAudioStateRef.current);
+      const isMuted = await jitsiApiRef.current.isAudioMuted();
+      const shouldBeMuted = !desiredAudioStateRef.current;
+      if (isMuted !== shouldBeMuted) {
+        jitsiApiRef.current.executeCommand('toggleAudio');
+      }
     } catch (err) {
       console.warn("Jitsi audio execute error:", err);
     }
@@ -290,8 +294,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         toolbarButtons: [],
         disableInviteFunctions: true,
         disablePolls: true,
-        disableSelfView: true,
-        hideConferenceSubject: true,
+                hideConferenceSubject: true,
         hideConferenceTimer: true,
         doNotStoreRoom: true,
         resolution: 180,
