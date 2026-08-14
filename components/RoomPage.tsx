@@ -79,7 +79,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [showFourGride, setShowFourGride] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [accountId, setAccountId] = useState<string>("Loading...");
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
 
   // Message restriction state
@@ -99,6 +98,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     name: string;
     image: string;
     accountId: string;
+    isInSeat?: boolean;
   } | null>(null);
 
   const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
@@ -129,12 +129,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [showChatInput, setShowChatInput] = useState(false);
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
 
-  // --- STEPS 1 & 2: Jitsi Refs and applyAudioState ---
+  // Jitsi refs
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<any>(null);
   const jitsiJoinedRef = useRef(false);
-  const desiredAudioStateRef = useRef(false); // true = unmuted, false = muted
-
+  const desiredAudioStateRef = useRef(false);
   const [jitsiLoaded, setJitsiLoaded] = useState(false);
   const [isJitsiJoined, setIsJitsiJoined] = useState(false);
   const [hasJoinedSeat, setHasJoinedSeat] = useState(false);
@@ -179,7 +178,13 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     : 'Room';
 
   const openProfile = (user: { name: string; image: string; accountId: string }) => {
-    setProfileUser(user);
+    const userInSeat = seats.some(s => s.isOccupied && s.user?.accountId === user.accountId);
+    setProfileUser({
+      name: user.name,
+      image: user.image,
+      accountId: user.accountId,
+      isInSeat: userInSeat
+    });
     setShowUserProfile(true);
   };
 
@@ -243,7 +248,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }));
   };
 
-  // --- STEP 2: applyAudioState definition ---
   const applyAudioState = useCallback(async () => {
     const api = jitsiApiRef.current;
     if (!api || !jitsiJoinedRef.current) return;
@@ -262,7 +266,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   }, []);
 
-  // --- STEP 3: Updated initialize function ---
   const initializeJitsiForListening = useCallback(() => {
     if (!jitsiLoaded || !jitsiContainerRef.current || jitsiApiRef.current) return;
 
@@ -307,8 +310,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         console.log('Jitsi joined');
         jitsiJoinedRef.current = true;
         setIsJitsiJoined(true);
-
-        // Everyone enters muted
         desiredAudioStateRef.current = false;
 
         try {
@@ -343,15 +344,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   }, [jitsiLoaded, jitsiRoomName, currentUser.name, userAccountId]);
 
-  // --- STEP 4: The "updateDesiredAudioState" Effect and removal of old "toggleAudio" effect ---
-  // Initialize Jitsi on room enter
   useEffect(() => {
     if (jitsiLoaded && !jitsiApiRef.current) {
       initializeJitsiForListening();
     }
   }, [jitsiLoaded, initializeJitsiForListening]);
 
-  // Update seats when mic mode changes
   useEffect(() => {
     setSeats(prev => {
       const newSeats = getInitialSeats(micMode);
@@ -365,13 +363,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     });
   }, [micMode]);
 
-  // ---------- REAL-TIME PRESENCE & MESSAGES (Firestore) ----------
-
   const presenceCollection = `roomPresence/${roomId}/users`;
   const messagesCollection = `roomMessages/${roomId}/messages`;
   const seatsCollection = `roomSeats/${roomId}/seats`;
 
-  // Set up Firestore listeners for presence and messages
   useEffect(() => {
     if (!db) return;
 
@@ -407,7 +402,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     };
   }, [roomId]);
 
-  // Real-time seats sync
   useEffect(() => {
     if (!db) return;
 
@@ -438,7 +432,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     return () => unsubSeats();
   }, [roomId, micMode]);
 
-  // Initialize seats in Firestore if not present
   useEffect(() => {
     if (!db) return;
     const initialSeats = getInitialSeats(micMode);
@@ -447,7 +440,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     });
   }, [micMode, roomId]);
 
-  // Add current user to presence when component mounts, remove on unmount
   useEffect(() => {
     if (!db || userAccountId === "guest") return;
 
@@ -466,7 +458,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     };
   }, [userAccountId, currentUser.name, currentUser.image, roomId]);
 
-  // Send a message to Firestore
   const sendMessageToFirestore = async (text: string, imageUrl?: string, type: 'message' | 'join' | 'leave' = 'message') => {
     if (!db) return;
     try {
@@ -483,7 +474,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
-  // Send join message once when user enters the room
   const joinMessageSentRef = useRef(false);
   useEffect(() => {
     if (joinMessageSentRef.current || userAccountId === "guest" || !currentUser.name) return;
@@ -491,12 +481,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     sendMessageToFirestore('Enter the Room', undefined, 'join');
   }, [userAccountId, currentUser.name]);
 
-  // Scroll messages to bottom
   useEffect(() => {
     if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input when chat opens
   useEffect(() => {
     if (showChatInput && inputRef.current) {
       const timer = setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 100);
@@ -504,7 +492,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   }, [showChatInput]);
 
-  // Handle click outside chat input
   useEffect(() => {
     if (!showChatInput) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -529,8 +516,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       document.removeEventListener('touchstart', handleTouchOutside);
     };
   }, [showChatInput]);
-
-  // ---------- All handler functions ----------
 
   const handleCopyId = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -593,7 +578,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
-  // --- STEP 5: Updated handleTakeSeat ---
   const handleTakeSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -636,7 +620,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-      // Unmute audio since user now has a seat
       desiredAudioStateRef.current = true;
       applyAudioState();
 
@@ -647,7 +630,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
-  // --- STEP 6: Updated handleLeaveSeat ---
   const handleLeaveSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -671,7 +653,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-      // Mute audio since user left the seat (listen only)
       desiredAudioStateRef.current = false;
       applyAudioState();
 
@@ -682,7 +663,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
-  // --- STEP 7: Updated handleBottomMicToggle ---
   const handleBottomMicToggle = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     
@@ -690,13 +670,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
     const newMuteState = !currentUserSeat.isMuted;
 
-    // Update desired state
     desiredAudioStateRef.current = !newMuteState;
-    
-    // Apply to Jitsi
     await applyAudioState();
 
-    // Sync seat
     const updatedSeats = seats.map(seat => 
       seat.number === currentUserSeat.number 
         ? { ...seat, isMuted: newMuteState } 
@@ -704,8 +680,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     );
     
     setSeats(updatedSeats);
-    
-    // Update Firestore
     await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
   };
 
@@ -919,7 +893,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     );
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       speakingTimersRef.current.forEach(timer => clearTimeout(timer));
@@ -954,7 +927,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         draggable={false}
       />
 
-      {/* --- STEP 8: Updated Jitsi container size --- */}
       <div 
         ref={jitsiContainerRef} 
         className="absolute inset-0 z-0 opacity-0 pointer-events-none"
@@ -1079,7 +1051,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.9rem)' }}>
                       <div
                         className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.sender === currentUser.name ? currentUser.accountId : '' })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -1094,7 +1066,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div className="flex items-start gap-2">
                       <div
                         className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.sender === currentUser.name ? currentUser.accountId : '' })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -1332,11 +1304,30 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       {/* RoomProfile Bottom Sheet */}
       {showUserProfile && profileUser && (
         <RoomProfile
-          user={{ name: profileUser.name, image: profileUser.image, accountId: profileUser.accountId }}
+          user={{ 
+            name: profileUser.name, 
+            image: profileUser.image, 
+            accountId: profileUser.accountId,
+            isInSeat: profileUser.isInSeat 
+          }}
           onClose={() => setShowUserProfile(false)}
           onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
           onMessage={() => console.log('Message clicked for', profileUser.accountId)}
           onCopyId={() => console.log('Copy ID clicked')}
+          onMention={(username) => {
+            setShowUserProfile(false);
+            setShowChatInput(true);
+            setMessage(`@${username} `);
+            setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
+          }}
+          onLeaveSeat={() => {
+            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
+            if (userSeat) {
+              setSelectedSeat(userSeat.number);
+              setTimeout(() => handleLeaveSeat(), 100);
+            }
+            setShowUserProfile(false);
+          }}
         />
       )}
 
@@ -1511,4 +1502,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
       </span>
     </div>
   );
-                                                   }
+          }
