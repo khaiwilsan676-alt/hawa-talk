@@ -1,21 +1,78 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface FourgrideProps {
   onClose: () => void;
   onClearChat: () => void;
+  publicMsgOff: boolean;
+  onTogglePublicMsg: () => void;
 }
 
-export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
-  // Toggle states
-  const [publicMsgOff, setPublicMsgOff] = useState(false);
+// ---------- IndexedDB Helpers (Music Storage) ----------
+const DB_NAME = 'HurryMusicDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'music';
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function addMusicToDB(music: { id: string; name: string; blob: Blob }): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.put(music);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    db.close();
+  });
+}
+
+async function getAllMusicFromDB(): Promise<{ id: string; name: string; blob: Blob }[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    tx.oncomplete = () => db.close();
+  });
+}
+
+export default function Fourgride({
+  onClose,
+  onClearChat,
+  publicMsgOff,
+  onTogglePublicMsg,
+}: FourgrideProps) {
+  // Toggle states (except publicMsgOff, which is controlled)
   const [entryEffect, setEntryEffect] = useState(false);
   const [giftEffect, setGiftEffect] = useState(false);
   const [speaker, setSpeaker] = useState(false);
 
+  // Music sheet state
+  const [showMusicSheet, setShowMusicSheet] = useState(false);
+  const [musicFiles, setMusicFiles] = useState<{ id: string; name: string; url: string }[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Toggle handlers
-  const togglePublicMsg = () => setPublicMsgOff(!publicMsgOff);
   const toggleEntryEffect = () => setEntryEffect(!entryEffect);
   const toggleGiftEffect = () => setGiftEffect(!giftEffect);
   const toggleSpeaker = () => setSpeaker(!speaker);
@@ -24,6 +81,76 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
   const handleClearChat = () => {
     onClearChat();
   };
+
+  // Load music files from IndexedDB on mount
+  useEffect(() => {
+    const loadMusic = async () => {
+      try {
+        const dbMusic = await getAllMusicFromDB();
+        const files = dbMusic.map((item) => ({
+          id: item.id,
+          name: item.name,
+          url: URL.createObjectURL(item.blob),
+        }));
+        setMusicFiles(files);
+      } catch (error) {
+        console.error('Error loading music:', error);
+      }
+    };
+    loadMusic();
+  }, []);
+
+  // Cleanup object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      musicFiles.forEach((file) => URL.revokeObjectURL(file.url));
+    };
+  }, [musicFiles]);
+
+  // Handle music file selection
+  const handleAddMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (!file.type.startsWith('audio/')) {
+      alert('Please select an audio file');
+      return;
+    }
+    const id = Date.now().toString();
+    const newMusic = {
+      id,
+      name: file.name,
+      url: URL.createObjectURL(file),
+    };
+    setMusicFiles((prev) => [...prev, newMusic]);
+    // Save to IndexedDB
+    addMusicToDB({ id, name: file.name, blob: file });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Play/pause handler
+  const togglePlay = (id: string, url: string) => {
+    if (currentlyPlaying === id && isPlaying) {
+      audioRef.current?.pause();
+      setIsPlaying(false);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.src = url;
+        audioRef.current.play();
+      } else {
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.play();
+      }
+      setCurrentlyPlaying(id);
+      setIsPlaying(true);
+    }
+  };
+
+  // Filter music by search query
+  const filteredMusic = musicFiles.filter((file) =>
+    file.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -54,7 +181,7 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
               onClick={handleClearChat}
               className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110525.png" alt="Clear Chat" className="w-16 h-16 object-contain" />
+              <img src="/IMG_20260814_110525.png" alt="Clear Chat" className="w-12 h-12 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1 text-center">Clear-Chat</span>
           </div>
@@ -62,10 +189,10 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
           {/* 2. Public msg Off with toggle overlay */}
           <div className="flex flex-col items-center">
             <div className="relative">
-              <img src="/IMG_20260814_110608.png" alt="Public msg Off" className="w-16 h-16 object-contain" />
+              <img src="/IMG_20260814_110608.png" alt="Public msg Off" className="w-12 h-12 object-contain" />
               <button
-                onClick={togglePublicMsg}
-                className={`absolute bottom-0 right-0 w-8 h-4 rounded-full flex items-center transition-colors ${
+                onClick={onTogglePublicMsg}
+                className={`absolute bottom-0 right-0 w-6 h-4 rounded-full flex items-center transition-colors ${
                   publicMsgOff ? 'bg-blue-500' : 'bg-gray-300'
                 }`}
               >
@@ -82,10 +209,10 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
           {/* 3. Entry Effect with toggle overlay */}
           <div className="flex flex-col items-center">
             <div className="relative">
-              <img src="/IMG_20260814_110709.png" alt="Entry Effect" className="w-16 h-16 object-contain" />
+              <img src="/IMG_20260814_110709.png" alt="Entry Effect" className="w-12 h-12 object-contain" />
               <button
                 onClick={toggleEntryEffect}
-                className={`absolute bottom-0 right-0 w-8 h-4 rounded-full flex items-center transition-colors ${
+                className={`absolute bottom-0 right-0 w-6 h-4 rounded-full flex items-center transition-colors ${
                   entryEffect ? 'bg-blue-500' : 'bg-gray-300'
                 }`}
               >
@@ -102,10 +229,10 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
           {/* 4. Gift Effect with toggle overlay */}
           <div className="flex flex-col items-center">
             <div className="relative">
-              <img src="/IMG_20260814_110727.png" alt="Gift Effect" className="w-16 h-16 object-contain" />
+              <img src="/IMG_20260814_110727.png" alt="Gift Effect" className="w-12 h-12 object-contain" />
               <button
                 onClick={toggleGiftEffect}
-                className={`absolute bottom-0 right-0 w-8 h-4 rounded-full flex items-center transition-colors ${
+                className={`absolute bottom-0 right-0 w-6 h-4 rounded-full flex items-center transition-colors ${
                   giftEffect ? 'bg-blue-500' : 'bg-gray-300'
                 }`}
               >
@@ -122,25 +249,25 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
 
         {/* Row 2 – 4 items */}
         <div className="grid grid-cols-4 gap-4 mb-4">
-          {/* 5. Music */}
+          {/* 5. Music - opens music sheet */}
           <div className="flex flex-col items-center">
             <button
-              onClick={() => console.log('Music')}
+              onClick={() => setShowMusicSheet(true)}
               className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110437.png" alt="Music" className="w-20 h-18 object-contain" />
+              <img src="/IMG_20260814_144255.png" alt="Music" className="w-12 h-12 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1">Music</span>
           </div>
 
-          {/* 6. Speaker with toggle (unchanged) */}
+          {/* 6. Speaker with toggle */}
           <div className="flex flex-col items-center">
-            <img src="/IMG_20260814_110628.png" alt="Speaker" className="w-16 h-16 object-contain" />
+            <img src="/IMG_20260814_110628.png" alt="Speaker" className="w-12 h-12 object-contain" />
             <div className="flex items-center mt-1 space-x-1">
               <span className="text-[10px] text-gray-700 whitespace-nowrap">Speaker</span>
               <button
                 onClick={toggleSpeaker}
-                className={`w-8 h-4 rounded-full flex items-center transition-colors ${
+                className={`w-6 h-4 rounded-full flex items-center transition-colors ${
                   speaker ? 'bg-blue-500' : 'bg-gray-300'
                 }`}
               >
@@ -159,7 +286,7 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
               onClick={() => console.log('Store')}
               className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110501.png" alt="Store" className="w-16 h-16 object-contain" />
+              <img src="/IMG_20260814_110501.png" alt="Store" className="w-12 h-12 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1">Store</span>
           </div>
@@ -170,7 +297,7 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
               onClick={() => console.log('My Item')}
               className="transition-transform hover:scale-105"
             >
-              <img src="/IMG_20260814_110545.png" alt="My Item" className="w-16 h-16 object-contain" />
+              <img src="/IMG_20260814_110545.png" alt="My Item" className="w-12 h-12 object-contain" />
             </button>
             <span className="text-[10px] text-gray-700 mt-1">My-Iteam</span>
           </div>
@@ -182,35 +309,32 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
             <h3 className="text-sm font-semibold text-gray-800">Games</h3>
           </div>
           <div className="flex justify-around">
-            {/* Games */}
             <div className="flex flex-col items-center">
               <button
                 onClick={() => console.log('Games')}
                 className="transition-transform hover:scale-105"
               >
-                <img src="/IMG_20260814_111008.png" alt="Games" className="w-16 h-16 object-contain" />
+                <img src="/IMG_20260814_111008.png" alt="Games" className="w-12 h-12 object-contain" />
               </button>
               <span className="text-[10px] text-gray-700 mt-1">Games</span>
             </div>
 
-            {/* Lucky bag */}
             <div className="flex flex-col items-center">
               <button
                 onClick={() => console.log('Lucky Bag')}
                 className="transition-transform hover:scale-105"
               >
-                <img src="/IMG_20260814_110743.png" alt="Lucky bag" className="w-16 h-16 object-contain" />
+                <img src="/IMG_20260814_110743.png" alt="Lucky bag" className="w-12 h-12 object-contain" />
               </button>
               <span className="text-[10px] text-gray-700 mt-1">Lucky bag</span>
             </div>
 
-            {/* Pk Battle */}
             <div className="flex flex-col items-center">
               <button
                 onClick={() => console.log('PK Battle')}
                 className="transition-transform hover:scale-105"
               >
-                <img src="/IMG_20260814_110802.png" alt="Pk Battle" className="w-16 h-16 object-contain" />
+                <img src="/IMG_20260814_110802.png" alt="Pk Battle" className="w-12 h-12 object-contain" />
               </button>
               <span className="text-[10px] text-gray-700 mt-1">Pk Battle</span>
             </div>
@@ -227,6 +351,86 @@ export default function Fourgride({ onClose, onClearChat }: FourgrideProps) {
           }
         `}</style>
       </div>
+
+      {/* ---------- Music Bottom Sheet ---------- */}
+      {showMusicSheet && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowMusicSheet(false)} />
+          <div
+            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+            style={{ height: '50vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-4 pb-2 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-800">Music</h2>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-3 py-1 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add
+              </button>
+            </div>
+
+            {/* Search input */}
+            <div className="px-4 pt-3">
+              <input
+                type="text"
+                placeholder="Search music..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-700 outline-none border border-gray-200 focus:border-blue-400"
+              />
+            </div>
+
+            {/* Music list */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {filteredMusic.length === 0 ? (
+                <p className="text-center text-gray-400 text-sm py-8">No music added yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {filteredMusic.map((file) => (
+                    <div key={file.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{file.name}</p>
+                      </div>
+                      <button
+                        onClick={() => togglePlay(file.id, file.url)}
+                        className="p-2 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+                        aria-label={currentlyPlaying === file.id && isPlaying ? 'Pause' : 'Play'}
+                      >
+                        {currentlyPlaying === file.id && isPlaying ? (
+                          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                            <rect x="6" y="4" width="4" height="16" rx="1" />
+                            <rect x="14" y="4" width="4" height="16" rx="1" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden file input for music */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        onChange={handleAddMusic}
+        className="hidden"
+      />
     </div>
   );
-        }
+      }
