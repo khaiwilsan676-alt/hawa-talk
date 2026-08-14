@@ -72,6 +72,12 @@ interface RoomUser {
   image: string
 }
 
+// Theme mapping: id -> background image URL
+const THEME_BACKGROUNDS: { [key: string]: string } = {
+  'forest-night': '/1784875884052~2.jpg',
+  'mood-light': '/1784533036732~2.jpg',
+}
+
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   const [showExitMenu, setShowExitMenu] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -109,14 +115,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [fullImageModal, setFullImageModal] = useState<string | null>(null)
 
   const [roomName, setRoomName] = useState<string>("")
-  const [roomAnnouncement, setRoomAnnouncement] = useState<string>("Welcome to Hurry. Any Content related to Fraud, Abusing, violence Breaking a Hurry Rules Will be Ban.")
-  const [roomImage, setRoomImage] = useState<string>(user.image || "/1784533036732~2.jpg")
   const [roomAnnouncement, setRoomAnnouncement] = useState<string>("")
   const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg")
   const [micMode, setMicMode] = useState<number>(9)
   const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile')
-
-  const backgroundImage = "/1784533036732~2.jpg"
+  const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg") // dynamic background
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -151,10 +154,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId)
   const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId)
 
-  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === localUser.accountId)
-  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === localUser.accountId)
-
-  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(accountId + 'room')) % 100000}`
   const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomOwner.id || roomOwner.accountId || 'default')) % 100000}`
 
   function hashCode(str: string): number {
@@ -190,6 +189,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             if (data.micMode && data.micMode !== micMode) {
               setMicMode(data.micMode)
             }
+            // Set background based on theme
+            if (data.theme && THEME_BACKGROUNDS[data.theme]) {
+              setBackgroundImage(THEME_BACKGROUNDS[data.theme])
+            } else {
+              setBackgroundImage('/1784533036732~2.jpg') // default
+            }
             const followerIds: string[] = data.followers || []
             const followersList: RoomUser[] = followerIds.map((id: string) => ({
               accountId: id,
@@ -223,7 +228,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const setUserSpeaking = (targetId: string, speaking: boolean) => {
     setSeats(prev => prev.map(seat => {
       if (seat.isOccupied && seat.user) {
-        if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === localUser.accountId)) {
         if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === userAccountId)) {
           return { ...seat, isSpeaking: speaking }
         }
@@ -234,85 +238,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   // Initialize Jitsi
   useEffect(() => {
-    if (!jitsiLoaded || !jitsiContainerRef.current || accountId === "Loading...") return
-
-    const initJitsi = () => {
-      const domain = 'meet.jit.si'
-      const options = {
-        roomName: jitsiRoomName,
-        width: '100%',
-        height: '100%',
-        parentNode: jitsiContainerRef.current,
-        userInfo: { displayName: localUser.name, email: localUser.accountId + '@hurry.app' },
-        configOverrides: {
-          startWithAudioMuted: true, startWithVideoMuted: true, disableDeepLinking: true,
-          prejoinPageEnabled: false, enableNoisyMicDetection: true, disableAudioLevels: false,
-          toolbarButtons: [], disableInviteFunctions: true, disablePolls: true,
-          disableSelfView: true, hideConferenceSubject: true, hideConferenceTimer: true,
-          doNotStoreRoom: true, resolution: 180,
-          constraints: { video: { height: { ideal: 180, max: 180, min: 180 } } },
-        },
-        interfaceConfigOverrides: {
-          filmStripOnly: false, SHOW_JITSI_WATERMARK: false, SHOW_WATERMARK_FOR_GUESTS: false,
-          SHOW_BRAND_WATERMARK: false, SHOW_POWERED_BY: false, SHOW_PROMOTIONAL_CLOSE_PAGE: false,
-          TOOLBAR_ALWAYS_VISIBLE: false, DISABLE_VIDEO_BACKGROUND: true,
-          HIDE_INVITE_MORE_HEADER: true, MOBILE_APP_PROMO: false,
-          APP_NAME: 'Hurry', NATIVE_APP_NAME: 'Hurry', PROVIDER_NAME: 'Hurry'
-        }
-      }
-
-      try {
-        const api = new window.JitsiMeetExternalAPI(domain, options)
-        jitsiApiRef.current = api
-
-        api.addListener('videoConferenceJoined', () => {
-          api.executeCommand('toggleAudio', false)
-        })
-
-        api.addListener('dominantSpeakerChanged', (data: any) => {
-          const speakerId = data?.id || 'local'
-          speakingUsersRef.current.add(speakerId)
-          setUserSpeaking(speakerId, true)
-          const existingTimer = speakingTimersRef.current.get(speakerId)
-          if (existingTimer) clearTimeout(existingTimer)
-          const timer = setTimeout(() => {
-            speakingUsersRef.current.delete(speakerId)
-            setUserSpeaking(speakerId, false)
-            speakingTimersRef.current.delete(speakerId)
-          }, 1500)
-          speakingTimersRef.current.set(speakerId, timer)
-        })
-
-        api.addListener('audioLevelsChanged', (data: any) => {
-          if (data && data.length > 0) {
-            data.forEach((participant: any) => {
-              if (participant.id && participant.level > 0.03) {
-                const targetKey = participant.id
-                speakingUsersRef.current.add(targetKey)
-                setUserSpeaking(targetKey, true)
-                const existingTimer = speakingTimersRef.current.get(targetKey)
-                if (existingTimer) clearTimeout(existingTimer)
-                const timer = setTimeout(() => {
-                  speakingUsersRef.current.delete(targetKey)
-                  setUserSpeaking(targetKey, false)
-                  speakingTimersRef.current.delete(targetKey)
-                }, 800)
-                speakingTimersRef.current.set(targetKey, timer)
-              }
-            })
-          }
-        })
-
-        api.addListener('participantLeft', (data: any) => {
-          if (data && data.id) {
-            speakingUsersRef.current.delete(data.id)
-            setUserSpeaking(data.id, false)
-            const timer = speakingTimersRef.current.get(data.id)
-            if (timer) { clearTimeout(timer); speakingTimersRef.current.delete(data.id) }
-          }
-        })
-      } catch (error) {
-        console.error('Error initializing Jitsi:', error)
     if (!jitsiLoaded || !jitsiContainerRef.current) return
 
     const domain = 'meet.jit.si'
@@ -448,13 +373,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   // Add current user to room users (live count)
   useEffect(() => {
-    if (localUser.accountId && localUser.name && localUser.image && accountId !== "Loading...") {
-      const userExists = roomUsers.find(u => u.accountId === localUser.accountId)
-      if (!userExists) {
-        setRoomUsers(prev => [...prev, { accountId: localUser.accountId, name: localUser.name, image: localUser.image }])
-        setMessages(prev => [...prev, {
-          id: `join-${Date.now()}`, text: 'Enter the Room', sender: localUser.name,
-          senderImage: localUser.image, timestamp: Date.now(), type: 'join'
     if (userAccountId !== "guest" && currentUser.name && currentUser.image) {
       const userExists = roomUsers.find(u => u.accountId === userAccountId)
       if (!userExists) {
@@ -470,27 +388,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       }
     }
     return () => {
-      if (localUser.accountId) setRoomUsers(prev => prev.filter(u => u.accountId !== localUser.accountId))
-    }
-  }, [localUser.accountId, localUser.name, localUser.image, accountId])
-
-  useEffect(() => {
-    const fetchRoomOwnerID = async () => {
-      if (user?.accountId) { setAccountId(String(user.accountId)); return }
-      const targetUID = user?.id || user?.uid
-      if (targetUID) {
-        if (OFFICIAL_IDS.includes(targetUID) || ADMIN_IDS.includes(targetUID) || SPECIAL_ACCOUNTS[targetUID]) {
-          setAccountId(SPECIAL_ACCOUNTS[targetUID] || targetUID); return
-        }
-        try {
-          const userDocRef = doc(db, "users", targetUID)
-          const docSnap = await getDoc(userDocRef)
-          if (docSnap.exists() && docSnap.data().accountId) {
-            setAccountId(String(docSnap.data().accountId)); return
-          }
-        } catch (err) { console.warn("Firestore fetch error:", err) }
-      }
-      setAccountId(user?.accountId || "100379620")
       setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId))
     }
   }, [userAccountId, currentUser.name, currentUser.image])
@@ -564,8 +461,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     reader.onload = (event) => {
       const imageUrl = event.target?.result as string
       setMessages(prev => [...prev, {
-        id: Date.now().toString(), text: '', sender: localUser.name,
-        senderImage: localUser.image, timestamp: Date.now(), type: 'message', imageUrl
         id: Date.now().toString(),
         text: '',
         sender: currentUser.name,
@@ -609,7 +504,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (targetSeat?.isOccupied && targetSeat.user?.accountId !== userAccountId) { alert("This seat is already taken!"); return }
 
     let updatedSeats = seats.map(s => {
-      if (s.isOccupied && s.user?.accountId === localUser.accountId) return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
       if (s.isOccupied && s.user?.accountId === userAccountId)
         return { ...s, isOccupied: false, isLocked: s.isLocked, isMuted: s.isMuted, isSpeaking: false }
       return s
@@ -617,8 +511,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
     updatedSeats = updatedSeats.map(s => {
       if (s.number === selectedSeat) {
-        if (jitsiApiRef.current) jitsiApiRef.current.executeCommand('toggleAudio', true)
-        return { ...s, isOccupied: true, user: { name: localUser.name, image: localUser.image, accountId: localUser.accountId }, isMuted: false, isSpeaking: false }
         if (jitsiApiRef.current) {
           try { jitsiApiRef.current.executeCommand('toggleAudio', true) } catch (err) {}
         }
@@ -644,8 +536,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       e.stopPropagation()
     }
     if (selectedSeat === null) return
-    if (jitsiApiRef.current && localUser.accountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
-      jitsiApiRef.current.executeCommand('toggleAudio', false)
     if (jitsiApiRef.current && userAccountId === seats.find(s => s.number === selectedSeat)?.user?.accountId) {
       try { jitsiApiRef.current.executeCommand('toggleAudio', false) } catch (err) {}
     }
@@ -668,7 +558,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
         const newMuteState = !s.isMuted
-        if (s.user?.accountId === localUser.accountId && jitsiApiRef.current) jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState)
         if (s.user?.accountId === userAccountId && jitsiApiRef.current) {
           try { jitsiApiRef.current.executeCommand('toggleAudio', !newMuteState) } catch (err) {}
         }
@@ -717,15 +606,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setSelectedSeat(null)
   }
 
-  const isCurrentUsersSeat = (seat: Seat) => seat.isOccupied && seat.user?.accountId === localUser.accountId
   const isCurrentUsersSeat = (seat?: Seat) => Boolean(seat && seat.isOccupied && seat.user?.accountId === userAccountId)
 
   const handleSendMessage = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (!message.trim()) return
     setMessages(prev => [...prev, {
-      id: Date.now().toString(), text: message.trim(), sender: localUser.name,
-      senderImage: localUser.image, timestamp: Date.now(), type: 'message'
       id: Date.now().toString(),
       text: message.trim(),
       sender: currentUser.name,
@@ -777,13 +663,18 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (data.announcement !== undefined) setRoomAnnouncement(data.announcement)
     if (data.roomImage) setRoomImage(data.roomImage)
     if (data.micMode) setMicMode(data.micMode)
+    // Update background based on theme
+    if (data.theme && THEME_BACKGROUNDS[data.theme]) {
+      setBackgroundImage(THEME_BACKGROUNDS[data.theme])
+    }
 
     if (roomOwner.id && db) {
       await setDoc(doc(db, "globalRooms", roomOwner.id), {
         name: data.roomName,
         image: data.roomImage,
         announcement: data.announcement,
-        micMode: data.micMode
+        micMode: data.micMode,
+        theme: data.theme,
       }, { merge: true })
     }
   }
@@ -792,7 +683,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (e) e.stopPropagation()
     setShowExitMenu(false)
     localStorage.removeItem('keptRoom')
-    setRoomUsers(prev => prev.filter(u => u.accountId !== localUser.accountId))
     setRoomUsers(prev => prev.filter(u => u.accountId !== userAccountId))
     if (jitsiApiRef.current) jitsiApiRef.current.dispose()
     if (onBack) onBack()
@@ -821,12 +711,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (micMode === 5) {
       return (
         <>
-          <div className="flex justify-center"><SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} localAccountId={localUser.accountId} /></div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} localAccountId={localUser.accountId} />
           <div className="flex justify-center">
             <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
@@ -843,20 +727,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       return (
         <>
           <div className="flex justify-center gap-4">
-            <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} localAccountId={localUser.accountId} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} localAccountId={localUser.accountId} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} localAccountId={localUser.accountId} />
             <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
             <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} onAvatarClick={handleSeatAvatarClick(seats[1])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
@@ -878,24 +748,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (micMode === 13) {
       return (
         <>
-          <div className="flex justify-center"><SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} localAccountId={localUser.accountId} /></div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} localAccountId={localUser.accountId} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} localAccountId={localUser.accountId} />
-          </div>
-          <div className="flex justify-around items-center px-1">
-            <SeatItem seatNumber={10} seatData={seats[9]} onClick={handleSeatClick(10)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={11} seatData={seats[10]} onClick={handleSeatClick(11)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={12} seatData={seats[11]} onClick={handleSeatClick(12)} localAccountId={localUser.accountId} />
-            <SeatItem seatNumber={13} seatData={seats[12]} onClick={handleSeatClick(13)} localAccountId={localUser.accountId} />
           <div className="flex justify-center">
             <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
           </div>
@@ -923,18 +775,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     // Default 9 seats
     return (
       <>
-        <div className="flex justify-center"><SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} localAccountId={localUser.accountId} /></div>
-        <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={2} seatData={seats[1]} onClick={handleSeatClick(2)} localAccountId={localUser.accountId} />
-          <SeatItem seatNumber={3} seatData={seats[2]} onClick={handleSeatClick(3)} localAccountId={localUser.accountId} />
-          <SeatItem seatNumber={4} seatData={seats[3]} onClick={handleSeatClick(4)} localAccountId={localUser.accountId} />
-          <SeatItem seatNumber={5} seatData={seats[4]} onClick={handleSeatClick(5)} localAccountId={localUser.accountId} />
-        </div>
-        <div className="flex justify-around items-center px-1">
-          <SeatItem seatNumber={6} seatData={seats[5]} onClick={handleSeatClick(6)} localAccountId={localUser.accountId} />
-          <SeatItem seatNumber={7} seatData={seats[6]} onClick={handleSeatClick(7)} localAccountId={localUser.accountId} />
-          <SeatItem seatNumber={8} seatData={seats[7]} onClick={handleSeatClick(8)} localAccountId={localUser.accountId} />
-          <SeatItem seatNumber={9} seatData={seats[8]} onClick={handleSeatClick(9)} localAccountId={localUser.accountId} />
         <div className="flex justify-center">
           <SeatItem seatNumber={1} seatData={seats[0]} onClick={handleSeatClick(1)} onAvatarClick={handleSeatAvatarClick(seats[0])} accountId={userAccountId} isRoomOwner={isRoomOwner} />
         </div>
@@ -960,7 +800,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       <RoomSettingPage
         onBack={closeSettings}
         roomOwnerId={roomOwner.id}
-        roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode }}
+        roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode, theme: Object.keys(THEME_BACKGROUNDS).find(key => THEME_BACKGROUNDS[key] === backgroundImage) || 'mood-light' }}
         onSave={handleSaveSettings}
       />
     )
@@ -969,11 +809,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   // ---------- Main Return JSX ----------
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      <img 
-        src="/1784533036732~2.jpg"
-        alt="Room Background" 
-        className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" 
-      {/* Fixed background image */}
+      {/* Dynamic background image */}
       <img
         src={backgroundImage}
         alt="Room Background"
@@ -1468,8 +1304,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   )
 }
 
-// SeatItem Component
-function SeatItem({ seatNumber, seatData, onClick, localAccountId }: { seatNumber: number; seatData: Seat; onClick: (e: React.MouseEvent) => void; localAccountId: string }) {
 // ---------- SeatItem Component ----------
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isRoomOwner }: {
   seatNumber: number;
@@ -1503,9 +1337,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
             </div>
           ) : isOccupied && user ? (
             <>
-              <img src={seatData.user.image || "/default-avatar.png"} alt={seatData.user.name} className="w-full h-full rounded-full object-cover pointer-events-none" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-              {seatData.isMuted && (
-                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${seatData.user.accountId === localAccountId ? 'bg-gray-400' : 'bg-red-500'}`}>
               <img
                 src={user.image || "/default-avatar.png"}
                 alt={user.name}
