@@ -225,7 +225,11 @@ export default function PublicProfile({
         await setDoc(userDocRef, updateData, { merge: true })
 
         const globalRoomRef = doc(db, 'globalRooms', currentUid)
-        await setDoc(globalRoomRef, updateData, { merge: true })
+        const roomUpdateData = { ...updateData }
+        delete roomUpdateData.name
+        delete roomUpdateData.displayName
+        delete roomUpdateData.userName
+        await setDoc(globalRoomRef, roomUpdateData, { merge: true })
       } catch (err) {
         console.error('Error saving data to Firestore collections:', err)
       }
