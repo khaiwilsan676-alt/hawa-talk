@@ -241,12 +241,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
       configOverrides: {
         startWithAudioMuted: true,
         startWithVideoMuted: true,
+        startAudioOnly: true,
         disableDeepLinking: true,
         prejoinPageEnabled: false,
         toolbarButtons: [],
         disableInviteFunctions: true,
         disablePolls: true,
-        disableSelfView: true,
         hideConferenceSubject: true,
         hideConferenceTimer: true,
         doNotStoreRoom: true,

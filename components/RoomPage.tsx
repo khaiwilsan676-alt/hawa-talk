@@ -300,6 +300,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         configOverrides: {
           startWithAudioMuted: true,
           startWithVideoMuted: true,
+          startAudioOnly: true,
           prejoinPageEnabled: false,
           disableDeepLinking: true,
           disableAudioLevels: false,
@@ -307,7 +308,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           toolbarButtons: [],
           disableInviteFunctions: true,
           disablePolls: true,
-          disableSelfView: true,
           hideConferenceSubject: true,
           hideConferenceTimer: true,
           doNotStoreRoom: true,
