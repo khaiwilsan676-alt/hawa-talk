@@ -11,6 +11,7 @@ import {
   orderBy,
   doc,
   updateDoc,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../src/lib/firebase';
 import ChatScreen from './ChatScreen';
@@ -36,12 +37,6 @@ interface FixedChat {
   isFixed: boolean;
 }
 
-interface AppUser {
-  uid: string;
-  name: string;
-  photo: string;
-}
-
 interface MessagePageProps {
   onChatOpen?: (open: boolean) => void;
   onJoinRoom?: (roomId: string) => void;
@@ -60,7 +55,6 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
 
   const [dynamicChats, setDynamicChats] = useState<ChatPreview[]>([]);
   const [activeChat, setActiveChat] = useState<{ uid: string; name: string; photo: string } | null>(null);
-  const [users, setUsers] = useState<AppUser[]>([]);
 
   const getCurrentUserData = () => {
     const uid = typeof window !== 'undefined' ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A' : 'N/A';
@@ -81,52 +75,63 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
       orderBy('lastTimestamp', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const chats: ChatPreview[] = [];
       const seenUids = new Set();
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data();
+
+      for (const docSnapshot of snapshot.docs) {
+        const data = docSnapshot.data();
         const participantsData = data.participantsData || [];
-        const otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
+        let otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
 
-        // Filter out if the conversation was cleared after the last message
-        const clearedAt = data.clearedAtRef?.[currentUserUid] || 0;
-        const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" ? data.lastTimestamp.toMillis() : (data.lastTimestamp || 0);
+        // Get lastTimestamp
+        const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" 
+          ? data.lastTimestamp.toMillis() 
+          : (data.lastTimestamp || 0);
 
-        if (otherUser && !seenUids.has(otherUser.uid)) {
-          seenUids.add(otherUser.uid);
-          const isCleared = clearedAt > lastTimestamp;
-          chats.push({
-            chatId: doc.id,
-            otherUser: {
-              uid: otherUser.uid,
-              name: otherUser.name,
-              photo: otherUser.photo || '',
-            },
-            lastMessage: isCleared ? '' : (data.lastMessage || ''),
-            lastTimestamp: lastTimestamp,
-            unreadCount: isCleared ? 0 : (data.unreadCounts?.[currentUserUid] || 0),
-          });
+        // 🔥 FIX: Skip if no messages (lastTimestamp is 0)
+        if (!otherUser || seenUids.has(otherUser.uid) || lastTimestamp === 0) {
+          continue;
         }
-      });
+
+        // Filter out if cleared
+        const clearedAt = data.clearedAtRef?.[currentUserUid] || 0;
+        if (clearedAt > lastTimestamp) {
+          continue;
+        }
+
+        seenUids.add(otherUser.uid);
+
+        // 🔥 FIX: Fetch fresh user data from users collection
+        try {
+          const userDocRef = doc(db, 'users', otherUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            otherUser = {
+              uid: otherUser.uid,
+              name: userData.name || userData.displayName || otherUser.name || 'User',
+              photo: userData.photoURL || userData.photo || userData.image || otherUser.photo || '',
+            };
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+
+        chats.push({
+          chatId: docSnapshot.id,
+          otherUser: {
+            uid: otherUser.uid,
+            name: otherUser.name,
+            photo: otherUser.photo || '',
+          },
+          lastMessage: data.lastMessage || '',
+          lastTimestamp: lastTimestamp,
+          unreadCount: data.unreadCounts?.[currentUserUid] || 0,
+        });
+      }
+
       setDynamicChats(chats);
-    });
-
-    return () => unsubscribe();
-  }, [currentUserUid]);
-
-  useEffect(() => {
-    if (!currentUserUid || currentUserUid === 'N/A') return;
-
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allUsers = snapshot.docs.map((doc) => ({
-        uid: doc.id,
-        name: doc.data().name,
-        photo: doc.data().photoURL || '',
-      }));
-      setUsers(allUsers.filter((u) => u.uid !== currentUserUid));
     });
 
     return () => unsubscribe();
@@ -159,10 +164,6 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
     }
   };
 
-  const handleSelectUser = (user: AppUser) => {
-    setActiveChat({ uid: user.uid, name: user.name, photo: user.photo });
-  };
-
   const handleCloseChat = () => {
     setActiveChat(null);
   };
@@ -185,7 +186,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
         <CheckCircle size={28} className="text-green-500" />
       </div>
 
-      {/* Main content: Chats + Users list */}
+      {/* Main content: Chats only */}
       <div className="px-4 pt-4 pb-24 flex flex-col gap-1">
         {/* Fixed chats */}
         {fixedChats.map((chat) => (
@@ -203,7 +204,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           </div>
         ))}
 
-        {/* Dynamic chats with unread badges */}
+        {/* Dynamic chats with unread badges - ONLY users with conversations */}
         {dynamicChats.map((chat) => (
           <div
             key={chat.chatId}
@@ -234,35 +235,12 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           </div>
         ))}
 
-        {/* Users section (no heading) */}
-        <div className="mt-4">
-          <div className="flex flex-col gap-1">
-            {(() => {
-              const activeChatUids = new Set([
-                ...fixedChats.map(c => c.uid),
-                ...dynamicChats.map(c => c.otherUser.uid)
-              ]);
-              return users.filter(user => !activeChatUids.has(user.uid)).map((user) => (
-                <div
-                  key={user.uid}
-                  onClick={() => handleSelectUser(user)}
-                  className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity"
-                >
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    <Image
-                      src={user.photo || '/default-avatar.png'}
-                      alt={user.name}
-                      width={56}
-                      height={56}
-                      className="object-cover"
-                    />
-                  </div>
-                  <span className="font-medium text-gray-800 text-base">{user.name}</span>
-                </div>
-              ));
-            })()}
+        {/* Show message if no conversations */}
+        {dynamicChats.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-400 text-sm">No conversations yet</p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Chat Screen Overlay */}
