@@ -113,7 +113,6 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     }
 
     await setDoc(doc(db, "users", uid), userData, { merge: true })
-    await setDoc(doc(db, "globalRooms", uid), userData, { merge: true })
 
     localStorage.setItem("accountNumber", finalAccountId)
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
@@ -329,14 +328,6 @@ function CountrySelectionPage({
         }
 
         await setDoc(userRef, userDocData, { merge: true })
-
-        const globalRoomRef = doc(db, "globalRooms", userId)
-        await setDoc(globalRoomRef, {
-          name: defaultData.name,
-          image: defaultData.image,
-          gender: selectedGender,
-          country: countryFlag,
-        }, { merge: true })
 
         localStorage.setItem("userName", defaultData.name)
         localStorage.setItem("userPhoto", defaultData.image)
