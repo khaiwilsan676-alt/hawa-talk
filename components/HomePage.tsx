@@ -151,6 +151,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [userName, setUserName] = useState('Guest')
   const [userPhoto, setUserPhoto] = useState('')
   const [userUID, setUserUID] = useState('')
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0)
 
   const [globalRooms, setGlobalRooms] = useState<GlobalRoom[]>([])
 
@@ -187,6 +188,28 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [jitsiLoaded, setJitsiLoaded] = useState(false)
   const jitsiJoinedRef = useRef(false)
   const [isJitsiJoined, setIsJitsiJoined] = useState(false)
+
+  useEffect(() => {
+    if (!userUID || userUID === 'N/A') return;
+
+    const conversationsRef = collection(db, 'conversations');
+    const q = query(
+      conversationsRef,
+      where('participants', 'array-contains', userUID)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let count = 0;
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const unread = data.unreadCounts?.[userUID] || 0;
+        count += unread;
+      });
+      setTotalUnreadCount(count);
+    });
+
+    return () => unsubscribe();
+  }, [userUID]);
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
@@ -1979,20 +2002,27 @@ export default function HomePage({ onLogout }: HomePageProps) {
               onClick={() => setCurrentPage('message')}
               className="flex flex-col items-center gap-1 transition-all active:scale-95"
             >
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-                <path
-                  d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
-                  fill={currentPage === 'message' ? '#3b82f6' : 'white'}
-                  stroke="#1D1D1F"
-                  strokeWidth="2.4"
-                />
-                <path
-                  d="M12 14.5C13.5 12.5 15.5 14.5 19.5 12.5C21.5 14.5 24 14.5 24 14.5"
-                  stroke="#1D1D1F"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <div className="relative">
+                <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+                  <path
+                    d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
+                    fill={currentPage === 'message' ? '#3b82f6' : 'white'}
+                    stroke="#1D1D1F"
+                    strokeWidth="2.4"
+                  />
+                  <path
+                    d="M12 14.5C13.5 12.5 15.5 14.5 19.5 12.5C21.5 14.5 24 14.5 24 14.5"
+                    stroke="#1D1D1F"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                {totalUnreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-white">
+                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                  </div>
+                )}
+              </div>
               <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
                 {t.message}
               </span>
