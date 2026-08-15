@@ -1048,8 +1048,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setMusicControllerState('hidden');
     setCurrentTrack(null);
     setIsMusicPlaying(false);
-    setDragPosition(null); // Reset drag position
-    setIsDraggingMusicIcon(false); // Ensure dragging state is off
+    setDragPosition(null);
+    setIsDraggingMusicIcon(false);
   };
 
   const handleMinimizeMusicController = () => {
@@ -1086,7 +1086,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   };
 
   // ----------------------------------------------------------------
-  // NEW: Drag and drop logic for minimized music icon
+  // Drag and drop logic for minimized music icon
   // ----------------------------------------------------------------
   const [isDraggingMusicIcon, setIsDraggingMusicIcon] = useState(false);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
@@ -1095,7 +1095,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dropTargetRef = useRef<HTMLDivElement>(null);
 
-  // Helper to check if a point is inside the drop target
   const isPointInsideDropTarget = (clientX: number, clientY: number) => {
     const rect = dropTargetRef.current?.getBoundingClientRect();
     if (!rect) return false;
@@ -1109,19 +1108,17 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const handleMinimizedIconPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    e.preventDefault(); // Prevent default touch behavior
+    e.preventDefault();
     didDragRef.current = false;
     setIsDraggingMusicIcon(true);
 
     const rect = e.currentTarget.getBoundingClientRect();
-    // Set drag position to current left/top if not already set
     setDragPosition(prev => prev ?? { x: rect.left, y: rect.top });
     dragOffsetRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     };
 
-    // Capture pointer on the button element
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -1129,7 +1126,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (!isDraggingMusicIcon) return;
     e.preventDefault();
 
-    // Detect movement
     const dx = Math.abs(e.clientX - (dragOffsetRef.current.x + (dragPosition?.x ?? 0)));
     const dy = Math.abs(e.clientY - (dragOffsetRef.current.y + (dragPosition?.y ?? 0)));
     if (dx > 3 || dy > 3) {
@@ -1140,7 +1136,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     const newY = e.clientY - dragOffsetRef.current.y;
     setDragPosition({ x: newX, y: newY });
 
-    // Check if pointer is over drop target
     if (isPointInsideDropTarget(e.clientX, e.clientY)) {
       setIsOverDropTarget(true);
     } else {
@@ -1152,19 +1147,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (!isDraggingMusicIcon) return;
     setIsDraggingMusicIcon(false);
 
-    // If it was a drag and dropped on target, close music
     if (didDragRef.current && isOverDropTarget) {
       handleCloseMusicController();
     } else if (!didDragRef.current) {
-      // It was a click, treat as maximize
       handleMaximizeMusicController();
     }
-    // Release capture
     e.currentTarget.releasePointerCapture(e.pointerId);
     setIsOverDropTarget(false);
   };
 
-  // Render drop target only while dragging
   const dropTargetStyle: React.CSSProperties = {
     position: 'fixed',
     bottom: '20px',
@@ -1181,7 +1172,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     zIndex: 60,
     transition: 'transform 0.2s, background-color 0.2s',
     transform: isOverDropTarget ? 'scale(1.1)' : 'scale(1)',
-    pointerEvents: 'none', // So it doesn't interfere with drop detection
+    pointerEvents: 'none',
   };
   // ----------------------------------------------------------------
 
@@ -1742,7 +1733,17 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               </svg>
             </button>
 
-            {/* REMOVED: Top Right Minimize Button (as requested) */}
+            {/* Top Right: Minimize Button (RE-ADDED) */}
+            <button
+              onClick={handleMinimizeMusicController}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+              aria-label="Minimize music controller"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                <line x1="7" y1="17" x2="17" y2="7" />
+                <polyline points="7 7 17 7 17 17" />
+              </svg>
+            </button>
 
             {/* Track name */}
             <div className="text-center mb-3 mt-6">
@@ -1859,13 +1860,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           <div
             className="fixed z-[45]"
             style={{
-              // If dragPosition is set, use left/top; otherwise default bottom-right
               left: dragPosition ? dragPosition.x : undefined,
               top: dragPosition ? dragPosition.y : undefined,
               bottom: dragPosition ? 'auto' : '8vh',
               right: dragPosition ? 'auto' : '12px',
               cursor: isDraggingMusicIcon ? 'grabbing' : 'grab',
-              touchAction: 'none', // Prevent scrolling on touch while dragging
+              touchAction: 'none',
             }}
             onClick={(e) => e.stopPropagation()}
           >
