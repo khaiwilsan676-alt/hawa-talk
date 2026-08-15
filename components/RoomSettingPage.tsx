@@ -176,6 +176,13 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
     }
   }
 
+  const handleUnlockPassword = () => {
+    setIsLocked(false)
+    setRoomPassword('')
+    setShowLockCard(false)
+    setPassword('')
+  }
+
   const handleSave = async () => {
     const settingsData = {
       roomImage,
@@ -299,7 +306,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
         {/* 6. Lock Room - Clickable */}
         <div className="mb-5">
           <button 
-            onClick={() => setShowLockCard(true)}
+            onClick={() => { setPassword(isLocked ? roomPassword : ''); setShowLockCard(true) }}
             className="flex items-center justify-between px-1 w-full hover:bg-gray-50 py-2 rounded-lg"
           >
             <label className="text-sm font-medium text-gray-600">Lock Room</label>
@@ -384,18 +391,27 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
             {/* 4 Digit Password Input - Numbers Only with Auto-shift */}
             <PasswordInput value={password} onChange={setPassword} />
             
-            {/* Set Password Button */}
-            <button
-              onClick={handleSetPassword}
-              disabled={password.length !== 4}
-              className={`w-full mt-6 py-3 rounded-xl font-semibold text-white transition-all ${
-                password.length === 4
-                  ? 'bg-blue-500 hover:bg-blue-600'
-                  : 'bg-gray-300 cursor-not-allowed'
-              }`}
-            >
-              Set Password
-            </button>
+            {/* Action Buttons based on lock state */}
+            {isLocked && password === roomPassword ? (
+              <button
+                onClick={handleUnlockPassword}
+                className="w-full mt-6 py-3 rounded-xl font-semibold text-white transition-all bg-red-500 hover:bg-red-600"
+              >
+                Unlocked Password
+              </button>
+            ) : (
+              <button
+                onClick={handleSetPassword}
+                disabled={password.length !== 4}
+                className={`w-full mt-6 py-3 rounded-xl font-semibold text-white transition-all ${
+                  password.length === 4
+                    ? 'bg-blue-500 hover:bg-blue-600'
+                    : 'bg-gray-300 cursor-not-allowed'
+                }`}
+              >
+                {isLocked ? 'Update Password' : 'Set Password'}
+              </button>
+            )}
             
             {/* Cancel Button */}
             <button
