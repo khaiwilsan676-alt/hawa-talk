@@ -89,6 +89,8 @@ export const getOrCreateAccountNumber = (uid: string) => {
 const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
   try {
     let finalAccountId = ""
+    let existingCountry = '🇮🇳'
+    let existingCountryCode = 'IN'
 
     if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
       finalAccountId = SPECIAL_ACCOUNTS[uid] || uid
@@ -96,8 +98,15 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
       const userDocRef = doc(db, "users", uid)
       const userDocSnap = await getDoc(userDocRef)
 
-      if (userDocSnap.exists() && userDocSnap.data().accountId) {
-        finalAccountId = String(userDocSnap.data().accountId)
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data()
+        if (data.accountId) {
+          finalAccountId = String(data.accountId)
+        } else {
+          finalAccountId = getOrCreateAccountNumber(uid)
+        }
+        if (data.country) existingCountry = data.country
+        if (data.countryCode) existingCountryCode = data.countryCode
       } else {
         finalAccountId = getOrCreateAccountNumber(uid)
       }
@@ -106,7 +115,8 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     const userData = {
       id: uid,
       name: name || email.split('@')[0] || 'User',
-      country: '🇮🇳',
+      country: existingCountry,
+      countryCode: existingCountryCode,
       image: photo || '/default-avatar.png',
       accountId: finalAccountId,
       createdAt: Date.now()
