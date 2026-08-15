@@ -132,7 +132,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     try {
       const messagesRef = collection(db, 'chats', chatId, 'messages');
       await addDoc(messagesRef, {
-        text: `Join my room: ${roomData.roomName}`,
+        text: `Joins our Party Room: ${roomData.roomName}`,
         senderUid: currentUser.uid,
         timestamp: serverTimestamp(),
         type: 'room_invite',
@@ -342,7 +342,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
                     </div>
                   </div>
                   <div className="bg-white p-3">
-                    <p className="text-sm text-gray-700 mb-2">Join my room</p>
+                    <p className="text-sm text-gray-700 mb-2">Joins our Party Room</p>
                     <button
                       onClick={() => handleJoinRoom(msg.roomData!.roomId)}
                       className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer"
