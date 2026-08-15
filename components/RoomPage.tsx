@@ -1749,114 +1749,108 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   <div 
     className="fixed z-[45]"
     style={{
-      bottom: '4vh',
+      bottom: '6vh',  // Thoda upar kiya
       right: '20px',
     }}
     onClick={(e) => e.stopPropagation()}
   >
     <div className="relative">
-      {/* Red waves */}
+      {/* Red waves - DARK */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-14 h-14 rounded-full bg-red-500/30 animate-ping-slow" />
-        <div className="absolute w-14 h-14 rounded-full bg-red-500/20 animate-ping-slow" style={{ animationDelay: '0.5s' }} />
+        <div className="w-16 h-16 rounded-full bg-red-600/50 animate-ping-slow" />
+        <div className="absolute w-16 h-16 rounded-full bg-red-700/40 animate-ping-slow" style={{ animationDelay: '0.5s' }} />
       </div>
       
-      {/* Image button - rotates slowly, NO green dot */}
+      {/* Image button - rotates slowly, SOLID BLACK border, bigger image */}
       <button
         onClick={handleMaximizeMusicController}
         className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
         style={{
-          width: '52px',
-          height: '52px',
-          border: '2px solid rgba(255,255,255,0.3)',
+          width: '56px',  // Thoda bada
+          height: '56px',  // Thoda bada
+          border: '3px solid black',  // Solid black border
+          backgroundColor: 'black',
         }}
         aria-label="Open music controller"
       >
-        <div className="absolute inset-0 flex items-center justify-center music-minimize-icon bg-black">
-          <img src="/IMG_20260815_133309.png" alt="Music" className="w-9 h-9 object-contain" />
+        <div className="absolute inset-0 flex items-center justify-center music-minimize-icon">
+          <img src="/IMG_20260815_133309.png" alt="Music" className="w-10 h-10 object-contain" />  {/* Image bada */}
         </div>
       </button>
     </div>
   </div>
 )}
 
-      {/* Custom styles for sliders, animations */}
-      <style jsx global>{`
-        .music-volume-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          border: 2px solid white;
-        }
-        .music-volume-slider::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          border: 2px solid white;
-        }
-        .music-volume-slider::-webkit-slider-runnable-track {
-          height: 6px;
-          border-radius: 3px;
-        }
-        .music-volume-slider::-moz-range-track {
-          height: 6px;
-          border-radius: 3px;
-        }
+{/* Custom styles for sliders - NO DOTS/THUMBS */}
+<style jsx global>{`
+  .music-volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .music-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 0px;  /* Dot hataya */
+    height: 0px;  /* Dot hataya */
+    background: transparent;  /* Transparent */
+  }
+  .music-volume-slider::-moz-range-thumb {
+    width: 0px;  /* Dot hataya */
+    height: 0px;  /* Dot hataya */
+    background: transparent;  /* Transparent */
+    border: none;
+  }
+  .music-volume-slider::-webkit-slider-runnable-track {
+    height: 8px;  /* Thoda mota track */
+    border-radius: 4px;
+  }
+  .music-volume-slider::-moz-range-track {
+    height: 8px;  /* Thoda mota track */
+    border-radius: 4px;
+  }
 
-        .music-progress-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          border: 2px solid white;
-        }
-        .music-progress-slider::-moz-range-thumb {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          border: 2px solid white;
-        }
-        .music-progress-slider::-webkit-slider-runnable-track {
-          height: 4px;
-          border-radius: 2px;
-        }
-        .music-progress-slider::-moz-range-track {
-          height: 4px;
-          border-radius: 2px;
-        }
+  .music-progress-slider {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .music-progress-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 0px;  /* Dot hataya */
+    height: 0px;  /* Dot hataya */
+    background: transparent;  /* Transparent */
+  }
+  .music-progress-slider::-moz-range-thumb {
+    width: 0px;  /* Dot hataya */
+    height: 0px;  /* Dot hataya */
+    background: transparent;  /* Transparent */
+    border: none;
+  }
+  .music-progress-slider::-webkit-slider-runnable-track {
+    height: 6px;  /* Thoda mota track */
+    border-radius: 3px;
+  }
+  .music-progress-slider::-moz-range-track {
+    height: 6px;  /* Thoda mota track */
+    border-radius: 3px;
+  }
 
-        @keyframes ping-slow {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(1.5); opacity: 0; }
-        }
-        .animate-ping-slow {
-          animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
+  @keyframes ping-slow {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  .animate-ping-slow {
+    animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
 
-        @keyframes rotate-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .music-minimize-icon {
-          animation: rotate-slow 4s linear infinite;
-        }
-      `}</style>
-
+  @keyframes rotate-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .music-minimize-icon {
+    animation: rotate-slow 4s linear infinite;
+  }
+`}</style>
       {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
