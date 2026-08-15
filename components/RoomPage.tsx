@@ -328,16 +328,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         console.log('Jitsi joined');
         jitsiJoinedRef.current = true;
         setIsJitsiJoined(true);
-        desiredAudioStateRef.current = false;
 
-        try {
-          const muted = await api.isAudioMuted();
-          if (!muted) {
-            api.executeCommand('toggleAudio');
-          }
-        } catch (error) {
-          console.error('Initial audio mute error:', error);
-        }
+        applyAudioState();
       });
 
       api.addListener('audioMuteStatusChanged', (data: any) => {
@@ -463,6 +455,25 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
     return () => unsubSeats();
   }, [roomId, micMode]);
+
+  useEffect(() => {
+    // If the user has a seat, check if the desired audio state aligns with their seat mute status
+    const currentSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
+
+    if (currentSeat) {
+      const shouldUnmute = !currentSeat.isMuted;
+      if (desiredAudioStateRef.current !== shouldUnmute) {
+        desiredAudioStateRef.current = shouldUnmute;
+        applyAudioState();
+      }
+    } else {
+      // If the user is not in a seat, ensure they are muted
+      if (desiredAudioStateRef.current !== false) {
+        desiredAudioStateRef.current = false;
+        applyAudioState();
+      }
+    }
+  }, [seats, userAccountId, applyAudioState]);
 
   useEffect(() => {
     if (!db) return;
