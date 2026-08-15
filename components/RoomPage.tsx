@@ -1984,14 +1984,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         }
 
         @keyframes rotate-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .music-minimize-icon {
-          animation: rotate-slow 4s linear infinite;
-        }
-
-        <style jsx global>{`
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .music-minimize-icon {
+    animation: rotate-slow 4s linear infinite;
+  }
 
   @keyframes wavePulse {
     0%, 100% { 
@@ -2002,9 +2000,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       transform: scale(1.1); 
       opacity: 0.8; 
     }
-        }
-      `}</style>
-
+  }
+`}</style>
       {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
