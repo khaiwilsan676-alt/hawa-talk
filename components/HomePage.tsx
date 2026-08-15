@@ -22,6 +22,54 @@ import PublicProfile from './PublicProfile'
 import { generateStableId } from '../lib/hash'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 
+
+// ---------- Password Input Component (4 Digits, Numbers Only, Auto-shift) ----------
+function PasswordInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  const handleInput = (index: number, inputValue: string) => {
+    // Only allow numbers
+    const numberValue = inputValue.replace(/[^0-9]/g, '')
+
+    if (numberValue) {
+      const newDigits = value.split('')
+      newDigits[index] = numberValue.slice(-1)
+      const newPassword = newDigits.join('').slice(0, 4)
+      onChange(newPassword)
+
+      // Auto-shift to next box
+      if (index < 3 && numberValue) {
+        inputRefs.current[index + 1]?.focus()
+      }
+    }
+  }
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !value[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus()
+    }
+  }
+
+  return (
+    <div className="flex gap-3 justify-center">
+      {[0, 1, 2, 3].map((index) => (
+        <input
+          key={index}
+          ref={(el) => { inputRefs.current[index] = el }}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={1}
+          value={value[index] || ''}
+          onChange={(e) => handleInput(index, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(index, e)}
+          className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-black"
+        />
+      ))}
+    </div>
+  )
+}
+
 interface HomePageProps {
   onLogout?: () => void;
 }
@@ -32,6 +80,8 @@ interface UserCard {
   name: string
   country: string
   image: string
+  isLocked?: boolean
+  roomPassword?: string
 }
 
 interface KeptRoomData {
@@ -39,6 +89,8 @@ interface KeptRoomData {
   country?: string
   image: string
   accountId: string
+  isLocked?: boolean
+  roomPassword?: string
 }
 
 interface RecentRoom extends KeptRoomData {
@@ -52,6 +104,8 @@ interface GlobalRoom {
   image: string
   accountId: string
   createdAt: number
+  isLocked?: boolean
+  roomPassword?: string
 }
 
 const BANNERS = [
@@ -158,6 +212,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
   const [enteredFromKept, setEnteredFromKept] = useState(false)
+
+  // Password Room State
+  const [showRoomPasswordCard, setShowRoomPasswordCard] = useState(false)
+  const [selectedLockedRoom, setSelectedLockedRoom] = useState<UserCard | null>(null)
+  const [enteredRoomPassword, setEnteredRoomPassword] = useState('')
+
 
   // --- NEW: Recent & Following Rooms ---
   const [recentRooms, setRecentRooms] = useState<RecentRoom[]>([])
@@ -766,13 +826,59 @@ export default function HomePage({ onLogout }: HomePageProps) {
   }
 
   // Handle Room Card Click from Search Overlay or Home Grid
-  const handleUserCardClick = (user: UserCard) => {
+  const handleUserCardClick = async (user: UserCard) => {
+    try {
+      const docRef = doc(db, "globalRooms", user.accountId || user.id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.isLocked && data.accountId !== userUID) {
+          setSelectedLockedRoom(user)
+          setShowRoomPasswordCard(true)
+          setEnteredRoomPassword('')
+          return
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch lock status:", e);
+    }
+
     setEnteredFromKept(false)
-    addToRecent({ name: user.name, image: user.image, accountId: user.accountId || user.id })
+    addToRecent({ name: user.name, image: user.image, accountId: user.accountId || user.id, isLocked: user.isLocked })
     setSelectedUser(user)
     setCurrentPage('room')
     if (isSearchOpen) {
       setIsSearchOpen(false)
+    }
+  }
+
+  const handleRoomPasswordSubmit = async () => {
+    if (!selectedLockedRoom) return;
+
+    // Fetch latest room data to check password securely
+    try {
+      const docRef = doc(db, "globalRooms", selectedLockedRoom.id || selectedLockedRoom.accountId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.isLocked && data.roomPassword === enteredRoomPassword) {
+          setShowRoomPasswordCard(false)
+          setEnteredFromKept(false)
+          addToRecent({ name: selectedLockedRoom.name, image: selectedLockedRoom.image, accountId: selectedLockedRoom.accountId || selectedLockedRoom.id, isLocked: true })
+          setSelectedUser(selectedLockedRoom)
+          setCurrentPage('room')
+          if (isSearchOpen) {
+            setIsSearchOpen(false)
+          }
+        } else {
+          alert('Incorrect Password')
+        }
+      } else {
+        alert('Room not found')
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error verifying password')
     }
   }
 
@@ -818,7 +924,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       const foundList: GlobalRoom[] = []
       const addedIds = new Set<string>()
 
-      const addResult = (docId: string, uData: any) => {
+      const addResult = (docId: string, uData: any, isGlobalRoom: boolean = false) => {
         const accId = String(uData.accountId || uData.id || docId)
         if (!addedIds.has(docId) && !addedIds.has(accId)) {
           addedIds.add(docId)
@@ -829,7 +935,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
             country: uData.country || '🇮🇳',
             image: uData.image || uData.photo || '/default-avatar.png',
             accountId: accId,
-            createdAt: uData.createdAt || Date.now()
+            createdAt: uData.createdAt || Date.now(),
+            isLocked: uData.isLocked
           })
         }
       }
@@ -1067,7 +1174,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 accountId: room.accountId,
                 name: room.name,
                 country: room.country || '🇮🇳',
-                image: room.image
+                image: room.image,
+                isLocked: room.isLocked
               }
               return (
                 <div
@@ -1082,7 +1190,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     className="w-full h-full object-cover"
                     style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                  {room.isLocked && (
+                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                    </svg>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className="text-base">🇮🇳</span>
                       <div className="flex-1 min-w-0">
@@ -1126,7 +1241,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 accountId: room.accountId,
                 name: room.name,
                 country: room.country || '🇮🇳',
-                image: room.image
+                image: room.image,
+                isLocked: room.isLocked
               }
               return (
                 <div
@@ -1141,7 +1257,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     className="w-full h-full object-cover"
                     style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                  {room.isLocked && (
+                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                    </svg>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className="text-base">🇮🇳</span>
                       <div className="flex-1 min-w-0">
@@ -1256,7 +1379,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   accountId: room.accountId,
                   name: room.name,
                   country: room.country,
-                  image: room.image
+                  image: room.image,
+                  isLocked: room.isLocked
                 })}
                 className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
                 style={{ height: '180px' }}
@@ -1267,6 +1391,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   className="w-full h-full object-cover"
                   style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                 />
+                {room.isLocked && (
+                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                    </svg>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                   <div className="flex items-center gap-1.5">
                     <span className="text-base">{room.country}</span>
@@ -1362,6 +1493,42 @@ export default function HomePage({ onLogout }: HomePageProps) {
       `}</style>
 
       {/* SEARCH OVERLAY SHEET */}
+
+      {/* Room Password Modal */}
+      {showRoomPasswordCard && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRoomPasswordCard(false)} />
+          <div className="relative bg-white w-80 rounded-3xl shadow-2xl p-6 mx-4 animate-scale-up">
+            <h3 className="text-xl font-bold text-gray-800 text-center mb-2">Locked Room</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">Enter password to join</p>
+
+            <PasswordInput value={enteredRoomPassword} onChange={setEnteredRoomPassword} />
+
+            <button
+              onClick={handleRoomPasswordSubmit}
+              disabled={enteredRoomPassword.length !== 4}
+              className={`w-full mt-6 py-3.5 rounded-2xl font-semibold text-white transition-all ${
+                enteredRoomPassword.length === 4
+                  ? 'bg-blue-500 hover:bg-blue-600 active:scale-[0.98]'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Enter Room
+            </button>
+
+            <button
+              onClick={() => {
+                setShowRoomPasswordCard(false)
+                setEnteredRoomPassword('')
+              }}
+              className="w-full mt-3 py-3 text-gray-500 font-medium text-center hover:bg-gray-50 rounded-2xl active:scale-[0.98] transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {isSearchOpen && (
         <div
           className="fixed inset-0 z-[120] bg-white flex flex-col"
@@ -1480,7 +1647,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                           accountId: user.accountId,
                           name: user.name,
                           country: user.country,
-                          image: user.image
+                          image: user.image,
+                          isLocked: user.isLocked
                         })}
                         className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"
                       >

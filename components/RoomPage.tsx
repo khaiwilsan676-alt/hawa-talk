@@ -131,6 +131,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   // Room data state
   const [roomName, setRoomName] = useState<string>("");
   const [roomAnnouncement, setRoomAnnouncement] = useState<string>("");
+  const [isLocked, setIsLocked] = useState<boolean>(false);
+  const [roomPassword, setRoomPassword] = useState<string>("");
   const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
   const [micMode, setMicMode] = useState<number>(9);
   const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
@@ -834,6 +836,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (data.theme && THEME_BACKGROUNDS[data.theme]) {
       setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
     }
+    if (data.isLocked !== undefined) setIsLocked(data.isLocked);
+    if (data.roomPassword !== undefined) setRoomPassword(data.roomPassword);
 
     if (roomId && db) {
       await setDoc(doc(db, "globalRooms", roomId), {
@@ -842,6 +846,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         announcement: data.announcement,
         micMode: data.micMode,
         theme: data.theme,
+        isLocked: data.isLocked,
+        roomPassword: data.roomPassword,
       }, { merge: true });
     }
   };
@@ -1192,7 +1198,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       <RoomSettingPage
         onBack={closeSettings}
         roomOwnerId={roomId}
-        roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode, theme: Object.keys(THEME_BACKGROUNDS).find(key => THEME_BACKGROUNDS[key] === backgroundImage) || 'mood-light' }}
+        roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode, isLocked, roomPassword, theme: Object.keys(THEME_BACKGROUNDS).find(key => THEME_BACKGROUNDS[key] === backgroundImage) || 'mood-light' }}
         onSave={handleSaveSettings}
       />
     );

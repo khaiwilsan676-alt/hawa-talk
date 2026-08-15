@@ -14,6 +14,7 @@ interface RoomSettingPageProps {
     theme?: string
     admin?: string[]
     isLocked?: boolean
+    roomPassword?: string
     micMode?: number
   }
   onSave?: (data: any) => void
@@ -138,6 +139,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
   const [showThemePage, setShowThemePage] = useState<boolean>(false)
   const [showLockCard, setShowLockCard] = useState<boolean>(false)
   const [password, setPassword] = useState<string>('')
+  const [roomPassword, setRoomPassword] = useState<string>(roomData?.roomPassword || '')
   const [selectedTheme, setSelectedTheme] = useState<string>(roomData?.theme || 'forest-night')
 
   const micModes = [5, 9, 10, 13]
@@ -168,6 +170,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
   const handleSetPassword = () => {
     if (password.length === 4) {
       setIsLocked(true)
+      setRoomPassword(password)
       setShowLockCard(false)
       setPassword('')
     }
@@ -179,6 +182,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
       roomName,
       announcement,
       isLocked,
+      roomPassword,
       micMode: selectedMicMode,
       theme: selectedTheme,
     }
@@ -191,6 +195,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           announcement: announcement,
           micMode: selectedMicMode,
           theme: selectedTheme,
+          isLocked: isLocked,
+          roomPassword: roomPassword,
         }, { merge: true })
       } catch (err) {
         console.error("Firestore update failed:", err)
