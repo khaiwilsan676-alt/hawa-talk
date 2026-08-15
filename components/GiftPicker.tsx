@@ -1,62 +1,85 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Mic, Coins, ChevronUp } from "lucide-react";
+import Image from "next/image";
 
 export default function GiftPicker({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState("Hot");
   const [selectedMultiplier, setSelectedMultiplier] = useState("1×");
   const [showMultipliers, setShowMultipliers] = useState(false);
   const [selectedGift, setSelectedGift] = useState<number | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   const tabs = ["Hot", "Lucky", "Luxury", "Event"];
   const multipliers = ["1×", "10×", "299×", "599×", "999×"];
 
-  // Sample Gifts Data
+  // Sample Gifts Data with images
   const sampleGifts = [
-    { id: 1, name: "Rose", coins: 10, icon: "🌹" },
-    { id: 2, name: "Heart", coins: 99, icon: "❤️" },
-    { id: 3, name: "Car", coins: 500, icon: "🏎️" },
-    { id: 4, name: "Crown", coins: 1000, icon: "👑" },
-    { id: 5, name: "Rocket", coins: 2000, icon: "🚀" },
-    { id: 6, name: "Castle", coins: 5000, icon: "🏰" },
+    { id: 1, name: "Rose", coins: 10, image: "/1786768926590.png" },
+    { id: 2, name: "Heart", coins: 99, image: "/1786768926590.png" },
+    { id: 3, name: "Car", coins: 500, image: "/1786768926590.png" },
+    { id: 4, name: "Crown", coins: 1000, image: "/1786768926590.png" },
+    { id: 5, name: "Rocket", coins: 2000, image: "/1786768926590.png" },
+    { id: 6, name: "Castle", coins: 5000, image: "/1786768926590.png" },
+    { id: 7, name: "Diamond", coins: 10000, image: "/1786768926590.png" },
+    { id: 8, name: "Yacht", coins: 20000, image: "/1786768926590.png" },
+    { id: 9, name: "Plane", coins: 50000, image: "/1786768926590.png" },
+    { id: 10, name: "Island", coins: 100000, image: "/1786768926590.png" },
   ];
 
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col justify-end bg-black/50 backdrop-blur-xs">
-      {/* 40vh Black Sheet Container */}
-      <div className="h-[40vh] w-full bg-black text-white flex flex-col justify-between rounded-t-3xl border-t border-white/10 shadow-2xl relative px-4 pt-3 pb-2">
-        
-        {/* 1. TOP SECTION: Tabs & Mic Icon */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
-          {/* Category Tabs */}
-          <div className="flex items-center gap-5">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`text-sm font-semibold transition-all relative ${
-                  activeTab === tab
-                    ? "text-white font-bold scale-105"
-                    : "text-gray-400 hover:text-gray-200"
-                }`}
-              >
-                {tab}
-                {/* Active Indicator Bar */}
-                {activeTab === tab && (
-                  <span className="absolute -bottom-2 left-0 right-0 h-[2px] bg-blue-500 rounded-full" />
-                )}
-              </button>
-            ))}
-          </div>
+  // Handle click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sheetRef.current && !sheetRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
 
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-xs">
+      {/* 40vh Black Sheet Container */}
+      <div 
+        ref={sheetRef}
+        className="h-[40vh] w-full max-w-md mx-auto bg-black text-white flex flex-col justify-between rounded-t-3xl border-t border-white/10 shadow-2xl relative px-4 pt-3 pb-2"
+      >
+        
+        {/* 1. TOP SECTION: Mic Icon Only */}
+        <div className="flex items-center justify-end border-b border-white/10 pb-2">
           {/* Right Side Mic Icon */}
           <button className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-300">
             <Mic className="w-4 h-4" />
           </button>
         </div>
 
-        {/* 2. MIDDLE SECTION: Gift Items Grid */}
+        {/* 2. CATEGORY TABS - Inside Sheet */}
+        <div className="flex items-center gap-5 py-2 border-b border-white/10">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`text-sm font-semibold transition-all relative ${
+                activeTab === tab
+                  ? "text-white font-bold scale-105"
+                  : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              {tab}
+              {/* Active Indicator Bar */}
+              {activeTab === tab && (
+                <span className="absolute -bottom-2 left-0 right-0 h-[2px] bg-blue-500 rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* 3. MIDDLE SECTION: Gift Items Grid - 4 Columns, 2 Rows Visible */}
         <div className="flex-1 overflow-y-auto py-3 grid grid-cols-4 gap-3 scrollbar-none">
           {sampleGifts.map((gift) => (
             <div
@@ -68,7 +91,15 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
                   : "border-transparent hover:border-white/20"
               }`}
             >
-              <span className="text-2xl mb-1">{gift.icon}</span>
+              <div className="relative w-12 h-12 mb-1">
+                <Image
+                  src={gift.image}
+                  alt={gift.name}
+                  fill
+                  className="object-cover rounded-full"
+                  sizes="48px"
+                />
+              </div>
               <span className="text-xs text-gray-300 font-medium">{gift.name}</span>
               <span className="text-[10px] text-yellow-400 flex items-center gap-0.5 mt-0.5">
                 <Coins className="w-2.5 h-2.5" /> {gift.coins}
@@ -77,11 +108,19 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        {/* 3. BOTTOM BAR */}
+        {/* 4. BOTTOM BAR */}
         <div className="flex items-center justify-between border-t border-white/10 pt-2 relative">
           {/* Left Side: Coin Balance */}
           <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full">
-            <Coins className="w-4 h-4 text-yellow-400" />
+            <div className="w-5 h-5 relative">
+              <Image
+                src="/1786768926590.png"
+                alt="Coins"
+                fill
+                className="object-cover rounded-full"
+                sizes="20px"
+              />
+            </div>
             <span className="text-xs font-bold text-yellow-300 tracking-wide">66457</span>
           </div>
 
@@ -132,5 +171,4 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
-}
-
+                    }
