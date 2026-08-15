@@ -64,6 +64,186 @@ async function getAllMusicFromDB(): Promise<{ id: string; name: string; blob: Bl
   });
 }
 
+// WebGL Shader Component for removing white background
+const ImageWithTransparentBackground: React.FC<{ src: string; className?: string }> = ({ src, className }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const gl = canvas.getContext('webgl');
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
+
+    // Vertex shader
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `;
+
+    // Fragment shader for removing white background
+    const fragmentShaderSource = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_image;
+      uniform float u_threshold;
+      
+      void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        
+        // Calculate whiteness
+        float whiteness = (color.r + color.g + color.b) / 3.0;
+        float maxChannel = max(color.r, max(color.g, color.b));
+        float minChannel = min(color.r, min(color.g, color.b));
+        float colorDiff = maxChannel - minChannel;
+        
+        // If pixel is white (high brightness, low saturation)
+        if (whiteness > u_threshold && colorDiff < 0.2) {
+          // Make it transparent
+          gl_FragColor = vec4(color.rgb, 0.0);
+        } else {
+          // Keep original color but adjust alpha for near-white pixels
+          float alpha = smoothstep(u_threshold - 0.2, u_threshold, whiteness);
+          gl_FragColor = vec4(color.rgb, alpha);
+        }
+      }
+    `;
+
+    // Compile shaders
+    const compileShader = (source: string, type: number) => {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
+    };
+
+    const vertexShader = compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+    const fragmentShader = compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+    if (!vertexShader || !fragmentShader) return;
+
+    // Create program
+    const program = gl.createProgram();
+    if (!program) return;
+    
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      return;
+    }
+
+    gl.useProgram(program);
+
+    // Set up geometry
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,
+       1, -1,
+      -1,  1,
+      -1,  1,
+       1, -1,
+       1,  1,
+    ]), gl.STATIC_DRAW);
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position');
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // Set up texture coordinates
+    const texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      0, 0,
+      1, 0,
+      0, 1,
+      0, 1,
+      1, 0,
+      1, 1,
+    ]), gl.STATIC_DRAW);
+
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
+    gl.enableVertexAttribArray(texCoordLocation);
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // Create texture
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    // Load image
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      canvas.width = image.width;
+      canvas.height = image.height;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+      
+      // Enable blending for transparency
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      
+      // Set threshold for white detection (0.85 = 85% white threshold)
+      const thresholdLocation = gl.getUniformLocation(program, 'u_threshold');
+      gl.uniform1f(thresholdLocation, 0.85);
+      
+      // Set image uniform
+      const imageLocation = gl.getUniformLocation(program, 'u_image');
+      gl.uniform1i(imageLocation, 0);
+      
+      // Draw
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      setImageLoaded(true);
+    };
+    image.src = src;
+
+    // Cleanup
+    return () => {
+      gl.deleteProgram(program);
+      gl.deleteShader(vertexShader);
+      gl.deleteShader(fragmentShader);
+      gl.deleteBuffer(positionBuffer);
+      gl.deleteBuffer(texCoordBuffer);
+      gl.deleteTexture(texture);
+    };
+  }, [src]);
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className={className}
+      style={{ 
+        opacity: imageLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
+      }}
+    />
+  );
+};
+
 export default function Fourgride({
   onClose,
   onClearChat,
@@ -82,8 +262,12 @@ export default function Fourgride({
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDeleteCard, setShowDeleteCard] = useState<string | null>(null);
+  const [volume, setVolume] = useState(1);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(-1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const volumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Toggle handlers
   const toggleEntryEffect = () => setEntryEffect(!entryEffect);
@@ -124,6 +308,11 @@ export default function Fourgride({
     };
   }, [musicFiles]);
 
+  // Handle music file selection - opens file picker directly
+  const handleMusicClick = () => {
+    fileInputRef.current?.click();
+  };
+
   // Handle music file selection - supports multiple files
   const handleAddMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -154,9 +343,21 @@ export default function Fourgride({
     });
     
     if (fileInputRef.current) fileInputRef.current.value = '';
+    
+    // Auto-play first added music if nothing is playing
+    if (currentlyPlaying === null && newMusicFiles.length > 0) {
+      const firstFile = newMusicFiles[0];
+      setCurrentlyPlaying(firstFile.id);
+      setCurrentTrackIndex(0);
+      const audio = new Audio(firstFile.url);
+      audio.volume = volume;
+      audioRef.current = audio;
+      audio.play();
+      setIsPlaying(true);
+    }
   };
 
-  // Play/pause handler - fixed logic
+  // Play/pause handler
   const togglePlay = (id: string, url: string) => {
     if (currentlyPlaying === id) {
       // Same track - toggle play/pause
@@ -177,10 +378,12 @@ export default function Fourgride({
         audioRef.current.play();
       } else {
         const audio = new Audio(url);
+        audio.volume = volume;
         audioRef.current = audio;
         audio.play();
       }
       setCurrentlyPlaying(id);
+      setCurrentTrackIndex(musicFiles.findIndex(f => f.id === id));
       setIsPlaying(true);
     }
   };
@@ -189,11 +392,69 @@ export default function Fourgride({
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = () => {
-        setIsPlaying(false);
-        setCurrentlyPlaying(null);
+        // Play next track
+        playNext();
       };
     }
-  }, [audioRef.current]);
+  }, [audioRef.current, currentTrackIndex, musicFiles]);
+
+  // Play next track
+  const playNext = () => {
+    if (musicFiles.length === 0) return;
+    
+    const nextIndex = (currentTrackIndex + 1) % musicFiles.length;
+    const nextTrack = musicFiles[nextIndex];
+    
+    if (audioRef.current) {
+      audioRef.current.src = nextTrack.url;
+      audioRef.current.play();
+    } else {
+      const audio = new Audio(nextTrack.url);
+      audio.volume = volume;
+      audioRef.current = audio;
+      audio.play();
+    }
+    
+    setCurrentlyPlaying(nextTrack.id);
+    setCurrentTrackIndex(nextIndex);
+    setIsPlaying(true);
+  };
+
+  // Play previous track
+  const playPrevious = () => {
+    if (musicFiles.length === 0) return;
+    
+    const prevIndex = (currentTrackIndex - 1 + musicFiles.length) % musicFiles.length;
+    const prevTrack = musicFiles[prevIndex];
+    
+    if (audioRef.current) {
+      audioRef.current.src = prevTrack.url;
+      audioRef.current.play();
+    } else {
+      const audio = new Audio(prevTrack.url);
+      audio.volume = volume;
+      audioRef.current = audio;
+      audio.play();
+    }
+    
+    setCurrentlyPlaying(prevTrack.id);
+    setCurrentTrackIndex(prevIndex);
+    setIsPlaying(true);
+  };
+
+  // Handle volume change
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
+  };
+
+  // Toggle volume slider
+  const toggleVolumeSlider = () => {
+    setShowVolumeSlider(!showVolumeSlider);
+  };
 
   // Delete music handler
   const handleDeleteMusic = async (id: string) => {
@@ -213,6 +474,7 @@ export default function Fourgride({
         }
         setCurrentlyPlaying(null);
         setIsPlaying(false);
+        setCurrentTrackIndex(-1);
       }
       setShowDeleteCard(null);
     } catch (error) {
@@ -328,10 +590,10 @@ export default function Fourgride({
 
         {/* Row 2 – 4 items */}
         <div className="grid grid-cols-4 gap-4 mb-4">
-          {/* 5. Music - opens music sheet */}
+          {/* 5. Music - opens file picker directly */}
           <div className="flex flex-col items-center">
             <button
-              onClick={() => setShowMusicSheet(true)}
+              onClick={handleMusicClick}
               className="transition-transform hover:scale-105"
             >
               <img src="/IMG_20260814_144255.png" alt="Music" className="w-12 h-12 object-contain" />
@@ -431,6 +693,111 @@ export default function Fourgride({
         `}</style>
       </div>
 
+      {/* ---------- Music Player Bar (Bottom) ---------- */}
+      {currentlyPlaying && !showMusicSheet && (
+        <div className="fixed bottom-[10vh] left-1/2 transform -translate-x-1/2 z-40 w-full max-w-md px-4">
+          <div className="relative bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-2xl p-3">
+            {/* Background Image with Transparent Background */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden">
+              <ImageWithTransparentBackground 
+                src="/IMG_20260815_121535.png" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            
+            {/* Content */}
+            <div className="relative z-10">
+              {/* Song Name */}
+              <p className="text-white text-sm font-semibold mb-2 text-center truncate px-2 drop-shadow-lg">
+                {musicFiles.find(f => f.id === currentlyPlaying)?.name || 'Playing...'}
+              </p>
+              
+              {/* Controls Row */}
+              <div className="flex items-center justify-center gap-4">
+                {/* Previous Button */}
+                <button
+                  onClick={playPrevious}
+                  className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors backdrop-blur-sm"
+                >
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white drop-shadow">
+                    <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                  </svg>
+                </button>
+                
+                {/* Play/Pause Button */}
+                <button
+                  onClick={() => {
+                    if (audioRef.current) {
+                      if (isPlaying) {
+                        audioRef.current.pause();
+                        setIsPlaying(false);
+                      } else {
+                        audioRef.current.play();
+                        setIsPlaying(true);
+                      }
+                    }
+                  }}
+                  className="p-3 bg-white/30 hover:bg-white/40 rounded-full transition-colors backdrop-blur-sm"
+                >
+                  {isPlaying ? (
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white drop-shadow">
+                      <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white drop-shadow">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  )}
+                </button>
+                
+                {/* Next Button */}
+                <button
+                  onClick={playNext}
+                  className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors backdrop-blur-sm"
+                >
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white drop-shadow">
+                    <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                  </svg>
+                </button>
+                
+                {/* Volume Control */}
+                <div className="relative">
+                  <button
+                    onClick={toggleVolumeSlider}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors backdrop-blur-sm"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white drop-shadow">
+                      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                  </button>
+                  
+                  {/* Volume Slider */}
+                  {showVolumeSlider && (
+                    <div className="absolute bottom-full mb-2 right-0 bg-white rounded-lg shadow-xl p-3">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #8b5cf6 ${volume * 100}%, #e5e7eb ${volume * 100}%)`
+                        }}
+                      />
+                      <p className="text-center text-xs text-gray-600 mt-1">
+                        {Math.round(volume * 100)}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ---------- Music Bottom Sheet ---------- */}
       {showMusicSheet && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center">
@@ -445,7 +812,7 @@ export default function Fourgride({
               <h2 className="text-lg font-bold text-gray-800">Music</h2>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={handleMusicClick}
                   className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-3 py-1 flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
@@ -557,4 +924,4 @@ export default function Fourgride({
       />
     </div>
   );
-}
+      }
