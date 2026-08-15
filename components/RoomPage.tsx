@@ -51,6 +51,7 @@ interface Message {
   text: string;
   sender: string;
   senderImage: string;
+  senderAccountId?: string;
   timestamp: number;
   type?: 'message' | 'join' | 'leave';
   imageUrl?: string;
@@ -413,6 +414,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             text: data.text || '',
             sender: data.sender || 'Unknown',
             senderImage: data.senderImage || '/default-avatar.png',
+            senderAccountId: data.senderAccountId || '',
             timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : data.timestamp || Date.now(),
             type: data.type || 'message',
             imageUrl: data.imageUrl || undefined
@@ -497,6 +499,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         text,
         sender: currentUser.name,
         senderImage: currentUser.image,
+        senderAccountId: userAccountId,
         timestamp: serverTimestamp(),
         type,
         imageUrl: imageUrl || null
@@ -1325,7 +1328,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div className="flex items-start gap-1.5 px-1">
                       <div
                         className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || '' })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -1338,7 +1341,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.9rem)' }}>
                       <div
                         className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.sender === currentUser.name ? currentUser.accountId : '' })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -1353,7 +1356,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div className="flex items-start gap-2">
                       <div
                         className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.sender === currentUser.name ? currentUser.accountId : '' })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
