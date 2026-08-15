@@ -51,6 +51,7 @@ interface Message {
   text: string;
   sender: string;
   senderImage: string;
+  senderAccountId?: string;
   timestamp: number;
   type?: 'message' | 'join' | 'leave';
   imageUrl?: string;
@@ -415,6 +416,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             text: data.text || '',
             sender: data.sender || 'Unknown',
             senderImage: data.senderImage || '/default-avatar.png',
+            senderAccountId: data.senderAccountId || '',
             timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : data.timestamp || Date.now(),
             type: data.type || 'message',
             imageUrl: data.imageUrl || undefined
@@ -499,6 +501,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         text,
         sender: currentUser.name,
         senderImage: currentUser.image,
+        senderAccountId: userAccountId,
         timestamp: serverTimestamp(),
         type,
         imageUrl: imageUrl || null
@@ -896,7 +899,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             onClick={handleSeatClick(num)}
             onAvatarClick={handleSeatAvatarClick(seat!)}
             accountId={userAccountId}
-            isRoomOwner={isRoomOwner}
+            roomOwnerId={roomOwnerId}
           />
         );
       });
@@ -1238,32 +1241,34 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-lg">{displayRoomName}</h2>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const newFollow = !isFollowed;
-                    setIsFollowed(newFollow);
-                    if (onFollowToggle) onFollowToggle(roomId, newFollow);
-                  }}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-gray-500' : 'bg-blue-500'}`}
-                  title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
-                >
-                  {isFollowed ? (
-                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                    </svg>
-                  ) : (
-                    <>
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white absolute">
+                {!isRoomOwner && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newFollow = !isFollowed;
+                      setIsFollowed(newFollow);
+                      if (onFollowToggle) onFollowToggle(roomId, newFollow);
+                    }}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-gray-500' : 'bg-blue-500'}`}
+                    title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
+                  >
+                    {isFollowed ? (
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                       </svg>
-                      <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 relative">
-                        <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                        <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                      </svg>
-                    </>
-                  )}
-                </button>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white absolute">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                        <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 relative">
+                          <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                          <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
               <p className="text-xs text-gray-300">ID: {roomOwner.accountId || roomOwner.id || ''}</p>
             </div>
@@ -1329,7 +1334,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div className="flex items-start gap-1.5 px-1">
                       <div
                         className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: '' })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || '' })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -1342,7 +1347,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.9rem)' }}>
                       <div
                         className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.sender === currentUser.name ? currentUser.accountId : '' })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -1357,7 +1362,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                     <div className="flex items-start gap-2">
                       <div
                         className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.sender === currentUser.name ? currentUser.accountId : '' })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -2037,21 +2042,21 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   );
 }
 
-// SeatItem Component (unchanged)
-function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isRoomOwner }: {
+// SeatItem Component
+function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
   onClick: (e: React.MouseEvent) => void;
   onAvatarClick?: (e: React.MouseEvent) => void;
   accountId: string;
-  isRoomOwner: boolean;
+  roomOwnerId: string;
 }) {
   const isLocked = seatData?.isLocked ?? false;
   const isOccupied = seatData?.isOccupied ?? false;
   const isSpeaking = seatData?.isSpeaking ?? false;
   const isMuted = seatData?.isMuted ?? false;
   const user = seatData?.user;
-  const isRoomOwnerSeat = isOccupied && user?.accountId !== accountId && isRoomOwner;
+  const isRoomOwnerSeat = isOccupied && user?.accountId === roomOwnerId;
 
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>

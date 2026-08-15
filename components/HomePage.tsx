@@ -263,8 +263,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
       let count = 0;
       snapshot.docs.forEach((doc) => {
         const data = doc.data();
-        const unread = data.unreadCounts?.[userUID] || 0;
-        count += unread;
+
+        // Filter out if the conversation was cleared after the last message
+        const clearedAt = data.clearedAtRef?.[userUID] || 0;
+        const lastTimestamp = data.lastTimestamp?.toMillis?.() || 0;
+
+        if (lastTimestamp >= clearedAt) {
+          const unread = data.unreadCounts?.[userUID] || 0;
+          count += unread;
+        }
       });
       setTotalUnreadCount(count);
     });
@@ -907,6 +914,26 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setCurrentPage('home')
     setSelectedUser(null)
   }
+
+  const handleJoinRoomFromChat = async (roomId: string) => {
+    try {
+      const roomDoc = await getDoc(doc(db, 'globalRooms', roomId));
+      if (roomDoc.exists()) {
+        const roomData = roomDoc.data();
+        handleUserCardClick({
+          id: roomData.id || roomId,
+          accountId: roomData.accountId || roomId,
+          name: roomData.name,
+          country: roomData.country || '🇮🇳',
+          image: roomData.image || '/default-avatar.png'
+        });
+      } else {
+        console.error('Room not found');
+      }
+    } catch (error) {
+      console.error('Error fetching room data:', error);
+    }
+  };
 
   // ROBUST SEARCH FUNCTION FOR FIRESTORE
   const handlePerformSearch = async () => {
@@ -2081,7 +2108,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
 
         {currentPage === 'message' && (
-          <MessagePage onChatOpen={setIsChatOpen} />
+          <MessagePage onChatOpen={setIsChatOpen} onJoinRoom={handleJoinRoomFromChat} />
         )}
 
         {currentPage === 'me' && (
@@ -2120,6 +2147,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         {currentPage === 'public_profile' && (
           <PublicProfile
             onBack={handleBackFromPublicProfile}
+            onJoinRoom={handleJoinRoomFromChat}
             isOtherUser={true}
             targetUser={selectedUser ? {
               id: selectedUser.id,

@@ -40,6 +40,7 @@ export interface TargetUser {
 
 interface PublicProfileProps {
   onBack?: () => void
+  onJoinRoom?: (roomId: string) => void
   isOtherUser?: boolean
   targetUser?: TargetUser | null
 }
@@ -167,6 +168,7 @@ const compressImage = (
 
 export default function PublicProfile({
   onBack,
+  onJoinRoom,
   isOtherUser = false,
   targetUser = null,
 }: PublicProfileProps) {
@@ -1202,6 +1204,7 @@ export default function PublicProfile({
             photo: targetUser.photo || targetUser.image || '',
           }}
           onClose={() => setShowChat(false)}
+          onJoinRoom={onJoinRoom}
         />
       )}
 

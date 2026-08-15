@@ -44,6 +44,7 @@ interface AppUser {
 
 interface MessagePageProps {
   onChatOpen?: (open: boolean) => void;
+  onJoinRoom?: (roomId: string) => void;
   sharedRoomData?: {
     roomId: string;
     roomName: string;
@@ -51,7 +52,7 @@ interface MessagePageProps {
   } | null;
 }
 
-export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageProps) {
+export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: MessagePageProps) {
   const [fixedChats] = useState<FixedChat[]>([
     { id: 'hawa-team', name: 'Hurry Team', image: '/logo.png', uid: 'hurry_team_official', isFixed: true },
     { id: 'hawa-system', name: 'Hurry System', image: '/1784465161302~2.jpg', uid: 'hurry_system_official', isFixed: true }
@@ -82,11 +83,19 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chats: ChatPreview[] = [];
+      const seenUids = new Set();
       snapshot.docs.forEach((doc) => {
         const data = doc.data();
         const participantsData = data.participantsData || [];
         const otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
-        if (otherUser) {
+
+        // Filter out if the conversation was cleared after the last message
+        const clearedAt = data.clearedAtRef?.[currentUserUid] || 0;
+        const lastTimestamp = data.lastTimestamp?.toMillis?.() || 0;
+
+        if (otherUser && !seenUids.has(otherUser.uid)) {
+          seenUids.add(otherUser.uid);
+          const isCleared = clearedAt > lastTimestamp;
           chats.push({
             chatId: doc.id,
             otherUser: {
@@ -94,9 +103,9 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
               name: otherUser.name,
               photo: otherUser.photo || '',
             },
-            lastMessage: data.lastMessage || '',
-            lastTimestamp: data.lastTimestamp?.toMillis?.() || 0,
-            unreadCount: data.unreadCounts?.[currentUserUid] || 0,
+            lastMessage: isCleared ? '' : (data.lastMessage || ''),
+            lastTimestamp: lastTimestamp,
+            unreadCount: isCleared ? 0 : (data.unreadCounts?.[currentUserUid] || 0),
           });
         }
       });
@@ -177,19 +186,19 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
       </div>
 
       {/* Main content: Chats + Users list */}
-      <div className="px-4 pt-4 pb-24 flex flex-col gap-2">
+      <div className="px-4 pt-4 pb-24 flex flex-col gap-1">
         {/* Fixed chats */}
         {fixedChats.map((chat) => (
           <div
             key={chat.id}
             onClick={() => handleOpenFixedChat(chat)}
-            className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+            className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity"
           >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-              <Image src={chat.image} alt={chat.name} width={40} height={40} className="object-cover" />
+            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <Image src={chat.image} alt={chat.name} width={56} height={56} className="object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-800 text-sm">{chat.name}</h3>
+              <h3 className="font-semibold text-gray-800 text-base">{chat.name}</h3>
             </div>
           </div>
         ))}
@@ -199,25 +208,25 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
           <div
             key={chat.chatId}
             onClick={() => handleOpenDynamicChat(chat)}
-            className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+            className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity"
           >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
               <Image
                 src={chat.otherUser.photo || '/default-avatar.png'}
                 alt={chat.otherUser.name}
-                width={40}
-                height={40}
+                width={56}
+                height={56}
                 className="object-cover"
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-800 text-sm">{chat.otherUser.name}</h3>
-              <p className="text-xs text-gray-500 truncate">{chat.lastMessage}</p>
+              <h3 className="font-semibold text-gray-800 text-base">{chat.otherUser.name}</h3>
+              <p className="text-sm text-gray-500 truncate">{chat.lastMessage}</p>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <span className="text-[10px] text-gray-400">{formatTime(chat.lastTimestamp)}</span>
+              <span className="text-xs text-gray-400">{formatTime(chat.lastTimestamp)}</span>
               {chat.unreadCount > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[22px] h-[22px] flex items-center justify-center px-1.5">
                   {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
                 </span>
               )}
@@ -226,26 +235,32 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
         ))}
 
         {/* Users section (no heading) */}
-        <div className="mt-6">
-          <div className="flex flex-col gap-2">
-            {users.map((user) => (
-              <div
-                key={user.uid}
-                onClick={() => handleSelectUser(user)}
-                className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  <Image
-                    src={user.photo || '/default-avatar.png'}
-                    alt={user.name}
-                    width={40}
-                    height={40}
-                    className="object-cover"
-                  />
+        <div className="mt-4">
+          <div className="flex flex-col gap-1">
+            {(() => {
+              const activeChatUids = new Set([
+                ...fixedChats.map(c => c.uid),
+                ...dynamicChats.map(c => c.otherUser.uid)
+              ]);
+              return users.filter(user => !activeChatUids.has(user.uid)).map((user) => (
+                <div
+                  key={user.uid}
+                  onClick={() => handleSelectUser(user)}
+                  className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity"
+                >
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <Image
+                      src={user.photo || '/default-avatar.png'}
+                      alt={user.name}
+                      width={56}
+                      height={56}
+                      className="object-cover"
+                    />
+                  </div>
+                  <span className="font-medium text-gray-800 text-base">{user.name}</span>
                 </div>
-                <span className="font-medium text-gray-800 text-sm">{user.name}</span>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </div>
       </div>
@@ -256,9 +271,10 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
           currentUser={getCurrentUserData()}
           targetUser={activeChat}
           onClose={handleCloseChat}
+          onJoinRoom={onJoinRoom}
           sharedRoomData={sharedRoomData}
         />
       )}
     </div>
   );
-            }
+}
