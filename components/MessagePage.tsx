@@ -55,6 +55,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
 
   const [dynamicChats, setDynamicChats] = useState<ChatPreview[]>([]);
   const [activeChat, setActiveChat] = useState<{ uid: string; name: string; photo: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const getCurrentUserData = () => {
     const uid = typeof window !== 'undefined' ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A' : 'N/A';
@@ -66,7 +67,10 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
   const currentUserUid = getCurrentUserData().uid;
 
   useEffect(() => {
-    if (!currentUserUid || currentUserUid === 'N/A') return;
+    if (!currentUserUid || currentUserUid === 'N/A') {
+      setIsLoading(false);
+      return;
+    }
 
     const conversationsRef = collection(db, 'conversations');
     const q = query(
@@ -76,62 +80,73 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const chats: ChatPreview[] = [];
-      const seenUids = new Set();
+      try {
+        const chats: ChatPreview[] = [];
+        const seenUids = new Set<string>();
 
-      for (const docSnapshot of snapshot.docs) {
-        const data = docSnapshot.data();
-        const participantsData = data.participantsData || [];
-        let otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
+        for (const docSnapshot of snapshot.docs) {
+          const data = docSnapshot.data();
+          const participantsData = data.participantsData || [];
+          let otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
 
-        // Get lastTimestamp
-        const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" 
-          ? data.lastTimestamp.toMillis() 
-          : (data.lastTimestamp || 0);
+          // Get lastTimestamp
+          const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function"
+            ? data.lastTimestamp.toMillis()
+            : (data.lastTimestamp || 0);
 
-        // 🔥 FIX: Skip if no messages (lastTimestamp is 0)
-        if (!otherUser || seenUids.has(otherUser.uid) || lastTimestamp === 0) {
-          continue;
-        }
-
-        // Filter out if cleared
-        const clearedAt = data.clearedAtRef?.[currentUserUid] || 0;
-        if (clearedAt > lastTimestamp) {
-          continue;
-        }
-
-        seenUids.add(otherUser.uid);
-
-        // 🔥 FIX: Fetch fresh user data from users collection
-        try {
-          const userDocRef = doc(db, 'users', otherUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            otherUser = {
-              uid: otherUser.uid,
-              name: userData.name || userData.displayName || otherUser.name || 'User',
-              photo: userData.photoURL || userData.photo || userData.image || otherUser.photo || '',
-            };
+          // Skip if no messages or no other user
+          if (!otherUser || seenUids.has(otherUser.uid) || lastTimestamp === 0) {
+            continue;
           }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
+
+          // Filter out if cleared
+          const clearedAt = data.clearedAtRef?.[currentUserUid] || 0;
+          if (clearedAt > lastTimestamp) {
+            continue;
+          }
+
+          seenUids.add(otherUser.uid);
+
+          // Fetch fresh user data from users collection
+          try {
+            const userDocRef = doc(db, 'users', otherUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+              const userData = userDocSnap.data();
+              otherUser = {
+                uid: otherUser.uid,
+                name: userData.name || userData.displayName || otherUser.name || 'User',
+                photo: userData.photoURL || userData.photo || userData.image || otherUser.photo || '',
+              };
+            }
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+          }
+
+          chats.push({
+            chatId: docSnapshot.id,
+            otherUser: {
+              uid: otherUser.uid,
+              name: otherUser.name,
+              photo: otherUser.photo || '',
+            },
+            lastMessage: data.lastMessage || '',
+            lastTimestamp: lastTimestamp,
+            unreadCount: data.unreadCounts?.[currentUserUid] || 0,
+          });
         }
 
-        chats.push({
-          chatId: docSnapshot.id,
-          otherUser: {
-            uid: otherUser.uid,
-            name: otherUser.name,
-            photo: otherUser.photo || '',
-          },
-          lastMessage: data.lastMessage || '',
-          lastTimestamp: lastTimestamp,
-          unreadCount: data.unreadCounts?.[currentUserUid] || 0,
-        });
+        // Sort by timestamp
+        chats.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+        setDynamicChats(chats);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error processing conversations:', error);
+        setIsLoading(false);
       }
-
-      setDynamicChats(chats);
+    }, (error) => {
+      console.error('Firestore listener error:', error);
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -204,8 +219,15 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           </div>
         ))}
 
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+
         {/* Dynamic chats with unread badges - ONLY users with conversations */}
-        {dynamicChats.map((chat) => (
+        {!isLoading && dynamicChats.map((chat) => (
           <div
             key={chat.chatId}
             onClick={() => handleOpenDynamicChat(chat)}
@@ -236,7 +258,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
         ))}
 
         {/* Show message if no conversations */}
-        {dynamicChats.length === 0 && (
+        {!isLoading && dynamicChats.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 text-sm">No conversations yet</p>
           </div>
@@ -255,4 +277,4 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
       )}
     </div>
   );
-}
+                                                        }
