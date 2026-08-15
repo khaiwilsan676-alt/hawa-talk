@@ -62,6 +62,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastSentInviteRoomIdRef = useRef<string | null>(null);
 
   const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid);
 
@@ -142,7 +143,8 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
 
   // Auto-send room invite if sharedRoomData exists
   useEffect(() => {
-    if (sharedRoomData && connected) {
+    if (sharedRoomData && connected && lastSentInviteRoomIdRef.current !== sharedRoomData.roomId) {
+      lastSentInviteRoomIdRef.current = sharedRoomData.roomId;
       sendRoomInvite(sharedRoomData);
     }
   }, [sharedRoomData, connected]);
