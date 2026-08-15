@@ -89,27 +89,49 @@ export const getOrCreateAccountNumber = (uid: string) => {
 const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
   try {
     let finalAccountId = ""
+    let existingName = ""
+    let existingImage = ""
+    let existingBio = ""
 
-    if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
-      finalAccountId = SPECIAL_ACCOUNTS[uid] || uid
-    } else {
-      const userDocRef = doc(db, "users", uid)
-      const userDocSnap = await getDoc(userDocRef)
+    const userDocRef = doc(db, "users", uid)
+    const userDocSnap = await getDoc(userDocRef)
 
-      if (userDocSnap.exists() && userDocSnap.data().accountId) {
-        finalAccountId = String(userDocSnap.data().accountId)
-      } else {
-        finalAccountId = getOrCreateAccountNumber(uid)
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data()
+      if (data.accountId) {
+        finalAccountId = String(data.accountId)
+      }
+      if (data.name) {
+        existingName = data.name
+      }
+      if (data.image) {
+        existingImage = data.image
+      }
+      if (data.bio) {
+        existingBio = data.bio
       }
     }
 
-    const userData = {
+    if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
+      finalAccountId = SPECIAL_ACCOUNTS[uid] || uid
+    } else if (!finalAccountId) {
+      finalAccountId = getOrCreateAccountNumber(uid)
+    }
+
+    const finalName = existingName || name || email.split('@')[0] || 'User'
+    const finalImage = existingImage || photo || '/default-avatar.png'
+
+    const userData: any = {
       id: uid,
-      name: name || email.split('@')[0] || 'User',
-      country: '🇮🇳',
-      image: photo || '/default-avatar.png',
+      name: finalName,
+      country: userDocSnap.exists() && userDocSnap.data().country ? userDocSnap.data().country : '🇮🇳',
+      image: finalImage,
       accountId: finalAccountId,
-      createdAt: Date.now()
+      createdAt: userDocSnap.exists() && userDocSnap.data().createdAt ? userDocSnap.data().createdAt : Date.now()
+    }
+
+    if (existingBio) {
+      userData.bio = existingBio;
     }
 
     await setDoc(doc(db, "users", uid), userData, { merge: true })
@@ -119,10 +141,10 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
 
     console.log("User synced successfully with ID:", finalAccountId)
-    return finalAccountId
+    return { accountId: finalAccountId, name: finalName, image: finalImage }
   } catch (err) {
     console.error("Error syncing user to Firestore:", err)
-    return getOrCreateAccountNumber(uid)
+    return { accountId: getOrCreateAccountNumber(uid), name: name || email.split('@')[0] || 'User', image: photo || '/default-avatar.png' }
   }
 }
 
@@ -565,13 +587,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const userPhoto = user.photoURL || "/default-avatar.png"
       const userUID = user.uid
 
-      const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
+      const syncResult = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
 
-      localStorage.setItem("userName", userName);
+      localStorage.setItem("userName", syncResult.name);
       localStorage.setItem("userEmail", userEmail);
-      localStorage.setItem("userPhoto", userPhoto);
+      localStorage.setItem("userPhoto", syncResult.image);
       localStorage.setItem("userUID", userUID);
-      localStorage.setItem("accountNumber", accNum);
+      localStorage.setItem("accountNumber", syncResult.accountId);
 
       await processLoginSuccess(user);
     } catch (error: any) {
@@ -635,7 +657,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         const userName = `${officialCred.type.toUpperCase()} - ${officialCred.id}`
         const officialID = officialCred.id
 
-        await syncUserToFirestore(officialID, userName, officialCred.email, "")
+        const syncResult = await syncUserToFirestore(officialID, userName, officialCred.email, "")
 
         const userData = {
           id: officialID,
@@ -644,12 +666,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           isOfficial: true
         };
 
-        localStorage.setItem("userName", userName);
+        localStorage.setItem("userName", syncResult.name);
         localStorage.setItem("userEmail", officialCred.email);
         localStorage.setItem("userUID", officialID);
-        localStorage.setItem("accountNumber", officialID);
+        localStorage.setItem("accountNumber", syncResult.accountId);
         localStorage.setItem("userType", officialCred.type);
-        localStorage.setItem("userPhoto", "");
+        localStorage.setItem("userPhoto", syncResult.image);
 
         const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
         loggedInSessions[officialID] = true
@@ -672,13 +694,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const userPhoto = user.photoURL || "/default-avatar.png"
       const userUID = user.uid
 
-      const accNum = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
+      const syncResult = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
 
-      localStorage.setItem("userName", userName);
+      localStorage.setItem("userName", syncResult.name);
       localStorage.setItem("userEmail", userEmail);
-      localStorage.setItem("userPhoto", userPhoto);
+      localStorage.setItem("userPhoto", syncResult.image);
       localStorage.setItem("userUID", userUID);
-      localStorage.setItem("accountNumber", accNum);
+      localStorage.setItem("accountNumber", syncResult.accountId);
 
       await processLoginSuccess(user);
     } catch (error: any) {
