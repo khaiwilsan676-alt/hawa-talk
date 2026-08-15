@@ -8,7 +8,7 @@ import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import { db } from "../src/lib/firebase";
-import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection, writeBatch, deleteField, getDocs } from "firebase/firestore";
 
 declare global {
   interface Window {
@@ -639,7 +639,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
       const updatedSeats = seats.map(s => {
         if (s.isOccupied && s.user?.accountId === userAccountId && s.number !== selectedSeat) {
-          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
+          return { ...s, isOccupied: false, user: null as any, isSpeaking: false, isMuted: false };
         }
         if (s.number === selectedSeat) {
           return {
@@ -681,7 +681,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     try {
       const updatedSeats = seats.map(s => {
         if (s.number === selectedSeat && s.user?.accountId === userAccountId) {
-          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
+          return { ...s, isOccupied: false, user: null as any, isSpeaking: false, isMuted: false };
         }
         return s;
       });
@@ -877,9 +877,28 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji);
 
-  const handleClearChat = () => {
-    clearedAtRef.current = Date.now();
-    setMessages([]);
+  const handleClearChat = async () => {
+    if (!db) return;
+
+    // Hard delete all messages from firestore inside the room
+    try {
+      const messagesRef = collection(db, messagesCollection);
+      const q = query(messagesRef);
+      const querySnapshot = await getDocs(q);
+
+      const batch = writeBatch(db);
+      querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      // Also clear local messages immediately
+      setMessages([]);
+      clearedAtRef.current = Date.now();
+    } catch (error) {
+      console.error("Error clearing chat from Firestore:", error);
+    }
   };
 
   const liveUserCount = roomUsers.length;
