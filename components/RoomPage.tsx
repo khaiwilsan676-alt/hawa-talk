@@ -389,6 +389,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   useEffect(() => {
     setMessages([]);
     joinMessageSentRef.current = false;
+    joinedAtRef.current = Date.now();
+    clearedAtRef.current = null;
   }, [roomId]);
 
   useEffect(() => {
@@ -403,18 +405,24 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
     const messagesQuery = query(collection(db, messagesCollection), orderBy('timestamp', 'asc'));
     const unsubMessages = onSnapshot(messagesQuery, (snapshot) => {
-      const msgs = snapshot.docs.map(d => {
-        const data = d.data();
-        return {
-          id: d.id,
-          text: data.text || '',
-          sender: data.sender || 'Unknown',
-          senderImage: data.senderImage || '/default-avatar.png',
-          timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : data.timestamp || Date.now(),
-          type: data.type || 'message',
-          imageUrl: data.imageUrl || undefined
-        } as Message;
-      });
+      const msgs = snapshot.docs
+        .map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            text: data.text || '',
+            sender: data.sender || 'Unknown',
+            senderImage: data.senderImage || '/default-avatar.png',
+            timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : data.timestamp || Date.now(),
+            type: data.type || 'message',
+            imageUrl: data.imageUrl || undefined
+          } as Message;
+        })
+        .filter(msg => {
+          if (clearedAtRef.current && msg.timestamp <= clearedAtRef.current) return false;
+          if (msg.timestamp < joinedAtRef.current) return false;
+          return true;
+        });
       setMessages(msgs);
     }, (error) => {
       console.error("Messages listener error:", error);
@@ -499,6 +507,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   };
 
   const joinMessageSentRef = useRef(false);
+  const joinedAtRef = useRef(Date.now());
+  const clearedAtRef = useRef<number | null>(null);
   useEffect(() => {
     if (joinMessageSentRef.current || userAccountId === "guest" || !currentUser.name) return;
     joinMessageSentRef.current = true;
@@ -859,6 +869,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji);
 
   const handleClearChat = () => {
+    clearedAtRef.current = Date.now();
     setMessages([]);
   };
 
@@ -1588,7 +1599,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
           onMessage={() => console.log('Message clicked for', profileUser.accountId)}
           onCopyId={() => console.log('Copy ID clicked')}
-          onMention={(username) => {
+          onMention={(username?: string) => {
             setShowUserProfile(false);
             setShowChatInput(true);
             setMessage(`@${username} `);
@@ -1673,7 +1684,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               </svg>
             </button>
             <div className="h-full overflow-y-auto">
-              <MessagePage />
+              <MessagePage sharedRoomData={{ roomId: roomId, roomName: roomOwner.name, roomImage: roomOwner.image }} />
             </div>
           </div>
         </div>
