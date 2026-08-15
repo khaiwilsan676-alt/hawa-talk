@@ -1842,20 +1842,37 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       {/* Music Controller - Minimized (Draggable, with close drop target) */}
       {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
         <>
-          {/* Red drop target (only visible while dragging) */}
-          {isDraggingMusicIcon && (
-            <div
-              ref={dropTargetRef}
-              style={dropTargetStyle}
-              className="select-none"
-            >
-              <svg viewBox="0 0 24 24" className="w-10 h-10 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </div>
-          )}
-
+      {/* Red drop target (only visible while dragging) */}
+{isDraggingMusicIcon && (
+  <div
+    ref={dropTargetRef}
+    style={{
+      position: 'fixed',
+      bottom: '0px',           // Bottom se chipka hua
+      right: '0px',            // Right se chipka hua
+      width: '60px',           // Thoda bada
+      height: '60px',
+      borderRadius: '50%',
+      backgroundColor: 'rgba(220, 38, 38, 0.3)',  // Halka red
+      border: '2px solid rgba(239, 68, 68, 0.6)', // Halka border
+      boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 60,
+      transition: 'transform 0.2s, background-color 0.2s',
+      transform: isOverDropTarget ? 'scale(1.15)' : 'scale(1)',
+      pointerEvents: 'none',
+      // C shape ke liye - left side ka border hatao
+      borderLeftColor: 'transparent',
+      borderBottomColor: 'transparent',
+      borderTopColor: 'transparent',
+      // Wave animation
+      animation: 'wavePulse 1.5s ease-in-out infinite',
+    }}
+    className="select-none"
+  />
+)}  
           {/* Draggable minimized icon */}
           <div
             className="fixed z-[45]"
@@ -1972,6 +1989,19 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         }
         .music-minimize-icon {
           animation: rotate-slow 4s linear infinite;
+        }
+
+        <style jsx global>{`
+
+  @keyframes wavePulse {
+    0%, 100% { 
+      transform: scale(1); 
+      opacity: 0.5; 
+    }
+    50% { 
+      transform: scale(1.1); 
+      opacity: 0.8; 
+    }
         }
       `}</style>
 
