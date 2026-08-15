@@ -8,7 +8,7 @@ import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import { db } from "../src/lib/firebase";
-import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection, writeBatch } from "firebase/firestore";
 
 declare global {
   interface Window {
@@ -120,7 +120,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
   const isRoomOwner = userAccountId === roomOwnerId;
 
-  // Message state
+  // Message state - FIXED: Reset messages when entering room
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [fullImageModal, setFullImageModal] = useState<string | null>(null);
@@ -382,6 +382,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const messagesCollection = `roomMessages/${roomId}/messages`;
   const seatsCollection = `roomSeats/${roomId}/seats`;
 
+  // FIXED: Clear messages when room changes
+  useEffect(() => {
+    setMessages([]);
+    joinMessageSentRef.current = false;
+  }, [roomId]);
+
   useEffect(() => {
     if (!db) return;
 
@@ -417,6 +423,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     };
   }, [roomId]);
 
+  // FIXED: Seat syncing with proper user data
   useEffect(() => {
     if (!db) return;
 
@@ -424,13 +431,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       const seatMap = new Map<number, Seat>();
       snapshot.docs.forEach(doc => {
         const data = doc.data() as Seat;
+        // FIXED: Ensure user data is properly preserved
         seatMap.set(data.number, {
           number: data.number,
           isOccupied: data.isOccupied || false,
           isLocked: data.isLocked || false,
           isMuted: data.isMuted || false,
           isSpeaking: data.isSpeaking || false,
-          user: data.user
+          user: data.user || undefined
         });
       });
 
@@ -494,7 +502,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (joinMessageSentRef.current || userAccountId === "guest" || !currentUser.name) return;
     joinMessageSentRef.current = true;
     sendMessageToFirestore('Enter the Room', undefined, 'join');
-  }, [userAccountId, currentUser.name]);
+  }, [userAccountId, currentUser.name, roomId]);
 
   useEffect(() => {
     if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -593,6 +601,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
+  // FIXED: Take seat with proper user data
   const handleTakeSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -613,8 +622,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         return; 
       }
 
+      // FIXED: Clear user from old seat first
       const updatedSeats = seats.map(s => {
-        if (s.isOccupied && s.user?.accountId === userAccountId) {
+        if (s.isOccupied && s.user?.accountId === userAccountId && s.number !== selectedSeat) {
           return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
         }
         if (s.number === selectedSeat) {
@@ -719,6 +729,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     
     setSeats(updatedSeats);
     updatedSeats.forEach(seat => updateSeatInFirestore(seat));
+    setShowSeatSheet(false);
+    setSelectedSeat(null);
   };
 
   const handleToggleLock = async (e?: React.MouseEvent) => {
@@ -825,11 +837,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
+  // FIXED: Clear messages on exit
   const handleExit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setShowExitMenu(false);
     localStorage.removeItem('keptRoom');
     if (jitsiApiRef.current) jitsiApiRef.current.dispose();
+    // Clear all messages before leaving
+    setMessages([]);
     if (onBack) onBack();
     if (onClose) onClose();
   };
@@ -1491,19 +1506,23 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* Seat Actions Sheet */}
+      {/* Seat Actions Sheet - FIXED: Added Mute option */}
       {showSeatSheet && selectedSeat !== null && (
         <div className="absolute inset-0 z-30 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
-          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[20vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[25vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="space-y-2">
               {!isSelectedSeatTakenByOther && !isSelectedSeatMySeat && (
                 <button onClick={handleTakeSeat} disabled={selectedSeatData?.isLocked && !selectedSeatData?.isOccupied} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Take Mic</button>
               )}
               {isSelectedSeatMySeat && <button onClick={handleLeaveSeat} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Leave Seat</button>}
+              {isSelectedSeatMySeat && (
+                <button onClick={handleToggleMute} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                  {selectedSeatData?.isMuted ? 'Unmute' : 'Mute'}
+                </button>
+              )}
               <button onClick={handleToggleLock} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">{selectedSeatData?.isLocked ? 'Unlock Mic' : 'Lock Mic'}</button>
               <button onClick={handleInvite} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Invite</button>
-              {isSelectedSeatMySeat && <button onClick={handleToggleMute} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">{selectedSeatData?.isMuted ? 'Unmute' : 'Mute'}</button>}
             </div>
           </div>
         </div>
@@ -1566,7 +1585,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         />
       )}
 
-      {/* Music Controller - Full Size */}
+      {/* Music Controller - Full Size (Black Card) */}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
         <div 
           className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
@@ -1574,20 +1593,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           onClick={(e) => e.stopPropagation()}
         >
           <div 
-            className="music-controller-bg relative rounded-2xl overflow-hidden"
+            className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
             style={{
-              backgroundImage: 'url(/IMG_20260815_121535.png)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              padding: '20px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(10px)',
+              padding: '16px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}
           >
             <button
               onClick={handleCloseMusicController}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors cursor-pointer z-10"
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
               aria-label="Close music controller"
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
@@ -1596,24 +1610,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               </svg>
             </button>
 
-            <button
-              onClick={handleMinimizeMusicController}
-              className="absolute top-2 left-2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors cursor-pointer z-10"
-              aria-label="Minimize music controller"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
-
-            <div className="text-center mb-3 mt-4">
-              <p className="text-white text-sm font-semibold truncate px-8 drop-shadow-lg">
+            <div className="text-center mb-3 mt-2">
+              <p className="text-white text-sm font-semibold truncate px-6">
                 {currentTrack.name}
               </p>
             </div>
 
-            <div className="flex items-center gap-3 mb-4 px-4">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0 drop-shadow-lg">
+            <div className="flex items-center gap-3 mb-4 px-2">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0">
                 <path d="M3 9v6h4l5 5V4L7 9H3z" />
                 <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
                 <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
@@ -1627,7 +1631,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                 onChange={handleVolumeChange}
                 className="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer music-volume-slider"
                 style={{
-                  background: `linear-gradient(to right, rgba(255,255,255,0.9) ${musicVolume * 100}%, rgba(255,255,255,0.2) ${musicVolume * 100}%)`,
+                  background: `linear-gradient(to right, white ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
                 }}
               />
             </div>
@@ -1635,26 +1639,26 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             <div className="flex items-center justify-center gap-8">
               <button
                 onClick={handlePrevTrack}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Previous track"
               >
-                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white drop-shadow-lg">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
                   <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
                 </svg>
               </button>
 
               <button
                 onClick={handleToggleMusicPlay}
-                className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors cursor-pointer"
+                className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
                 aria-label={isMusicPlaying ? 'Pause' : 'Play'}
               >
                 {isMusicPlaying ? (
-                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white drop-shadow-lg">
+                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white">
                     <rect x="6" y="4" width="4" height="16" rx="1" />
                     <rect x="14" y="4" width="4" height="16" rx="1" />
                   </svg>
                 ) : (
-                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white drop-shadow-lg">
+                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white">
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>
                 )}
@@ -1662,10 +1666,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
               <button
                 onClick={handleNextTrack}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Next track"
               >
-                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white drop-shadow-lg">
+                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
                   <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
                 </svg>
               </button>
@@ -1674,88 +1678,69 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* Music Controller - Minimized Icon */}
+      {/* Music Controller - Minimized Recorder Icon */}
       {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
         <div 
           className="fixed z-[45]"
           style={{
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)',
+            bottom: 'calc(10vh + 70px)',
             right: '20px',
           }}
           onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={handleMaximizeMusicController}
-            className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
+            className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105 bg-black"
             style={{
-              width: '56px',
-              height: '56px',
-              backgroundImage: 'url(/IMG_20260815_121535.png)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              border: '2px solid rgba(255,255,255,0.3)',
+              width: '48px',
+              height: '48px',
+              border: '2px solid rgba(255,255,255,0.2)',
             }}
             aria-label="Open music controller"
           >
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white drop-shadow-lg">
-                <path d="M9 18V5l12-2v13" />
-                <circle cx="6" cy="18" r="3" />
-                <circle cx="18" cy="16" r="3" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
+                <path d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9zm0 2a7 7 0 0 1 7 7 7 7 0 0 1-7 7 7 7 0 0 1-7-7 7 7 0 0 1 7-7zm0 3a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4zm0 2a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2z" />
               </svg>
             </div>
+            {isMusicPlaying && (
+              <div className="absolute bottom-1 right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-black" />
+            )}
           </button>
         </div>
       )}
 
-      {/* WebShader for white color removal */}
+      {/* Volume slider styles */}
       <style jsx global>{`
-        .music-controller-bg {
-          background-image: url('/IMG_20260815_121535.png');
-          background-blend-mode: multiply;
-          background-color: rgba(255, 255, 255, 0);
-          filter: brightness(1.2) contrast(1.15) saturate(1.1);
-        }
-        
-        .music-controller-bg::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: inherit;
-          mix-blend-mode: multiply;
-          filter: brightness(1.5) contrast(1.2);
-        }
-        
         .music-volume-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background: white;
           cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-          border: 2px solid rgba(255,255,255,0.8);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         .music-volume-slider::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background: white;
           cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-          border: 2px solid rgba(255,255,255,0.8);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          border: none;
         }
         
         .music-volume-slider::-webkit-slider-runnable-track {
-          height: 6px;
-          border-radius: 3px;
+          height: 4px;
+          border-radius: 2px;
         }
         
         .music-volume-slider::-moz-range-track {
-          height: 6px;
-          border-radius: 3px;
+          height: 4px;
+          border-radius: 2px;
         }
       `}</style>
 
