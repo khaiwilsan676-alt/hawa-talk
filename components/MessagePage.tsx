@@ -44,6 +44,7 @@ interface AppUser {
 
 interface MessagePageProps {
   onChatOpen?: (open: boolean) => void;
+  onJoinRoom?: (roomId: string) => void;
   sharedRoomData?: {
     roomId: string;
     roomName: string;
@@ -51,7 +52,7 @@ interface MessagePageProps {
   } | null;
 }
 
-export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageProps) {
+export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: MessagePageProps) {
   const [fixedChats] = useState<FixedChat[]>([
     { id: 'hawa-team', name: 'Hurry Team', image: '/logo.png', uid: 'hurry_team_official', isFixed: true },
     { id: 'hawa-system', name: 'Hurry System', image: '/1784465161302~2.jpg', uid: 'hurry_system_official', isFixed: true }
@@ -270,6 +271,7 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
           currentUser={getCurrentUserData()}
           targetUser={activeChat}
           onClose={handleCloseChat}
+          onJoinRoom={onJoinRoom}
           sharedRoomData={sharedRoomData}
         />
       )}
