@@ -1,0 +1,11 @@
+
+> my-project@0.1.0 start /app
+> next start
+
+▲ Next.js 16.2.6
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 200ms
+Error: "next start" does not work with "output: export" configuration. Use "npx serve@latest out" instead.
+    at ignore-listed frames
+ ELIFECYCLE  Command failed with exit code 1.

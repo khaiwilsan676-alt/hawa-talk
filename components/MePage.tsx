@@ -6,6 +6,7 @@ import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
+import Dailycheckin from './Dailycheckin'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
@@ -600,15 +601,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Recharge Event Floating Card */}
-      <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">
-        <div className="text-center text-sm">
-          <div className="text-2xl mb-1"></div>
-          <div className="text-xs font-bold text-blue-800">Recharge</div>
-          <div className="text-xs font-bold text-blue-800">Event</div>
-        </div>
-      </div>
+      <Dailycheckin />
     </div>
   )
-    }
+}
 
