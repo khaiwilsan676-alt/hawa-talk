@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Send, ImageIcon, MoreHorizontal, LogIn, Trash2, Flag, Ban, X, Copy, Check } from 'lucide-react';
 import {
   collection,
@@ -65,10 +65,12 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const [showFullImage, setShowFullImage] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastSentInviteRoomIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid);
 
@@ -89,60 +91,86 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       } else {
         setOnline(false);
       }
+    }, (error) => {
+      console.error('Presence listener error:', error);
+      setOnline(false);
     });
 
     return () => unsubscribe();
   }, [targetUser.uid, isFixedChat]);
 
-  // Firestore listener for messages
+  // Firestore listener for messages - Fixed version
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    let isSubscribed = true;
     let unsubMessages: (() => void) | null = null;
+    let unsubChatDoc: (() => void) | null = null;
 
-    const chatDocRef = doc(db, 'chats', chatId);
-    const unsubChatDoc = onSnapshot(chatDocRef, (docSnap) => {
-      const chatData = docSnap.data();
-      const clearedAt = chatData?.clearedAtRef?.[currentUser.uid] || 0;
+    const setupListeners = () => {
+      const chatDocRef = doc(db, 'chats', chatId);
+      
+      unsubChatDoc = onSnapshot(chatDocRef, (docSnap) => {
+        if (!isSubscribed) return;
+        
+        const chatData = docSnap.data();
+        const clearedAt = chatData?.clearedAtRef?.[currentUser.uid] || 0;
 
-      const messagesRef = collection(db, 'chats', chatId, 'messages');
-      const q = query(messagesRef, orderBy('timestamp', 'asc'));
+        const messagesRef = collection(db, 'chats', chatId, 'messages');
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
+        // Clean up previous messages listener
+        if (unsubMessages) {
+          unsubMessages();
+        }
+
+        unsubMessages = onSnapshot(
+          q,
+          (snapshot) => {
+            if (!isSubscribed) return;
+            
+            const loadedMessages: Message[] = snapshot.docs.map((doc) => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                text: data.text || '',
+                sender: data.senderUid === currentUser.uid ? 'me' : 'other',
+                timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
+                type: data.type || 'message',
+                imageUrl: data.imageUrl || undefined,
+                roomData: data.roomData || undefined,
+                replyTo: data.replyTo || null,
+              };
+            }).filter(msg => msg.timestamp > clearedAt);
+
+            setMessages(loadedMessages);
+            setConnected(true);
+          },
+          (error) => {
+            console.error('Messages listener error:', error);
+            if (isSubscribed) {
+              setConnected(false);
+            }
+          }
+        );
+      }, (error) => {
+        console.error('Chat doc listener error:', error);
+        if (isSubscribed) {
+          setConnected(false);
+        }
+      });
+    };
+
+    setupListeners();
+
+    // Cleanup function
+    return () => {
+      isSubscribed = false;
       if (unsubMessages) {
         unsubMessages();
       }
-
-      unsubMessages = onSnapshot(
-        q,
-        (snapshot) => {
-          const loadedMessages: Message[] = snapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              text: data.text || '',
-              sender: data.senderUid === currentUser.uid ? 'me' : 'other',
-              timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
-              type: data.type || 'message',
-              imageUrl: data.imageUrl || undefined,
-              roomData: data.roomData || undefined,
-              replyTo: data.replyTo || null,
-            };
-          }).filter(msg => msg.timestamp > clearedAt);
-
-          setMessages(loadedMessages);
-          setConnected(true);
-        },
-        (error) => {
-          console.error('Firestore listener error:', error);
-          setConnected(false);
-        }
-      );
-    });
-
-    return () => {
-      unsubChatDoc();
-      if (unsubMessages) {
-        unsubMessages();
+      if (unsubChatDoc) {
+        unsubChatDoc();
       }
     };
   }, [chatId, currentUser.uid]);
@@ -155,7 +183,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   }, [sharedRoomData, connected, isFixedChat]);
 
-  const updateConversation = async (
+  const updateConversation = useCallback(async (
     chatId: string,
     senderUid: string,
     targetUser: { uid: string; name: string; photo: string },
@@ -199,7 +227,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     } catch (error) {
       console.error('Error updating conversation:', error);
     }
-  };
+  }, [currentUser]);
 
   const sendRoomInvite = async (roomData: { roomId: string; roomName: string; roomImage: string }) => {
     if (isFixedChat) {
@@ -228,7 +256,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isSending) return;
     
     if (isFixedChat) {
       alert('You cannot send messages to this official account');
@@ -237,6 +265,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     
     const messageText = newMessage.trim();
     setNewMessage('');
+    setIsSending(true);
 
     try {
       const messagesRef = collection(db, 'chats', chatId, 'messages');
@@ -257,6 +286,9 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     } catch (error) {
       console.error('Error sending message:', error);
       setNewMessage(messageText);
+      alert('Failed to send message. Please try again.');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -267,6 +299,9 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         alert('You cannot send images to this official account');
         return;
       }
+      
+      if (isSending) return;
+      setIsSending(true);
       
       try {
         const compressedBase64 = await compressImage(file, 800, 800, 0.7);
@@ -284,6 +319,11 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       } catch (error) {
         console.error('Error sending image:', error);
         alert('Failed to send image');
+      } finally {
+        setIsSending(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     }
   };
@@ -359,6 +399,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       setShowOptions(false);
     } catch (error) {
       console.error('Error clearing chat:', error);
+      alert('Failed to clear chat');
     }
   };
 
@@ -375,6 +416,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       setShowOptions(false);
     } catch (error) {
       console.error('Error deleting messages:', error);
+      alert('Failed to delete messages');
     }
   };
 
@@ -391,6 +433,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       onClose();
     } catch (error) {
       console.error('Error blocking user:', error);
+      alert('Failed to block user');
     }
   };
 
@@ -408,6 +451,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       alert('User reported');
     } catch (error) {
       console.error('Error reporting user:', error);
+      alert('Failed to report user');
     }
   };
 
@@ -827,6 +871,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
           <button 
             onClick={() => fileInputRef.current?.click()}
             className="text-gray-500 hover:text-gray-700"
+            disabled={isSending}
           >
             <ImageIcon size={24} />
           </button>
@@ -837,10 +882,11 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             className="flex-1 bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-300"
+            disabled={isSending}
           />
           <button
             onClick={handleSend}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || isSending}
             className="text-blue-500 disabled:text-gray-300 hover:text-blue-600"
           >
             <Send size={24} />
@@ -922,16 +968,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
           />
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-        .animate-slide-up {
-          animation: slideUp 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
                       }
