@@ -45,6 +45,8 @@ interface AppUser {
 interface MessagePageProps {
   onChatOpen?: (open: boolean) => void;
   onJoinRoom?: (roomId: string) => void;
+  initialChat?: { uid: string; name: string; photo: string } | null;
+  onClearInitialChat?: () => void;
   sharedRoomData?: {
     roomId: string;
     roomName: string;
@@ -52,7 +54,7 @@ interface MessagePageProps {
   } | null;
 }
 
-export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: MessagePageProps) {
+export default function MessagePage({ onChatOpen, onJoinRoom, initialChat, onClearInitialChat, sharedRoomData }: MessagePageProps) {
   const [fixedChats] = useState<FixedChat[]>([
     { id: 'hawa-team', name: 'Hurry Team', image: '/logo.png', uid: 'hurry_team_official', isFixed: true },
     { id: 'hawa-system', name: 'Hurry System', image: '/1784465161302~2.jpg', uid: 'hurry_system_official', isFixed: true }
@@ -61,6 +63,13 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
   const [dynamicChats, setDynamicChats] = useState<ChatPreview[]>([]);
   const [activeChat, setActiveChat] = useState<{ uid: string; name: string; photo: string } | null>(null);
   const [users, setUsers] = useState<AppUser[]>([]);
+
+  useEffect(() => {
+    if (initialChat) {
+      setActiveChat(initialChat);
+      if (onClearInitialChat) onClearInitialChat();
+    }
+  }, [initialChat, onClearInitialChat]);
 
   const getCurrentUserData = () => {
     const uid = typeof window !== 'undefined' ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A' : 'N/A';

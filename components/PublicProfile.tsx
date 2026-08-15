@@ -16,9 +16,6 @@ import {
 import { db } from '../src/lib/firebase'
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 
-// Import the WebRTC ChatScreen component
-import ChatScreen from './ChatScreen' // adjust path if necessary
-
 export interface TargetUser {
   id?: string
   uid?: string
@@ -41,6 +38,7 @@ export interface TargetUser {
 interface PublicProfileProps {
   onBack?: () => void
   onJoinRoom?: (roomId: string) => void
+  onOpenChat?: (user: { uid: string; name: string; photo: string }) => void
   isOtherUser?: boolean
   targetUser?: TargetUser | null
 }
@@ -169,6 +167,7 @@ const compressImage = (
 export default function PublicProfile({
   onBack,
   onJoinRoom,
+  onOpenChat,
   isOtherUser = false,
   targetUser = null,
 }: PublicProfileProps) {
@@ -213,9 +212,6 @@ export default function PublicProfile({
   const [isFollowing, setIsFollowing] = useState(false)
 
   const [showThreeDotMenu, setShowThreeDotMenu] = useState(false)
-
-  // ---- NEW: Chat screen state ----
-  const [showChat, setShowChat] = useState(false)
 
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
 
@@ -648,15 +644,6 @@ export default function PublicProfile({
     })
   }
 
-  // ---- NEW: Current user data helper for ChatScreen ----
-  const getCurrentUserData = () => {
-    const uid =
-      user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
-    const name = user.name || localStorage.getItem('userName') || 'Me'
-    const photo = user.photo || localStorage.getItem('userPhoto') || ''
-    return { uid, name, photo }
-  }
-
   return (
     <div
       className={`w-full bg-white min-h-screen text-gray-900 relative ${
@@ -921,8 +908,15 @@ export default function PublicProfile({
           </button>
 
           <button
-            // ---- NEW: Open ChatScreen instead of alert ----
-            onClick={() => setShowChat(true)}
+            onClick={() => {
+              if (onOpenChat && targetUser) {
+                onOpenChat({
+                  uid: targetUser.uid || targetUser.id || "",
+                  name: targetUser.name || "User",
+                  photo: targetUser.photo || targetUser.image || ""
+                })
+              }
+            }}
             className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#1dc4e9] to-[#1de9b6] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-cyan-200"
           >
             <MessageCircle className="w-6 h-6 fill-white stroke-none" />
@@ -1192,20 +1186,6 @@ export default function PublicProfile({
             </div>
           </div>
         </div>
-      )}
-
-      {/* ---- NEW: ChatScreen Overlay ---- */}
-      {isOtherUser && showChat && targetUser && (
-        <ChatScreen
-          currentUser={getCurrentUserData()}
-          targetUser={{
-            uid: targetUser.uid || targetUser.id || '',
-            name: targetUser.name || 'User',
-            photo: targetUser.photo || targetUser.image || '',
-          }}
-          onClose={() => setShowChat(false)}
-          onJoinRoom={onJoinRoom}
-        />
       )}
 
       <style jsx>{`

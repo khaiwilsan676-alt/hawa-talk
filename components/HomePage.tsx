@@ -190,6 +190,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
+  const [initialChatUser, setInitialChatUser] = useState<{ uid: string; name: string; photo: string } | null>(null)
 
   // Search Sheet State & Results
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -2108,7 +2109,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
 
         {currentPage === 'message' && (
-          <MessagePage onChatOpen={setIsChatOpen} onJoinRoom={handleJoinRoomFromChat} />
+          <MessagePage
+            onChatOpen={setIsChatOpen}
+            onJoinRoom={handleJoinRoomFromChat}
+            initialChat={initialChatUser}
+            onClearInitialChat={() => setInitialChatUser(null)}
+          />
         )}
 
         {currentPage === 'me' && (
@@ -2148,6 +2154,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <PublicProfile
             onBack={handleBackFromPublicProfile}
             onJoinRoom={handleJoinRoomFromChat}
+            onOpenChat={(user) => {
+              setInitialChatUser(user)
+              setIsPublicProfileActive(false)
+              setCurrentPage("message")
+            }}
             isOtherUser={true}
             targetUser={selectedUser ? {
               id: selectedUser.id,
