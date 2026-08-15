@@ -214,7 +214,7 @@ export default function PublicProfile({
 
   const [showThreeDotMenu, setShowThreeDotMenu] = useState(false)
 
-  // ---- NEW: Chat screen state ----
+  // Chat screen state
   const [showChat, setShowChat] = useState(false)
 
   const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
@@ -648,12 +648,15 @@ export default function PublicProfile({
     })
   }
 
-  // ---- NEW: Current user data helper for ChatScreen ----
   const getCurrentUserData = () => {
     const uid =
-      user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
-    const name = user.name || localStorage.getItem('userName') || 'Me'
-    const photo = user.photo || localStorage.getItem('userPhoto') || ''
+      typeof window !== 'undefined'
+        ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
+        : 'N/A'
+    const name =
+      typeof window !== 'undefined' ? localStorage.getItem('userName') || 'Me' : 'Me'
+    const photo =
+      typeof window !== 'undefined' ? localStorage.getItem('userPhoto') || '' : ''
     return { uid, name, photo }
   }
 
@@ -921,7 +924,6 @@ export default function PublicProfile({
           </button>
 
           <button
-            // ---- NEW: Open ChatScreen instead of alert ----
             onClick={() => setShowChat(true)}
             className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#1dc4e9] to-[#1de9b6] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-cyan-200"
           >
@@ -1194,18 +1196,20 @@ export default function PublicProfile({
         </div>
       )}
 
-      {/* ---- NEW: ChatScreen Overlay ---- */}
+      {/* ChatScreen Overlay - Fixed z-index */}
       {isOtherUser && showChat && targetUser && (
-        <ChatScreen
-          currentUser={getCurrentUserData()}
-          targetUser={{
-            uid: targetUser.uid || targetUser.id || '',
-            name: targetUser.name || 'User',
-            photo: targetUser.photo || targetUser.image || '',
-          }}
-          onClose={() => setShowChat(false)}
-          onJoinRoom={onJoinRoom}
-        />
+        <div className="fixed inset-0 z-[100]">
+          <ChatScreen
+            currentUser={getCurrentUserData()}
+            targetUser={{
+              uid: targetUser.uid || targetUser.id || '',
+              name: targetUser.name || 'User',
+              photo: targetUser.photo || targetUser.image || '',
+            }}
+            onClose={() => setShowChat(false)}
+            onJoinRoom={onJoinRoom}
+          />
+        </div>
       )}
 
       <style jsx>{`
@@ -1223,4 +1227,4 @@ export default function PublicProfile({
       `}</style>
     </div>
   )
-}
+                      }
