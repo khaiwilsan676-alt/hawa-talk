@@ -62,6 +62,12 @@ interface RoomUser {
   image: string;
 }
 
+interface MusicTrack {
+  id: string;
+  name: string;
+  url: string;
+}
+
 const THEME_BACKGROUNDS: { [key: string]: string } = {
   'forest-night': '/1784875884052~2.jpg',
   'mood-light': '/1784533036732~2.jpg',
@@ -80,6 +86,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [isFollowed, setIsFollowed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
+
+  // Music controller state
+  const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full' | 'minimized'>('hidden');
+  const [currentTrack, setCurrentTrack] = useState<MusicTrack | null>(null);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [musicVolume, setMusicVolume] = useState(1);
+  const [musicPlaylist, setMusicPlaylist] = useState<MusicTrack[]>([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
@@ -907,6 +922,124 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     };
   }, []);
 
+  // Music playback handlers
+  const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
+    if (playlist && playlist.length > 0) {
+      setMusicPlaylist(playlist);
+      const index = playlist.findIndex(t => t.id === track.id);
+      setCurrentTrackIndex(index >= 0 ? index : 0);
+    } else {
+      setMusicPlaylist([track]);
+      setCurrentTrackIndex(0);
+    }
+
+    if (musicAudioRef.current) {
+      musicAudioRef.current.pause();
+      musicAudioRef.current.src = track.url;
+      musicAudioRef.current.volume = musicVolume;
+      musicAudioRef.current.play();
+    } else {
+      const audio = new Audio(track.url);
+      audio.volume = musicVolume;
+      musicAudioRef.current = audio;
+      audio.play();
+      
+      audio.onended = () => {
+        handleNextTrack();
+      };
+    }
+    
+    setCurrentTrack(track);
+    setIsMusicPlaying(true);
+    setMusicControllerState('full');
+  };
+
+  const handleToggleMusicPlay = () => {
+    if (!musicAudioRef.current || !currentTrack) return;
+    if (isMusicPlaying) {
+      musicAudioRef.current.pause();
+      setIsMusicPlaying(false);
+    } else {
+      musicAudioRef.current.play();
+      setIsMusicPlaying(true);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setMusicVolume(newVolume);
+    if (musicAudioRef.current) {
+      musicAudioRef.current.volume = newVolume;
+    }
+  };
+
+  const handleNextTrack = () => {
+    if (musicPlaylist.length === 0) return;
+    const nextIndex = (currentTrackIndex + 1) % musicPlaylist.length;
+    const nextTrack = musicPlaylist[nextIndex];
+    
+    if (musicAudioRef.current) {
+      musicAudioRef.current.src = nextTrack.url;
+      musicAudioRef.current.volume = musicVolume;
+      musicAudioRef.current.play();
+    }
+    
+    setCurrentTrackIndex(nextIndex);
+    setCurrentTrack(nextTrack);
+    setIsMusicPlaying(true);
+  };
+
+  const handlePrevTrack = () => {
+    if (musicPlaylist.length === 0) return;
+    const prevIndex = (currentTrackIndex - 1 + musicPlaylist.length) % musicPlaylist.length;
+    const prevTrack = musicPlaylist[prevIndex];
+    
+    if (musicAudioRef.current) {
+      musicAudioRef.current.src = prevTrack.url;
+      musicAudioRef.current.volume = musicVolume;
+      musicAudioRef.current.play();
+    }
+    
+    setCurrentTrackIndex(prevIndex);
+    setCurrentTrack(prevTrack);
+    setIsMusicPlaying(true);
+  };
+
+  const handleCloseMusicController = () => {
+    if (musicAudioRef.current) {
+      musicAudioRef.current.pause();
+      musicAudioRef.current = null;
+    }
+    setMusicControllerState('hidden');
+    setCurrentTrack(null);
+    setIsMusicPlaying(false);
+  };
+
+  const handleMinimizeMusicController = () => {
+    setMusicControllerState('minimized');
+  };
+
+  const handleMaximizeMusicController = () => {
+    setMusicControllerState('full');
+  };
+
+  // Cleanup music on unmount
+  useEffect(() => {
+    return () => {
+      if (musicAudioRef.current) {
+        musicAudioRef.current.pause();
+        musicAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update audio volume when volume changes
+  useEffect(() => {
+    if (musicAudioRef.current) {
+      musicAudioRef.current.volume = musicVolume;
+    }
+  }, [musicVolume]);
+
   if (showSettingPage) {
     return (
       <RoomSettingPage
@@ -919,7 +1052,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={() => {
+      if (musicControllerState === 'full') {
+        setMusicControllerState('minimized');
+      }
+    }}>
       <img
         src={backgroundImage}
         alt="Room Background"
@@ -934,7 +1071,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       />
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
-      <div className="relative z-10 flex flex-col h-full px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+      <div className="relative z-10 flex flex-col h-full px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }} onClick={(e) => e.stopPropagation()}>
 
         {/* Top Header */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
@@ -1408,8 +1545,219 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           onClearChat={handleClearChat}
           publicMsgOff={publicMsgOff}
           onTogglePublicMsg={() => setPublicMsgOff(prev => !prev)}
+          onMusicPlay={(track) => {
+            const db = indexedDB.open('HurryMusicDB', 1);
+            db.onsuccess = () => {
+              const request = db.result
+                .transaction('music', 'readonly')
+                .objectStore('music')
+                .getAll();
+              
+              request.onsuccess = () => {
+                const allTracks = request.result.map((item: any) => ({
+                  id: item.id,
+                  name: item.name,
+                  url: URL.createObjectURL(item.blob)
+                }));
+                handlePlayMusic(track, allTracks);
+              };
+            };
+          }}
         />
       )}
+
+      {/* Music Controller - Full Size */}
+      {musicControllerState === 'full' && currentTrack && !showFourGride && (
+        <div 
+          className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
+          style={{ bottom: '10vh' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="music-controller-bg relative rounded-2xl overflow-hidden"
+            style={{
+              backgroundImage: 'url(/IMG_20260815_121535.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              padding: '20px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <button
+              onClick={handleCloseMusicController}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors cursor-pointer z-10"
+              aria-label="Close music controller"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            <button
+              onClick={handleMinimizeMusicController}
+              className="absolute top-2 left-2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors cursor-pointer z-10"
+              aria-label="Minimize music controller"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+
+            <div className="text-center mb-3 mt-4">
+              <p className="text-white text-sm font-semibold truncate px-8 drop-shadow-lg">
+                {currentTrack.name}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 mb-4 px-4">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0 drop-shadow-lg">
+                <path d="M3 9v6h4l5 5V4L7 9H3z" />
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
+                <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+              </svg>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={musicVolume}
+                onChange={handleVolumeChange}
+                className="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer music-volume-slider"
+                style={{
+                  background: `linear-gradient(to right, rgba(255,255,255,0.9) ${musicVolume * 100}%, rgba(255,255,255,0.2) ${musicVolume * 100}%)`,
+                }}
+              />
+            </div>
+
+            <div className="flex items-center justify-center gap-8">
+              <button
+                onClick={handlePrevTrack}
+                className="p-2 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                aria-label="Previous track"
+              >
+                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white drop-shadow-lg">
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+                </svg>
+              </button>
+
+              <button
+                onClick={handleToggleMusicPlay}
+                className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors cursor-pointer"
+                aria-label={isMusicPlaying ? 'Pause' : 'Play'}
+              >
+                {isMusicPlaying ? (
+                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white drop-shadow-lg">
+                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white drop-shadow-lg">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={handleNextTrack}
+                className="p-2 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                aria-label="Next track"
+              >
+                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white drop-shadow-lg">
+                  <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Music Controller - Minimized Icon */}
+      {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
+        <div 
+          className="fixed z-[45]"
+          style={{
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)',
+            right: '20px',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={handleMaximizeMusicController}
+            className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
+            style={{
+              width: '56px',
+              height: '56px',
+              backgroundImage: 'url(/IMG_20260815_121535.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: '2px solid rgba(255,255,255,0.3)',
+            }}
+            aria-label="Open music controller"
+          >
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white drop-shadow-lg">
+                <path d="M9 18V5l12-2v13" />
+                <circle cx="6" cy="18" r="3" />
+                <circle cx="18" cy="16" r="3" />
+              </svg>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* WebShader for white color removal */}
+      <style jsx global>{`
+        .music-controller-bg {
+          background-image: url('/IMG_20260815_121535.png');
+          background-blend-mode: multiply;
+          background-color: rgba(255, 255, 255, 0);
+          filter: brightness(1.2) contrast(1.15) saturate(1.1);
+        }
+        
+        .music-controller-bg::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: inherit;
+          mix-blend-mode: multiply;
+          filter: brightness(1.5) contrast(1.2);
+        }
+        
+        .music-volume-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: white;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+          border: 2px solid rgba(255,255,255,0.8);
+        }
+        
+        .music-volume-slider::-moz-range-thumb {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: white;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+          border: 2px solid rgba(255,255,255,0.8);
+        }
+        
+        .music-volume-slider::-webkit-slider-runnable-track {
+          height: 6px;
+          border-radius: 3px;
+        }
+        
+        .music-volume-slider::-moz-range-track {
+          height: 6px;
+          border-radius: 3px;
+        }
+      `}</style>
 
       {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
@@ -1502,4 +1850,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isR
       </span>
     </div>
   );
-          }
+}
