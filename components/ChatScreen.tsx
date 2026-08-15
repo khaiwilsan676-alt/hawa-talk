@@ -91,34 +91,53 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const messagesRef = collection(db, 'chats', chatId, 'messages');
-    const q = query(messagesRef, orderBy('timestamp', 'asc'));
+    // Listen to the chat doc to get the cleared timestamp
+    let unsubMessages: (() => void) | null = null;
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const loadedMessages: Message[] = snapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            text: data.text || '',
-            sender: data.senderUid === currentUser.uid ? 'me' : 'other',
-            timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
-            type: data.type || 'message',
-            roomData: data.roomData || undefined,
-            replyTo: data.replyTo || null,
-          };
-        });
-        setMessages(loadedMessages);
-        setConnected(true);
-      },
-      (error) => {
-        console.error('Firestore listener error:', error);
-        setConnected(false);
+    const chatDocRef = doc(db, 'chats', chatId);
+    const unsubChatDoc = onSnapshot(chatDocRef, (docSnap) => {
+      const chatData = docSnap.data();
+      const clearedAt = chatData?.clearedAtRef?.[currentUser.uid] || 0;
+
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
+      const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+      if (unsubMessages) {
+        unsubMessages();
       }
-    );
 
-    return () => unsubscribe();
+      unsubMessages = onSnapshot(
+        q,
+        (snapshot) => {
+          const loadedMessages: Message[] = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              text: data.text || '',
+              sender: data.senderUid === currentUser.uid ? 'me' : 'other',
+              timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
+              type: data.type || 'message',
+              roomData: data.roomData || undefined,
+              replyTo: data.replyTo || null,
+            };
+          }).filter(msg => msg.timestamp > clearedAt);
+
+          setMessages(loadedMessages);
+          setConnected(true);
+        },
+        (error) => {
+          console.error('Firestore listener error:', error);
+          setConnected(false);
+        }
+      );
+    });
+
+    return () => {
+      unsubChatDoc();
+      if (unsubMessages) {
+        unsubMessages();
+      }
+    };
   }, [chatId, currentUser.uid]);
 
   // Auto-send room invite if sharedRoomData exists
@@ -188,14 +207,23 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
 
   const handleClearChat = async () => {
     try {
-      const messagesRef = collection(db, 'chats', chatId, 'messages');
-      const snapshot = await getDoc(doc(db, 'chats', chatId));
-      // Delete all messages
-      const q = query(messagesRef);
-      const batch = writeBatch(db);
+      const timestamp = Date.now();
       
-      // Get all messages
-      const { docs } = await getDoc(doc(db, 'chats', chatId)).then(() => ({ docs: [] }));
+      // Update chat cleared timestamp
+      const chatDocRef = doc(db, 'chats', chatId);
+      await setDoc(chatDocRef, {
+        clearedAtRef: {
+          [currentUser.uid]: timestamp
+        }
+      }, { merge: true });
+
+      // Update conversation cleared timestamp
+      const convoDocRef = doc(db, 'conversations', chatId);
+      await setDoc(convoDocRef, {
+        clearedAtRef: {
+          [currentUser.uid]: timestamp
+        }
+      }, { merge: true });
       
       setMessages([]);
       setShowOptions(false);

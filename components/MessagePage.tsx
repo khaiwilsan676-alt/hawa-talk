@@ -87,7 +87,12 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
         const data = doc.data();
         const participantsData = data.participantsData || [];
         const otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
-        if (otherUser && !seenUids.has(otherUser.uid)) {
+
+        // Filter out if the conversation was cleared after the last message
+        const clearedAt = data.clearedAtRef?.[currentUserUid] || 0;
+        const lastTimestamp = data.lastTimestamp?.toMillis?.() || 0;
+
+        if (otherUser && !seenUids.has(otherUser.uid) && lastTimestamp >= clearedAt) {
           seenUids.add(otherUser.uid);
           chats.push({
             chatId: doc.id,
@@ -97,7 +102,7 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
               photo: otherUser.photo || '',
             },
             lastMessage: data.lastMessage || '',
-            lastTimestamp: data.lastTimestamp?.toMillis?.() || 0,
+            lastTimestamp: lastTimestamp,
             unreadCount: data.unreadCounts?.[currentUserUid] || 0,
           });
         }
