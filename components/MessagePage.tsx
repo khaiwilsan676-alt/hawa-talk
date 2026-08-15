@@ -82,11 +82,13 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chats: ChatPreview[] = [];
+      const seenUids = new Set();
       snapshot.docs.forEach((doc) => {
         const data = doc.data();
         const participantsData = data.participantsData || [];
         const otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
-        if (otherUser) {
+        if (otherUser && !seenUids.has(otherUser.uid)) {
+          seenUids.add(otherUser.uid);
           chats.push({
             chatId: doc.id,
             otherUser: {
@@ -228,24 +230,30 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
         {/* Users section (no heading) */}
         <div className="mt-6">
           <div className="flex flex-col gap-2">
-            {users.map((user) => (
-              <div
-                key={user.uid}
-                onClick={() => handleSelectUser(user)}
-                className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  <Image
-                    src={user.photo || '/default-avatar.png'}
-                    alt={user.name}
-                    width={40}
-                    height={40}
-                    className="object-cover"
-                  />
+            {(() => {
+              const activeChatUids = new Set([
+                ...fixedChats.map(c => c.uid),
+                ...dynamicChats.map(c => c.otherUser.uid)
+              ]);
+              return users.filter(user => !activeChatUids.has(user.uid)).map((user) => (
+                <div
+                  key={user.uid}
+                  onClick={() => handleSelectUser(user)}
+                  className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <Image
+                      src={user.photo || '/default-avatar.png'}
+                      alt={user.name}
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                    />
+                  </div>
+                  <span className="font-medium text-gray-800 text-sm">{user.name}</span>
                 </div>
-                <span className="font-medium text-gray-800 text-sm">{user.name}</span>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </div>
       </div>
