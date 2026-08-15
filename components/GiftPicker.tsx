@@ -82,29 +82,29 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* 3. MIDDLE SECTION: Gift Items Grid - 4 Columns, 2 Rows Visible (8 gifts) */}
-        <div className="flex-1 overflow-y-auto py-2 grid grid-cols-4 gap-2 scrollbar-none">
+        <div className="flex-1 overflow-y-auto py-2 grid grid-cols-4 gap-2.5 scrollbar-none">
           {sampleGifts.map((gift) => (
             <div
               key={gift.id}
               onClick={() => setSelectedGift(gift.id)}
-              className={`flex flex-col items-center justify-center p-1.5 bg-black border transition cursor-pointer active:scale-95 rounded-md ${
+              className={`flex flex-col items-center justify-center p-2.5 bg-black border transition cursor-pointer active:scale-95 rounded-md ${
                 selectedGift === gift.id
                   ? "border-blue-500"
                   : "border-white/10 hover:border-white/20"
               }`}
             >
-              <div className="relative w-12 h-12 mb-0.5">
+              <div className="relative w-14 h-14 mb-1">
                 <Image
                   src={gift.image}
                   alt={gift.name}
                   fill
                   className="object-cover"
-                  sizes="48px"
+                  sizes="56px"
                 />
               </div>
               <span className="text-[10px] text-gray-300 font-medium">{gift.name}</span>
               <span className="text-[9px] text-yellow-400 flex items-center gap-0.5 mt-0.5">
-                <div className="w-3 h-2 relative overflow-hidden rounded-full">
+                <div className="w-2.5 h-2.5 relative overflow-hidden rounded-full">
                   <Image
                     src="/1786768926590.png"
                     alt="Coins"
@@ -182,4 +182,4 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
-        }
+          }
