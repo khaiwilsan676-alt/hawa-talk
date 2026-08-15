@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Mic, Coins, ChevronUp } from "lucide-react";
+import { Mic, ChevronUp } from "lucide-react";
 import Image from "next/image";
 
 export default function GiftPicker({ onClose }: { onClose: () => void }) {
@@ -14,18 +14,20 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
   const tabs = ["Hot", "Lucky", "Luxury", "Event"];
   const multipliers = ["1×", "10×", "299×", "599×", "999×"];
 
-  // Sample Gifts Data with images
+  // Sample Gifts Data with gift icon
   const sampleGifts = [
-    { id: 1, name: "Rose", coins: 10, image: "/1786768926590.png" },
-    { id: 2, name: "Heart", coins: 99, image: "/1786768926590.png" },
-    { id: 3, name: "Car", coins: 500, image: "/1786768926590.png" },
-    { id: 4, name: "Crown", coins: 1000, image: "/1786768926590.png" },
-    { id: 5, name: "Rocket", coins: 2000, image: "/1786768926590.png" },
-    { id: 6, name: "Castle", coins: 5000, image: "/1786768926590.png" },
-    { id: 7, name: "Diamond", coins: 10000, image: "/1786768926590.png" },
-    { id: 8, name: "Yacht", coins: 20000, image: "/1786768926590.png" },
-    { id: 9, name: "Plane", coins: 50000, image: "/1786768926590.png" },
-    { id: 10, name: "Island", coins: 100000, image: "/1786768926590.png" },
+    { id: 1, name: "Rose", coins: 10, image: "/IMG_20260815_103351.jpg" },
+    { id: 2, name: "Heart", coins: 99, image: "/IMG_20260815_103351.jpg" },
+    { id: 3, name: "Car", coins: 500, image: "/IMG_20260815_103351.jpg" },
+    { id: 4, name: "Crown", coins: 1000, image: "/IMG_20260815_103351.jpg" },
+    { id: 5, name: "Rocket", coins: 2000, image: "/IMG_20260815_103351.jpg" },
+    { id: 6, name: "Castle", coins: 5000, image: "/IMG_20260815_103351.jpg" },
+    { id: 7, name: "Diamond", coins: 10000, image: "/IMG_20260815_103351.jpg" },
+    { id: 8, name: "Yacht", coins: 20000, image: "/IMG_20260815_103351.jpg" },
+    { id: 9, name: "Plane", coins: 50000, image: "/IMG_20260815_103351.jpg" },
+    { id: 10, name: "Island", coins: 100000, image: "/IMG_20260815_103351.jpg" },
+    { id: 11, name: "Star", coins: 500000, image: "/IMG_20260815_103351.jpg" },
+    { id: 12, name: "Galaxy", coins: 1000000, image: "/IMG_20260815_103351.jpg" },
   ];
 
   // Handle click outside to close
@@ -43,7 +45,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
       {/* 40vh Black Sheet Container */}
       <div 
         ref={sheetRef}
@@ -79,7 +81,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        {/* 3. MIDDLE SECTION: Gift Items Grid - 4 Columns, 2 Rows Visible */}
+        {/* 3. MIDDLE SECTION: Gift Items Grid - 4 Columns, 3 Rows Visible */}
         <div className="flex-1 overflow-y-auto py-3 grid grid-cols-4 gap-3 scrollbar-none">
           {sampleGifts.map((gift) => (
             <div
@@ -91,18 +93,27 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
                   : "border-transparent hover:border-white/20"
               }`}
             >
-              <div className="relative w-12 h-12 mb-1">
+              <div className="relative w-14 h-14 mb-1">
                 <Image
                   src={gift.image}
                   alt={gift.name}
                   fill
-                  className="object-cover rounded-full"
-                  sizes="48px"
+                  className="object-cover"
+                  sizes="56px"
                 />
               </div>
               <span className="text-xs text-gray-300 font-medium">{gift.name}</span>
               <span className="text-[10px] text-yellow-400 flex items-center gap-0.5 mt-0.5">
-                <Coins className="w-2.5 h-2.5" /> {gift.coins}
+                <div className="w-3 h-3 relative">
+                  <Image
+                    src="/1786768926590.png"
+                    alt="Coins"
+                    fill
+                    className="object-cover rounded-full"
+                    sizes="12px"
+                  />
+                </div>
+                {gift.coins}
               </span>
             </div>
           ))}
@@ -112,13 +123,13 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between border-t border-white/10 pt-2 relative">
           {/* Left Side: Coin Balance */}
           <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full">
-            <div className="w-5 h-5 relative">
+            <div className="w-6 h-6 relative overflow-hidden rounded-full">
               <Image
                 src="/1786768926590.png"
                 alt="Coins"
                 fill
-                className="object-cover rounded-full"
-                sizes="20px"
+                className="object-cover"
+                sizes="24px"
               />
             </div>
             <span className="text-xs font-bold text-yellow-300 tracking-wide">66457</span>
@@ -171,4 +182,4 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
-                    }
+}
