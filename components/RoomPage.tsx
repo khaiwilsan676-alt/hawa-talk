@@ -1749,8 +1749,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   <div 
     className="fixed z-[45]"
     style={{
-      bottom: '6vh',  // Thoda upar kiya
-      right: '20px',
+      bottom: '8vh',  // Thoda upar kiya
+      right: '12px',
     }}
     onClick={(e) => e.stopPropagation()}
   >
@@ -1774,7 +1774,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         aria-label="Open music controller"
       >
         <div className="absolute inset-0 flex items-center justify-center music-minimize-icon">
-          <img src="/IMG_20260815_133309.png" alt="Music" className="w-10 h-10 object-contain" />  {/* Image bada */}
+          <img src="/IMG_20260815_133309.png" alt="Music" className="w-13 h-13 object-contain" />  {/* Image bada */}
         </div>
       </button>
     </div>
