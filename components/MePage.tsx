@@ -124,6 +124,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   
   // Feedback States
   const [showFeedbackPage, setShowFeedbackPage] = useState(false)
+
+  useEffect(() => {
+    if (onPublicProfileChange) {
+      onPublicProfileChange(currentView !== 'me' || showFeedbackPage)
+    }
+  }, [showFeedbackPage, currentView])
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
   const [contactInfo, setContactInfo] = useState('')
@@ -161,7 +167,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view !== 'me')
+      onPublicProfileChange(view !== 'me' || showFeedbackPage)
     }
   }
 
