@@ -46,8 +46,8 @@ export default function RoomProfile({
   const displayImage = user.image || '/default-avatar.png'
   const displayGender = user.gender || '♂'
   const displayAge = user.age || 24
-  const displayCountry = user.country || 'India'
-  const displayFlag = user.flag || '🇮🇳'
+  const displayCountry = user.country || ''
+  const displayFlag = user.flag || ''
   const followers = user.followers || 0
   const isOnline = user.isOnline !== undefined ? user.isOnline : true
   const isInSeat = user.isInSeat !== undefined ? user.isInSeat : false
@@ -150,9 +150,6 @@ export default function RoomProfile({
                 }}
               />
             </div>
-            {isOnline && (
-              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 rounded-full border-2 border-white" />
-            )}
           </div>
 
           {/* User Info */}
@@ -215,13 +212,17 @@ export default function RoomProfile({
                 <span className="text-gray-500">Fans</span>
               </div>
 
-              <span className="text-gray-300">|</span>
+              {displayCountry && displayFlag && (
+                <>
+                  <span className="text-gray-300">|</span>
 
-              {/* Country Flag */}
-              <div className="flex items-center gap-0.5">
-                <span className="text-base">{displayFlag}</span>
-                <span className="text-gray-500">{displayCountry}</span>
-              </div>
+                  {/* Country Flag */}
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-base">{displayFlag}</span>
+                    <span className="text-gray-500">{displayCountry}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
