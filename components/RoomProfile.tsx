@@ -29,7 +29,9 @@ interface RoomProfileProps {
   onClose: () => void
   onCopyId?: () => void
   onLeaveSeat?: () => void
-  onMention?: () => void
+  onMention?: (username: string) => void
+  onFollow?: () => void
+  onMessage?: () => void
 }
 
 export default function RoomProfile({ 
@@ -80,7 +82,7 @@ export default function RoomProfile({
   }
 
   const handleMention = () => {
-    if (onMention) onMention()
+    if (onMention) onMention(displayName)
   }
 
   // Determine gender color

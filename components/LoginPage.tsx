@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, provider, db } from "../src/lib/firebase";
 import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
 
@@ -448,6 +448,7 @@ function CountrySelectionPage({
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -664,7 +665,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       }
 
       let userCredential;
-      userCredential = await signInWithEmailAndPassword(auth, email, password);
+      if (isSignUp) {
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      }
 
       const user = userCredential.user;
       const userName = user.displayName || email.split('@')[0]
@@ -988,6 +993,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 setShowLoginPage(false);
                 setEmail('');
                 setPassword('');
+                setIsSignUp(false);
                 setAuthError(null);
               }}
               className="p-2 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
@@ -1004,8 +1010,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   alt="Hurry"
                   className="w-16 h-16 rounded-2xl mx-auto mb-3 drop-shadow-lg" 
                 />
-                <h1 className="text-2xl font-bold text-white">Welcome Back!</h1>
-                <p className="text-white/70 text-sm mt-1">Sign in to your account</p>
+                <h1 className="text-2xl font-bold text-white">{isSignUp ? 'Create Account' : 'Welcome Back!'}</h1>
+                <p className="text-white/70 text-sm mt-1">{isSignUp ? 'Sign up to get started' : 'Sign in to your account'}</p>
               </div>
 
               <form onSubmit={handleEmailAuth} className="space-y-4">
@@ -1058,17 +1064,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
                 <div className="text-center">
                   <p className="text-sm text-white/70">
-                    Do you have account?{' '}
+                    {isSignUp ? "Already have an account?" : "Don't have an account?"}{' '}
                     <button
                       type="button"
                       onClick={() => {
-                        setEmail('');
-                        setPassword('');
+                        setIsSignUp(!isSignUp);
                         setAuthError(null);
                       }}
                       className="text-blue-300 hover:text-blue-200 font-semibold cursor-pointer"
                     >
-                      Sign In
+                      {isSignUp ? "Sign In" : "Sign Up"}
                     </button>
                   </p>
                 </div>
@@ -1084,10 +1089,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      Signing In...
+                      {isSignUp ? 'Signing Up...' : 'Signing In...'}
                     </span>
                   ) : (
-                    'Login'
+                    isSignUp ? 'Sign Up' : 'Login'
                   )}
                 </button>
               </form>

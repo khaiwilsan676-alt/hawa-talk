@@ -20,6 +20,7 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 import ChatScreen from './ChatScreen' // adjust path if necessary
 
 export interface TargetUser {
+  countryCode?: string;
   id?: string
   uid?: string
   name?: string

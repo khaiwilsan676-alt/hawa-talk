@@ -1588,7 +1588,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
           onMessage={() => console.log('Message clicked for', profileUser.accountId)}
           onCopyId={() => console.log('Copy ID clicked')}
-          onMention={(username) => {
+          onMention={(username: string) => {
             setShowUserProfile(false);
             setShowChatInput(true);
             setMessage(`@${username} `);
