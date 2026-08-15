@@ -191,13 +191,13 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
           <div
             key={chat.id}
             onClick={() => handleOpenFixedChat(chat)}
-            className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+            className="flex items-center gap-4 px-2 py-3 cursor-pointer active:opacity-60 transition-opacity"
           >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-              <Image src={chat.image} alt={chat.name} width={40} height={40} className="object-cover" />
+            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <Image src={chat.image} alt={chat.name} width={56} height={56} className="object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-800 text-sm">{chat.name}</h3>
+              <h3 className="font-semibold text-gray-800 text-lg">{chat.name}</h3>
             </div>
           </div>
         ))}
@@ -207,25 +207,25 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
           <div
             key={chat.chatId}
             onClick={() => handleOpenDynamicChat(chat)}
-            className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+            className="flex items-center gap-4 px-2 py-3 cursor-pointer active:opacity-60 transition-opacity"
           >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
               <Image
                 src={chat.otherUser.photo || '/default-avatar.png'}
                 alt={chat.otherUser.name}
-                width={40}
-                height={40}
+                width={56}
+                height={56}
                 className="object-cover"
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-800 text-sm">{chat.otherUser.name}</h3>
-              <p className="text-xs text-gray-500 truncate">{chat.lastMessage}</p>
+              <h3 className="font-semibold text-gray-800 text-lg">{chat.otherUser.name}</h3>
+              <p className="text-sm text-gray-500 truncate">{chat.lastMessage}</p>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <span className="text-[10px] text-gray-400">{formatTime(chat.lastTimestamp)}</span>
+              <span className="text-xs text-gray-400">{formatTime(chat.lastTimestamp)}</span>
               {chat.unreadCount > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[22px] h-[22px] flex items-center justify-center px-1.5">
                   {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
                 </span>
               )}
@@ -245,18 +245,18 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
                 <div
                   key={user.uid}
                   onClick={() => handleSelectUser(user)}
-                  className="flex items-center gap-3 bg-gray-100 px-3 py-2 rounded-xl cursor-pointer active:bg-gray-200 transition-colors"
+                  className="flex items-center gap-4 px-2 py-3 cursor-pointer active:opacity-60 transition-opacity"
                 >
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     <Image
                       src={user.photo || '/default-avatar.png'}
                       alt={user.name}
-                      width={40}
-                      height={40}
+                      width={56}
+                      height={56}
                       className="object-cover"
                     />
                   </div>
-                  <span className="font-medium text-gray-800 text-sm">{user.name}</span>
+                  <span className="font-medium text-gray-800 text-lg">{user.name}</span>
                 </div>
               ));
             })()}
@@ -275,4 +275,4 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
       )}
     </div>
   );
-            }
+                   }
