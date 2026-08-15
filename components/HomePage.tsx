@@ -36,6 +36,7 @@ interface UserCard {
 
 interface KeptRoomData {
   name: string
+  country?: string
   image: string
   accountId: string
 }
@@ -680,7 +681,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         id: keptRoom.accountId,
         accountId: keptRoom.accountId,
         name: keptRoom.name,
-        country: '🇮🇳',
+        country: keptRoom.country || '🇮🇳',
         image: keptRoom.image
       }
       setSelectedUser(roomUser)
@@ -699,7 +700,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       id: userUID,
       accountId: storedAccNum,
       name: userName,
-      country: '🇮🇳',
+      country: localStorage.getItem('userCountry') || '🇮🇳',
       image: userPhoto
     }
 
@@ -713,7 +714,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
       await setDoc(doc(db, "globalRooms", userUID), {
         id: userUID,
         name: userName,
-        country: "🇮🇳",
+        country: localStorage.getItem("userCountry") || "🇮🇳",
+        countryCode: localStorage.getItem("userCountryCode") || "IN",
         image: userPhoto,
         accountId: storedAccNum,
         createdAt: Date.now()
@@ -723,7 +725,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
       await setDoc(doc(db, "users", userUID), {
         id: userUID,
         name: userName,
-        country: "🇮🇳",
+        country: localStorage.getItem("userCountry") || "🇮🇳",
+        countryCode: localStorage.getItem("userCountryCode") || "IN",
         image: userPhoto,
         accountId: storedAccNum,
         createdAt: Date.now()
@@ -1040,7 +1043,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 id: room.accountId,
                 accountId: room.accountId,
                 name: room.name,
-                country: '🇮🇳',
+                country: room.country || '🇮🇳',
                 image: room.image
               }
               return (
@@ -1099,7 +1102,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 id: room.accountId,
                 accountId: room.accountId,
                 name: room.name,
-                country: '🇮🇳',
+                country: room.country || '🇮🇳',
                 image: room.image
               }
               return (

@@ -34,6 +34,7 @@ export interface TargetUser {
   bio?: string
   location?: string
   country?: string
+  countryCode?: string
   flag?: string
 }
 
