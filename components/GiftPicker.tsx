@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Mic, ChevronUp } from "lucide-react";
+import { Home, ChevronUp } from "lucide-react";
 import Image from "next/image";
 
 export default function GiftPicker({ onClose }: { onClose: () => void }) {
@@ -14,7 +14,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
   const tabs = ["Hot", "Lucky", "Luxury", "Event"];
   const multipliers = ["1×", "10×", "299×", "599×", "999×"];
 
-  // Sample Gifts Data with gift icon
+  // Sample Gifts Data with gift icon - 12 gifts total (8 visible, 4 scroll)
   const sampleGifts = [
     { id: 1, name: "Rose", coins: 10, image: "/IMG_20260815_103351.jpg" },
     { id: 2, name: "Heart", coins: 99, image: "/IMG_20260815_103351.jpg" },
@@ -46,17 +46,17 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* 40vh Black Sheet Container */}
+      {/* 50vh Black Sheet Container - Very minimal rounded corners */}
       <div 
         ref={sheetRef}
-        className="h-[40vh] w-full max-w-md mx-auto bg-black text-white flex flex-col justify-between rounded-t-3xl border-t border-white/10 shadow-2xl relative px-4 pt-3 pb-2"
+        className="h-[50vh] w-full max-w-md mx-auto bg-black text-white flex flex-col justify-between rounded-t-md border-t border-white/10 shadow-2xl relative px-4 pt-3 pb-2"
       >
         
-        {/* 1. TOP SECTION: Mic Icon Only */}
+        {/* 1. TOP SECTION: House Icon Only */}
         <div className="flex items-center justify-end border-b border-white/10 pb-2">
-          {/* Right Side Mic Icon */}
+          {/* Right Side House Icon */}
           <button className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition text-gray-300">
-            <Mic className="w-4 h-4" />
+            <Home className="w-4 h-4" />
           </button>
         </div>
 
@@ -81,35 +81,35 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        {/* 3. MIDDLE SECTION: Gift Items Grid - 4 Columns, 3 Rows Visible */}
+        {/* 3. MIDDLE SECTION: Gift Items Grid - 4 Columns, 2 Rows Visible (8 gifts) */}
         <div className="flex-1 overflow-y-auto py-3 grid grid-cols-4 gap-3 scrollbar-none">
           {sampleGifts.map((gift) => (
             <div
               key={gift.id}
               onClick={() => setSelectedGift(gift.id)}
-              className={`flex flex-col items-center justify-center p-2 rounded-xl bg-white/5 border transition cursor-pointer active:scale-95 ${
+              className={`flex flex-col items-center justify-center p-2 bg-black border transition cursor-pointer active:scale-95 rounded-md ${
                 selectedGift === gift.id
-                  ? "border-blue-500 bg-blue-500/10"
-                  : "border-transparent hover:border-white/20"
+                  ? "border-blue-500"
+                  : "border-white/10 hover:border-white/20"
               }`}
             >
-              <div className="relative w-14 h-14 mb-1">
+              <div className="relative w-16 h-16 mb-1">
                 <Image
                   src={gift.image}
                   alt={gift.name}
                   fill
                   className="object-cover"
-                  sizes="56px"
+                  sizes="64px"
                 />
               </div>
               <span className="text-xs text-gray-300 font-medium">{gift.name}</span>
               <span className="text-[10px] text-yellow-400 flex items-center gap-0.5 mt-0.5">
-                <div className="w-3 h-3 relative">
+                <div className="w-3 h-3 relative overflow-hidden rounded-full">
                   <Image
                     src="/1786768926590.png"
                     alt="Coins"
                     fill
-                    className="object-cover rounded-full"
+                    className="object-cover"
                     sizes="12px"
                   />
                 </div>
@@ -140,7 +140,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
             
             {/* Multiplier Dropdown Popup */}
             {showMultipliers && (
-              <div className="absolute bottom-12 right-16 bg-zinc-900 border border-white/20 rounded-xl p-1 shadow-xl flex flex-col gap-1 z-50">
+              <div className="absolute bottom-12 right-16 bg-zinc-900 border border-white/20 rounded-md p-1 shadow-xl flex flex-col gap-1 z-50">
                 {multipliers.map((num) => (
                   <button
                     key={num}
@@ -148,7 +148,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
                       setSelectedMultiplier(num);
                       setShowMultipliers(false);
                     }}
-                    className={`px-3 py-1 text-xs rounded-lg text-center font-medium transition ${
+                    className={`px-3 py-1 text-xs rounded-md text-center font-medium transition ${
                       selectedMultiplier === num
                         ? "bg-blue-600 text-white"
                         : "hover:bg-white/10 text-gray-300"
@@ -182,4 +182,4 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
-}
+          }
