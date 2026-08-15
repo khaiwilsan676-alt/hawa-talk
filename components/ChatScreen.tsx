@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, Send, ImageIcon, MoreHorizontal, LogIn, Trash2, Flag, Ban, X, Copy, Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Send, ImageIcon, MoreHorizontal, LogIn, Trash2, Flag, Ban, X, Check, Copy } from 'lucide-react';
 import {
   collection,
   onSnapshot,
@@ -16,7 +16,8 @@ import {
   deleteDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { db } from '../src/lib/firebase';
+import { db, storage } from '../src/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface Message {
   id: string;
@@ -60,21 +61,21 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const [showReportConfirm, setShowReportConfirm] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [longPressMsg, setLongPressMsg] = useState<Message | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
-  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
-  const [showFullImage, setShowFullImage] = useState<string | null>(null);
-  const [isSending, setIsSending] = useState(false);
+  const [showDeleteSelectedConfirm, setShowDeleteSelectedConfirm] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
+  const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
+  const [swipeMsgId, setSwipeMsgId] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastSentInviteRoomIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid);
-
-  // Unique chat ID for both users
   const chatId = [currentUser.uid, targetUser.uid].sort().join('_');
 
   // Check online status
@@ -91,150 +92,73 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       } else {
         setOnline(false);
       }
-    }, (error) => {
-      console.error('Presence listener error:', error);
-      setOnline(false);
     });
 
     return () => unsubscribe();
   }, [targetUser.uid, isFixedChat]);
 
-  // Firestore listener for messages - Fixed version
+  // Firestore listener for messages
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let isSubscribed = true;
     let unsubMessages: (() => void) | null = null;
-    let unsubChatDoc: (() => void) | null = null;
 
-    const setupListeners = () => {
-      const chatDocRef = doc(db, 'chats', chatId);
-      
-      unsubChatDoc = onSnapshot(chatDocRef, (docSnap) => {
-        if (!isSubscribed) return;
-        
-        const chatData = docSnap.data();
-        const clearedAt = chatData?.clearedAtRef?.[currentUser.uid] || 0;
+    const chatDocRef = doc(db, 'chats', chatId);
+    const unsubChatDoc = onSnapshot(chatDocRef, (docSnap) => {
+      const chatData = docSnap.data();
+      const clearedAt = chatData?.clearedAtRef?.[currentUser.uid] || 0;
 
-        const messagesRef = collection(db, 'chats', chatId, 'messages');
-        const q = query(messagesRef, orderBy('timestamp', 'asc'));
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
+      const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
-        // Clean up previous messages listener
-        if (unsubMessages) {
-          unsubMessages();
-        }
-
-        unsubMessages = onSnapshot(
-          q,
-          (snapshot) => {
-            if (!isSubscribed) return;
-            
-            const loadedMessages: Message[] = snapshot.docs.map((doc) => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                text: data.text || '',
-                sender: data.senderUid === currentUser.uid ? 'me' : 'other',
-                timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
-                type: data.type || 'message',
-                imageUrl: data.imageUrl || undefined,
-                roomData: data.roomData || undefined,
-                replyTo: data.replyTo || null,
-              };
-            }).filter(msg => msg.timestamp > clearedAt);
-
-            setMessages(loadedMessages);
-            setConnected(true);
-          },
-          (error) => {
-            console.error('Messages listener error:', error);
-            if (isSubscribed) {
-              setConnected(false);
-            }
-          }
-        );
-      }, (error) => {
-        console.error('Chat doc listener error:', error);
-        if (isSubscribed) {
-          setConnected(false);
-        }
-      });
-    };
-
-    setupListeners();
-
-    // Cleanup function
-    return () => {
-      isSubscribed = false;
       if (unsubMessages) {
         unsubMessages();
       }
-      if (unsubChatDoc) {
-        unsubChatDoc();
+
+      unsubMessages = onSnapshot(
+        q,
+        (snapshot) => {
+          const loadedMessages: Message[] = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              text: data.text || '',
+              sender: data.senderUid === currentUser.uid ? 'me' : 'other',
+              timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
+              type: data.type || 'message',
+              imageUrl: data.imageUrl || undefined,
+              roomData: data.roomData || undefined,
+              replyTo: data.replyTo || null,
+            };
+          }).filter(msg => msg.timestamp > clearedAt);
+
+          setMessages(loadedMessages);
+          setConnected(true);
+        },
+        (error) => {
+          console.error('Firestore listener error:', error);
+          setConnected(false);
+        }
+      );
+    });
+
+    return () => {
+      unsubChatDoc();
+      if (unsubMessages) {
+        unsubMessages();
       }
     };
   }, [chatId, currentUser.uid]);
 
   // Auto-send room invite if sharedRoomData exists
   useEffect(() => {
-    if (sharedRoomData && connected && !isFixedChat && lastSentInviteRoomIdRef.current !== sharedRoomData.roomId) {
+    if (sharedRoomData && connected && lastSentInviteRoomIdRef.current !== sharedRoomData.roomId) {
       lastSentInviteRoomIdRef.current = sharedRoomData.roomId;
       sendRoomInvite(sharedRoomData);
     }
-  }, [sharedRoomData, connected, isFixedChat]);
-
-  const updateConversation = useCallback(async (
-    chatId: string,
-    senderUid: string,
-    targetUser: { uid: string; name: string; photo: string },
-    messageText: string,
-    isImage: boolean = false
-  ) => {
-    try {
-      const convoRef = doc(db, 'conversations', chatId);
-      const convoSnap = await getDoc(convoRef);
-      
-      const lastMessageText = isImage ? '📷 Photo' : messageText;
-      
-      if (convoSnap.exists()) {
-        await updateDoc(convoRef, {
-          lastMessage: lastMessageText,
-          lastTimestamp: serverTimestamp(),
-          [`unreadCounts.${targetUser.uid}`]: (convoSnap.data().unreadCounts?.[targetUser.uid] || 0) + 1,
-        });
-      } else {
-        await setDoc(convoRef, {
-          participants: [senderUid, targetUser.uid],
-          participantsData: [
-            {
-              uid: senderUid,
-              name: currentUser.name,
-              photo: currentUser.photo,
-            },
-            {
-              uid: targetUser.uid,
-              name: targetUser.name,
-              photo: targetUser.photo,
-            }
-          ],
-          lastMessage: lastMessageText,
-          lastTimestamp: serverTimestamp(),
-          unreadCounts: {
-            [targetUser.uid]: 1,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Error updating conversation:', error);
-    }
-  }, [currentUser]);
+  }, [sharedRoomData, connected]);
 
   const sendRoomInvite = async (roomData: { roomId: string; roomName: string; roomImage: string }) => {
-    if (isFixedChat) {
-      console.log('Cannot send room invite to fixed chat');
-      return;
-    }
-    
     try {
       const messagesRef = collection(db, 'chats', chatId, 'messages');
       await addDoc(messagesRef, {
@@ -248,24 +172,15 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
           roomImage: roomData.roomImage,
         },
       });
-      
-      await updateConversation(chatId, currentUser.uid, targetUser, `🎉 Party Room: ${roomData.roomName}`);
     } catch (error) {
       console.error('Error sending room invite:', error);
     }
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || isSending) return;
-    
-    if (isFixedChat) {
-      alert('You cannot send messages to this official account');
-      return;
-    }
-    
+    if (!newMessage.trim()) return;
     const messageText = newMessage.trim();
     setNewMessage('');
-    setIsSending(true);
 
     try {
       const messagesRef = collection(db, 'chats', chatId, 'messages');
@@ -281,87 +196,49 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         } : null,
       });
 
-      await updateConversation(chatId, currentUser.uid, targetUser, messageText);
       setReplyTo(null);
     } catch (error) {
       console.error('Error sending message:', error);
       setNewMessage(messageText);
-      alert('Failed to send message. Please try again.');
-    } finally {
-      setIsSending(false);
     }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (isFixedChat) {
-        alert('You cannot send images to this official account');
-        return;
-      }
-      
-      if (isSending) return;
-      setIsSending(true);
-      
-      try {
-        const compressedBase64 = await compressImage(file, 800, 800, 0.7);
-        
-        const messagesRef = collection(db, 'chats', chatId, 'messages');
-        await addDoc(messagesRef, {
-          text: '',
-          senderUid: currentUser.uid,
-          timestamp: serverTimestamp(),
-          type: 'image',
-          imageUrl: compressedBase64,
-        });
+    if (!file) return;
 
-        await updateConversation(chatId, currentUser.uid, targetUser, '', true);
-      } catch (error) {
-        console.error('Error sending image:', error);
-        alert('Failed to send image');
-      } finally {
-        setIsSending(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+    setImageUploading(true);
+    try {
+      // Upload image to Firebase Storage
+      const imageRef = ref(storage, `chat_images/${chatId}/${Date.now()}_${file.name}`);
+      await uploadBytes(imageRef, file);
+      const imageUrl = await getDownloadURL(imageRef);
+
+      // Send image message
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
+      await addDoc(messagesRef, {
+        text: '',
+        senderUid: currentUser.uid,
+        timestamp: serverTimestamp(),
+        type: 'image',
+        imageUrl: imageUrl,
+        replyTo: replyTo ? {
+          id: replyTo.id,
+          text: replyTo.text,
+          senderName: replyTo.sender === 'me' ? currentUser.name : targetUser.name,
+        } : null,
+      });
+
+      setReplyTo(null);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setImageUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
-  };
-
-  const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.onerror = reject;
-      };
-      reader.onerror = reject;
-    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -397,9 +274,23 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       
       setMessages([]);
       setShowOptions(false);
+      setDeleteMode(false);
+      setSelectedMessages(new Set());
     } catch (error) {
       console.error('Error clearing chat:', error);
-      alert('Failed to clear chat');
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+      await deleteDoc(messageRef);
+      setLongPressMsg(null);
+      setShowDeleteConfirm(false);
+      setDeleteMode(false);
+      setSelectedMessages(new Set());
+    } catch (error) {
+      console.error('Error deleting message:', error);
     }
   };
 
@@ -411,12 +302,14 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         batch.delete(messageRef);
       });
       await batch.commit();
+      
       setDeleteMode(false);
       setSelectedMessages(new Set());
+      setShowDeleteSelectedConfirm(false);
       setShowOptions(false);
     } catch (error) {
-      console.error('Error deleting messages:', error);
-      alert('Failed to delete messages');
+      console.error('Error deleting selected messages:', error);
+      alert('Failed to delete messages. Please try again.');
     }
   };
 
@@ -433,7 +326,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       onClose();
     } catch (error) {
       console.error('Error blocking user:', error);
-      alert('Failed to block user');
     }
   };
 
@@ -445,31 +337,47 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         reportedUser: targetUser.uid,
         reportedUserName: targetUser.name,
         timestamp: serverTimestamp(),
+        chatId: chatId,
       });
+      
       setShowReportConfirm(false);
       setShowOptions(false);
-      alert('User reported');
+      alert('User reported successfully.');
     } catch (error) {
       console.error('Error reporting user:', error);
-      alert('Failed to report user');
+      alert('Failed to report user. Please try again.');
     }
   };
 
   const handleReply = (msg: Message) => {
     setReplyTo(msg);
+    setLongPressMsg(null);
+    setSwipeMsgId(null);
   };
 
-  const handleCopyMessage = async (msg: Message) => {
-    try {
-      await navigator.clipboard.writeText(msg.text);
-      setCopiedMsgId(msg.id);
-      setTimeout(() => setCopiedMsgId(null), 2000);
-    } catch (error) {
-      console.error('Error copying message:', error);
+  const handleCopyMessage = (msg: Message) => {
+    if (msg.text) {
+      navigator.clipboard.writeText(msg.text).then(() => {
+        setCopiedMessage(msg.id);
+        setTimeout(() => setCopiedMessage(null), 2000);
+      }).catch((error) => {
+        console.error('Error copying to clipboard:', error);
+      });
     }
+    setLongPressMsg(null);
   };
 
-  // Long press handlers (1 second for copy)
+  const toggleMessageSelection = (messageId: string) => {
+    const newSelected = new Set(selectedMessages);
+    if (newSelected.has(messageId)) {
+      newSelected.delete(messageId);
+    } else {
+      newSelected.add(messageId);
+    }
+    setSelectedMessages(newSelected);
+  };
+
+  // Long press handlers
   const handleTouchStart = (msg: Message) => {
     longPressTimerRef.current = setTimeout(() => {
       handleCopyMessage(msg);
@@ -496,38 +404,27 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
-  // Swipe RIGHT to reply
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const [swipingMsgId, setSwipeMsgId] = useState<string | null>(null);
-  const [swipeOffset, setSwipeOffset] = useState(0);
-
+  // Swipe handlers for reply (both left and right swipe)
   const handleSwipeStart = (e: React.TouchEvent, msg: Message) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+    setSwipeStartX(e.touches[0].clientX);
     setSwipeMsgId(msg.id);
   };
 
-  const handleSwipeMove = (e: React.TouchEvent) => {
-    if (touchStartX.current !== null && touchStartY.current !== null) {
-      const deltaX = e.touches[0].clientX - touchStartX.current;
-      const deltaY = e.touches[0].clientY - touchStartY.current;
+  const handleSwipeEnd = (e: React.TouchEvent) => {
+    if (swipeStartX !== null && swipeMsgId) {
+      const swipeEndX = e.changedTouches[0].clientX;
+      const swipeDistance = swipeEndX - swipeStartX;
       
-      // Only handle horizontal swipe to RIGHT (positive deltaX)
-      if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 0) {
-        setSwipeOffset(Math.min(80, deltaX));
+      // Swipe left (negative distance) OR right (positive distance) to reply
+      if (Math.abs(swipeDistance) > 50) {
+        const msg = messages.find(m => m.id === swipeMsgId);
+        if (msg) {
+          handleReply(msg);
+        }
       }
     }
-  };
-
-  const handleSwipeEnd = (msg: Message) => {
-    if (swipeOffset > 50) {
-      handleReply(msg);
-    }
-    setSwipeOffset(0);
+    setSwipeStartX(null);
     setSwipeMsgId(null);
-    touchStartX.current = null;
-    touchStartY.current = null;
   };
 
   // Auto-scroll on new messages
@@ -537,16 +434,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
 
   const formatTime = (timestamp: number) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const toggleMessageSelection = (msgId: string) => {
-    const newSelected = new Set(selectedMessages);
-    if (newSelected.has(msgId)) {
-      newSelected.delete(msgId);
-    } else {
-      newSelected.add(msgId);
-    }
-    setSelectedMessages(newSelected);
   };
 
   return (
@@ -580,83 +467,87 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
           )}
         </div>
 
-        {!isFixedChat && (
-          <div className="relative">
-            <button 
-              onClick={() => setShowOptions(!showOptions)} 
-              className="flex-shrink-0 hover:bg-white/30 rounded-full p-1"
+        {deleteMode ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">
+              {selectedMessages.size} selected
+            </span>
+            <button
+              onClick={() => setShowDeleteSelectedConfirm(true)}
+              disabled={selectedMessages.size === 0}
+              className="px-3 py-1.5 bg-red-500 text-white rounded-full text-sm font-medium disabled:opacity-50"
             >
-              <MoreHorizontal size={24} className="text-gray-800" />
+              Delete
             </button>
-
-            {/* Dropdown menu - BLACK TEXT */}
-            {showOptions && (
-              <div className="absolute right-0 top-12 w-48 bg-white rounded-xl shadow-lg py-2 z-50 border border-gray-100">
-                <button
-                  onClick={() => {
-                    setShowOptions(false);
-                    setShowReportConfirm(true);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-black hover:bg-gray-50 transition-colors flex items-center gap-2"
-                >
-                  <Flag size={16} className="text-gray-600" /> Report
-                </button>
-                <button
-                  onClick={handleClearChat}
-                  className="w-full text-left px-4 py-2.5 text-sm text-black hover:bg-gray-50 transition-colors flex items-center gap-2"
-                >
-                  <Trash2 size={16} className="text-gray-600" /> Clear Chat
-                </button>
-                <button
-                  onClick={() => {
-                    setShowOptions(false);
-                    setShowBlockConfirm(true);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-black hover:bg-gray-50 transition-colors flex items-center gap-2"
-                >
-                  <Ban size={16} className="text-gray-600" /> Block
-                </button>
-                <button
-                  onClick={() => {
-                    setShowOptions(false);
-                    setDeleteMode(true);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-black hover:bg-gray-50 transition-colors flex items-center gap-2"
-                >
-                  <Trash2 size={16} className="text-gray-600" /> Delete
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Delete mode banner */}
-      {deleteMode && (
-        <div className="bg-red-50 px-4 py-2 flex items-center justify-between border-b border-red-100">
-          <span className="text-sm text-black font-medium">
-            {selectedMessages.size} selected
-          </span>
-          <div className="flex gap-2">
             <button
               onClick={() => {
                 setDeleteMode(false);
                 setSelectedMessages(new Set());
               }}
-              className="px-3 py-1 text-xs text-black hover:bg-gray-200 rounded-full"
+              className="p-1.5 hover:bg-white/30 rounded-full"
             >
-              Cancel
-            </button>
-            <button
-              onClick={handleDeleteSelectedMessages}
-              disabled={selectedMessages.size === 0}
-              className="px-3 py-1 text-xs bg-red-500 text-white rounded-full disabled:opacity-50"
-            >
-              Delete Selected
+              <X size={20} className="text-gray-800" />
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          !isFixedChat && (
+            <div className="relative">
+              <button 
+                onClick={() => setShowOptions(!showOptions)} 
+                className="flex-shrink-0 hover:bg-white/30 rounded-full p-1"
+              >
+                <MoreHorizontal size={24} className="text-gray-800" />
+              </button>
+              
+              {/* Small dropdown card */}
+              {showOptions && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowOptions(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setShowOptions(false);
+                        setShowReportConfirm(true);
+                      }}
+                      className="w-full px-4 py-3 text-left text-black hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                    >
+                      <Flag size={18} className="text-orange-500" />
+                      <span className="text-sm font-medium">Report</span>
+                    </button>
+                    <button
+                      onClick={handleClearChat}
+                      className="w-full px-4 py-3 text-left text-black hover:bg-gray-50 flex items-center gap-3 transition-colors border-t border-gray-100"
+                    >
+                      <Trash2 size={18} className="text-gray-500" />
+                      <span className="text-sm font-medium">Clear Chat</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowOptions(false);
+                        setDeleteMode(true);
+                      }}
+                      className="w-full px-4 py-3 text-left text-black hover:bg-gray-50 flex items-center gap-3 transition-colors border-t border-gray-100"
+                    >
+                      <Trash2 size={18} className="text-red-500" />
+                      <span className="text-sm font-medium">Delete Messages</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowOptions(false);
+                        setShowBlockConfirm(true);
+                      }}
+                      className="w-full px-4 py-3 text-left text-black hover:bg-red-50 flex items-center gap-3 transition-colors border-t border-gray-100"
+                    >
+                      <Ban size={18} className="text-red-500" />
+                      <span className="text-sm font-medium">Block User</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        )}
+      </div>
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
@@ -671,75 +562,17 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
           const isMine = msg.sender === 'me';
           const isSelected = selectedMessages.has(msg.id);
 
-          // Image Message
-          if (msg.type === 'image' && msg.imageUrl) {
-            return (
-              <div
-                key={msg.id}
-                className={`flex ${isMine ? 'justify-end' : 'justify-start'} relative`}
-                style={{ transform: `translateX(${swipeMsgId === msg.id ? swipeOffset : 0}px)` }}
-                onTouchStart={(e) => handleSwipeStart(e, msg)}
-                onTouchMove={handleSwipeMove}
-                onTouchEnd={() => handleSwipeEnd(msg)}
-                onMouseDown={() => handleMouseDown(msg)}
-                onMouseUp={handleMouseUp}
-              >
-                {deleteMode && (
-                  <button
-                    onClick={() => toggleMessageSelection(msg.id)}
-                    className={`absolute -left-8 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-2 ${
-                      isSelected ? 'bg-red-500 border-red-500' : 'border-gray-400'
-                    }`}
-                  >
-                    {isSelected && <Check size={14} className="text-white mx-auto" />}
-                  </button>
-                )}
-                {!isMine && (
-                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-auto">
-                    <img
-                      src={targetUser.photo || '/default-avatar.png'}
-                      alt={targetUser.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[70%] cursor-pointer ${isMine ? 'items-end' : 'items-start'}`}
-                  onClick={() => {
-                    if (deleteMode) {
-                      toggleMessageSelection(msg.id);
-                    } else {
-                      setShowFullImage(msg.imageUrl!);
-                    }
-                  }}
-                >
-                  <img
-                    src={msg.imageUrl}
-                    alt=""
-                    className="rounded-2xl max-h-64 object-cover"
-                  />
-                  <p className={`text-[10px] mt-1 ${isMine ? 'text-right' : 'text-left'} text-gray-400`}>
-                    {formatTime(msg.timestamp)}
-                  </p>
-                </div>
-                {isMine && (
-                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 ml-2 mt-auto">
-                    <img
-                      src={currentUser.photo || '/default-avatar.png'}
-                      alt={currentUser.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          }
-
           // Room Invite Message
           if (msg.type === 'room_invite' && msg.roomData) {
             return (
-              <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] overflow-hidden rounded-2xl shadow-md ${isMine ? 'rounded-br-md' : 'rounded-bl-md'}`}>
+              <div 
+                key={msg.id} 
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${deleteMode ? 'cursor-pointer' : ''}`} 
+                onClick={() => deleteMode && toggleMessageSelection(msg.id)}
+                onTouchStart={(e) => !deleteMode && handleSwipeStart(e, msg)}
+                onTouchEnd={(e) => !deleteMode && handleSwipeEnd(e)}
+              >
+                <div className={`max-w-[80%] overflow-hidden rounded-2xl shadow-md ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
                   <div className="relative h-40 bg-gray-200">
                     <img
                       src={msg.roomData.roomImage || '/default-avatar.png'}
@@ -769,28 +602,81 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
             );
           }
 
+          // Image Message
+          if (msg.type === 'image' && msg.imageUrl) {
+            return (
+              <div
+                key={msg.id}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${deleteMode ? 'cursor-pointer' : ''}`}
+                onClick={() => deleteMode && toggleMessageSelection(msg.id)}
+                onTouchStart={(e) => !deleteMode && handleSwipeStart(e, msg)}
+                onTouchEnd={(e) => !deleteMode && handleSwipeEnd(e)}
+              >
+                {!isMine && (
+                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-auto">
+                    <img
+                      src={targetUser.photo || '/default-avatar.png'}
+                      alt={targetUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                  <div className={`rounded-2xl overflow-hidden relative ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
+                    {msg.replyTo && (
+                      <div className="px-3 pt-2 bg-white/95">
+                        <div className="border-l-4 border-blue-400 pl-2 bg-black/5 rounded p-1">
+                          <p className="text-[10px] font-semibold text-blue-600">{msg.replyTo.senderName}</p>
+                          <p className="text-[11px] text-gray-600 truncate">{msg.replyTo.text}</p>
+                        </div>
+                      </div>
+                    )}
+                    <img
+                      src={msg.imageUrl}
+                      alt="Shared image"
+                      className="max-w-full h-auto max-h-64 object-cover"
+                    />
+                    <div className={`px-2 py-1 ${isMine ? 'bg-[#dcf8c6]' : 'bg-white'}`}>
+                      <p className={`text-[10px] text-right ${isMine ? 'text-gray-500' : 'text-gray-400'}`}>
+                        {formatTime(msg.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {isMine && (
+                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 ml-2 mt-auto">
+                    <img
+                      src={currentUser.photo || '/default-avatar.png'}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           // Regular message
           return (
             <div
               key={msg.id}
-              className={`flex ${isMine ? 'justify-end' : 'justify-start'} relative`}
-              style={{ transform: `translateX(${swipeMsgId === msg.id ? swipeOffset : 0}px)` }}
-              onTouchStart={(e) => handleSwipeStart(e, msg)}
-              onTouchMove={handleSwipeMove}
-              onTouchEnd={() => handleSwipeEnd(msg)}
-              onMouseDown={() => handleMouseDown(msg)}
-              onMouseUp={handleMouseUp}
+              className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${deleteMode ? 'cursor-pointer' : ''}`}
+              onClick={() => deleteMode && toggleMessageSelection(msg.id)}
+              onTouchStart={(e) => {
+                if (!deleteMode) {
+                  handleTouchStart(msg);
+                  handleSwipeStart(e, msg);
+                }
+              }}
+              onTouchEnd={(e) => {
+                if (!deleteMode) {
+                  handleTouchEnd();
+                  handleSwipeEnd(e);
+                }
+              }}
+              onMouseDown={() => !deleteMode && handleMouseDown(msg)}
+              onMouseUp={() => !deleteMode && handleMouseUp()}
             >
-              {deleteMode && (
-                <button
-                  onClick={() => toggleMessageSelection(msg.id)}
-                  className={`absolute -left-8 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-2 z-10 ${
-                    isSelected ? 'bg-red-500 border-red-500' : 'border-gray-400'
-                  }`}
-                >
-                  {isSelected && <Check size={14} className="text-white mx-auto" />}
-                </button>
-              )}
               {!isMine && (
                 <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-auto">
                   <img
@@ -809,7 +695,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
                     isMine
                       ? 'bg-[#dcf8c6] text-gray-800 rounded-br-md'
                       : 'bg-white text-gray-800 rounded-bl-md shadow-sm'
-                  } ${isSelected ? 'opacity-50' : ''}`}
+                  } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
                 >
                   {msg.replyTo && (
                     <div className="border-l-4 border-blue-400 pl-2 mb-1 bg-black/5 rounded p-1">
@@ -818,15 +704,13 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
                     </div>
                   )}
                   <p className="text-sm">{msg.text}</p>
-                  <div className="flex items-center gap-1 justify-end">
-                    {copiedMsgId === msg.id && (
-                      <span className="text-[10px] text-green-500">Copied!</span>
-                    )}
-                    <p className={`text-[10px] ${isMine ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {formatTime(msg.timestamp)}
-                    </p>
-                  </div>
+                  <p className={`text-[10px] mt-1 ${isMine ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {formatTime(msg.timestamp)}
+                  </p>
                 </div>
+                {copiedMessage === msg.id && (
+                  <span className="text-[10px] text-green-600 mt-0.5">Copied!</span>
+                )}
               </div>
               {isMine && (
                 <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 ml-2 mt-auto">
@@ -844,13 +728,13 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       </div>
 
       {/* Reply bar */}
-      {replyTo && !isFixedChat && (
+      {replyTo && !deleteMode && (
         <div className="px-4 py-2 bg-gray-100 border-t border-gray-200 flex items-center gap-2">
           <div className="flex-1 border-l-4 border-blue-400 pl-2 bg-white rounded p-2">
             <p className="text-[10px] font-semibold text-blue-600">
               Replying to {replyTo.sender === 'me' ? 'yourself' : targetUser.name}
             </p>
-            <p className="text-xs text-gray-600 truncate">{replyTo.text || 'Photo'}</p>
+            <p className="text-xs text-gray-600 truncate">{replyTo.text || 'Image'}</p>
           </div>
           <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-gray-200 rounded-full">
             <X size={18} className="text-gray-500" />
@@ -858,22 +742,26 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         </div>
       )}
 
-      {/* Input bar - Hidden for fixed chats */}
-      {!isFixedChat ? (
+      {/* Input bar */}
+      {!isFixedChat && !deleteMode && (
         <div className="px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-2">
           <input
             type="file"
             ref={fileInputRef}
-            accept="image/*"
             onChange={handleImageUpload}
+            accept="image/*"
             className="hidden"
           />
           <button 
+            className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
             onClick={() => fileInputRef.current?.click()}
-            className="text-gray-500 hover:text-gray-700"
-            disabled={isSending}
+            disabled={imageUploading}
           >
-            <ImageIcon size={24} />
+            {imageUploading ? (
+              <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+            ) : (
+              <ImageIcon size={24} />
+            )}
           </button>
           <input
             type="text"
@@ -882,44 +770,20 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             className="flex-1 bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-300"
-            disabled={isSending}
           />
           <button
             onClick={handleSend}
-            disabled={!newMessage.trim() || isSending}
+            disabled={!newMessage.trim()}
             className="text-blue-500 disabled:text-gray-300 hover:text-blue-600"
           >
             <Send size={24} />
           </button>
         </div>
-      ) : (
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
-          <p className="text-xs text-gray-400">This is an official account. You cannot reply here.</p>
-        </div>
       )}
 
-      {/* Report Confirmation */}
-      {showReportConfirm && (
-        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowReportConfirm(false)}>
-          <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="text-4xl mb-3">⚠️</div>
-            <h3 className="text-lg font-bold text-gray-800 mb-1">Report {targetUser.name}?</h3>
-            <p className="text-sm text-gray-500 mb-4">This user will be reported to our team for review.</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowReportConfirm(false)}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-full transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReportUser}
-                className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full transition-colors cursor-pointer"
-              >
-                Report
-              </button>
-            </div>
-          </div>
+      {isFixedChat && (
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
+          <p className="text-xs text-gray-400">This is an official account. You cannot reply here.</p>
         </div>
       )}
 
@@ -948,26 +812,55 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         </div>
       )}
 
-      {/* Full Image View */}
-      {showFullImage && (
-        <div
-          className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setShowFullImage(null)}
-        >
-          <button
-            onClick={() => setShowFullImage(null)}
-            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
-          >
-            <X size={24} />
-          </button>
-          <img
-            src={showFullImage}
-            alt=""
-            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+      {/* Report Confirmation */}
+      {showReportConfirm && (
+        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowReportConfirm(false)}>
+          <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="text-4xl mb-3">🚨</div>
+            <h3 className="text-lg font-bold text-gray-800 mb-1">Report {targetUser.name}?</h3>
+            <p className="text-sm text-gray-500 mb-4">This user will be reviewed by our team.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowReportConfirm(false)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-full transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReportUser}
+                className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full transition-colors cursor-pointer"
+              >
+                Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Selected Messages Confirmation */}
+      {showDeleteSelectedConfirm && (
+        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowDeleteSelectedConfirm(false)}>
+          <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="text-4xl mb-3">🗑️</div>
+            <h3 className="text-lg font-bold text-gray-800 mb-1">Delete {selectedMessages.size} Message{selectedMessages.size > 1 ? 's' : ''}?</h3>
+            <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteSelectedConfirm(false)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-full transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteSelectedMessages}
+                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-full transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
-                      }
+          }
