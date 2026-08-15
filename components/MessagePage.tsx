@@ -92,8 +92,9 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
         const clearedAt = data.clearedAtRef?.[currentUserUid] || 0;
         const lastTimestamp = data.lastTimestamp?.toMillis?.() || 0;
 
-        if (otherUser && !seenUids.has(otherUser.uid) && lastTimestamp >= clearedAt) {
+        if (otherUser && !seenUids.has(otherUser.uid)) {
           seenUids.add(otherUser.uid);
+          const isCleared = clearedAt > lastTimestamp;
           chats.push({
             chatId: doc.id,
             otherUser: {
@@ -101,9 +102,9 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
               name: otherUser.name,
               photo: otherUser.photo || '',
             },
-            lastMessage: data.lastMessage || '',
+            lastMessage: isCleared ? '' : (data.lastMessage || ''),
             lastTimestamp: lastTimestamp,
-            unreadCount: data.unreadCounts?.[currentUserUid] || 0,
+            unreadCount: isCleared ? 0 : (data.unreadCounts?.[currentUserUid] || 0),
           });
         }
       });
