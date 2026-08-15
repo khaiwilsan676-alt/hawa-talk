@@ -16,8 +16,7 @@ import {
   deleteDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { db, storage } from '../src/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '../src/lib/firebase';
 
 interface Message {
   id: string;
@@ -207,21 +206,30 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check file size (max 5MB for base64)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
     setImageUploading(true);
     try {
-      // Upload image to Firebase Storage
-      const imageRef = ref(storage, `chat_images/${chatId}/${Date.now()}_${file.name}`);
-      await uploadBytes(imageRef, file);
-      const imageUrl = await getDownloadURL(imageRef);
+      // Convert image to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      // Send image message
+      // Send image message with base64 data
       const messagesRef = collection(db, 'chats', chatId, 'messages');
       await addDoc(messagesRef, {
         text: '',
         senderUid: currentUser.uid,
         timestamp: serverTimestamp(),
         type: 'image',
-        imageUrl: imageUrl,
+        imageUrl: base64,
         replyTo: replyTo ? {
           id: replyTo.id,
           text: replyTo.text,
@@ -863,4 +871,4 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       )}
     </div>
   );
-          }
+      }
