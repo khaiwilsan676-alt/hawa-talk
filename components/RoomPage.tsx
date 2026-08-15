@@ -973,6 +973,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setMusicControllerState('full');
     setMusicCurrentTime(0);
     setMusicDuration(0);
+    // Reset drag position when new track starts
+    setDragPosition(null);
   };
 
   const handleToggleMusicPlay = () => {
@@ -1046,6 +1048,8 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setMusicControllerState('hidden');
     setCurrentTrack(null);
     setIsMusicPlaying(false);
+    setDragPosition(null); // Reset drag position
+    setIsDraggingMusicIcon(false); // Ensure dragging state is off
   };
 
   const handleMinimizeMusicController = () => {
@@ -1080,6 +1084,106 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // ----------------------------------------------------------------
+  // NEW: Drag and drop logic for minimized music icon
+  // ----------------------------------------------------------------
+  const [isDraggingMusicIcon, setIsDraggingMusicIcon] = useState(false);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isOverDropTarget, setIsOverDropTarget] = useState(false);
+  const didDragRef = useRef(false);
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dropTargetRef = useRef<HTMLDivElement>(null);
+
+  // Helper to check if a point is inside the drop target
+  const isPointInsideDropTarget = (clientX: number, clientY: number) => {
+    const rect = dropTargetRef.current?.getBoundingClientRect();
+    if (!rect) return false;
+    return (
+      clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom
+    );
+  };
+
+  const handleMinimizedIconPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault(); // Prevent default touch behavior
+    didDragRef.current = false;
+    setIsDraggingMusicIcon(true);
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    // Set drag position to current left/top if not already set
+    setDragPosition(prev => prev ?? { x: rect.left, y: rect.top });
+    dragOffsetRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+
+    // Capture pointer on the button element
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleMinimizedIconPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isDraggingMusicIcon) return;
+    e.preventDefault();
+
+    // Detect movement
+    const dx = Math.abs(e.clientX - (dragOffsetRef.current.x + (dragPosition?.x ?? 0)));
+    const dy = Math.abs(e.clientY - (dragOffsetRef.current.y + (dragPosition?.y ?? 0)));
+    if (dx > 3 || dy > 3) {
+      didDragRef.current = true;
+    }
+
+    const newX = e.clientX - dragOffsetRef.current.x;
+    const newY = e.clientY - dragOffsetRef.current.y;
+    setDragPosition({ x: newX, y: newY });
+
+    // Check if pointer is over drop target
+    if (isPointInsideDropTarget(e.clientX, e.clientY)) {
+      setIsOverDropTarget(true);
+    } else {
+      setIsOverDropTarget(false);
+    }
+  };
+
+  const handleMinimizedIconPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isDraggingMusicIcon) return;
+    setIsDraggingMusicIcon(false);
+
+    // If it was a drag and dropped on target, close music
+    if (didDragRef.current && isOverDropTarget) {
+      handleCloseMusicController();
+    } else if (!didDragRef.current) {
+      // It was a click, treat as maximize
+      handleMaximizeMusicController();
+    }
+    // Release capture
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    setIsOverDropTarget(false);
+  };
+
+  // Render drop target only while dragging
+  const dropTargetStyle: React.CSSProperties = {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    width: '80px',
+    height: '80px',
+    borderRadius: '50%',
+    backgroundColor: isOverDropTarget ? '#ef4444' : '#dc2626',
+    border: '3px solid white',
+    boxShadow: '0 0 20px rgba(0,0,0,0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 60,
+    transition: 'transform 0.2s, background-color 0.2s',
+    transform: isOverDropTarget ? 'scale(1.1)' : 'scale(1)',
+    pointerEvents: 'none', // So it doesn't interfere with drop detection
+  };
+  // ----------------------------------------------------------------
 
   if (showSettingPage) {
     return (
@@ -1612,245 +1716,265 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         />
       )}
 
-  {/* Music Controller - Full Size */}
-{musicControllerState === 'full' && currentTrack && !showFourGride && (
-  <div 
-    className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
-    style={{ bottom: '10vh' }}
-    onClick={(e) => e.stopPropagation()}
-  >
-    <div 
-      className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
-      style={{
-        padding: '16px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-      }}
-    >
-      {/* Top Left: Power Off (Close) */}
-      <button
-        onClick={handleCloseMusicController}
-        className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-        aria-label="Close music controller"
-      >
-        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-          <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
-          <line x1="12" y1="2" x2="12" y2="12" />
-        </svg>
-      </button>
+      {/* Music Controller - Full Size */}
+      {musicControllerState === 'full' && currentTrack && !showFourGride && (
+        <div 
+          className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
+          style={{ bottom: '10vh' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
+            style={{
+              padding: '16px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            }}
+          >
+            {/* Top Left: Power Off (Close) */}
+            <button
+              onClick={handleCloseMusicController}
+              className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+              aria-label="Close music controller"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
+                <line x1="12" y1="2" x2="12" y2="12" />
+              </svg>
+            </button>
 
-      {/* Top Right: Minimize Arrow Icon */}
-      <button
-        onClick={handleMinimizeMusicController}
-        className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-        aria-label="Minimize music controller"
-      >
-        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-          <line x1="7" y1="17" x2="17" y2="7" />
-          <polyline points="7 7 17 7 17 17" />
-        </svg>
-      </button>
+            {/* REMOVED: Top Right Minimize Button (as requested) */}
 
-      {/* Track name */}
-      <div className="text-center mb-3 mt-6">
-        <p className="text-white text-sm font-semibold truncate px-8">
-          {currentTrack.name}
-        </p>
-      </div>
+            {/* Track name */}
+            <div className="text-center mb-3 mt-6">
+              <p className="text-white text-sm font-semibold truncate px-8">
+                {currentTrack.name}
+              </p>
+            </div>
 
-      {/* Music Progress Bar */}
-      <div className="px-2 mb-3">
-        <input
-          type="range"
-          min="0"
-          max={musicDuration || 0}
-          step="0.1"
-          value={musicCurrentTime}
-          onChange={handleProgressChange}
-          className="w-full h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
-          style={{
-            background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
-          }}
-        />
-        <div className="flex justify-between text-[10px] text-white/60 mt-1">
-          <span>{formatTime(musicCurrentTime)}</span>
-          <span>{formatTime(musicDuration)}</span>
+            {/* Music Progress Bar */}
+            <div className="px-2 mb-3">
+              <input
+                type="range"
+                min="0"
+                max={musicDuration || 0}
+                step="0.1"
+                value={musicCurrentTime}
+                onChange={handleProgressChange}
+                className="w-full h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
+                style={{
+                  background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
+                }}
+              />
+              <div className="flex justify-between text-[10px] text-white/60 mt-1">
+                <span>{formatTime(musicCurrentTime)}</span>
+                <span>{formatTime(musicDuration)}</span>
+              </div>
+            </div>
+
+            {/* Control Buttons */}
+            <div className="flex items-center justify-center gap-8 mb-3">
+              <button
+                onClick={handlePrevTrack}
+                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Previous track"
+              >
+                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+                </svg>
+              </button>
+
+              <button
+                onClick={handleToggleMusicPlay}
+                className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                aria-label={isMusicPlaying ? 'Pause' : 'Play'}
+              >
+                {isMusicPlaying ? (
+                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white">
+                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={handleNextTrack}
+                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Next track"
+              >
+                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+                  <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Volume Control with speaker and percentage */}
+            <div className="flex items-center gap-3 px-2">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0">
+                <path d="M3 9v6h4l5 5V4L7 9H3z" />
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
+                <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+              </svg>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={musicVolume}
+                onChange={handleVolumeChange}
+                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
+                style={{
+                  background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
+                }}
+              />
+              <span className="text-white text-xs font-semibold w-10 text-right">
+                {Math.round(musicVolume * 100)}%
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Control Buttons */}
-      <div className="flex items-center justify-center gap-8 mb-3">
-        <button
-          onClick={handlePrevTrack}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-          aria-label="Previous track"
-        >
-          <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-          </svg>
-        </button>
-
-        <button
-          onClick={handleToggleMusicPlay}
-          className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
-          aria-label={isMusicPlaying ? 'Pause' : 'Play'}
-        >
-          {isMusicPlaying ? (
-            <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white">
-              <rect x="6" y="4" width="4" height="16" rx="1" />
-              <rect x="14" y="4" width="4" height="16" rx="1" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
+      {/* Music Controller - Minimized (Draggable, with close drop target) */}
+      {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
+        <>
+          {/* Red drop target (only visible while dragging) */}
+          {isDraggingMusicIcon && (
+            <div
+              ref={dropTargetRef}
+              style={dropTargetStyle}
+              className="select-none"
+            >
+              <svg viewBox="0 0 24 24" className="w-10 h-10 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </div>
           )}
-        </button>
 
-        <button
-          onClick={handleNextTrack}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-          aria-label="Next track"
-        >
-          <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-            <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
-          </svg>
-        </button>
-      </div>
+          {/* Draggable minimized icon */}
+          <div
+            className="fixed z-[45]"
+            style={{
+              // If dragPosition is set, use left/top; otherwise default bottom-right
+              left: dragPosition ? dragPosition.x : undefined,
+              top: dragPosition ? dragPosition.y : undefined,
+              bottom: dragPosition ? 'auto' : '8vh',
+              right: dragPosition ? 'auto' : '12px',
+              cursor: isDraggingMusicIcon ? 'grabbing' : 'grab',
+              touchAction: 'none', // Prevent scrolling on touch while dragging
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative">
+              {/* Red waves - DARK */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-red-600/50 animate-ping-slow" />
+                <div className="absolute w-16 h-16 rounded-full bg-red-700/40 animate-ping-slow" style={{ animationDelay: '0.5s' }} />
+              </div>
+              
+              {/* Image button - rotates slowly, SOLID BLACK border, bigger image */}
+              <button
+                onPointerDown={handleMinimizedIconPointerDown}
+                onPointerMove={handleMinimizedIconPointerMove}
+                onPointerUp={handleMinimizedIconPointerUp}
+                onPointerCancel={() => {
+                  setIsDraggingMusicIcon(false);
+                  setIsOverDropTarget(false);
+                }}
+                className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  border: '3px solid black',
+                  backgroundColor: 'black',
+                  touchAction: 'none',
+                }}
+                aria-label="Draggable music icon"
+              >
+                <div className="absolute inset-0 flex items-center justify-center music-minimize-icon">
+                  <img src="/IMG_20260815_133309.png" alt="Music" className="w-15 h-15 object-contain" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
-      {/* Volume Control with speaker and percentage */}
-      <div className="flex items-center gap-3 px-2">
-        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0">
-          <path d="M3 9v6h4l5 5V4L7 9H3z" />
-          <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-          <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-        </svg>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={musicVolume}
-          onChange={handleVolumeChange}
-          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
-          style={{
-            background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
-          }}
-        />
-        <span className="text-white text-xs font-semibold w-10 text-right">
-          {Math.round(musicVolume * 100)}%
-        </span>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Custom styles for sliders - NO DOTS/THUMBS */}
+      <style jsx global>{`
+        .music-volume-slider {
+          -webkit-appearance: none;
+          appearance: none;
+        }
+        .music-volume-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 0px;
+          height: 0px;
+          background: transparent;
+        }
+        .music-volume-slider::-moz-range-thumb {
+          width: 0px;
+          height: 0px;
+          background: transparent;
+          border: none;
+        }
+        .music-volume-slider::-webkit-slider-runnable-track {
+          height: 8px;
+          border-radius: 4px;
+        }
+        .music-volume-slider::-moz-range-track {
+          height: 8px;
+          border-radius: 4px;
+        }
 
-{/* Music Controller - Minimized (with IMAGE, red waves, rotation, NO green dot) */}
-{musicControllerState === 'minimized' && currentTrack && !showFourGride && (
-  <div 
-    className="fixed z-[45]"
-    style={{
-      bottom: '8vh',  // Thoda upar kiya
-      right: '12px',
-    }}
-    onClick={(e) => e.stopPropagation()}
-  >
-    <div className="relative">
-      {/* Red waves - DARK */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-16 h-16 rounded-full bg-red-600/50 animate-ping-slow" />
-        <div className="absolute w-16 h-16 rounded-full bg-red-700/40 animate-ping-slow" style={{ animationDelay: '0.5s' }} />
-      </div>
-      
-      {/* Image button - rotates slowly, SOLID BLACK border, bigger image */}
-      <button
-        onClick={handleMaximizeMusicController}
-        className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
-        style={{
-          width: '56px',  // Thoda bada
-          height: '56px',  // Thoda bada
-          border: '3px solid black',  // Solid black border
-          backgroundColor: 'black',
-        }}
-        aria-label="Open music controller"
-      >
-        <div className="absolute inset-0 flex items-center justify-center music-minimize-icon">
-          <img src="/IMG_20260815_133309.png" alt="Music" className="w-13 h-13 object-contain" />  {/* Image bada */}
-        </div>
-      </button>
-    </div>
-  </div>
-)}
+        .music-progress-slider {
+          -webkit-appearance: none;
+          appearance: none;
+        }
+        .music-progress-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 0px;
+          height: 0px;
+          background: transparent;
+        }
+        .music-progress-slider::-moz-range-thumb {
+          width: 0px;
+          height: 0px;
+          background: transparent;
+          border: none;
+        }
+        .music-progress-slider::-webkit-slider-runnable-track {
+          height: 6px;
+          border-radius: 3px;
+        }
+        .music-progress-slider::-moz-range-track {
+          height: 6px;
+          border-radius: 3px;
+        }
 
-{/* Custom styles for sliders - NO DOTS/THUMBS */}
-<style jsx global>{`
-  .music-volume-slider {
-    -webkit-appearance: none;
-    appearance: none;
-  }
-  .music-volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 0px;  /* Dot hataya */
-    height: 0px;  /* Dot hataya */
-    background: transparent;  /* Transparent */
-  }
-  .music-volume-slider::-moz-range-thumb {
-    width: 0px;  /* Dot hataya */
-    height: 0px;  /* Dot hataya */
-    background: transparent;  /* Transparent */
-    border: none;
-  }
-  .music-volume-slider::-webkit-slider-runnable-track {
-    height: 8px;  /* Thoda mota track */
-    border-radius: 4px;
-  }
-  .music-volume-slider::-moz-range-track {
-    height: 8px;  /* Thoda mota track */
-    border-radius: 4px;
-  }
+        @keyframes ping-slow {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+        .animate-ping-slow {
+          animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
 
-  .music-progress-slider {
-    -webkit-appearance: none;
-    appearance: none;
-  }
-  .music-progress-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 0px;  /* Dot hataya */
-    height: 0px;  /* Dot hataya */
-    background: transparent;  /* Transparent */
-  }
-  .music-progress-slider::-moz-range-thumb {
-    width: 0px;  /* Dot hataya */
-    height: 0px;  /* Dot hataya */
-    background: transparent;  /* Transparent */
-    border: none;
-  }
-  .music-progress-slider::-webkit-slider-runnable-track {
-    height: 6px;  /* Thoda mota track */
-    border-radius: 3px;
-  }
-  .music-progress-slider::-moz-range-track {
-    height: 6px;  /* Thoda mota track */
-    border-radius: 3px;
-  }
+        @keyframes rotate-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .music-minimize-icon {
+          animation: rotate-slow 4s linear infinite;
+        }
+      `}</style>
 
-  @keyframes ping-slow {
-    0% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(1.5); opacity: 0; }
-  }
-  .animate-ping-slow {
-    animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-
-  @keyframes rotate-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .music-minimize-icon {
-    animation: rotate-slow 4s linear infinite;
-  }
-`}</style>
       {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
@@ -1869,7 +1993,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   );
 }
 
-// SeatItem Component
+// SeatItem Component (unchanged)
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, isRoomOwner }: {
   seatNumber: number;
   seatData?: Seat;
