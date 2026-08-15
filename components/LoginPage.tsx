@@ -96,7 +96,9 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     const userDocRef = doc(db, "users", uid)
     const userDocSnap = await getDoc(userDocRef)
 
-    if (userDocSnap.exists()) {
+    const isExistingUser = userDocSnap.exists()
+
+    if (isExistingUser) {
       const data = userDocSnap.data()
       if (data.accountId) {
         finalAccountId = String(data.accountId)
@@ -104,8 +106,8 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
       if (data.name) {
         existingName = data.name
       }
-      if (data.image) {
-        existingImage = data.image
+      if (data.image || data.photo || data.photoURL) {
+        existingImage = data.image || data.photo || data.photoURL
       }
       if (data.bio) {
         existingBio = data.bio
@@ -119,7 +121,11 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     }
 
     const finalName = existingName || name || email.split('@')[0] || 'User'
-    const finalImage = existingImage || photo || '/default-avatar.png'
+
+    // Gmail fallback DP is only for new users. Existing users retain their DP (or default).
+    const finalImage = isExistingUser
+      ? (existingImage || '/default-avatar.png')
+      : (photo || '/default-avatar.png')
 
     const userData: any = {
       id: uid,
