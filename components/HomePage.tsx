@@ -802,6 +802,26 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setSelectedUser(null)
   }
 
+  const handleJoinRoomFromChat = async (roomId: string) => {
+    try {
+      const roomDoc = await getDoc(doc(db, 'globalRooms', roomId));
+      if (roomDoc.exists()) {
+        const roomData = roomDoc.data();
+        handleUserCardClick({
+          id: roomData.id || roomId,
+          accountId: roomData.accountId || roomId,
+          name: roomData.name,
+          country: roomData.country || '🇮🇳',
+          image: roomData.image || '/default-avatar.png'
+        });
+      } else {
+        console.error('Room not found');
+      }
+    } catch (error) {
+      console.error('Error fetching room data:', error);
+    }
+  };
+
   // ROBUST SEARCH FUNCTION FOR FIRESTORE
   const handlePerformSearch = async () => {
     if (!searchQuery.trim()) {
@@ -1913,7 +1933,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
 
         {currentPage === 'message' && (
-          <MessagePage onChatOpen={setIsChatOpen} />
+          <MessagePage onChatOpen={setIsChatOpen} onJoinRoom={handleJoinRoomFromChat} />
         )}
 
         {currentPage === 'me' && (
@@ -1952,6 +1972,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         {currentPage === 'public_profile' && (
           <PublicProfile
             onBack={handleBackFromPublicProfile}
+            onJoinRoom={handleJoinRoomFromChat}
             isOtherUser={true}
             targetUser={selectedUser ? {
               id: selectedUser.id,
