@@ -185,19 +185,19 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
       </div>
 
       {/* Main content: Chats + Users list */}
-      <div className="px-4 pt-4 pb-24 flex flex-col gap-2">
+      <div className="px-4 pt-4 pb-24 flex flex-col gap-1">
         {/* Fixed chats */}
         {fixedChats.map((chat) => (
           <div
             key={chat.id}
             onClick={() => handleOpenFixedChat(chat)}
-            className="flex items-center gap-4 px-2 py-3 cursor-pointer active:opacity-60 transition-opacity"
+            className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity"
           >
             <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
               <Image src={chat.image} alt={chat.name} width={56} height={56} className="object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-800 text-lg">{chat.name}</h3>
+              <h3 className="font-semibold text-gray-800 text-base">{chat.name}</h3>
             </div>
           </div>
         ))}
@@ -207,7 +207,7 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
           <div
             key={chat.chatId}
             onClick={() => handleOpenDynamicChat(chat)}
-            className="flex items-center gap-4 px-2 py-3 cursor-pointer active:opacity-60 transition-opacity"
+            className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity"
           >
             <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
               <Image
@@ -219,7 +219,7 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-800 text-lg">{chat.otherUser.name}</h3>
+              <h3 className="font-semibold text-gray-800 text-base">{chat.otherUser.name}</h3>
               <p className="text-sm text-gray-500 truncate">{chat.lastMessage}</p>
             </div>
             <div className="flex flex-col items-end gap-1">
@@ -234,8 +234,8 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
         ))}
 
         {/* Users section (no heading) */}
-        <div className="mt-6">
-          <div className="flex flex-col gap-2">
+        <div className="mt-4">
+          <div className="flex flex-col gap-1">
             {(() => {
               const activeChatUids = new Set([
                 ...fixedChats.map(c => c.uid),
@@ -245,7 +245,7 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
                 <div
                   key={user.uid}
                   onClick={() => handleSelectUser(user)}
-                  className="flex items-center gap-4 px-2 py-3 cursor-pointer active:opacity-60 transition-opacity"
+                  className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity"
                 >
                   <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     <Image
@@ -256,7 +256,7 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
                       className="object-cover"
                     />
                   </div>
-                  <span className="font-medium text-gray-800 text-lg">{user.name}</span>
+                  <span className="font-medium text-gray-800 text-base">{user.name}</span>
                 </div>
               ));
             })()}
@@ -275,4 +275,4 @@ export default function MessagePage({ onChatOpen, sharedRoomData }: MessagePageP
       )}
     </div>
   );
-                   }
+}
