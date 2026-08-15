@@ -266,7 +266,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
         // Filter out if the conversation was cleared after the last message
         const clearedAt = data.clearedAtRef?.[userUID] || 0;
-        const lastTimestamp = data.lastTimestamp?.toMillis?.() || 0;
+        const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" ? data.lastTimestamp.toMillis() : (data.lastTimestamp || 0);
 
         if (lastTimestamp >= clearedAt) {
           const unread = data.unreadCounts?.[userUID] || 0;

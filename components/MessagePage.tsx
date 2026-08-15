@@ -91,7 +91,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
 
         // Filter out if the conversation was cleared after the last message
         const clearedAt = data.clearedAtRef?.[currentUserUid] || 0;
-        const lastTimestamp = data.lastTimestamp?.toMillis?.() || 0;
+        const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" ? data.lastTimestamp.toMillis() : (data.lastTimestamp || 0);
 
         if (otherUser && !seenUids.has(otherUser.uid)) {
           seenUids.add(otherUser.uid);
