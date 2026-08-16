@@ -2090,6 +2090,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     />
   </div>
 </button>
+  </div>
+  )}
      
       {/* Custom styles for sliders */}
       <style jsx global>{`
