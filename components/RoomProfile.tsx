@@ -30,6 +30,7 @@ interface RoomProfileProps {
     isLocked?: boolean
   }
   isCurrentUser?: boolean
+  isRoomOwner?: boolean   // New prop: true if the viewer is the room owner
   onClose: () => void
   onCopyId?: () => void
   onLeaveSeat?: () => void
@@ -45,6 +46,7 @@ interface RoomProfileProps {
 export default function RoomProfile({ 
   user, 
   isCurrentUser = false,
+  isRoomOwner = false,   // default false
   onClose, 
   onCopyId,
   onLeaveSeat,
@@ -114,12 +116,14 @@ export default function RoomProfile({
   const genderColor = getGenderColor(displayGender)
 
   // Determine dynamic height based on states
-  const showActions = !isCurrentUser
   const showLeaveSeat = isCurrentUser && isInSeat
+  const showActions = !showLeaveSeat // show actions for everyone except current user in seat
+  const showModerationRow = isRoomOwner && !isCurrentUser // only room owner viewing others
 
   const getSheetHeight = () => {
-    if (showActions) return { height: '38vh', minHeight: '340px', maxHeight: '400px' }
     if (showLeaveSeat) return { height: '30vh', minHeight: '280px', maxHeight: '320px' }
+    if (showActions && showModerationRow) return { height: '48vh', minHeight: '420px', maxHeight: '480px' } // extra room for moderation row
+    if (showActions) return { height: '38vh', minHeight: '340px', maxHeight: '400px' }
     return { height: '20vh', minHeight: '220px', maxHeight: '260px' }
   }
 
@@ -285,7 +289,7 @@ export default function RoomProfile({
             </div>
           </div>
 
-          {/* Leave Seat Button - Only show if it's the current user AND they are in a seat */}
+          {/* Leave Seat Button - Only show if current user is in seat */}
           {showLeaveSeat && (
             <div className="mt-auto w-full pt-2">
               <button
@@ -307,73 +311,72 @@ export default function RoomProfile({
             </div>
           )}
 
-          {/* Action Buttons for Other Users Profile: Follow, Chat, 3rd Image, and Mute/Leave/Lock/Kick out row below */}
+          {/* Action Buttons for everyone except current user in seat */}
           {showActions && (
-            <div className="mt-auto w-full pt-2 flex flex-col gap-2.5">
-              {/* Top Row: Follow, Chat, 3rd Image Button */}
-              <div className="flex items-center gap-3 w-full">
-                {/* Follow Button */}
+            <div className="mt-auto w-full pt-2 flex flex-col gap-3">
+              {/* Top row: Follow, Chat, Image (no card) */}
+              <div className="flex items-center gap-6 w-full justify-center">
                 <button
                   onClick={onFollow}
-                  className="flex-1 h-11 rounded-full bg-pink-50 text-pink-500 border border-pink-200 font-semibold text-sm hover:bg-pink-100 transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                  className="flex flex-col items-center gap-1 text-pink-500 font-medium text-sm hover:text-pink-600 transition-colors active:scale-95"
                 >
-                  <Heart size={16} className="text-pink-500 fill-pink-500" />
+                  <Heart size={22} className="fill-pink-500" />
                   <span>{isFollowing ? 'Following' : 'Follow'}</span>
                 </button>
 
-                {/* Chat Button */}
                 <button
                   onClick={onMessage}
-                  className="flex-1 h-11 rounded-full bg-gray-50 text-gray-800 border border-gray-200 font-semibold text-sm hover:bg-gray-100 transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                  className="flex flex-col items-center gap-1 text-gray-700 font-medium text-sm hover:text-gray-900 transition-colors active:scale-95"
                 >
-                  <MessageCircle size={16} className="text-gray-700" />
+                  <MessageCircle size={22} />
                   <span>Chat</span>
                 </button>
 
-                {/* 3rd Column - Image inside a Circle Button */}
                 <button
                   onClick={onThirdAction}
-                  className="w-11 h-11 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-all overflow-hidden p-2 active:scale-95 shrink-0"
+                  className="flex flex-col items-center gap-1 group active:scale-95 transition-all"
                   aria-label="Additional action"
                 >
                   <img 
                     src="/file_000000008e508208b1353ae33e2abef9.png" 
                     alt="Action" 
-                    className="w-full h-full object-contain rounded-full"
+                    className="w-8 h-8 object-contain rounded-full group-hover:scale-110 transition-transform"
                   />
                 </button>
               </div>
 
-              {/* Bottom Row: Mute | Leave | Lock | Kick out */}
-              <div className="flex items-center justify-around w-full py-1 text-gray-500 text-xs sm:text-sm font-medium border-t border-gray-100">
-                <button 
-                  onClick={onMute}
-                  className="hover:text-gray-800 transition-colors py-1 px-2"
-                >
-                  {isMuted ? 'Unmute' : 'Mute'}
-                </button>
-                <span className="text-gray-300">|</span>
-                <button 
-                  onClick={onLeaveSeat}
-                  className="hover:text-gray-800 transition-colors py-1 px-2"
-                >
-                  Leave
-                </button>
-                <span className="text-gray-300">|</span>
-                <button 
-                  onClick={onLock}
-                  className="hover:text-gray-800 transition-colors py-1 px-2"
-                >
-                  {isLocked ? 'Unlock' : 'Lock'}
-                </button>
-                <span className="text-gray-300">|</span>
-                <button 
-                  onClick={onKickOut}
-                  className="hover:text-red-600 transition-colors py-1 px-2"
-                >
-                  Kick out
-                </button>
-              </div>
+              {/* Moderation row: only for room owner viewing other users */}
+              {showModerationRow && (
+                <div className="flex items-center justify-around w-full py-1 text-gray-500 text-xs sm:text-sm font-medium">
+                  <button 
+                    onClick={onMute}
+                    className="hover:text-gray-800 transition-colors py-1 px-2"
+                  >
+                    {isMuted ? 'Unmute' : 'Mute'}
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button 
+                    onClick={onLeaveSeat}
+                    className="hover:text-gray-800 transition-colors py-1 px-2"
+                  >
+                    Leave
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button 
+                    onClick={onLock}
+                    className="hover:text-gray-800 transition-colors py-1 px-2"
+                  >
+                    {isLocked ? 'Unlock' : 'Lock'}
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button 
+                    onClick={onKickOut}
+                    className="hover:text-red-600 transition-colors py-1 px-2"
+                  >
+                    Kick out
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -396,5 +399,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-}
-
+    }
