@@ -1729,4 +1729,4 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       `}</style>
     </div>
   );
-}
+                     }
