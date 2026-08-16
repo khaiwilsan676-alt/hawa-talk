@@ -233,17 +233,17 @@ const WhiteColorRemovalShader = ({
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // Setup texture coordinates
-    const texCoordBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    const texCoords = new Float32Array([
-      0.0, 0.0,
-      1.0, 0.0,
-      0.0, 1.0,
-      0.0, 1.0,
-      1.0, 0.0,
-      1.0, 1.0,
-    ])
+    // Setup texture coordinates - FLIP Y axis
+const texCoordBuffer = gl.createBuffer()
+gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+const texCoords = new Float32Array([
+  0.0, 1.0,  // Bottom-left
+  1.0, 1.0,  // Bottom-right
+  0.0, 0.0,  // Top-left
+  0.0, 0.0,  // Top-left
+  1.0, 1.0,  // Bottom-right
+  1.0, 0.0,  // Top-right
+])
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
     const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
