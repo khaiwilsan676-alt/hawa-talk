@@ -10,27 +10,20 @@ import Fourgride from './Fourgride';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { db } from "../src/lib/firebase";
 import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
-// LiveKit imports for Voice Audio
+// LiveKit imports for Voice Audio - Fixed imports
 import { 
   LiveKitRoom, 
   RoomAudioRenderer, 
   useLocalParticipant, 
-  useRemoteParticipants,
-  useTracks,
-  Track,
-  useRoomContext,
-  ConnectionState
+  useRemoteParticipants 
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { 
   Room, 
   RoomEvent, 
   Track as LKTrack, 
-  createLocalAudioTrack, 
-  LocalAudioTrack, 
   RemoteParticipant, 
-  RemoteTrackPublication,
-  AudioCaptureOptions
+  RemoteTrackPublication
 } from "livekit-client";
 
 interface RoomPageProps {
@@ -127,14 +120,14 @@ function VoiceActivityIndicator({ participantIdentity, isLocal, isMuted }: {
         let stream: MediaStream | null = null;
         
         if (isLocal && localParticipant) {
-          const track = localParticipant.getTrackPublication(Track.Source.Microphone);
+          const track = localParticipant.getTrackPublication(LKTrack.Source.Microphone);
           if (track && track.audioTrack) {
             stream = new MediaStream([track.audioTrack.mediaStreamTrack]);
           }
         } else if (!isLocal) {
           const participant = remoteParticipants.find(p => p.identity === participantIdentity);
           if (participant) {
-            const track = participant.getTrackPublication(Track.Source.Microphone);
+            const track = participant.getTrackPublication(LKTrack.Source.Microphone);
             if (track && track.audioTrack) {
               stream = new MediaStream([track.audioTrack.mediaStreamTrack]);
             }
@@ -201,7 +194,6 @@ function AudioConnectionManager({
   useEffect(() => {
     if (!localParticipant || !room) return;
     
-    // Enable/disable microphone based on seat status
     const updateMicrophoneState = async () => {
       try {
         if (hasSeat && !isMuted) {
@@ -219,7 +211,6 @@ function AudioConnectionManager({
     updateMicrophoneState();
   }, [localParticipant, room, hasSeat, isMuted, currentUserName]);
 
-  // Listen for room events
   useEffect(() => {
     if (!room) return;
     
@@ -252,9 +243,8 @@ function AudioConnectionManager({
 }
 
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
-  // LiveKit Token & Connection States
+  // LiveKit Token State
   const [livekitToken, setLivekitToken] = useState<string>("");
-  const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.Disconnected);
   const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
 
   const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
@@ -287,8 +277,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       token={livekitToken}
       serverUrl={livekitUrl}
       connect={Boolean(livekitToken)}
-      onConnected={() => setConnectionState(ConnectionState.Connected)}
-      onDisconnected={() => setConnectionState(ConnectionState.Disconnected)}
       className="fixed inset-0 z-50 bg-black flex flex-col"
       options={{
         adaptiveStream: true,
@@ -307,13 +295,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         onFollowToggle={onFollowToggle}
       />
       <RoomAudioRenderer />
-      <AudioConnectionManager 
-        roomId={roomId}
-        userAccountId={userAccountId}
-        currentUserName={currentUser.name}
-        hasSeat={false} // Will be updated from RoomContent
-        isMuted={true}
-      />
     </LiveKitRoom>
   );
 }
@@ -332,7 +313,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [copied, setCopied] = useState(false);
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
 
-  // LiveKit Hooks
+  // LiveKit Hook for Microphone Control
   const { localParticipant, room } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
 
@@ -454,7 +435,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         );
         
         if (seatIndex !== -1) {
-          const audioPublication = participant.getTrackPublication(Track.Source.Microphone);
+          const audioPublication = participant.getTrackPublication(LKTrack.Source.Microphone);
           const isMuted = audioPublication ? audioPublication.isMuted : true;
           
           if (updatedSeats[seatIndex].isMuted !== isMuted) {
@@ -2128,4 +2109,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-}
+    }
