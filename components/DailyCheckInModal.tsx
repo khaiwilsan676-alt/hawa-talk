@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 
-// Rewards data – all icons now use the image
+// Rewards data – different images and custom text
 const SIGN_IN_REWARDS = [
-  { day: 1, reward: '50 Diamonds', color: '#FF6B6B' },
-  { day: 2, reward: '100 Coins', color: '#FFA726' },
-  { day: 3, reward: '150 Diamonds', color: '#66BB6A' },
-  { day: 4, reward: '200 Coins', color: '#42A5F5' },
-  { day: 5, reward: 'Frame', color: '#AB47BC' },
-  { day: 6, reward: '300 Diamonds', color: '#EF5350' },
-  { day: 7, reward: '500 Coins + Special Frame', color: '#FFD700' },
+  { day: 1, reward: '+5000', image: '1786855398290.png', color: '#FF6B6B' },
+  { day: 2, reward: '+5000', image: '1786855398290.png', color: '#FFA726' },
+  { day: 3, reward: '×2 Days', image: '1786857172378.png', color: '#66BB6A' },
+  { day: 4, reward: '+10,000', image: '1786855398290.png', color: '#42A5F5' },
+  { day: 5, reward: '+10,000', image: '1786855398290.png', color: '#AB47BC' },
+  { day: 6, reward: 'Special', image: '1786855398290.png', color: '#EF5350', special: true },
+  { day: 7, reward: '500 Coins + Special Frame', image: '1786855398290.png', color: '#FFD700' },
 ];
 
 interface DailyCheckInModalProps {
@@ -43,14 +43,36 @@ export default function DailyCheckInModal({
 
   if (!isOpen) return null;
 
-  // Render the image icon
-  const renderIcon = () => {
+  // Render the image icon with specific image for each day
+  const renderIcon = (imageSrc: string, size: string = 'w-10 h-10') => {
     return (
       <img 
-        src="1786855398290.png" 
+        src={imageSrc} 
         alt="reward" 
-        className="w-8 h-8 mx-auto object-contain" 
+        className={`${size} mx-auto object-contain`} 
       />
+    );
+  };
+
+  // Special render for Day 6 with two rewards
+  const renderDay6Special = () => {
+    return (
+      <div className="flex items-center justify-center gap-4">
+        {/* Left side - Coins */}
+        <div className="flex flex-col items-center">
+          {renderIcon('1786855398290.png', 'w-8 h-8')}
+          <span className="text-xs font-bold text-gray-700 mt-1">+10,000</span>
+        </div>
+        
+        {/* Divider */}
+        <div className="w-px h-12 bg-gray-300"></div>
+        
+        {/* Right side - Special image */}
+        <div className="flex flex-col items-center">
+          {renderIcon('/1784875884052~2.jpg', 'w-8 h-8')}
+          <span className="text-xs font-bold text-gray-700 mt-1">×3 Days</span>
+        </div>
+      </div>
     );
   };
 
@@ -60,12 +82,13 @@ export default function DailyCheckInModal({
       style={{
         animation: 'modalOverlayIn 0.3s ease-out',
         height: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
+        paddingTop: '60px',
       }}
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/60" />
       <div
-        className="relative bg-white rounded-3xl w-full max-w-sm overflow-hidden mb-4"
+        className="relative bg-white rounded-3xl w-full max-w-md overflow-hidden mb-4"
         style={{
           animation: 'modalFadeIn 0.3s ease-out',
           boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
@@ -92,24 +115,24 @@ export default function DailyCheckInModal({
         {/* Rewards grid */}
         <div className="px-6 pt-6 pb-4">
           {/* Days 1-4 */}
-          <div className="grid grid-cols-4 gap-2 mb-2">
+          <div className="grid grid-cols-4 gap-3 mb-3">
             {SIGN_IN_REWARDS.slice(0, 4).map((item, index) => (
               <div
                 key={item.day}
-                className={`relative rounded-xl p-2 text-center transition-all bg-white ${
+                className={`relative rounded-xl p-3 text-center transition-all bg-white ${
                   index + 1 < currentDay
                     ? 'border-2 border-green-400'
                     : index + 1 === currentDay
                     ? 'border-2 border-blue-500 animate-pulse'
                     : 'border-2 border-gray-200 opacity-60'
                 }`}
-                style={{ minHeight: '80px' }}
+                style={{ minHeight: '90px' }}
               >
-                {/* Blue day number in top-left */}
-                <span className="absolute top-1 left-2 text-blue-600 text-xs font-bold">
+                {/* Day number with blue circular background */}
+                <span className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   {item.day}
                 </span>
-                <div className="mb-1">{renderIcon()}</div>
+                <div className="mb-1">{renderIcon(item.image)}</div>
                 <div className="text-xs font-semibold text-gray-700">{item.reward}</div>
                 {index + 1 < currentDay && (
                   <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
@@ -123,36 +146,58 @@ export default function DailyCheckInModal({
           </div>
 
           {/* Days 5-6 */}
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            {SIGN_IN_REWARDS.slice(4, 6).map((item, index) => (
-              <div
-                key={item.day}
-                className={`relative rounded-xl p-3 text-center transition-all bg-white ${
-                  index + 5 < currentDay
-                    ? 'border-2 border-green-400'
-                    : index + 5 === currentDay
-                    ? 'border-2 border-blue-500 animate-pulse'
-                    : 'border-2 border-gray-200 opacity-60'
-                }`}
-                style={{ minHeight: '70px' }}
-              >
-                <span className="absolute top-1 left-2 text-blue-600 text-xs font-bold">
-                  {item.day}
-                </span>
-                <div className="mb-1">{renderIcon()}</div>
-                <div className="text-xs font-semibold text-gray-700">{item.reward}</div>
-                {index + 5 < currentDay && (
-                  <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            {/* Day 5 */}
+            <div
+              className={`relative rounded-xl p-4 text-center transition-all bg-white ${
+                5 < currentDay
+                  ? 'border-2 border-green-400'
+                  : 5 === currentDay
+                  ? 'border-2 border-blue-500 animate-pulse'
+                  : 'border-2 border-gray-200 opacity-60'
+              }`}
+              style={{ minHeight: '80px' }}
+            >
+              <span className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                5
+              </span>
+              <div className="mb-1">{renderIcon(SIGN_IN_REWARDS[4].image)}</div>
+              <div className="text-xs font-semibold text-gray-700">{SIGN_IN_REWARDS[4].reward}</div>
+              {5 < currentDay && (
+                <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            {/* Day 6 - Special with two rewards */}
+            <div
+              className={`relative rounded-xl p-4 text-center transition-all bg-white ${
+                6 < currentDay
+                  ? 'border-2 border-green-400'
+                  : 6 === currentDay
+                  ? 'border-2 border-blue-500 animate-pulse'
+                  : 'border-2 border-gray-200 opacity-60'
+              }`}
+              style={{ minHeight: '80px' }}
+            >
+              <span className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                6
+              </span>
+              {renderDay6Special()}
+              {6 < currentDay && (
+                <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Day 7 */}
+          {/* Day 7 - Special with Big Rewards badge */}
           <div className="mb-4">
             <div
               className={`relative rounded-xl p-4 text-center transition-all bg-white ${
@@ -164,10 +209,10 @@ export default function DailyCheckInModal({
               }`}
               style={{ minHeight: '100px' }}
             >
-              <span className="absolute top-1 left-2 text-blue-600 text-xs font-bold">
-                {SIGN_IN_REWARDS[6].day}
+              <span className="absolute -top-3 -left-2 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full text-white text-xs font-bold shadow-lg">
+                Big Rewards
               </span>
-              <div className="mb-2">{renderIcon()}</div>
+              <div className="mb-2">{renderIcon(SIGN_IN_REWARDS[6].image)}</div>
               <div className="text-sm font-bold text-gray-800">{SIGN_IN_REWARDS[6].reward}</div>
               {7 < currentDay && (
                 <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
@@ -228,4 +273,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-                    }
+              }
