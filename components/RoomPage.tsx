@@ -2059,34 +2059,37 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       document.addEventListener('touchend', handleTouchEnd);
     }}
   >
-    <button
-      onClick={handleMaximizeMusicController}
-      className="relative rounded-full overflow-visible shadow-lg cursor-pointer transition-transform hover:scale-105"
-      style={{
-        width: '56px',
-        height: '56px',
-        border: '3px solid black',
-        backgroundColor: 'black',
-      }}
-      aria-label="Maximize music controller"
-    >
-      {/* Voice Wave Rings - Beech mein */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="relative w-full h-full flex items-center justify-center">
-          <div className="absolute w-10 h-10 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
-          <div className="absolute w-10 h-10 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
-          <div className="absolute w-10 h-10 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        </div>
-      </div>
-
-      {/* Music Icon */}
-      <div className="absolute inset-0 flex items-center justify-center music-minimize-icon">
-        <img src="/IMG_20260815_133309.png" alt="Music" className="w-12 h-12 object-contain" />
-      </div>
-    </button>
+   <button
+  onClick={handleMaximizeMusicController}
+  className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
+  style={{
+    width: '56px',
+    height: '56px',
+    border: '3px solid black',
+    backgroundColor: 'black',
+  }}
+  aria-label="Maximize music controller"
+>
+  {/* Voice Wave Rings - Beech mein */}
+  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+    <div className="relative w-full h-full flex items-center justify-center">
+      <div className="absolute w-10 h-10 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
+      <div className="absolute w-10 h-10 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
+      <div className="absolute w-10 h-10 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
+      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+    </div>
   </div>
-)}
+
+  {/* Music Icon - Circle mein */}
+  <div className="absolute inset-0 flex items-center justify-center music-minimize-icon z-20">
+    <img 
+      src="/IMG_20260815_133309.png" 
+      alt="Music" 
+      className="w-full h-full object-cover rounded-full" 
+      style={{ borderRadius: '50%' }}
+    />
+  </div>
+</button>
      
       {/* Custom styles for sliders */}
       <style jsx global>{`
