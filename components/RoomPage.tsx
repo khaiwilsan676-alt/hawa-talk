@@ -1843,49 +1843,63 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             <div className="w-8 h-8 flex items-center justify-center">
               <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="5" y="11" width="14" height="10" rx="2.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><circle cx="12" cy="16" r="1.2" fill="#94a7be" /></svg>
             </div>
-        {isOccupied && user ? (
-  <>
-    <div className="relative w-full h-full rounded-full overflow-hidden">
-      <img
-        src={user.image || "/default-avatar.png"}
-        alt={user.name}
-        className="w-full h-full rounded-full object-cover pointer-events-none"
-        draggable={false}
-        onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
-        onClick={onAvatarClick}
-        style={{ cursor: 'pointer', pointerEvents: 'auto' }}
-      />
-    </div>
-    {/* WebGL Overlay - Outside the overflow-hidden container */}
-    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 20 }}>
-      <WhiteColorRemovalShader
-        imageSrc="/1786867564769.png"
-        threshold={0.85}
-        className="w-full h-full"
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '180%',
-          height: '180%',
-          objectFit: 'contain',
-          maxWidth: 'none',
-          maxHeight: 'none',
-          zIndex: 20,
-        }}
-      />
-    </div>
-    {isMuted && (
-      <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none z-30 ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
-        <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
-      </div>
-    )}
-  </>
-) : (
-  // ... rest of the code
-)}   
-          <div className="w-[58%] h-[58%] flex items-center justify-center pointer-events-none relative">
+          ) : isOccupied && user ? (
+            <>
+              <div className="relative w-full h-full rounded-full overflow-visible">
+                <img
+                  src={user.image || "/default-avatar.png"}
+                  alt={user.name}
+                  className="w-full h-full rounded-full object-cover pointer-events-none"
+                  draggable={false}
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
+                  onClick={onAvatarClick}
+                  style={{ 
+                    cursor: 'pointer', 
+                    pointerEvents: 'auto',
+                    borderRadius: '50%',
+                    position: 'relative',
+                    zIndex: 1
+                  }}
+                />
+                {/* WebGL Overlay - From separate file - Full image visible, can overflow */}
+                <div 
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '160%',
+                    height: '160%',
+                    zIndex: 2,
+                    overflow: 'visible',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <WhiteColorRemovalShader
+                    imageSrc="/1786867564769.png"
+                    threshold={0.85}
+                    className="w-full h-full"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      maxWidth: 'none',
+                      maxHeight: 'none',
+                      overflow: 'visible',
+                    }}
+                  />
+                </div>
+              </div>
+              {isMuted && (
+                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-[58%] h-[58%] flex items-center justify-center pointer-events-none relative">
               <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style={{ overflow: "visible", display: "block" }}>
                 <g fill="none" stroke="#94a7be" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"><path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" /><path d="M 50 74 L 50 86" /><path d="M 38 90 L 62 90" /></g>
                 <g fill="#94a7be" stroke="#5a6d89" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" transform="translate(0, 6)"><path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" /></g>
@@ -1909,4 +1923,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-                }
+          }
