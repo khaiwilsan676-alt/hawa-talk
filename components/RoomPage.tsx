@@ -1978,75 +1978,168 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     }}
     onClick={(e) => e.stopPropagation()}
   >
-    onTouchStart={(e) => {
-      const card = e.currentTarget;
-      const touch = e.touches[0];
-      const startX = touch.clientX;
-      const startY = touch.clientY;
-      const startLeft = card.offsetLeft;
-      const startTop = card.offsetTop;
-      let isDragging = false;
+    <div 
+      className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
+      style={{
+        padding: '12px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+      }}
+    >
+      <button
+        onClick={handleCloseMusicController}
+        className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+        aria-label="Close music controller"
+      >
+        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+          <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
+          <line x1="12" y1="2" x2="12" y2="12" />
+        </svg>
+      </button>
 
-      const handleTouchMove = (moveEvent: TouchEvent) => {
-        const moveTouch = moveEvent.touches[0];
-        const dx = moveTouch.clientX - startX;
-        const dy = moveTouch.clientY - startY;
-        
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-          isDragging = true;
-        }
-        
-        if (isDragging) {
-          card.style.left = `${startLeft + dx}px`;
-          card.style.top = `${startTop + dy}px`;
-          card.style.right = 'auto';
-          card.style.bottom = 'auto';
-        }
-      };
+      <button
+        onClick={handleMinimizeMusicController}
+        className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+        aria-label="Minimize music controller"
+      >
+        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+          <line x1="7" y1="17" x2="17" y2="7" />
+          <polyline points="7 7 17 7 17 17" />
+        </svg>
+      </button>
 
-      const handleTouchEnd = () => {
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-      };
+      <div className="text-center mb-2 mt-5">
+        <p className="text-white text-sm font-semibold truncate px-8">
+          {currentTrack.name}
+        </p>
+      </div>
 
-      document.addEventListener('touchmove', handleTouchMove);
-      document.addEventListener('touchend', handleTouchEnd);
-    }}
-  >
-   <button
-  onClick={handleMaximizeMusicController}
-  className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
-  style={{
-    width: '56px',
-    height: '56px',
-    border: '3px solid black',
-    backgroundColor: 'black',
-  }}
-  aria-label="Maximize music controller"
->
-  {/* Voice Wave Rings - Beech mein */}
-  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-    <div className="relative w-full h-full flex items-center justify-center">
-      <div className="absolute w-14 h-14 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
-      <div className="absolute w-14 h-14 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
-      <div className="absolute w-14 h-14 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
-      <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+      <div className="px-2 mb-2">
+        <input
+          type="range"
+          min="0"
+          max={musicDuration || 0}
+          step="0.1"
+          value={musicCurrentTime}
+          onChange={handleProgressChange}
+          className="w-full h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
+          style={{
+            background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
+          }}
+        />
+        <div className="flex justify-between text-[10px] text-white/60 mt-1">
+          <span>{formatTime(musicCurrentTime)}</span>
+          <span>{formatTime(musicDuration)}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center gap-6 mb-2">
+        <button
+          onClick={handlePrevTrack}
+          className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+          aria-label="Previous track"
+        >
+          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
+            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+          </svg>
+        </button>
+
+        <button
+          onClick={handleToggleMusicPlay}
+          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+          aria-label={isMusicPlaying ? 'Pause' : 'Play'}
+        >
+          {isMusicPlaying ? (
+            <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+              <rect x="6" y="4" width="4" height="16" rx="1" />
+              <rect x="14" y="4" width="4" height="16" rx="1" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          )}
+        </button>
+
+        <button
+          onClick={handleNextTrack}
+          className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+          aria-label="Next track"
+        >
+          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
+            <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2 px-2">
+        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
+          <path d="M3 9v6h4l5 5V4L7 9H3z" />
+          <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
+          <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+        </svg>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={musicVolume}
+          onChange={handleVolumeChange}
+          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
+          style={{
+            background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
+          }}
+        />
+        <span className="text-white text-xs font-semibold w-8 text-right">
+          {Math.round(musicVolume * 100)}%
+        </span>
+      </div>
     </div>
   </div>
+)}
 
-  {/* Music Icon - Circle mein */}
-  <div className="absolute inset-0 flex items-center justify-center music-minimize-icon z-20">
-    <img 
-      src="/IMG_20260815_133309.png" 
-      alt="Music" 
-      className="w-full h-full object-cover rounded-full" 
-      style={{ borderRadius: '50%' }}
-    />
+{/* Music Controller - Minimized */}
+{musicControllerState === 'minimized' && currentTrack && !showFourGride && (
+  <div
+    className="fixed z-[45]"
+    style={{ 
+      bottom: '8vh', 
+      right: '12px',
+    }}
+    onClick={(e) => e.stopPropagation()}
+  >
+    <button
+      onClick={handleMaximizeMusicController}
+      className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
+      style={{
+        width: '56px',
+        height: '56px',
+        border: '3px solid black',
+        backgroundColor: 'black',
+      }}
+      aria-label="Maximize music controller"
+    >
+      {/* Voice Wave Rings - Beech mein */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        <div className="relative w-full h-full flex items-center justify-center">
+          <div className="absolute w-14 h-14 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
+          <div className="absolute w-14 h-14 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
+          <div className="absolute w-14 h-14 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
+          <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+        </div>
+      </div>
+
+      {/* Music Icon - Circle mein */}
+      <div className="absolute inset-0 flex items-center justify-center music-minimize-icon z-20">
+        <img 
+          src="/IMG_20260815_133309.png" 
+          alt="Music" 
+          className="w-full h-full object-cover rounded-full" 
+          style={{ borderRadius: '50%' }}
+        />
+      </div>
+    </button>
   </div>
-</button>
-  </div>
-  )}
-     
+)}
       {/* Custom styles for sliders */}
       <style jsx global>{`
         .music-volume-slider {
