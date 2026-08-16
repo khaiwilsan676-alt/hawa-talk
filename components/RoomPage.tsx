@@ -1855,26 +1855,30 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   onClick={onAvatarClick}
                   style={{ cursor: 'pointer', pointerEvents: 'auto' }}
                 />
-                {/* WebGL Overlay - From separate file */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <WhiteColorRemovalShader
-                    imageSrc="/1786867564769.png"
-                    threshold={0.85}
-                    className="w-full h-full"
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '160%',
-                      height: '160%',
-                      objectFit: 'contain',
-                     maxWidth: 'none',
-                     maxHeight: 'none',
-                    }}
-                  />
-                </div>
-              </div>
+                {/* WebGL Overlay - Full image visible, no cutting */}
+<div 
+  className="absolute pointer-events-none"
+  style={{
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '130px', // Bigger than avatar
+    height: '130px', // Bigger than avatar
+    zIndex: 2,
+    overflow: 'visible',
+  }}
+>
+  <WhiteColorRemovalShader
+    imageSrc="/1786867564769.png"
+    threshold={0.85}
+    style={{
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      pointerEvents: 'none',
+    }}
+  />
+</div>
               {isMuted && (
                 <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
                   <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
