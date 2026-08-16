@@ -21,14 +21,13 @@ import RoomPage from './RoomPage'
 import PublicProfile from './PublicProfile'
 import { generateStableId } from '../lib/hash'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-
+import DailyCheckInModal from '../components/DailyCheckInModal'
 
 // ---------- Password Input Component (4 Digits, Numbers Only, Auto-shift) ----------
 function PasswordInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const handleInput = (index: number, inputValue: string) => {
-    // Only allow numbers
     const numberValue = inputValue.replace(/[^0-9]/g, '')
 
     if (numberValue) {
@@ -37,7 +36,6 @@ function PasswordInput({ value, onChange }: { value: string; onChange: (value: s
       const newPassword = newDigits.join('').slice(0, 4)
       onChange(newPassword)
 
-      // Auto-shift to next box
       if (index < 3 && numberValue) {
         inputRefs.current[index + 1]?.focus()
       }
@@ -152,17 +150,6 @@ const CATEGORY_CARDS = [
   },
 ];
 
-// Sign-in rewards data
-const SIGN_IN_REWARDS = [
-  { day: 1, reward: '50 💎', icon: '💎', color: '#FF6B6B' },
-  { day: 2, reward: '100 🪙', icon: '🪙', color: '#FFA726' },
-  { day: 3, reward: '150 💎', icon: '💎', color: '#66BB6A' },
-  { day: 4, reward: '200 🪙', icon: '🪙', color: '#42A5F5' },
-  { day: 5, reward: 'Frame', icon: '🖼️', color: '#AB47BC' },
-  { day: 6, reward: '300 💎', icon: '💎', color: '#EF5350' },
-  { day: 7, reward: '500 🪙', icon: '🪙', color: '#FFD700' },
-];
-
 export default function HomePage({ onLogout }: HomePageProps) {
   const [activeTab, setActiveTab] = useState<Tab>('popular')
   const [appLang, setAppLang] = useState<LanguageCode>('en')
@@ -191,7 +178,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
 
-  // Search Sheet State & Results
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSearchTab, setActiveSearchTab] = useState<SearchTab>('user')
@@ -213,13 +199,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
   const [enteredFromKept, setEnteredFromKept] = useState(false)
 
-  // Password Room State
   const [showRoomPasswordCard, setShowRoomPasswordCard] = useState(false)
   const [selectedLockedRoom, setSelectedLockedRoom] = useState<UserCard | null>(null)
   const [enteredRoomPassword, setEnteredRoomPassword] = useState('')
 
-
-  // --- NEW: Recent & Following Rooms ---
   const [recentRooms, setRecentRooms] = useState<RecentRoom[]>([])
   const [followingRooms, setFollowingRooms] = useState<KeptRoomData[]>([])
 
@@ -243,7 +226,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [isSwiping, setIsSwiping] = useState(false)
   const [swipeOffset, setSwipeOffset] = useState(0)
 
-  // Jitsi refs for global audio
   const jitsiContainerRef = useRef<HTMLDivElement>(null)
   const jitsiApiRef = useRef<any>(null)
   const [jitsiLoaded, setJitsiLoaded] = useState(false)
@@ -263,11 +245,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
       let count = 0;
       snapshot.docs.forEach((doc) => {
         const data = doc.data();
-
-        // Filter out if the conversation was cleared after the last message
         const clearedAt = data.clearedAtRef?.[userUID] || 0;
         const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" ? data.lastTimestamp.toMillis() : (data.lastTimestamp || 0);
-
         if (lastTimestamp >= clearedAt) {
           const unread = data.unreadCounts?.[userUID] || 0;
           count += unread;
@@ -290,18 +269,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
       document.documentElement.style.setProperty('--vh', `${vh}px`)
       setViewportHeight(window.innerHeight)
     }
-
     setHeight()
     window.addEventListener('resize', setHeight)
     window.addEventListener('orientationchange', setHeight)
-
     return () => {
       window.removeEventListener('resize', setHeight)
       window.removeEventListener('orientationchange', setHeight)
     }
   }, [])
 
-  // Load Jitsi script
   useEffect(() => {
     if (!document.getElementById('jitsi-script')) {
       const script = document.createElement('script')
@@ -315,7 +291,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // Initialize Jitsi for global listening
   const initializeJitsiForListening = useCallback(() => {
     if (!jitsiLoaded || !jitsiContainerRef.current || jitsiApiRef.current) return
 
@@ -371,23 +346,18 @@ export default function HomePage({ onLogout }: HomePageProps) {
         setIsJitsiJoined(true)
       })
 
-      api.addListener('participantLeft', () => {
-        // Handle participant leaving if needed
-      })
-
+      api.addListener('participantLeft', () => {})
     } catch (error) {
       console.error('Error initializing Jitsi:', error)
     }
   }, [jitsiLoaded, userName, userUID])
 
-  // Initialize Jitsi when script loads and user data is available
   useEffect(() => {
     if (jitsiLoaded && !jitsiApiRef.current && userName !== 'Guest') {
       initializeJitsiForListening()
     }
   }, [jitsiLoaded, userName, initializeJitsiForListening])
 
-  // Cleanup Jitsi on unmount
   useEffect(() => {
     return () => {
       if (jitsiApiRef.current) {
@@ -399,7 +369,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // Firebase Realtime Listener for globalRooms collection
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
       const rooms = snapshot.docs.map((d) => ({
@@ -407,11 +376,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
       }));
       setGlobalRooms(rooms);
     });
-
     return () => unsub();
   }, []);
 
-  // Calculate initial position for kept room circle
   useEffect(() => {
     if (typeof window !== 'undefined') {
       circleStartPos.current = {
@@ -422,32 +389,19 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // Check if dragged circle is over delete zone
   const checkOverlap = useCallback((circleX: number, circleY: number) => {
     if (!deleteZoneRef.current) return false
-
     const deleteRect = deleteZoneRef.current.getBoundingClientRect()
     const circleSize = 48
-
-    const circleCenter = {
-      x: circleX + circleSize / 2,
-      y: circleY + circleSize / 2
-    }
-
-    const deleteCenter = {
-      x: deleteRect.left + deleteRect.width / 2,
-      y: deleteRect.top + deleteRect.height / 2
-    }
-
+    const circleCenter = { x: circleX + circleSize / 2, y: circleY + circleSize / 2 }
+    const deleteCenter = { x: deleteRect.left + deleteRect.width / 2, y: deleteRect.top + deleteRect.height / 2 }
     const distance = Math.sqrt(
       Math.pow(circleCenter.x - deleteCenter.x, 2) +
       Math.pow(circleCenter.y - deleteCenter.y, 2)
     )
-
     return distance < 60
   }, [])
 
-  // --- Load profile, room state, kept room, recent rooms, following rooms ---
   useEffect(() => {
     const loadProfile = () => {
       const name = localStorage.getItem('userName') || 'JIYA'
@@ -494,12 +448,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       }
 
-      // Load recent rooms
       const storedRecent = localStorage.getItem('recentRooms')
       if (storedRecent) {
         try { setRecentRooms(JSON.parse(storedRecent)) } catch {}
       }
-      // Load following rooms
       const storedFollowing = localStorage.getItem('followingRooms')
       if (storedFollowing) {
         try { setFollowingRooms(JSON.parse(storedFollowing)) } catch {}
@@ -511,7 +463,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => window.removeEventListener('storage', loadProfile)
   }, [])
 
-  // Save recent and following rooms when they change
   useEffect(() => {
     localStorage.setItem('recentRooms', JSON.stringify(recentRooms))
   }, [recentRooms])
@@ -520,7 +471,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     localStorage.setItem('followingRooms', JSON.stringify(followingRooms))
   }, [followingRooms])
 
-  // Listen for storage changes (e.g., keptRoom removed)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'keptRoom') {
@@ -547,7 +497,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => clearInterval(interval)
   }, [])
 
-  // Load sign-in day from localStorage
   useEffect(() => {
     const savedDay = localStorage.getItem('signInDay')
     if (savedDay) {
@@ -555,7 +504,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // --- Helper functions for recent and following rooms ---
   const addToRecent = (room: KeptRoomData) => {
     setRecentRooms(prev => {
       const filtered = prev.filter(r => r.accountId !== room.accountId)
@@ -568,15 +516,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
       if (prev.some(r => r.accountId === room.accountId)) return prev
       return [...prev, room]
     })
-    // Optionally update Firestore followers array here
   }
 
   const handleUnfollowRoom = (roomId: string) => {
     setFollowingRooms(prev => prev.filter(r => r.accountId !== roomId))
-    // Optionally update Firestore followers array here
   }
 
-  // Mouse & Touch drag handlers for kept room circle
   const handleCircleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -598,24 +543,18 @@ export default function HomePage({ onLogout }: HomePageProps) {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return
-
       const deltaX = e.clientX - dragStartPos.current.x
       const deltaY = e.clientY - dragStartPos.current.y
-
       const newX = circleStartPos.current.x + deltaX
       const newY = circleStartPos.current.y + deltaY
-
       setDragPosition({ x: newX, y: newY })
-
       const isOverlap = checkOverlap(newX, newY)
       setIsOverDeleteZone(isOverlap)
     }
 
     const handleMouseUp = () => {
       if (!isDragging) return
-
       const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
-
       if (isOverlap) {
         localStorage.removeItem('keptRoom')
         setKeptRoom(null)
@@ -623,7 +562,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       } else {
         setDragPosition(circleStartPos.current)
       }
-
       setIsDragging(false)
       setShowDeleteZone(false)
       setIsOverDeleteZone(false)
@@ -631,25 +569,19 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isDragging) return
-
       const touch = e.touches[0]
       const deltaX = touch.clientX - dragStartPos.current.x
       const deltaY = touch.clientY - dragStartPos.current.y
-
       const newX = circleStartPos.current.x + deltaX
       const newY = circleStartPos.current.y + deltaY
-
       setDragPosition({ x: newX, y: newY })
-
       const isOverlap = checkOverlap(newX, newY)
       setIsOverDeleteZone(isOverlap)
     }
 
     const handleTouchEnd = () => {
       if (!isDragging) return
-
       const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
-
       if (isOverlap) {
         localStorage.removeItem('keptRoom')
         setKeptRoom(null)
@@ -657,7 +589,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       } else {
         setDragPosition(circleStartPos.current)
       }
-
       setIsDragging(false)
       setShowDeleteZone(false)
       setIsOverDeleteZone(false)
@@ -678,7 +609,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [isDragging, dragPosition, checkOverlap])
 
-  // Touch swipe handlers for banner
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchEndX.current = e.touches[0].clientX
@@ -765,7 +695,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const handleKeptRoomClick = () => {
     if (isDragging) return
     if (keptRoom) {
-      addToRecent(keptRoom)   // Add to recent when entering via kept room
+      addToRecent(keptRoom)
       setEnteredFromKept(true)
       const roomUser: UserCard = {
         id: keptRoom.accountId,
@@ -779,7 +709,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // ✅ STRICT BINDING: Mine Tab Card click strictly opens logged-in user's room
   const handleCardClick = async () => {
     setEnteredFromKept(false)
 
@@ -800,7 +729,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
 
-      // Save room data to Firestore
       await setDoc(doc(db, "globalRooms", userUID), {
         id: userUID,
         name: userName,
@@ -811,7 +739,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         createdAt: Date.now()
       }, { merge: true });
 
-      // Save user data to Firestore
       await setDoc(doc(db, "users", userUID), {
         id: userUID,
         name: userName,
@@ -823,7 +750,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       }, { merge: true });
     }
 
-    addToRecent({ name: userName, image: userPhoto, accountId: storedAccNum }) // Add own room to recent
+    addToRecent({ name: userName, image: userPhoto, accountId: storedAccNum })
     setSelectedUser(createdRoomCard)
     setCurrentPage('room')
   }
@@ -832,14 +759,19 @@ export default function HomePage({ onLogout }: HomePageProps) {
     handleCardClick()
   }
 
-  // Handle Room Card Click from Search Overlay or Home Grid
+  // ✅ FIXED: Compare with current user's accountId, not UID
   const handleUserCardClick = async (user: UserCard) => {
+    // Get current user's accountId
+    const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+    const currentAccountId = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
+
     try {
       const docRef = doc(db, "globalRooms", user.accountId || user.id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.isLocked && data.accountId !== userUID) {
+        // Only show password modal if room is locked AND current user is NOT the owner
+        if (data.isLocked && data.accountId !== currentAccountId) {
           setSelectedLockedRoom(user)
           setShowRoomPasswordCard(true)
           setEnteredRoomPassword('')
@@ -850,6 +782,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       console.warn("Failed to fetch lock status:", e);
     }
 
+    // Room is not locked OR user is owner → enter directly
     setEnteredFromKept(false)
     addToRecent({ name: user.name, image: user.image, accountId: user.accountId || user.id, isLocked: user.isLocked })
     setSelectedUser(user)
@@ -861,8 +794,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const handleRoomPasswordSubmit = async () => {
     if (!selectedLockedRoom) return;
-
-    // Fetch latest room data to check password securely
     try {
       const docRef = doc(db, "globalRooms", selectedLockedRoom.id || selectedLockedRoom.accountId);
       const docSnap = await getDoc(docRef);
@@ -889,7 +820,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Handle User Search Item Click -> Opens Target User's Public Profile
   const handleUserProfileClick = (user: UserCard) => {
     setSelectedUser(user)
     setIsPublicProfileActive(true)
@@ -935,7 +865,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   };
 
-  // ROBUST SEARCH FUNCTION FOR FIRESTORE
   const handlePerformSearch = async () => {
     if (!searchQuery.trim()) {
       setSearchResults([])
@@ -968,7 +897,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       }
 
-      // 1. Local globalRooms search (case-insensitive)
       globalRooms.forEach((r) => {
         const accId = String(r.accountId || r.id || '')
         const rName = String(r.name || '')
@@ -983,7 +911,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       })
 
-      // 2. Direct Document ID Search in 'users'
       try {
         const userDocRef = doc(db, "users", queryRaw)
         const userDocSnap = await getDoc(userDocRef)
@@ -994,7 +921,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         console.warn("Direct doc search skipped:", e)
       }
 
-      // 3. 'users' collection accountId query
       try {
         const usersRef = collection(db, "users")
         const qRange = query(
@@ -1008,7 +934,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         console.warn("Users query error:", err)
       }
 
-      // 4. 'globalRooms' collection query
       try {
         const roomsRef = collection(db, "globalRooms")
         const qRooms = query(
@@ -1022,7 +947,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         console.warn("globalRooms query error:", err)
       }
 
-      // Sort exact match first
       foundList.sort((a, b) => {
         const aExact = String(a.accountId).toLowerCase() === queryLower || a.id.toLowerCase() === queryLower
         const bExact = String(b.accountId).toLowerCase() === queryLower || b.id.toLowerCase() === queryLower
@@ -1041,7 +965,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // Sign-in modal handlers
   const handleImageClick = () => {
     setIsSignInModalOpen(true)
   }
@@ -1087,7 +1010,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
-  // Filter out fake rooms like "Jiys" from the Popular tab
   const allRooms = globalRooms.filter(room =>
     !/jiys/i.test(room.name) && room.name !== 'User'
   )
@@ -1191,7 +1113,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </button>
       </div>
 
-      {/* Following rooms */}
       {activeMineTab === 'following' && (
         followingRooms.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5">
@@ -1258,7 +1179,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )
       )}
 
-      {/* Recent rooms */}
       {activeMineTab === 'recent' && (
         recentRooms.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5">
@@ -1455,7 +1375,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         WebkitTouchCallout: 'none'
       }}
     >
-      {/* Hidden Jitsi container for global listening */}
       <div 
         ref={jitsiContainerRef} 
         className="absolute inset-0 z-0 opacity-0 pointer-events-none" 
@@ -1469,11 +1388,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
           -ms-text-size-adjust: 100%;
           touch-action: manipulation;
         }
-
         button, a, div, span {
           touch-action: manipulation;
         }
-
         @keyframes cardIn {
           0% { opacity: 0; transform: translateY(14px) scale(0.96); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -1502,16 +1419,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
           0% { transform: translateY(100%); }
           100% { transform: translateY(0); }
         }
-
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
-
         .truncate {
           overflow: hidden;
           text-overflow: ellipsis;
@@ -1519,18 +1433,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       `}</style>
 
-      {/* SEARCH OVERLAY SHEET */}
-
-      {/* Room Password Modal */}
       {showRoomPasswordCard && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRoomPasswordCard(false)} />
           <div className="relative bg-white w-80 rounded-3xl shadow-2xl p-6 mx-4 animate-scale-up">
             <h3 className="text-xl font-bold text-gray-800 text-center mb-2">Locked Room</h3>
             <p className="text-sm text-gray-500 text-center mb-6">Enter password to join</p>
-
             <PasswordInput value={enteredRoomPassword} onChange={setEnteredRoomPassword} />
-
             <button
               onClick={handleRoomPasswordSubmit}
               disabled={enteredRoomPassword.length !== 4}
@@ -1542,7 +1451,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
             >
               Enter Room
             </button>
-
             <button
               onClick={() => {
                 setShowRoomPasswordCard(false)
@@ -1564,7 +1472,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
             height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
           }}
         >
-          {/* Top Row Header */}
           <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100 safe-top">
             <button
               onClick={() => setIsSearchOpen(false)}
@@ -1575,7 +1482,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <polyline points="12 19 5 12 12 5" />
               </svg>
             </button>
-
             <div className="flex-1 flex items-center bg-gradient-to-r from-gray-100/90 to-blue-50/70 border border-white/60 shadow-inner rounded-full px-4 py-2 backdrop-blur-md">
               <input
                 type="text"
@@ -1588,7 +1494,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 }}
               />
             </div>
-
             <button
               onClick={handlePerformSearch}
               className="p-2.5 bg-gradient-to-tr from-blue-500 to-indigo-500 text-white rounded-full shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
@@ -1600,7 +1505,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </button>
           </div>
 
-          {/* User / Room Tabs */}
           <div className="flex px-4 border-b border-gray-100 mt-1">
             <button
               type="button"
@@ -1628,7 +1532,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </button>
           </div>
 
-          {/* Search Results */}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 hide-scrollbar">
             {isSearching ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -1724,161 +1627,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {/* Sign-in Modal */}
-      {isSignInModalOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{
-            animation: 'modalOverlayIn 0.3s ease-out',
-            height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
-          }}
-          onClick={handleCloseModal}
-        >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div
-            className="relative bg-white rounded-3xl w-full max-w-sm overflow-hidden"
-            style={{
-              animation: 'modalFadeIn 0.3s ease-out',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-4 right-4 z-10 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/40 transition-all"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+      <DailyCheckInModal
+        isOpen={isSignInModalOpen}
+        onClose={handleCloseModal}
+        currentDay={currentSignInDay}
+        onSignIn={handleSignIn}
+      />
 
-            <div
-              className="relative px-6 pt-8 pb-6 text-center"
-              style={{
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              }}
-            >
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full" />
-                <div className="absolute -bottom-2 -left-2 w-16 h-16 bg-white/10 rounded-full" />
-              </div>
-              <h2 className="text-2xl font-bold text-white relative z-10">
-                Daily Sign-in
-              </h2>
-              <p className="text-blue-100 text-sm mt-1 relative z-10">
-                Day {currentSignInDay} of 7
-              </p>
-            </div>
-
-            <div className="px-6 pt-6 pb-4">
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {SIGN_IN_REWARDS.slice(0, 4).map((item, index) => (
-                  <div
-                    key={item.day}
-                    className={`relative rounded-xl p-2 text-center transition-all ${
-                      index + 1 < currentSignInDay
-                        ? 'bg-green-50 border-2 border-green-400'
-                        : index + 1 === currentSignInDay
-                        ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'
-                        : 'bg-gray-50 border-2 border-gray-200 opacity-60'
-                    }`}
-                    style={{ minHeight: '80px' }}
-                  >
-                    <div className="text-2xl mb-1">{item.icon}</div>
-                    <div className="text-xs font-semibold text-gray-700">
-                      Day {item.day}
-                    </div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">
-                      {item.reward}
-                    </div>
-                    {index + 1 < currentSignInDay && (
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                {SIGN_IN_REWARDS.slice(4, 6).map((item, index) => (
-                  <div
-                    key={item.day}
-                    className={`relative rounded-xl p-3 text-center transition-all ${
-                      index + 5 < currentSignInDay
-                        ? 'bg-green-50 border-2 border-green-400'
-                        : index + 5 === currentSignInDay
-                        ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'
-                        : 'bg-gray-50 border-2 border-gray-200 opacity-60'
-                    }`}
-                    style={{ minHeight: '70px' }}
-                  >
-                    <div className="text-2xl mb-1">{item.icon}</div>
-                    <div className="text-xs font-semibold text-gray-700">
-                      Day {item.day}
-                    </div>
-                    <div className="text-[10px] text-gray-500 mt-0.5">
-                      {item.reward}
-                    </div>
-                    {index + 5 < currentSignInDay && (
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mb-4">
-                <div
-                  className={`relative rounded-xl p-4 text-center transition-all ${
-                    7 < currentSignInDay
-                      ? 'bg-green-50 border-2 border-green-400'
-                      : 7 === currentSignInDay
-                      ? 'bg-blue-50 border-2 border-blue-500 animate-pulse'
-                      : 'bg-gray-50 border-2 border-gray-200 opacity-60'
-                  }`}
-                  style={{ minHeight: '100px' }}
-                >
-                  <div className="text-4xl mb-2">🎁</div>
-                  <div className="text-sm font-bold text-gray-800">
-                    Day 7 - Big Reward!
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    500 🪙 + Special Frame
-                  </div>
-                  {7 < currentSignInDay && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <button
-                onClick={handleSignIn}
-                disabled={currentSignInDay > 7}
-                className={`w-full py-3.5 rounded-xl font-bold text-white text-base transition-all transform active:scale-95 ${
-                  currentSignInDay > 7
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50'
-                }`}
-              >
-                {currentSignInDay > 7 ? 'All Rewards Claimed! 🎉' : 'Sign In'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Zone */}
       {showDeleteZone && keptRoom && (
         <div
           ref={deleteZoneRef}
@@ -1913,7 +1668,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {/* Kept Room Floating Circle */}
       {keptRoom && currentPage === 'home' && !isSearchOpen && (
         <div
           ref={circleRef}
@@ -2163,7 +1917,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
       </div>
 
-      {/* BOTTOM NAVIGATION BAR */}
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom">
           <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
@@ -2250,4 +2003,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-      }
+  }
