@@ -154,11 +154,49 @@ export default function RoomProfile({
           height: getSheetHeight(), 
           minHeight: getSheetHeight(), 
           maxHeight: getSheetHeight(),
-          overflow: 'hidden'
+          overflow: 'visible' // Changed from hidden to visible
         }}
       >
+        {/* Avatar - Positioned above the sheet */}
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-30">
+          <div className="relative w-24 h-24">
+            {/* Base Avatar */}
+            <img 
+              src={displayImage} 
+              alt={displayName}
+              className="w-full h-full object-cover rounded-full border-4 border-white shadow-xl bg-gray-100"
+              style={{
+                position: 'relative',
+                zIndex: 1,
+              }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/default-avatar.png'
+              }}
+            />
+            
+            {/* WebGL Shader Overlay */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                zIndex: 2,
+              }}
+            >
+              <WhiteColorRemovalShader
+                imageSrc="/1786867564769.png"
+                threshold={0.85}
+                className="w-full h-full"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Top Left - Warning Icon */}
-        <div className="absolute top-3 left-4 z-20">
+        <div className="absolute top-3 left-4 z-30">
           <button
             className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Warning"
@@ -168,7 +206,7 @@ export default function RoomProfile({
         </div>
 
         {/* Top Right - @ Mention Icon */}
-        <div className="absolute top-3 right-4 z-20">
+        <div className="absolute top-3 right-4 z-30">
           <button
             onClick={handleMention}
             className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
@@ -178,27 +216,8 @@ export default function RoomProfile({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex flex-col items-center px-4 pt-6 pb-3 h-full overflow-y-auto">
-          {/* Avatar - Simple and clean */}
-          <div className="relative mb-3 shrink-0">
-            <div className="relative w-20 h-20 rounded-full border-2 border-white shadow-lg bg-gray-100">
-              <img 
-                src={displayImage} 
-                alt={displayName}
-                className="w-full h-full object-cover rounded-full"
-                style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  borderRadius: '50%'
-                }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/default-avatar.png'
-                }}
-              />
-            </div>
-          </div>
-
+        {/* Content - Starts after avatar space */}
+        <div className="flex flex-col items-center px-4 pt-14 pb-3 h-full overflow-y-auto">
           {/* User Info */}
           <div className="text-center w-full shrink-0">
             {/* Row 1: Name + Gender Tag */}
@@ -374,4 +393,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-}
+      }
