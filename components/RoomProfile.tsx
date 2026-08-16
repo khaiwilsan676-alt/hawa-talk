@@ -123,15 +123,19 @@ export default function RoomProfile({
 
   // Determine sheet height based on content
   const getSheetHeight = () => {
+    // If both actions and moderation are shown
+    if (showActions && showModerationRow) {
+      return '40vh'
+    }
+    // If only actions (follow, chat, image) without moderation
+    if (showActions && !showModerationRow) {
+      return '30vh'
+    }
+    // If only leave seat button
     if (showLeaveSeat) {
-      return '30vh'
+      return '25vh'
     }
-    if (showModerationRow) {
-      return '30vh'
-    }
-    if (showActions) {
-      return '30vh'
-    }
+    // If no options at all
     return '20vh'
   }
 
@@ -145,15 +149,16 @@ export default function RoomProfile({
       
       {/* Bottom Sheet - Dynamic height based on content */}
       <div 
-        className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-visible"
+        className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up"
         style={{ 
           height: getSheetHeight(), 
           minHeight: getSheetHeight(), 
-          maxHeight: getSheetHeight() 
+          maxHeight: getSheetHeight(),
+          overflow: 'hidden'
         }}
       >
         {/* Top Left - Warning Icon */}
-        <div className="absolute top-3 left-4 z-10">
+        <div className="absolute top-3 left-4 z-20">
           <button
             className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Warning"
@@ -163,7 +168,7 @@ export default function RoomProfile({
         </div>
 
         {/* Top Right - @ Mention Icon */}
-        <div className="absolute top-3 right-4 z-10">
+        <div className="absolute top-3 right-4 z-20">
           <button
             onClick={handleMention}
             className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
@@ -173,11 +178,11 @@ export default function RoomProfile({
           </button>
         </div>
 
-        {/* Content - Avatar shifted more up */}
-        <div className="flex flex-col items-center px-4 pt-1 pb-2.5 h-full overflow-y-auto">
-          {/* Avatar with WebGL Overlay - shifted up with negative margin */}
-          <div className="relative -mt-6 mb-3">
-            <div className="relative w-20 h-20 rounded-full border-2 border-white shadow-md bg-gray-100 overflow-visible">
+        {/* Content */}
+        <div className="flex flex-col items-center px-4 pt-6 pb-3 h-full overflow-y-auto">
+          {/* Avatar - Simple and clean */}
+          <div className="relative mb-3 shrink-0">
+            <div className="relative w-20 h-20 rounded-full border-2 border-white shadow-lg bg-gray-100">
               <img 
                 src={displayImage} 
                 alt={displayName}
@@ -191,42 +196,11 @@ export default function RoomProfile({
                   (e.target as HTMLImageElement).src = '/default-avatar.png'
                 }}
               />
-              
-              {/* WebGL Shader Overlay */}
-              <div 
-                className="absolute pointer-events-none"
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '150%',
-                  height: '150%',
-                  zIndex: 2,
-                  overflow: 'visible',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <WhiteColorRemovalShader
-                  imageSrc="/1786867564769.png"
-                  threshold={0.85}
-                  className="w-full h-full"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    maxWidth: 'none',
-                    maxHeight: 'none',
-                    overflow: 'visible',
-                  }}
-                />
-              </div>
             </div>
           </div>
 
-          {/* User Info - Larger sizes */}
-          <div className="text-center w-full">
+          {/* User Info */}
+          <div className="text-center w-full shrink-0">
             {/* Row 1: Name + Gender Tag */}
             <div className="flex items-center justify-center gap-2">
               <h3 className="text-base font-bold text-gray-900">
@@ -237,7 +211,7 @@ export default function RoomProfile({
               </span>
             </div>
 
-            {/* Row 2: Tags - Larger */}
+            {/* Row 2: Tags */}
             <div className="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
               <img src="/1785131462125.png" alt="" className="h-5 w-auto object-contain" />
               <img src="/1785131792693.png" alt="" className="h-5 w-auto object-contain" />
@@ -245,7 +219,7 @@ export default function RoomProfile({
               <img src="/1785469365805.png" alt="" className="h-4.5 w-auto object-contain" />
             </div>
 
-            {/* Row 3: Level Badge + Additional Image - Larger */}
+            {/* Row 3: Level Badge + Additional Image */}
             <div className="flex items-center justify-center gap-1.5 mt-1.5">
               <div className="relative inline-flex items-center">
                 <img 
@@ -260,7 +234,7 @@ export default function RoomProfile({
               <img src="/1785486414756.png" alt="" className="h-5 w-auto object-contain" />
             </div>
 
-            {/* Row 4: ID | Fans | Flag - Larger text */}
+            {/* Row 4: ID | Fans | Flag */}
             <div className="flex items-center justify-center gap-2 mt-1.5 text-sm">
               {/* ID with Copy */}
               <div className="flex items-center gap-1">
@@ -296,9 +270,9 @@ export default function RoomProfile({
             </div>
           </div>
 
-          {/* Blue Leave Button - Larger */}
+          {/* Blue Leave Button - Only for current user in seat */}
           {showLeaveSeat && (
-            <div className="mt-3 w-full px-2">
+            <div className="mt-3 w-full px-2 shrink-0">
               <button
                 onClick={handleLeaveSeat}
                 className="w-full h-12 rounded-full bg-blue-500 text-white font-semibold text-base shadow-md shadow-blue-200 hover:bg-blue-600 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
@@ -312,9 +286,9 @@ export default function RoomProfile({
             </div>
           )}
 
-          {/* Action Buttons for OTHER users - Larger */}
+          {/* Action Buttons for OTHER users */}
           {showActions && (
-            <div className="mt-3 w-full flex flex-col gap-2">
+            <div className="mt-3 w-full flex flex-col gap-2 shrink-0">
               {/* Row: Follow, Chat, Image */}
               <div className="flex items-center gap-6 w-full justify-center">
                 <button
@@ -346,7 +320,7 @@ export default function RoomProfile({
                 </button>
               </div>
 
-              {/* Moderation row - Larger */}
+              {/* Moderation row - Only for room owner viewing other users */}
               {showModerationRow && (
                 <div className="flex items-center justify-around w-full py-1 text-gray-500 text-sm font-medium">
                   <button 
