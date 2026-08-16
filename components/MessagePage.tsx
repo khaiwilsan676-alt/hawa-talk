@@ -12,7 +12,6 @@ import {
   doc,
   updateDoc,
   getDoc,
-  deleteField,
 } from 'firebase/firestore';
 import { db } from '../src/lib/firebase';
 import ChatScreen from './ChatScreen';
@@ -58,17 +57,6 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
   const [activeChat, setActiveChat] = useState<{ uid: string; name: string; photo: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ---------- Hidden conversations (chatId → hiddenAt timestamp) ----------
-  const [hiddenMap, setHiddenMap] = useState<Record<string, number>>({});
-
-  // ---------- UI state for hiding confirmation ----------
-  const [chatToHide, setChatToHide] = useState<{ chatId: string; name: string } | null>(null);
-  const [showHideConfirm, setShowHideConfirm] = useState(false);
-
-  // ---------- Long‑press detection (for the conversation cards) ----------
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
-  const [pressTarget, setPressTarget] = useState<string | null>(null);
-
   const getCurrentUserData = () => {
     const uid = typeof window !== 'undefined' ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A' : 'N/A';
     const name = typeof window !== 'undefined' ? localStorage.getItem('userName') || 'Me' : 'Me';
@@ -77,23 +65,6 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
   };
 
   const currentUserUid = getCurrentUserData().uid;
-
-  // ---------- Listen to hidden conversations in the user's document ----------
-  useEffect(() => {
-    if (!currentUserUid || currentUserUid === 'N/A') return;
-
-    const userRef = doc(db, 'users', currentUserUid);
-    const unsubscribe = onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setHiddenMap(data.hiddenConversations || {});
-      } else {
-        setHiddenMap({});
-      }
-    });
-
-    return () => unsubscribe();
-  }, [currentUserUid]);
 
   // ---------- Listen to conversations ----------
   useEffect(() => {
@@ -116,7 +87,6 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
 
         for (const docSnapshot of snapshot.docs) {
           const data = docSnapshot.data();
-          const chatId = docSnapshot.id;
           const participantsData = data.participantsData || [];
           let otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
 
@@ -128,24 +98,6 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           // Skip if no other user or no messages
           if (!otherUser || seenUids.has(otherUser.uid) || lastTimestamp === 0) {
             continue;
-          }
-
-          // ---------- HIDDEN CONVERSATION LOGIC ----------
-          const hiddenAt = hiddenMap[chatId];
-          if (hiddenAt !== undefined) {
-            const lastSenderUid = data.lastSenderUid || '';
-            // If the other user sent a message AFTER we hid it → auto‑unhide
-            if (lastSenderUid !== currentUserUid && lastTimestamp > hiddenAt) {
-              // Remove from hidden map in Firestore (fire and forget)
-              const userRef = doc(db, 'users', currentUserUid);
-              updateDoc(userRef, {
-                [`hiddenConversations.${chatId}`]: deleteField(),
-              }).catch((err) => console.error('Failed to unhide:', err));
-              // Continue processing – this conversation will be shown
-            } else {
-              // Still hidden – skip adding to the list
-              continue;
-            }
           }
 
           seenUids.add(otherUser.uid);
@@ -167,7 +119,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           }
 
           chats.push({
-            chatId,
+            chatId: docSnapshot.id,
             otherUser: {
               uid: otherUser.uid,
               name: otherUser.name,
@@ -193,7 +145,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
     });
 
     return () => unsubscribe();
-  }, [currentUserUid, hiddenMap]); // Re‑run when hiddenMap changes
+  }, [currentUserUid]);
 
   // ---------- Helpers ----------
   const formatTime = (timestamp: number) => {
@@ -227,45 +179,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
     setActiveChat(null);
   };
 
-  // ---------- Hide conversation ----------
-  const handleHideConversation = async (chatId: string) => {
-    try {
-      const userRef = doc(db, 'users', currentUserUid);
-      await updateDoc(userRef, {
-        [`hiddenConversations.${chatId}`]: Date.now(),
-      });
-      setShowHideConfirm(false);
-      setChatToHide(null);
-    } catch (error) {
-      console.error('Failed to hide conversation:', error);
-      alert('Could not hide conversation.');
-    }
-  };
-
-  // ---------- Long‑press handlers for mobile ----------
-  const handlePressStart = (chatId: string) => {
-    const timer = setTimeout(() => {
-      // Find the chat name
-      const chat = dynamicChats.find((c) => c.chatId === chatId);
-      if (chat) {
-        setChatToHide({ chatId, name: chat.otherUser.name });
-        setShowHideConfirm(true);
-      }
-      setPressTarget(null);
-    }, 500); // 500ms long press
-    setLongPressTimer(timer);
-    setPressTarget(chatId);
-  };
-
-  const handlePressEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-    setPressTarget(null);
-  };
-
-  // ---------- Effect to notify parent about chat open state ----------
+  // ---------- Notify parent about chat open state ----------
   useEffect(() => {
     if (onChatOpen) onChatOpen(!!activeChat);
   }, [activeChat, onChatOpen]);
@@ -302,32 +216,12 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           </div>
         ))}
 
-        {/* Loading indicator */}
-        {isLoading && (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          </div>
-        )}
-
-        {/* Dynamic chats with unread badges */}
-        {!isLoading && dynamicChats.map((chat) => (
+        {/* Dynamic chats – no loading spinner, just show the list */}
+        {dynamicChats.map((chat) => (
           <div
             key={chat.chatId}
             onClick={() => handleOpenDynamicChat(chat)}
-            // Long press to hide
-            onTouchStart={() => handlePressStart(chat.chatId)}
-            onTouchEnd={handlePressEnd}
-            onTouchCancel={handlePressEnd}
-            onMouseDown={() => handlePressStart(chat.chatId)}
-            onMouseUp={handlePressEnd}
-            onMouseLeave={handlePressEnd}
-            // Also provide a context menu for desktop right‑click
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setChatToHide({ chatId: chat.chatId, name: chat.otherUser.name });
-              setShowHideConfirm(true);
-            }}
-            className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity relative"
+            className="flex items-center gap-4 px-2 py-2.5 cursor-pointer active:opacity-60 transition-opacity"
           >
             <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
               <Image
@@ -353,53 +247,13 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           </div>
         ))}
 
-        {/* Empty state */}
+        {/* Show message if no conversations (and not loading) */}
         {!isLoading && dynamicChats.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 text-sm">No conversations yet</p>
           </div>
         )}
       </div>
-
-      {/* -------- Hide Conversation Confirmation Modal -------- */}
-      {showHideConfirm && chatToHide && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => {
-            setShowHideConfirm(false);
-            setChatToHide(null);
-          }}
-        >
-          <div
-            className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-bold text-gray-800 mb-1">
-              Hide conversation with {chatToHide.name}?
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              You won’t see it in your list until they message you again.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setShowHideConfirm(false);
-                  setChatToHide(null);
-                }}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-full transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleHideConversation(chatToHide.chatId)}
-                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-full transition-colors cursor-pointer"
-              >
-                Hide
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Chat Screen Overlay */}
       {activeChat && (
@@ -413,4 +267,4 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
       )}
     </div>
   );
-          }
+    }
