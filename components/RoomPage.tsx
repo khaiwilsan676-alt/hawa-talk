@@ -1812,7 +1812,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   );
 }
 
-// SeatItem Component - Only seats have WebGL overlay
+// SeatItem Component - With WebGL overlay from separate file
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1855,10 +1855,10 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   onClick={onAvatarClick}
                   style={{ cursor: 'pointer', pointerEvents: 'auto' }}
                 />
-                {/* WebGL Overlay - ONLY ON SEATS */}
+                {/* WebGL Overlay - From separate file */}
                 <div className="absolute inset-0 pointer-events-none">
                   <WhiteColorRemovalShader
-                    imageSrc="1786867564769.png"
+                    imageSrc="/1786867564769.png"
                     threshold={0.85}
                     className="w-full h-full"
                     style={{
@@ -1903,4 +1903,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-    }
+                }
