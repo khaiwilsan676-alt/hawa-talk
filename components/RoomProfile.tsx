@@ -30,7 +30,7 @@ interface RoomProfileProps {
     isLocked?: boolean
   }
   isCurrentUser?: boolean
-  isRoomOwner?: boolean   // New prop: true if the viewer is the room owner
+  isRoomOwner?: boolean
   onClose: () => void
   onCopyId?: () => void
   onLeaveSeat?: () => void
@@ -46,7 +46,7 @@ interface RoomProfileProps {
 export default function RoomProfile({ 
   user, 
   isCurrentUser = false,
-  isRoomOwner = false,   // default false
+  isRoomOwner = false,
   onClose, 
   onCopyId,
   onLeaveSeat,
@@ -115,16 +115,27 @@ export default function RoomProfile({
 
   const genderColor = getGenderColor(displayGender)
 
-  // Determine dynamic height based on states
+  // Determine what to show
   const showLeaveSeat = isCurrentUser && isInSeat
-  const showActions = !showLeaveSeat // show actions for everyone except current user in seat
-  const showModerationRow = isRoomOwner && !isCurrentUser // only room owner viewing others
+  const showModerationRow = isRoomOwner && !isCurrentUser
+  const showActions = !isCurrentUser // Show actions for all other users
 
+  // Dynamic height based on content
   const getSheetHeight = () => {
-    if (showLeaveSeat) return { height: '30vh', minHeight: '280px', maxHeight: '320px' }
-    if (showActions && showModerationRow) return { height: '48vh', minHeight: '420px', maxHeight: '480px' } // extra room for moderation row
-    if (showActions) return { height: '38vh', minHeight: '340px', maxHeight: '400px' }
-    return { height: '20vh', minHeight: '220px', maxHeight: '260px' }
+    if (showLeaveSeat) {
+      // Only blue leave button
+      return { minHeight: '280px', maxHeight: '320px' }
+    }
+    if (showModerationRow) {
+      // Actions + moderation row
+      return { minHeight: '380px', maxHeight: '420px' }
+    }
+    if (showActions) {
+      // Only actions row
+      return { minHeight: '320px', maxHeight: '360px' }
+    }
+    // Default
+    return { minHeight: '220px', maxHeight: '260px' }
   }
 
   return (
@@ -135,7 +146,7 @@ export default function RoomProfile({
         onClick={onClose}
       />
       
-      {/* Bottom Sheet - Dynamic Height */}
+      {/* Bottom Sheet - Auto Height */}
       <div 
         className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up"
         style={getSheetHeight()}
@@ -162,7 +173,7 @@ export default function RoomProfile({
         </div>
 
         {/* Content */}
-        <div className="flex flex-col items-center px-4 pt-8 pb-4 h-full">
+        <div className="flex flex-col items-center px-4 pt-8 pb-4">
           {/* Avatar with WebGL Overlay - Half inside sheet */}
           <div className="relative -mt-14 mb-2 overflow-visible">
             <div className="relative w-20 h-20 rounded-full overflow-visible border-2 border-white shadow-md bg-gray-100">
@@ -289,52 +300,45 @@ export default function RoomProfile({
             </div>
           </div>
 
-          {/* Leave Seat Button - Only show if current user is in seat */}
+          {/* Blue Leave Button - ONLY for current user in seat */}
           {showLeaveSeat && (
-            <div className="mt-auto w-full pt-2">
+            <div className="mt-4 w-full">
               <button
                 onClick={handleLeaveSeat}
                 className="w-full h-11 rounded-full bg-blue-500 text-white font-semibold text-sm shadow-md shadow-blue-200 hover:bg-blue-600 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center"
               >
-                <div className="flex items-center justify-center gap-1.5">
-                  <div className="relative flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                      <path d="M19 10v1a7 7 0 0 1-14 0v-1"></path>
-                      <line x1="12" y1="19" x2="12" y2="22"></line>
-                      <polyline points="15 16 12 19 9 16"></polyline>
-                    </svg>
-                  </div>
-                  <span>Leave</span>
-                </div>
+                <span>Leave Seat</span>
               </button>
             </div>
           )}
 
-          {/* Action Buttons for everyone except current user in seat */}
+          {/* Action Buttons for OTHER users */}
           {showActions && (
-            <div className="mt-auto w-full pt-2 flex flex-col gap-3">
-              {/* Top row: Follow, Chat, Image (no card) */}
+            <div className="mt-4 w-full flex flex-col gap-3">
+              {/* Row: Follow, Chat, Image - Icon & Text in same row */}
               <div className="flex items-center gap-6 w-full justify-center">
+                {/* Follow - Icon + Text in same row */}
                 <button
                   onClick={onFollow}
-                  className="flex flex-col items-center gap-1 text-pink-500 font-medium text-sm hover:text-pink-600 transition-colors active:scale-95"
+                  className="flex items-center gap-1.5 text-pink-500 font-medium text-sm hover:text-pink-600 transition-colors active:scale-95"
                 >
-                  <Heart size={22} className="fill-pink-500" />
+                  <Heart size={20} className="fill-pink-500" />
                   <span>{isFollowing ? 'Following' : 'Follow'}</span>
                 </button>
 
+                {/* Chat - Icon + Text in same row */}
                 <button
                   onClick={onMessage}
-                  className="flex flex-col items-center gap-1 text-gray-700 font-medium text-sm hover:text-gray-900 transition-colors active:scale-95"
+                  className="flex items-center gap-1.5 text-gray-700 font-medium text-sm hover:text-gray-900 transition-colors active:scale-95"
                 >
-                  <MessageCircle size={22} />
+                  <MessageCircle size={20} />
                   <span>Chat</span>
                 </button>
 
+                {/* Image button */}
                 <button
                   onClick={onThirdAction}
-                  className="flex flex-col items-center gap-1 group active:scale-95 transition-all"
+                  className="flex items-center gap-1.5 group active:scale-95 transition-all"
                   aria-label="Additional action"
                 >
                   <img 
@@ -345,7 +349,7 @@ export default function RoomProfile({
                 </button>
               </div>
 
-              {/* Moderation row: only for room owner viewing other users */}
+              {/* Moderation row: ONLY for room owner viewing other users */}
               {showModerationRow && (
                 <div className="flex items-center justify-around w-full py-1 text-gray-500 text-xs sm:text-sm font-medium">
                   <button 
@@ -399,4 +403,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-    }
+  }
