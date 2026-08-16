@@ -2250,15 +2250,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                     zIndex: 1
                   }}
                 />
-                {/* Voice Activity Indicator */}
-                {!isMuted && (
-                  <VoiceActivityIndicator 
-                    participantIdentity={user.accountId} 
-                    isLocal={user.accountId === accountId}
-                    isMuted={isMuted}
-                  />
-                )}
-                {/* WebGL Overlay - From separate file - Full image visible, can overflow */}
+                               {/* WebGL Overlay - From separate file - Full image visible, can overflow */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
