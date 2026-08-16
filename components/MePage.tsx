@@ -1,6 +1,6 @@
 'use client' 
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { ChevronRight, Copy, ArrowLeft } from 'lucide-react'
 import SettingPage from './settingpage'
 import PublicProfile from './PublicProfile'
@@ -116,6 +116,203 @@ export const getOrCreateAccountNumber = (uid: string) => {
   const generated = String(10000000 + (positiveHash % 90000000))
   
   return { fullAccNum: generated, displayAccNum: generated }
+}
+
+// WebGL Shader Component for removing white color
+const WhiteColorRemovalShader = ({ 
+  imageSrc, 
+  threshold = 0.9,
+  className = "",
+  style = {}
+}: { 
+  imageSrc: string
+  threshold?: number
+  className?: string
+  style?: React.CSSProperties
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
+    if (!gl) {
+      console.warn('WebGL not supported')
+      return
+    }
+
+    // Vertex shader
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `
+
+    // Fragment shader with white color removal
+    const fragmentShaderSource = `
+      precision mediump float;
+      
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture;
+      uniform float u_threshold;
+      
+      void main() {
+        vec4 color = texture2D(u_texture, v_texCoord);
+        
+        // Calculate whiteness
+        float maxColor = max(color.r, max(color.g, color.b));
+        float minColor = min(color.r, min(color.g, color.b));
+        float lightness = (maxColor + minColor) / 2.0;
+        float saturation = maxColor - minColor;
+        
+        // If pixel is white (high lightness, low saturation), make it transparent
+        if (lightness > u_threshold && saturation < 0.3) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `
+
+    // Compile shaders
+    const compileShader = (type: number, source: string) => {
+      const shader = gl.createShader(type)
+      if (!shader) return null
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+      
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
+        gl.deleteShader(shader)
+        return null
+      }
+      return shader
+    }
+
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
+    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
+    
+    if (!vertexShader || !fragmentShader) return
+
+    // Create program
+    const program = gl.createProgram()
+    if (!program) return
+    
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program))
+      return
+    }
+
+    gl.useProgram(program)
+
+    // Setup geometry
+    const positionBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    const positions = new Float32Array([
+      -1.0, -1.0,
+       1.0, -1.0,
+      -1.0,  1.0,
+      -1.0,  1.0,
+       1.0, -1.0,
+       1.0,  1.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(positionLocation)
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+    // Setup texture coordinates
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    const texCoords = new Float32Array([
+      0.0, 0.0,
+      1.0, 0.0,
+      0.0, 1.0,
+      0.0, 1.0,
+      1.0, 0.0,
+      1.0, 1.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
+    gl.enableVertexAttribArray(texCoordLocation)
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
+
+    // Load and create texture
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    
+    // Set texture parameters
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    
+    // Enable blending for transparency
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+      
+      // Set threshold uniform
+      const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
+      gl.uniform1f(thresholdLocation, threshold)
+      
+      // Set canvas size to match image
+      canvas.width = image.width
+      canvas.height = image.height
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      
+      // Draw
+      gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      
+      setIsLoaded(true)
+    }
+    image.onerror = () => {
+      console.error('Failed to load image for WebGL processing')
+    }
+    image.src = imageSrc
+
+    // Cleanup
+    return () => {
+      gl.deleteProgram(program)
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      gl.deleteBuffer(positionBuffer)
+      gl.deleteBuffer(texCoordBuffer)
+      gl.deleteTexture(texture)
+    }
+  }, [imageSrc, threshold])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={className}
+      style={{
+        ...style,
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
+      }}
+    />
+  )
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
@@ -432,18 +629,39 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         {/* User Card */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            {/* Avatar */}
-            {user.photo ? (
-              <img
-                src={user.photo}
-                className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
-                alt="Profile"
-              />
-            ) : (
-              <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
-                {user.name.charAt(0).toUpperCase() || "G"}
+            {/* Avatar with WebGL Shader Overlay */}
+            <div className="relative w-20 h-20">
+              {user.photo ? (
+                <img
+                  src={user.photo}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
+                  alt="Profile"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
+                  {user.name.charAt(0).toUpperCase() || "G"}
+                </div>
+              )}
+              
+              {/* WebGL Shader Overlay Image */}
+              <div className="absolute inset-0 pointer-events-none">
+                <WhiteColorRemovalShader
+                  imageSrc="/1786857172378.png"
+                  threshold={0.85}
+                  className="w-full h-full"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                  }}
+                />
               </div>
-            )}
+            </div>
 
             <div className="flex flex-col">
               {/* Name */}
@@ -616,5 +834,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-    }
-
+  }
