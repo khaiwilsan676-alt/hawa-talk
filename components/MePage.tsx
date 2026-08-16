@@ -61,7 +61,7 @@ const bottomMenuItems: MenuItem[] = [
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1E1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M5.5 11 V8.5 C5.5 5 8.2 3 12 3 C15.8 3 18.5 5 18.5 8.5 V15.2 C18.5 18.5 16.2 21 12 21"/>
-        <path d="M3 10.2 V13.8 C3 14.6 3.5 15.2 4.2 15.2 H5.5 V9 H4.2 C3.5 9 3 9.5 3 10.2 Z"/>
+        <path d="M3 10.2 V13.8 C3 10.2 V13.8 C3 14.6 3.5 15.2 4.2 15.2 H5.5 V9 H4.2 C3.5 9 3 9.5 3 10.2 Z"/>
         <path d="M18.5 9 V15.2 H19.8 C20.5 15.2 21 14.6 21 13.8 V10.2 C21 9.4 20.5 9 19.8 9 H18.5"/>
         <path d="M9.2 13.8 C9.2 15 10.3 16 12 16 C13.7 16 14.8 15 14.8 13.8"/>
       </svg>
@@ -628,9 +628,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       >
         {/* User Card */}
         <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4" style={{ paddingLeft: '4px' }}>
             {/* Avatar with WebGL Shader Overlay */}
-            <div className="relative w-20 h-20">
+            <div className="relative w-20 h-20 shrink-0">
               {user.photo ? (
                 <img
                   src={user.photo}
@@ -643,8 +643,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 </div>
               )}
               
-              {/* WebGL Shader Overlay Image */}
-              <div className="absolute inset-0 pointer-events-none">
+              {/* WebGL Shader Overlay Image - Fixed positioning */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-full">
                 <WhiteColorRemovalShader
                   imageSrc="/1786867564769.png"
                   threshold={0.85}
@@ -654,18 +654,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: '150%',
-                    height: '150%',
+                    width: '160%',
+                    height: '160%',
                     objectFit: 'cover',
-                    borderRadius: '50%',
                   }}
                 />
               </div>
             </div>
 
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
               {/* Name */}
-              <h2 className="text-2xl font-bold text-gray-900 mb-0.5">{user.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-0.5 truncate">{user.name}</h2>
 
               {/* Account Number Display */}
               <div className="flex items-center gap-1 mt-1">
@@ -698,7 +697,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               </div>
 
               {user.phone && (
-                <p className="text-gray-600 text-xs mt-0.5 font-semibold">
+                <p className="text-gray-600 text-xs mt-0.5 font-semibold truncate">
                   {user.phone}
                 </p>
               )}
@@ -708,7 +707,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           {/* Top Right Arrow - View Public Profile */}
           <button
             onClick={() => switchView('public_profile')}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2 cursor-pointer"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2 cursor-pointer shrink-0"
             title="View Public Profile"
           >
             <ChevronRight className="text-gray-700" size={24} />
@@ -731,20 +730,22 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </div>
         </div>
 
-        {/* Banner Images */}
-        <div className="flex gap-1 mt-6">
-          <div className="flex-1 rounded-lg overflow-hidden">
+        {/* Banner Images - Fixed layout with gap and proper spacing */}
+        <div className="flex gap-2 mt-6">
+          <div className="flex-1 rounded-lg overflow-hidden" style={{ height: '56px' }}>
             <img
               src="/1784480382765~2.jpg"
               alt="Feature 1"
-              className="w-full h-14 object-cover"
+              className="w-full h-full object-cover"
+              style={{ display: 'block' }}
             />
           </div>
-          <div className="flex-1 rounded-lg overflow-hidden">
+          <div className="flex-1 rounded-lg overflow-hidden" style={{ height: '56px' }}>
             <img
               src="/1784480368941~2.jpg"
               alt="Feature 2"
-              className="w-full h-14 object-cover"
+              className="w-full h-full object-cover"
+              style={{ display: 'block' }}
             />
           </div>
         </div>
@@ -761,6 +762,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     src={item.src}
                     alt={t[item.labelKey]}
                     className="w-full h-full object-cover"
+                    style={{ display: 'block' }}
                   />
                 </div>
 
@@ -775,7 +777,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     {item.badge}
                   </span>
                 )}
-                <ChevronRight size={20} className="text-gray-400" />
+                <ChevronRight size={20} className="text-gray-400 shrink-0" />
               </div>
               {index < menuItems.length - 1 && (
                 <div className="h-[0.5px] bg-gray-200 mx-4"></div>
@@ -814,7 +816,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     {item.badge}
                   </span>
                 )}
-                <ChevronRight size={20} className="text-gray-400" />
+                <ChevronRight size={20} className="text-gray-400 shrink-0" />
               </div>
               {index < bottomMenuItems.length - 1 && (
                 <div className="h-[0.5px] bg-gray-200 mx-4"></div>
