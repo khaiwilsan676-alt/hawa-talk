@@ -221,13 +221,13 @@ export default function RoomProfile({
           </button>
         </div>
 
-        {/* Content - Starts after avatar space */}
-        <div className="flex flex-col items-center px-4 pt-14 pb-3 h-full overflow-y-auto">
+        {/* Content - No scroll */}
+        <div className="flex flex-col items-center px-4 pt-14 pb-3 h-full">
           {/* User Info */}
           <div className="text-center w-full shrink-0">
             {/* Row 1: Name + Gender Tag */}
             <div className="flex items-center justify-center gap-2">
-              <h3 className="text-base font-bold text-gray-900">
+              <h3 className="text-lg font-bold text-gray-900">
                 {displayName}
               </h3>
               <span className={`px-2 py-0.5 ${genderColor} text-white text-xs font-medium rounded-full`}>
@@ -236,22 +236,22 @@ export default function RoomProfile({
             </div>
 
             {/* Row 2: Tags */}
-            <div className="flex items-center justify-center gap-0.5 mt-0.5 flex-wrap">
-              <img src="/1785131462125.png" alt="" className="h-7 w-auto object-contain" />
-              <img src="/1785131792693.png" alt="" className="h-7 w-auto object-contain" />
-              <img src="/1785469775751.png" alt="" className="h-7 w-auto object-contain" />
-              <img src="/1785469365805.png" alt="" className="h-7 w-auto object-contain" />
+            <div className="flex items-center justify-center gap-0.5 mt-1.5 w-auto flex-wrap">
+              <img src="/1785131462125.png" alt="" className="h-8 w-auto object-contain" />
+              <img src="/1785131792693.png" alt="" className="h-8 w-auto object-contain" />
+              <img src="/1785469775751.png" alt="" className="h-5 w-auto object-contain" />
+              <img src="/1785469365805.png" alt="" className="h-5 w-auto object-contain" />
             </div>
 
             {/* Row 3: Level Badge + Additional Image */}
-            <div className="flex items-center justify-center gap-0.5 mt-0.5">
+            <div className="flex items-center justify-center gap-0.5 mt-1.5">
               <div className="relative inline-flex items-center">
                 <img 
                   src="/1785137410522.png" 
                   alt="Level" 
                   className="h-5 w-auto object-contain"
                 />
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm pl-2">
                   Lv.1
                 </span>
               </div>
@@ -313,11 +313,11 @@ export default function RoomProfile({
           {/* Action Buttons for OTHER users */}
           {showActions && (
             <div className="mt-3 w-full flex flex-col gap-2 shrink-0">
-              {/* Column: Follow, Chat, Image */}
-              <div className="flex flex-col gap-2 w-full items-center">
+              {/* Row: Follow, Chat, Image */}
+              <div className="flex items-center gap-6 w-full justify-center">
                 <button
                   onClick={onFollow}
-                  className="flex items-center gap-2 text-pink-500 font-medium text-base hover:text-pink-600 transition-colors active:scale-95"
+                  className="flex items-center gap-1.5 text-pink-500 font-medium text-base hover:text-pink-600 transition-colors active:scale-95"
                 >
                   <Heart size={20} className="fill-pink-500" />
                   <span>{isFollowing ? 'Following' : 'Follow'}</span>
@@ -325,7 +325,7 @@ export default function RoomProfile({
 
                 <button
                   onClick={onMessage}
-                  className="flex items-center gap-2 text-gray-700 font-medium text-base hover:text-gray-900 transition-colors active:scale-95"
+                  className="flex items-center gap-1.5 text-gray-700 font-medium text-base hover:text-gray-900 transition-colors active:scale-95"
                 >
                   <MessageCircle size={20} />
                   <span>Chat</span>
@@ -333,7 +333,7 @@ export default function RoomProfile({
 
                 <button
                   onClick={onThirdAction}
-                  className="flex items-center gap-2 group active:scale-95 transition-all"
+                  className="flex items-center gap-1.5 group active:scale-95 transition-all"
                   aria-label="Additional action"
                 >
                   <img 
@@ -398,4 +398,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-}
+        }
