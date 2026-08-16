@@ -51,7 +51,13 @@ interface ChatScreenProps {
 
 const FIXED_CHAT_UIDS = ['hurry_team_official', 'hurry_system_official'];
 
-export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoom, sharedRoomData }: ChatScreenProps) {
+export default function ChatScreen({
+  currentUser,
+  targetUser,
+  onClose,
+  onJoinRoom,
+  sharedRoomData,
+}: ChatScreenProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [connected, setConnected] = useState(false);
@@ -77,13 +83,13 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
   const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid);
   const chatId = [currentUser.uid, targetUser.uid].sort().join('_');
 
-  // Check online status
+  // ========== Online status ==========
   useEffect(() => {
     if (isFixedChat) {
       setOnline(true);
       return;
     }
-    
+
     const presenceRef = doc(db, 'presence', targetUser.uid);
     const unsubscribe = onSnapshot(presenceRef, (snap) => {
       if (snap.exists()) {
@@ -96,7 +102,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     return () => unsubscribe();
   }, [targetUser.uid, isFixedChat]);
 
-  // Firestore listener for messages
+  // ========== Firestore messages listener ==========
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -117,19 +123,21 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       unsubMessages = onSnapshot(
         q,
         (snapshot) => {
-          const loadedMessages: Message[] = snapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              text: data.text || '',
-              sender: data.senderUid === currentUser.uid ? 'me' : 'other',
-              timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
-              type: data.type || 'message',
-              imageUrl: data.imageUrl || undefined,
-              roomData: data.roomData || undefined,
-              replyTo: data.replyTo || null,
-            };
-          }).filter(msg => msg.timestamp > clearedAt);
+          const loadedMessages: Message[] = snapshot.docs
+            .map((doc) => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                text: data.text || '',
+                sender: data.senderUid === currentUser.uid ? 'me' : 'other',
+                timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
+                type: data.type || 'message',
+                imageUrl: data.imageUrl || undefined,
+                roomData: data.roomData || undefined,
+                replyTo: data.replyTo || null,
+              };
+            })
+            .filter((msg) => msg.timestamp > clearedAt);
 
           setMessages(loadedMessages);
           setConnected(true);
@@ -149,7 +157,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     };
   }, [chatId, currentUser.uid]);
 
-  // Auto-send room invite if sharedRoomData exists
+  // ========== Auto-send room invite if sharedRoomData provided ==========
   useEffect(() => {
     if (sharedRoomData && connected && lastSentInviteRoomIdRef.current !== sharedRoomData.roomId) {
       lastSentInviteRoomIdRef.current = sharedRoomData.roomId;
@@ -157,6 +165,26 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   }, [sharedRoomData, connected]);
 
+  // ========== Helper: update conversation document ==========
+  const updateConversation = async (messageText: string) => {
+    const convoRef = doc(db, 'conversations', chatId);
+    await setDoc(
+      convoRef,
+      {
+        participants: [currentUser.uid, targetUser.uid],
+        participantsData: [
+          { uid: currentUser.uid, name: currentUser.name, photo: currentUser.photo },
+          { uid: targetUser.uid, name: targetUser.name, photo: targetUser.photo },
+        ],
+        lastMessage: messageText,
+        lastTimestamp: serverTimestamp(),
+        lastSenderUid: currentUser.uid, // ✅ required for auto‑unhide
+      },
+      { merge: true }
+    );
+  };
+
+  // ========== Send room invite ==========
   const sendRoomInvite = async (roomData: { roomId: string; roomName: string; roomImage: string }) => {
     try {
       const messagesRef = collection(db, 'chats', chatId, 'messages');
@@ -171,11 +199,15 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
           roomImage: roomData.roomImage,
         },
       });
+
+      // ✅ update conversation
+      await updateConversation(`Room invite: ${roomData.roomName}`);
     } catch (error) {
       console.error('Error sending room invite:', error);
     }
   };
 
+  // ========== Send text message ==========
   const handleSend = async () => {
     if (!newMessage.trim()) return;
     const messageText = newMessage.trim();
@@ -188,12 +220,17 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         senderUid: currentUser.uid,
         timestamp: serverTimestamp(),
         type: 'message',
-        replyTo: replyTo ? {
-          id: replyTo.id,
-          text: replyTo.text,
-          senderName: replyTo.sender === 'me' ? currentUser.name : targetUser.name,
-        } : null,
+        replyTo: replyTo
+          ? {
+              id: replyTo.id,
+              text: replyTo.text,
+              senderName: replyTo.sender === 'me' ? currentUser.name : targetUser.name,
+            }
+          : null,
       });
+
+      // ✅ update conversation
+      await updateConversation(messageText);
 
       setReplyTo(null);
     } catch (error) {
@@ -202,11 +239,11 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
+  // ========== Send image message ==========
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 5MB for base64)
     if (file.size > 5 * 1024 * 1024) {
       alert('Image size should be less than 5MB');
       return;
@@ -214,7 +251,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
 
     setImageUploading(true);
     try {
-      // Convert image to base64
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -222,7 +258,6 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         reader.readAsDataURL(file);
       });
 
-      // Send image message with base64 data
       const messagesRef = collection(db, 'chats', chatId, 'messages');
       await addDoc(messagesRef, {
         text: '',
@@ -230,12 +265,17 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         timestamp: serverTimestamp(),
         type: 'image',
         imageUrl: base64,
-        replyTo: replyTo ? {
-          id: replyTo.id,
-          text: replyTo.text,
-          senderName: replyTo.sender === 'me' ? currentUser.name : targetUser.name,
-        } : null,
+        replyTo: replyTo
+          ? {
+              id: replyTo.id,
+              text: replyTo.text,
+              senderName: replyTo.sender === 'me' ? currentUser.name : targetUser.name,
+            }
+          : null,
       });
+
+      // ✅ update conversation (use 'Image' as last message)
+      await updateConversation('Image');
 
       setReplyTo(null);
     } catch (error) {
@@ -249,37 +289,26 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleJoinRoom = (roomId: string) => {
-    if (onJoinRoom) {
-      onJoinRoom(roomId);
-    }
-  };
-
+  // ========== Clear Chat (only clears messages, NOT the conversation) ==========
   const handleClearChat = async () => {
     try {
       const timestamp = Date.now();
-      
-      const chatDocRef = doc(db, 'chats', chatId);
-      await setDoc(chatDocRef, {
-        clearedAtRef: {
-          [currentUser.uid]: timestamp
-        }
-      }, { merge: true });
 
-      const convoDocRef = doc(db, 'conversations', chatId);
-      await setDoc(convoDocRef, {
-        clearedAtRef: {
-          [currentUser.uid]: timestamp
-        }
-      }, { merge: true });
-      
+      // 1️⃣ Update the chat document – this hides messages inside the chat.
+      const chatDocRef = doc(db, 'chats', chatId);
+      await setDoc(
+        chatDocRef,
+        {
+          clearedAtRef: {
+            [currentUser.uid]: timestamp,
+          },
+        },
+        { merge: true }
+      );
+
+      // 2️⃣ ❌ DO NOT update the 'conversations' document.
+      //     The conversation card will stay visible in the message list.
+
       setMessages([]);
       setShowOptions(false);
       setDeleteMode(false);
@@ -289,6 +318,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
+  // ========== Delete single message ==========
   const handleDeleteMessage = async (messageId: string) => {
     try {
       const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
@@ -302,6 +332,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
+  // ========== Delete selected messages (batch) ==========
   const handleDeleteSelectedMessages = async () => {
     try {
       const batch = writeBatch(db);
@@ -310,7 +341,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         batch.delete(messageRef);
       });
       await batch.commit();
-      
+
       setDeleteMode(false);
       setSelectedMessages(new Set());
       setShowDeleteSelectedConfirm(false);
@@ -321,6 +352,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
+  // ========== Block user ==========
   const handleBlockUser = async () => {
     try {
       const blockRef = doc(db, 'blocks', `${currentUser.uid}_${targetUser.uid}`);
@@ -337,6 +369,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
+  // ========== Report user ==========
   const handleReportUser = async () => {
     try {
       const reportRef = doc(db, 'reports', `${currentUser.uid}_${targetUser.uid}_${Date.now()}`);
@@ -347,7 +380,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         timestamp: serverTimestamp(),
         chatId: chatId,
       });
-      
+
       setShowReportConfirm(false);
       setShowOptions(false);
       alert('User reported successfully.');
@@ -357,24 +390,30 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
+  // ========== Reply to message ==========
   const handleReply = (msg: Message) => {
     setReplyTo(msg);
     setLongPressMsg(null);
     setSwipeMsgId(null);
   };
 
+  // ========== Copy message text ==========
   const handleCopyMessage = (msg: Message) => {
     if (msg.text) {
-      navigator.clipboard.writeText(msg.text).then(() => {
-        setCopiedMessage(msg.id);
-        setTimeout(() => setCopiedMessage(null), 2000);
-      }).catch((error) => {
-        console.error('Error copying to clipboard:', error);
-      });
+      navigator.clipboard
+        .writeText(msg.text)
+        .then(() => {
+          setCopiedMessage(msg.id);
+          setTimeout(() => setCopiedMessage(null), 2000);
+        })
+        .catch((error) => {
+          console.error('Error copying to clipboard:', error);
+        });
     }
     setLongPressMsg(null);
   };
 
+  // ========== Toggle selection in delete mode ==========
   const toggleMessageSelection = (messageId: string) => {
     const newSelected = new Set(selectedMessages);
     if (newSelected.has(messageId)) {
@@ -385,7 +424,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     setSelectedMessages(newSelected);
   };
 
-  // Long press handlers
+  // ========== Long press handlers (for copy) ==========
   const handleTouchStart = (msg: Message) => {
     longPressTimerRef.current = setTimeout(() => {
       handleCopyMessage(msg);
@@ -412,7 +451,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     }
   };
 
-  // Swipe handlers for reply (both left and right swipe)
+  // ========== Swipe handlers (for reply) ==========
   const handleSwipeStart = (e: React.TouchEvent, msg: Message) => {
     setSwipeStartX(e.touches[0].clientX);
     setSwipeMsgId(msg.id);
@@ -422,10 +461,9 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     if (swipeStartX !== null && swipeMsgId) {
       const swipeEndX = e.changedTouches[0].clientX;
       const swipeDistance = swipeEndX - swipeStartX;
-      
-      // Swipe left (negative distance) OR right (positive distance) to reply
+
       if (Math.abs(swipeDistance) > 50) {
-        const msg = messages.find(m => m.id === swipeMsgId);
+        const msg = messages.find((m) => m.id === swipeMsgId);
         if (msg) {
           handleReply(msg);
         }
@@ -435,18 +473,35 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
     setSwipeMsgId(null);
   };
 
-  // Auto-scroll on new messages
+  // ========== Enter key handler ==========
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // ========== Join room from invite ==========
+  const handleJoinRoom = (roomId: string) => {
+    if (onJoinRoom) {
+      onJoinRoom(roomId);
+    }
+  };
+
+  // ========== Auto-scroll ==========
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // ========== Format timestamp ==========
   const formatTime = (timestamp: number) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // ========================= RENDER =========================
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      {/* Header */}
+      {/* ----- Header ----- */}
       <div
         className="px-4 pb-3 flex items-center gap-3 sticky top-0 z-10"
         style={{
@@ -500,14 +555,13 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         ) : (
           !isFixedChat && (
             <div className="relative">
-              <button 
-                onClick={() => setShowOptions(!showOptions)} 
+              <button
+                onClick={() => setShowOptions(!showOptions)}
                 className="flex-shrink-0 hover:bg-white/30 rounded-full p-1"
               >
                 <MoreHorizontal size={24} className="text-gray-800" />
               </button>
-              
-              {/* Small dropdown card */}
+
               {showOptions && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowOptions(false)} />
@@ -557,7 +611,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         )}
       </div>
 
-      {/* Messages area */}
+      {/* ----- Messages area ----- */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
         {messages.length === 0 && (
           <p className="text-center text-gray-400 mt-20">
@@ -570,17 +624,23 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
           const isMine = msg.sender === 'me';
           const isSelected = selectedMessages.has(msg.id);
 
-          // Room Invite Message
+          // ---- Room invite ----
           if (msg.type === 'room_invite' && msg.roomData) {
             return (
-              <div 
-                key={msg.id} 
-                className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${deleteMode ? 'cursor-pointer' : ''}`} 
+              <div
+                key={msg.id}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${
+                  deleteMode ? 'cursor-pointer' : ''
+                }`}
                 onClick={() => deleteMode && toggleMessageSelection(msg.id)}
                 onTouchStart={(e) => !deleteMode && handleSwipeStart(e, msg)}
                 onTouchEnd={(e) => !deleteMode && handleSwipeEnd(e)}
               >
-                <div className={`max-w-[80%] overflow-hidden rounded-2xl shadow-md ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
+                <div
+                  className={`max-w-[80%] overflow-hidden rounded-2xl shadow-md ${
+                    isMine ? 'rounded-br-md' : 'rounded-bl-md'
+                  } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                >
                   <div className="relative h-40 bg-gray-200">
                     <img
                       src={msg.roomData.roomImage || '/default-avatar.png'}
@@ -610,12 +670,14 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
             );
           }
 
-          // Image Message
+          // ---- Image message ----
           if (msg.type === 'image' && msg.imageUrl) {
             return (
               <div
                 key={msg.id}
-                className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${deleteMode ? 'cursor-pointer' : ''}`}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${
+                  deleteMode ? 'cursor-pointer' : ''
+                }`}
                 onClick={() => deleteMode && toggleMessageSelection(msg.id)}
                 onTouchStart={(e) => !deleteMode && handleSwipeStart(e, msg)}
                 onTouchEnd={(e) => !deleteMode && handleSwipeEnd(e)}
@@ -630,11 +692,17 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
                   </div>
                 )}
                 <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                  <div className={`rounded-2xl overflow-hidden relative ${isMine ? 'rounded-br-md' : 'rounded-bl-md'} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
+                  <div
+                    className={`rounded-2xl overflow-hidden relative ${
+                      isMine ? 'rounded-br-md' : 'rounded-bl-md'
+                    } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                  >
                     {msg.replyTo && (
                       <div className="px-3 pt-2 bg-white/95">
                         <div className="border-l-4 border-blue-400 pl-2 bg-black/5 rounded p-1">
-                          <p className="text-[10px] font-semibold text-blue-600">{msg.replyTo.senderName}</p>
+                          <p className="text-[10px] font-semibold text-blue-600">
+                            {msg.replyTo.senderName}
+                          </p>
                           <p className="text-[11px] text-gray-600 truncate">{msg.replyTo.text}</p>
                         </div>
                       </div>
@@ -664,11 +732,13 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
             );
           }
 
-          // Regular message
+          // ---- Regular text message ----
           return (
             <div
               key={msg.id}
-              className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${deleteMode ? 'cursor-pointer' : ''}`}
+              className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${
+                deleteMode ? 'cursor-pointer' : ''
+              }`}
               onClick={() => deleteMode && toggleMessageSelection(msg.id)}
               onTouchStart={(e) => {
                 if (!deleteMode) {
@@ -707,7 +777,9 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
                 >
                   {msg.replyTo && (
                     <div className="border-l-4 border-blue-400 pl-2 mb-1 bg-black/5 rounded p-1">
-                      <p className="text-[10px] font-semibold text-blue-600">{msg.replyTo.senderName}</p>
+                      <p className="text-[10px] font-semibold text-blue-600">
+                        {msg.replyTo.senderName}
+                      </p>
                       <p className="text-[11px] text-gray-600 truncate">{msg.replyTo.text}</p>
                     </div>
                   )}
@@ -735,7 +807,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Reply bar */}
+      {/* ----- Reply bar ----- */}
       {replyTo && !deleteMode && (
         <div className="px-4 py-2 bg-gray-100 border-t border-gray-200 flex items-center gap-2">
           <div className="flex-1 border-l-4 border-blue-400 pl-2 bg-white rounded p-2">
@@ -750,7 +822,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         </div>
       )}
 
-      {/* Input bar */}
+      {/* ----- Input bar ----- */}
       {!isFixedChat && !deleteMode && (
         <div className="px-4 py-3 bg-white border-t border-gray-200 flex items-center gap-2">
           <input
@@ -760,7 +832,7 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
             accept="image/*"
             className="hidden"
           />
-          <button 
+          <button
             className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
             onClick={() => fileInputRef.current?.click()}
             disabled={imageUploading}
@@ -795,10 +867,16 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         </div>
       )}
 
-      {/* Block Confirmation */}
+      {/* ----- Block Confirmation ----- */}
       {showBlockConfirm && (
-        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowBlockConfirm(false)}>
-          <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50"
+          onClick={() => setShowBlockConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-4xl mb-3">🚫</div>
             <h3 className="text-lg font-bold text-gray-800 mb-1">Block {targetUser.name}?</h3>
             <p className="text-sm text-gray-500 mb-4">You won't receive messages from this user.</p>
@@ -820,10 +898,16 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         </div>
       )}
 
-      {/* Report Confirmation */}
+      {/* ----- Report Confirmation ----- */}
       {showReportConfirm && (
-        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowReportConfirm(false)}>
-          <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50"
+          onClick={() => setShowReportConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-4xl mb-3">🚨</div>
             <h3 className="text-lg font-bold text-gray-800 mb-1">Report {targetUser.name}?</h3>
             <p className="text-sm text-gray-500 mb-4">This user will be reviewed by our team.</p>
@@ -845,12 +929,20 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
         </div>
       )}
 
-      {/* Delete Selected Messages Confirmation */}
+      {/* ----- Delete Selected Messages Confirmation ----- */}
       {showDeleteSelectedConfirm && (
-        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowDeleteSelectedConfirm(false)}>
-          <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50"
+          onClick={() => setShowDeleteSelectedConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-4xl mb-3">🗑️</div>
-            <h3 className="text-lg font-bold text-gray-800 mb-1">Delete {selectedMessages.size} Message{selectedMessages.size > 1 ? 's' : ''}?</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-1">
+              Delete {selectedMessages.size} Message{selectedMessages.size > 1 ? 's' : ''}?
+            </h3>
             <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
             <div className="flex gap-2">
               <button
@@ -871,4 +963,4 @@ export default function ChatScreen({ currentUser, targetUser, onClose, onJoinRoo
       )}
     </div>
   );
-      }
+  }
