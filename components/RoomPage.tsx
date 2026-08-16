@@ -7,14 +7,9 @@ import RoomSettingPage from './RoomSettingPage';
 import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
+import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { db } from "../src/lib/firebase";
 import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
-
-declare global {
-  interface Window {
-    JitsiMeetExternalAPI: any;
-  }
-}
 
 interface RoomPageProps {
   roomOwner: {
@@ -98,7 +93,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
   const [musicDuration, setMusicDuration] = useState(0);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
-  const progressBarRef = useRef<HTMLDivElement>(null);
 
   // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
@@ -150,19 +144,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [showChatInput, setShowChatInput] = useState(false);
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
 
-  // Jitsi refs
-  const jitsiContainerRef = useRef<HTMLDivElement>(null);
-  const jitsiApiRef = useRef<any>(null);
-  const jitsiJoinedRef = useRef(false);
-  const desiredAudioStateRef = useRef(false);
-  const [jitsiLoaded, setJitsiLoaded] = useState(false);
-  const [isJitsiJoined, setIsJitsiJoined] = useState(false);
-  const [hasJoinedSeat, setHasJoinedSeat] = useState(false);
-  const isUpdatingSeatRef = useRef(false);
-
-  const speakingUsersRef = useRef<Set<string>>(new Set());
-  const speakingTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
-
   const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([]);
 
   // Seat helpers
@@ -182,17 +163,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
 
   const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
-  const jitsiRoomName = `hurry-room-${Math.abs(hashCode(roomId)) % 100000}`;
-
-  function hashCode(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash |= 0;
-    }
-    return Math.abs(hash);
-  }
 
   const displayRoomName = roomName
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
@@ -243,133 +213,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     };
     fetchRoomData();
   }, [roomId, roomOwner.image]);
-
-  // Load Jitsi script
-  useEffect(() => {
-    if (!document.getElementById('jitsi-script')) {
-      const script = document.createElement('script');
-      script.id = 'jitsi-script';
-      script.src = 'https://meet.jit.si/external_api.js';
-      script.async = true;
-      script.onload = () => { setJitsiLoaded(true); };
-      document.body.appendChild(script);
-    } else {
-      setJitsiLoaded(true);
-    }
-  }, []);
-
-  const setUserSpeaking = (targetId: string, speaking: boolean) => {
-    setSeats(prev => prev.map(seat => {
-      if (seat.isOccupied && seat.user) {
-        if (seat.user.accountId === targetId || (targetId === 'local' && seat.user.accountId === userAccountId)) {
-          return { ...seat, isSpeaking: speaking };
-        }
-      }
-      return seat;
-    }));
-  };
-
-  const applyAudioState = useCallback(async () => {
-    const api = jitsiApiRef.current;
-    if (!api || !jitsiJoinedRef.current) return;
-
-    try {
-      const shouldUnmute = desiredAudioStateRef.current;
-      const isMuted = await api.isAudioMuted();
-
-      if (shouldUnmute && isMuted) {
-        api.executeCommand('toggleAudio');
-      } else if (!shouldUnmute && !isMuted) {
-        api.executeCommand('toggleAudio');
-      }
-    } catch (error) {
-      console.error('Jitsi audio state error:', error);
-    }
-  }, []);
-
-  const initializeJitsiForListening = useCallback(() => {
-    if (!jitsiLoaded || !jitsiContainerRef.current || jitsiApiRef.current) return;
-
-    try {
-      const api = new window.JitsiMeetExternalAPI('meet.jit.si', {
-        roomName: jitsiRoomName,
-        width: '100%',
-        height: '100%',
-        parentNode: jitsiContainerRef.current,
-        userInfo: {
-          displayName: currentUser.name,
-          email: `${userAccountId}@hurry.app`,
-        },
-        configOverrides: {
-          startWithAudioMuted: true,
-          startWithVideoMuted: true,
-          startAudioOnly: true,
-          prejoinPageEnabled: false,
-          disableDeepLinking: true,
-          disableAudioLevels: false,
-          enableNoisyMicDetection: true,
-          toolbarButtons: [],
-          disableInviteFunctions: true,
-          disablePolls: true,
-          hideConferenceSubject: true,
-          hideConferenceTimer: true,
-          doNotStoreRoom: true,
-        },
-        interfaceConfigOverrides: {
-          SHOW_JITSI_WATERMARK: false,
-          SHOW_WATERMARK_FOR_GUESTS: false,
-          SHOW_BRAND_WATERMARK: false,
-          SHOW_POWERED_BY: false,
-          TOOLBAR_ALWAYS_VISIBLE: false,
-          MOBILE_APP_PROMO: false,
-        },
-      });
-
-      jitsiApiRef.current = api;
-
-      api.addListener('videoConferenceJoined', async () => {
-        console.log('Jitsi joined');
-        jitsiJoinedRef.current = true;
-        setIsJitsiJoined(true);
-        desiredAudioStateRef.current = false;
-
-        try {
-          const muted = await api.isAudioMuted();
-          if (!muted) {
-            api.executeCommand('toggleAudio');
-          }
-        } catch (error) {
-          console.error('Initial audio mute error:', error);
-        }
-      });
-
-      api.addListener('audioMuteStatusChanged', (data: any) => {
-        console.log('Jitsi audio status:', data);
-      });
-
-      api.addListener('participantJoined', (data: any) => {
-        console.log('Jitsi participant joined:', data);
-      });
-
-      api.addListener('participantLeft', (data: any) => {
-        console.log('Jitsi participant left:', data);
-      });
-
-      api.addListener('readyToClose', () => {
-        jitsiJoinedRef.current = false;
-        setIsJitsiJoined(false);
-      });
-
-    } catch (error) {
-      console.error('Jitsi initialization error:', error);
-    }
-  }, [jitsiLoaded, jitsiRoomName, currentUser.name, userAccountId]);
-
-  useEffect(() => {
-    if (jitsiLoaded && !jitsiApiRef.current) {
-      initializeJitsiForListening();
-    }
-  }, [jitsiLoaded, initializeJitsiForListening]);
 
   useEffect(() => {
     setSeats(prev => {
@@ -622,9 +465,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null || isUpdatingSeatRef.current) return;
-    
-    isUpdatingSeatRef.current = true;
+    if (selectedSeat === null) return;
     
     try {
       const targetSeat = seats.find(s => s.number === selectedSeat);
@@ -654,18 +495,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       });
 
       setSeats(updatedSeats);
-      setHasJoinedSeat(true);
 
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-      desiredAudioStateRef.current = true;
-      applyAudioState();
-
       setShowSeatSheet(false);
       setSelectedSeat(null);
-    } finally {
-      isUpdatingSeatRef.current = false;
+    } catch (err) {
+      console.error("Error taking seat:", err);
     }
   };
 
@@ -674,9 +511,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null || isUpdatingSeatRef.current) return;
-    
-    isUpdatingSeatRef.current = true;
+    if (selectedSeat === null) return;
     
     try {
       const updatedSeats = seats.map(s => {
@@ -687,30 +522,23 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       });
       
       setSeats(updatedSeats);
-      setHasJoinedSeat(false);
       
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-      desiredAudioStateRef.current = false;
-      applyAudioState();
-
       setShowSeatSheet(false);
       setSelectedSeat(null);
-    } finally {
-      isUpdatingSeatRef.current = false;
+    } catch (err) {
+      console.error("Error leaving seat:", err);
     }
   };
 
   const handleBottomMicToggle = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     
-    if (!currentUserSeat || !jitsiApiRef.current) return;
+    if (!currentUserSeat) return;
 
     const newMuteState = !currentUserSeat.isMuted;
-
-    desiredAudioStateRef.current = !newMuteState;
-    await applyAudioState();
 
     const updatedSeats = seats.map(seat => 
       seat.number === currentUserSeat.number 
@@ -732,10 +560,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) {
         const newMuteState = !s.isMuted;
-        if (s.user?.accountId === userAccountId) {
-          desiredAudioStateRef.current = !newMuteState;
-          applyAudioState();
-        }
         return { ...s, isMuted: newMuteState };
       }
       return s;
@@ -860,7 +684,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (e) e.stopPropagation();
     setShowExitMenu(false);
     localStorage.removeItem('keptRoom');
-    if (jitsiApiRef.current) jitsiApiRef.current.dispose();
     setMessages([]);
     if (onBack) onBack();
     if (onClose) onClose();
@@ -941,20 +764,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     );
   };
 
-  useEffect(() => {
-    return () => {
-      speakingTimersRef.current.forEach(timer => clearTimeout(timer));
-      speakingTimersRef.current.clear();
-      speakingUsersRef.current.clear();
-      if (jitsiApiRef.current) { 
-        jitsiApiRef.current.dispose(); 
-        jitsiApiRef.current = null; 
-      }
-      jitsiJoinedRef.current = false;
-      setIsJitsiJoined(false);
-    };
-  }, []);
-
   // Music playback handlers
   const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
     if (playlist && playlist.length > 0) {
@@ -993,7 +802,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setMusicControllerState('full');
     setMusicCurrentTime(0);
     setMusicDuration(0);
-    // Reset drag position when new track starts
     setDragPosition(null);
   };
 
@@ -1105,9 +913,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // ----------------------------------------------------------------
   // Drag and drop logic for minimized music icon
-  // ----------------------------------------------------------------
   const [isDraggingMusicIcon, setIsDraggingMusicIcon] = useState(false);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [isOverDropTarget, setIsOverDropTarget] = useState(false);
@@ -1176,26 +982,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setIsOverDropTarget(false);
   };
 
-  const dropTargetStyle: React.CSSProperties = {
-    position: 'fixed',
-    bottom: '20px',
-    right: '20px',
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    backgroundColor: isOverDropTarget ? '#ef4444' : '#dc2626',
-    border: '3px solid white',
-    boxShadow: '0 0 20px rgba(0,0,0,0.6)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 60,
-    transition: 'transform 0.2s, background-color 0.2s',
-    transform: isOverDropTarget ? 'scale(1.1)' : 'scale(1)',
-    pointerEvents: 'none',
-  };
-  // ----------------------------------------------------------------
-
   if (showSettingPage) {
     return (
       <RoomSettingPage
@@ -1220,11 +1006,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         draggable={false}
       />
 
-      <div 
-        ref={jitsiContainerRef} 
-        className="absolute inset-0 z-0 opacity-0 pointer-events-none"
-        style={{ width: '100%', height: '100%', opacity: 0 }}
-      />
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
       <div className="relative z-10 flex flex-col h-full px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }} onClick={(e) => e.stopPropagation()}>
@@ -1293,7 +1074,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               </button>
             )}
 
-            {/* Share button now opens message sheet */}
             <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
@@ -1701,7 +1481,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* Four Grid Tools Sheet (Apps Menu) */}
+      {/* Four Grid Tools Sheet */}
       {showFourGride && (
         <Fourgride
           onClose={() => setShowFourGride(false)}
@@ -1743,7 +1523,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}
           >
-            {/* Top Left: Power Off (Close) */}
             <button
               onClick={handleCloseMusicController}
               className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
@@ -1755,7 +1534,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               </svg>
             </button>
 
-            {/* Top Right: Minimize Button (RE-ADDED) */}
             <button
               onClick={handleMinimizeMusicController}
               className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
@@ -1767,14 +1545,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               </svg>
             </button>
 
-            {/* Track name */}
             <div className="text-center mb-3 mt-6">
               <p className="text-white text-sm font-semibold truncate px-8">
                 {currentTrack.name}
               </p>
             </div>
 
-            {/* Music Progress Bar */}
             <div className="px-2 mb-3">
               <input
                 type="range"
@@ -1794,7 +1570,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               </div>
             </div>
 
-            {/* Control Buttons */}
             <div className="flex items-center justify-center gap-8 mb-3">
               <button
                 onClick={handlePrevTrack}
@@ -1834,7 +1609,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
               </button>
             </div>
 
-            {/* Volume Control with speaker and percentage */}
             <div className="flex items-center gap-3 px-2">
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0">
                 <path d="M3 9v6h4l5 5V4L7 9H3z" />
@@ -1861,41 +1635,38 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       )}
 
-      {/* Music Controller - Minimized (Draggable, with close drop target) */}
+      {/* Music Controller - Minimized */}
       {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
         <>
-      {/* Red drop target (only visible while dragging) */}
-{isDraggingMusicIcon && (
-  <div
-    ref={dropTargetRef}
-    style={{
-      position: 'fixed',
-      bottom: '0px',           // Bottom se chipka hua
-      right: '0px',            // Right se chipka hua
-      width: '60px',           // Thoda bada
-      height: '60px',
-      borderRadius: '50%',
-      backgroundColor: 'rgba(220, 38, 38, 0.3)',  // Halka red
-      border: '2px solid rgba(239, 68, 68, 0.6)', // Halka border
-      boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 60,
-      transition: 'transform 0.2s, background-color 0.2s',
-      transform: isOverDropTarget ? 'scale(1.15)' : 'scale(1)',
-      pointerEvents: 'none',
-      // C shape ke liye - left side ka border hatao
-      borderLeftColor: 'transparent',
-      borderBottomColor: 'transparent',
-      borderTopColor: 'transparent',
-      // Wave animation
-      animation: 'wavePulse 1.5s ease-in-out infinite',
-    }}
-    className="select-none"
-  />
-)}  
-          {/* Draggable minimized icon */}
+          {isDraggingMusicIcon && (
+            <div
+              ref={dropTargetRef}
+              style={{
+                position: 'fixed',
+                bottom: '0px',
+                right: '0px',
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(220, 38, 38, 0.3)',
+                border: '2px solid rgba(239, 68, 68, 0.6)',
+                boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 60,
+                transition: 'transform 0.2s, background-color 0.2s',
+                transform: isOverDropTarget ? 'scale(1.15)' : 'scale(1)',
+                pointerEvents: 'none',
+                borderLeftColor: 'transparent',
+                borderBottomColor: 'transparent',
+                borderTopColor: 'transparent',
+                animation: 'wavePulse 1.5s ease-in-out infinite',
+              }}
+              className="select-none"
+            />
+          )}  
+          
           <div
             className="fixed z-[45]"
             style={{
@@ -1909,13 +1680,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative">
-              {/* Red waves - DARK */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-16 h-16 rounded-full bg-red-600/50 animate-ping-slow" />
                 <div className="absolute w-16 h-16 rounded-full bg-red-700/40 animate-ping-slow" style={{ animationDelay: '0.5s' }} />
               </div>
               
-              {/* Image button - rotates slowly, SOLID BLACK border, bigger image */}
               <button
                 onPointerDown={handleMinimizedIconPointerDown}
                 onPointerMove={handleMinimizedIconPointerMove}
@@ -1943,7 +1712,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </>
       )}
 
-      {/* Custom styles for sliders - NO DOTS/THUMBS */}
+      {/* Custom styles for sliders */}
       <style jsx global>{`
         .music-volume-slider {
           -webkit-appearance: none;
@@ -2006,24 +1775,25 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         }
 
         @keyframes rotate-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .music-minimize-icon {
-    animation: rotate-slow 4s linear infinite;
-  }
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .music-minimize-icon {
+          animation: rotate-slow 4s linear infinite;
+        }
 
-  @keyframes wavePulse {
-    0%, 100% { 
-      transform: scale(1); 
-      opacity: 0.5; 
-    }
-    50% { 
-      transform: scale(1.1); 
-      opacity: 0.8; 
-    }
-  }
-`}</style>
+        @keyframes wavePulse {
+          0%, 100% { 
+            transform: scale(1); 
+            opacity: 0.5; 
+          }
+          50% { 
+            transform: scale(1.1); 
+            opacity: 0.8; 
+          }
+        }
+      `}</style>
+
       {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
@@ -2042,7 +1812,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   );
 }
 
-// SeatItem Component
+// SeatItem Component - Only seats have WebGL overlay
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -2075,15 +1845,33 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             </div>
           ) : isOccupied && user ? (
             <>
-              <img
-                src={user.image || "/default-avatar.png"}
-                alt={user.name}
-                className="w-full h-full rounded-full object-cover pointer-events-none"
-                draggable={false}
-                onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
-                onClick={onAvatarClick}
-                style={{ cursor: 'pointer', pointerEvents: 'auto' }}
-              />
+              <div className="relative w-full h-full rounded-full overflow-hidden">
+                <img
+                  src={user.image || "/default-avatar.png"}
+                  alt={user.name}
+                  className="w-full h-full rounded-full object-cover pointer-events-none"
+                  draggable={false}
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
+                  onClick={onAvatarClick}
+                  style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                />
+                {/* WebGL Overlay - ONLY ON SEATS */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <WhiteColorRemovalShader
+                    imageSrc="1786867564769.png"
+                    threshold={0.85}
+                    className="w-full h-full"
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%) scale(1.5)',
+                      width: '100%',
+                      height: '100%',
+                    }}
+                  />
+                </div>
+              </div>
               {isMuted && (
                 <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
                   <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
