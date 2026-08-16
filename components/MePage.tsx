@@ -646,7 +646,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               {/* WebGL Shader Overlay Image */}
               <div className="absolute inset-0 pointer-events-none">
                 <WhiteColorRemovalShader
-                  imageSrc="/1786857172378.png"
+                  imageSrc="/1786867564769.png"
                   threshold={0.85}
                   className="w-full h-full"
                   style={{
@@ -654,8 +654,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: '100%',
-                    height: '100%',
+                    width: '150%',
+                    height: '150%',
                     objectFit: 'cover',
                     borderRadius: '50%',
                   }}
