@@ -129,14 +129,14 @@ export default function RoomProfile({
     }
     // If only actions (follow, chat, image) without moderation
     if (showActions && !showModerationRow) {
-      return '30vh'
+      return '32vh'
     }
     // If only leave seat button
     if (showLeaveSeat) {
-      return '30vh'
+      return '34vh'
     }
     // If no options at all
-    return '25vh'
+    return '27vh'
   }
 
   return (
@@ -239,8 +239,8 @@ export default function RoomProfile({
             <div className="flex items-center justify-center gap-0.5 mt-1.5 w-auto flex-wrap">
               <img src="/1785131462125.png" alt="" className="h-8 w-auto object-contain" />
               <img src="/1785131792693.png" alt="" className="h-8 w-auto object-contain" />
-              <img src="/1785469775751.png" alt="" className="h-5 w-auto object-contain" />
-              <img src="/1785469365805.png" alt="" className="h-5 w-auto object-contain" />
+              <img src="/1785469775751.png" alt="" className="h-6 w-auto object-contain" />
+              <img src="/1785469365805.png" alt="" className="h-6 w-auto object-contain" />
             </div>
 
             {/* Row 3: Level Badge + Additional Image */}
@@ -249,7 +249,7 @@ export default function RoomProfile({
                 <img 
                   src="/1785137410522.png" 
                   alt="Level" 
-                  className="h-5 w-auto object-contain"
+                  className="h-6 w-auto object-contain"
                 />
                 <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm pl-2">
                   Lv.1
