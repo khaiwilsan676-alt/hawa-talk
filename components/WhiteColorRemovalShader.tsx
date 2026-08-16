@@ -41,32 +41,61 @@ export default function WhiteColorRemovalShader({
       }
     `
 
-    // Improved fragment shader - ONLY removes pure white/very light pixels
+    // Fragment shader - ONLY removes white from corners and center
     const fragmentShaderSource = `
       precision mediump float;
       
       varying vec2 v_texCoord;
       uniform sampler2D u_texture;
       
+      // Helper function to check if point is in corner region
+      bool isInCorner(vec2 point, vec2 corner, float radius) {
+        float dist = distance(point, corner);
+        return dist < radius;
+      }
+      
+      // Helper function to check if point is in center region
+      bool isInCenter(vec2 point, vec2 center, float radius) {
+        float dist = distance(point, center);
+        return dist < radius;
+      }
+      
       void main() {
         vec4 color = texture2D(u_texture, v_texCoord);
         
+        // Define corner points (in UV coordinates)
+        vec2 topLeft = vec2(0.0, 0.0);
+        vec2 topRight = vec2(1.0, 0.0);
+        vec2 bottomLeft = vec2(0.0, 1.0);
+        vec2 bottomRight = vec2(1.0, 1.0);
+        
+        // Define center point
+        vec2 center = vec2(0.5, 0.5);
+        
+        // Radii for corners and center
+        float cornerRadius = 0.3; // Adjust as needed
+        float centerRadius = 0.25; // Adjust as needed
+        
+        // Check if pixel is in any corner or center
+        bool inRemovalZone = 
+          isInCorner(v_texCoord, topLeft, cornerRadius) ||
+          isInCorner(v_texCoord, topRight, cornerRadius) ||
+          isInCorner(v_texCoord, bottomLeft, cornerRadius) ||
+          isInCorner(v_texCoord, bottomRight, cornerRadius) ||
+          isInCenter(v_texCoord, center, centerRadius);
+        
         // Check if pixel is white/near-white
-        // White pixels have all RGB values very high and similar
         float maxChannel = max(color.r, max(color.g, color.b));
         float minChannel = min(color.r, min(color.g, color.b));
         float difference = maxChannel - minChannel;
-        
-        // Define white threshold - only remove if:
-        // 1. All channels are very bright (>= 0.95)
-        // 2. Channels are very similar (difference < 0.1)
         bool isWhite = (minChannel >= 0.95) && (difference < 0.1);
         
-        if (isWhite) {
+        // Only remove white if in removal zone
+        if (inRemovalZone && isWhite) {
           // Make white pixels fully transparent
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
-          // Preserve all other colors exactly as they are
+          // Preserve all other pixels
           gl_FragColor = color;
         }
       }
