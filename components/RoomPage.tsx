@@ -1970,60 +1970,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     </div>
   </div>
 )}
-      {/* Music Controller - Minimized */}
-{musicControllerState === 'minimized' && currentTrack && !showFourGride && (
-  <div
-    className="fixed z-[45]"
+      {musicControllerState === 'full' && currentTrack && !showFourGride && (
+  <div 
+    className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
     style={{ 
-      bottom: '8vh', 
-      right: '12px',
-      cursor: 'grab',
-      userSelect: 'none',
-      touchAction: 'none'
+      bottom: '10vh',
     }}
     onClick={(e) => e.stopPropagation()}
-    onMouseDown={(e) => {
-      const card = e.currentTarget;
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startLeft = card.offsetLeft;
-      const startTop = card.offsetTop;
-      let isDragging = false;
-      let hasMoved = false;
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const dx = moveEvent.clientX - startX;
-        const dy = moveEvent.clientY - startY;
-        
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-          isDragging = true;
-          hasMoved = true;
-        }
-        
-        if (isDragging) {
-          card.style.cursor = 'grabbing';
-          card.style.left = `${startLeft + dx}px`;
-          card.style.top = `${startTop + dy}px`;
-          card.style.right = 'auto';
-          card.style.bottom = 'auto';
-        }
-      };
-
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        card.style.cursor = 'grab';
-        
-        if (hasMoved) {
-          setTimeout(() => {
-            hasMoved = false;
-          }, 100);
-        }
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }}
+  >
     onTouchStart={(e) => {
       const card = e.currentTarget;
       const touch = e.touches[0];
@@ -2073,10 +2027,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   {/* Voice Wave Rings - Beech mein */}
   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
     <div className="relative w-full h-full flex items-center justify-center">
-      <div className="absolute w-10 h-10 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
-      <div className="absolute w-10 h-10 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
-      <div className="absolute w-10 h-10 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
-      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+      <div className="absolute w-14 h-14 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
+      <div className="absolute w-14 h-14 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
+      <div className="absolute w-14 h-14 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
+      <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
     </div>
   </div>
 
