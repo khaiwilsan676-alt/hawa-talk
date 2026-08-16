@@ -145,7 +145,7 @@ export default function RoomProfile({
       
       {/* Bottom Sheet - Dynamic height based on content */}
       <div 
-        className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+        className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-visible"
         style={{ 
           height: getSheetHeight(), 
           minHeight: getSheetHeight(), 
@@ -173,11 +173,11 @@ export default function RoomProfile({
           </button>
         </div>
 
-        {/* Content - Avatar shifted up */}
-        <div className="flex flex-col items-center px-4 pt-2 pb-2.5 h-full overflow-y-auto">
+        {/* Content - Avatar shifted more up */}
+        <div className="flex flex-col items-center px-4 pt-1 pb-2.5 h-full overflow-y-auto">
           {/* Avatar with WebGL Overlay - shifted up with negative margin */}
-          <div className="relative -mt-4 mb-3">
-            <div className="relative w-20 h-20 rounded-full border-2 border-white shadow-md bg-gray-100">
+          <div className="relative -mt-6 mb-3">
+            <div className="relative w-20 h-20 rounded-full border-2 border-white shadow-md bg-gray-100 overflow-visible">
               <img 
                 src={displayImage} 
                 alt={displayName}
