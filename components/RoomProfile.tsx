@@ -6,7 +6,8 @@ import {
   AlertTriangle,
   AtSign,
   Heart,
-  MessageCircle
+  MessageCircle,
+  Mic
 } from 'lucide-react'
 import WhiteColorRemovalShader from './WhiteColorRemovalShader'
 
@@ -123,18 +124,14 @@ export default function RoomProfile({
   // Determine sheet height based on content
   const getSheetHeight = () => {
     if (showLeaveSeat) {
-      // Current user in seat - show blue leave button only
       return '30vh'
     }
     if (showModerationRow) {
-      // Room owner viewing other user - actions + moderation
       return '30vh'
     }
     if (showActions) {
-      // Other user - actions row only (Follow, Chat, Image)
       return '30vh'
     }
-    // Current user not in seat - no buttons
     return '20vh'
   }
 
@@ -156,31 +153,31 @@ export default function RoomProfile({
         }}
       >
         {/* Top Left - Warning Icon */}
-        <div className="absolute top-2 left-3 z-10">
+        <div className="absolute top-2.5 left-3.5 z-10">
           <button
             className="p-1 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Warning"
           >
-            <AlertTriangle size={18} className="text-gray-700" strokeWidth={2.5} />
+            <AlertTriangle size={20} className="text-gray-700" strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Top Right - @ Mention Icon */}
-        <div className="absolute top-2 right-3 z-10">
+        <div className="absolute top-2.5 right-3.5 z-10">
           <button
             onClick={handleMention}
             className="p-1 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Mention user"
           >
-            <AtSign size={18} className="text-gray-700" strokeWidth={2.5} />
+            <AtSign size={20} className="text-gray-700" strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Content - Compact layout */}
-        <div className="flex flex-col items-center px-4 pt-6 pb-2 h-full overflow-y-auto">
+        <div className="flex flex-col items-center px-4 pt-7 pb-2.5 h-full overflow-y-auto">
           {/* Avatar with WebGL Overlay */}
-          <div className="relative mb-1.5">
-            <div className="relative w-14 h-14 rounded-full border-2 border-white shadow-md bg-gray-100">
+          <div className="relative mb-2">
+            <div className="relative w-16 h-16 rounded-full border-2 border-white shadow-md bg-gray-100">
               <img 
                 src={displayImage} 
                 alt={displayName}
@@ -235,17 +232,17 @@ export default function RoomProfile({
               <h3 className="text-sm font-bold text-gray-900">
                 {displayName}
               </h3>
-              <span className={`px-1.5 py-0.5 ${genderColor} text-white text-[10px] font-medium rounded-full`}>
+              <span className={`px-1.5 py-0.5 ${genderColor} text-white text-[11px] font-medium rounded-full`}>
                 {displayGender} {displayAge}
               </span>
             </div>
 
             {/* Row 2: Tags */}
             <div className="flex items-center justify-center gap-1 mt-1 flex-wrap">
-              <img src="/1785131462125.png" alt="" className="h-4 w-auto object-contain" />
-              <img src="/1785131792693.png" alt="" className="h-4 w-auto object-contain" />
-              <img src="/1785469775751.png" alt="" className="h-3.5 w-auto object-contain" />
-              <img src="/1785469365805.png" alt="" className="h-3.5 w-auto object-contain" />
+              <img src="/1785131462125.png" alt="" className="h-4.5 w-auto object-contain" />
+              <img src="/1785131792693.png" alt="" className="h-4.5 w-auto object-contain" />
+              <img src="/1785469775751.png" alt="" className="h-4 w-auto object-contain" />
+              <img src="/1785469365805.png" alt="" className="h-4 w-auto object-contain" />
             </div>
 
             {/* Row 3: Level Badge + Additional Image */}
@@ -254,17 +251,17 @@ export default function RoomProfile({
                 <img 
                   src="/1785137410522.png" 
                   alt="Level" 
-                  className="h-4 w-auto object-contain"
+                  className="h-4.5 w-auto object-contain"
                 />
-                <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white drop-shadow-sm">
+                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white drop-shadow-sm">
                   Lv.1
                 </span>
               </div>
-              <img src="/1785486414756.png" alt="" className="h-4 w-auto object-contain" />
+              <img src="/1785486414756.png" alt="" className="h-4.5 w-auto object-contain" />
             </div>
 
-            {/* Row 4: ID, Followers with Flag, Country */}
-            <div className="flex items-center justify-center gap-1.5 mt-1 text-[10px]">
+            {/* Row 4: ID | Fans | Flag */}
+            <div className="flex items-center justify-center gap-1.5 mt-1 text-[11px]">
               {/* ID with Copy */}
               <div className="flex items-center gap-0.5">
                 <span className="text-gray-500">ID:</span>
@@ -275,71 +272,67 @@ export default function RoomProfile({
                     className="text-gray-400 hover:text-gray-600 transition-colors p-0.5"
                     aria-label="Copy ID"
                   >
-                    <Copy size={10} strokeWidth={2} />
+                    <Copy size={12} strokeWidth={2} />
                   </button>
                 )}
               </div>
 
               <span className="text-gray-300">|</span>
 
-              {/* Followers with Country Flag */}
+              {/* Fans */}
               <div className="flex items-center gap-0.5">
                 <span className="text-gray-700 font-medium">{followers}</span>
                 <span className="text-gray-500">Fans</span>
-                {displayFlag && (
-                  <span className="text-sm ml-0.5">{displayFlag}</span>
-                )}
               </div>
 
-              {displayCountry && displayFlag && (
-                <>
-                  <span className="text-gray-300">|</span>
+              <span className="text-gray-300">|</span>
 
-                  {/* Country */}
-                  <div className="flex items-center gap-0.5">
-                    <span className="text-gray-500">{displayCountry}</span>
-                  </div>
-                </>
-              )}
+              {/* Flag only */}
+              <div className="flex items-center">
+                {displayFlag && (
+                  <span className="text-sm">{displayFlag}</span>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Blue Leave Button - ONLY for current user in seat */}
+          {/* Blue Leave Button matching the reference image layout exactly */}
           {showLeaveSeat && (
-            <div className="mt-2 w-full">
+            <div className="mt-2.5 w-full px-2">
               <button
                 onClick={handleLeaveSeat}
-                className="w-full h-8 rounded-full bg-blue-500 text-white font-semibold text-xs shadow-md shadow-blue-200 hover:bg-blue-600 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center"
+                className="w-full h-11 rounded-full bg-blue-500 text-white font-medium text-base shadow-md shadow-blue-200 hover:bg-blue-600 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5"
               >
-                <span>Leave Seat</span>
+                <div className="relative flex items-center justify-center">
+                  <Mic size={18} strokeWidth={2.5} className="text-white" />
+                  <span className="absolute -bottom-1 -right-1 text-[10px] font-bold text-white">↓</span>
+                </div>
+                <span>Leave</span>
               </button>
             </div>
           )}
 
           {/* Action Buttons for OTHER users */}
           {showActions && (
-            <div className="mt-2 w-full flex flex-col gap-1.5">
-              {/* Row: Follow, Chat, Image - Icon & Text in same row */}
-              <div className="flex items-center gap-4 w-full justify-center">
-                {/* Follow - Icon + Text in same row */}
+            <div className="mt-2.5 w-full flex flex-col gap-1.5">
+              {/* Row: Follow, Chat, Image */}
+              <div className="flex items-center gap-5 w-full justify-center">
                 <button
                   onClick={onFollow}
-                  className="flex items-center gap-1 text-pink-500 font-medium text-xs hover:text-pink-600 transition-colors active:scale-95"
+                  className="flex items-center gap-1 text-pink-500 font-medium text-sm hover:text-pink-600 transition-colors active:scale-95"
                 >
-                  <Heart size={16} className="fill-pink-500" />
+                  <Heart size={18} className="fill-pink-500" />
                   <span>{isFollowing ? 'Following' : 'Follow'}</span>
                 </button>
 
-                {/* Chat - Icon + Text in same row */}
                 <button
                   onClick={onMessage}
-                  className="flex items-center gap-1 text-gray-700 font-medium text-xs hover:text-gray-900 transition-colors active:scale-95"
+                  className="flex items-center gap-1 text-gray-700 font-medium text-sm hover:text-gray-900 transition-colors active:scale-95"
                 >
-                  <MessageCircle size={16} />
+                  <MessageCircle size={18} />
                   <span>Chat</span>
                 </button>
 
-                {/* Image button */}
                 <button
                   onClick={onThirdAction}
                   className="flex items-center gap-1 group active:scale-95 transition-all"
@@ -348,14 +341,14 @@ export default function RoomProfile({
                   <img 
                     src="/file_000000008e508208b1353ae33e2abef9.png" 
                     alt="Action" 
-                    className="w-6 h-6 object-contain rounded-full group-hover:scale-110 transition-transform"
+                    className="w-7 h-7 object-contain rounded-full group-hover:scale-110 transition-transform"
                   />
                 </button>
               </div>
 
-              {/* Moderation row: ONLY for room owner viewing other users */}
+              {/* Moderation row */}
               {showModerationRow && (
-                <div className="flex items-center justify-around w-full py-0.5 text-gray-500 text-[10px] font-medium">
+                <div className="flex items-center justify-around w-full py-0.5 text-gray-500 text-[11px] font-medium">
                   <button 
                     onClick={onMute}
                     className="hover:text-gray-800 transition-colors py-0.5 px-1.5"
@@ -407,4 +400,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-  }
+}
