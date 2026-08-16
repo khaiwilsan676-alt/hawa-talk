@@ -1,15 +1,31 @@
+
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import EmojiPicker from './Emojipicker';
 import GiftPicker from './GiftPicker';
 import RoomSettingPage from './RoomSettingPage';
 import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
+import RoomInfo from './RoomInfo';
+import ActiveUsers from './ActiveUsers';
+import ExitMenu from './ExitMenu';
+import SeatActions from './SeatActions';
+import MusicController from './MusicController';
+import SeatItem from './SeatItem';
 import Fourgride from './Fourgride';
-import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { db } from "../src/lib/firebase";
 import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
+// LiveKit imports for Voice Audio
+import { 
+  LiveKitRoom, 
+  RoomAudioRenderer, 
+  useLocalParticipant,
+  LocalAudioTrack,
+  RemoteAudioTrack,
+  AudioCaptureOptions
+} from "@livekit/components-react";
+import "@livekit/components-styles";
 
 interface RoomPageProps {
   roomOwner: {
@@ -64,12 +80,70 @@ interface MusicTrack {
   url: string;
 }
 
+type AudioDeviceType = 'bluetooth' | 'headphones' | 'speaker';
+
+interface AudioDevice {
+  deviceId: string;
+  label: string;
+  type: AudioDeviceType;
+}
+
 const THEME_BACKGROUNDS: { [key: string]: string } = {
   'forest-night': '/1784875884052~2.jpg',
   'mood-light': '/1784533036732~2.jpg',
 };
 
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
+  // LiveKit Token & Connection States
+  const [livekitToken, setLivekitToken] = useState<string>("");
+  const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
+
+  const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
+  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
+  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
+  const isRoomOwner = userAccountId === roomOwnerId;
+
+  // Fetch LiveKit Token from API route
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const res = await fetch(`/api/livekit?room=${roomId}&username=${encodeURIComponent(currentUser.name)}&identity=${userAccountId}`);
+        const data = await res.json();
+        if (data.token) {
+          setLivekitToken(data.token);
+        }
+      } catch (err) {
+        console.error("Error fetching LiveKit token:", err);
+      }
+    };
+    if (roomId && currentUser.name) {
+      fetchToken();
+    }
+  }, [roomId, currentUser.name, userAccountId]);
+
+  return (
+    <LiveKitRoom
+      audio={true}
+      video={false}
+      token={livekitToken}
+      serverUrl={livekitUrl}
+      connect={Boolean(livekitToken)}
+      className="fixed inset-0 z-50 bg-black flex flex-col"
+    >
+      <RoomContent
+        roomOwner={roomOwner}
+        currentUser={currentUser}
+        onClose={onClose}
+        onBack={onBack}
+        onKeepRoom={onKeepRoom}
+        onFollowToggle={onFollowToggle}
+      />
+      <RoomAudioRenderer />
+    </LiveKitRoom>
+  );
+}
+
+function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   // UI state
   const [showExitMenu, setShowExitMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -82,6 +156,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [isFollowed, setIsFollowed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
+
+  // LiveKit Hook for Microphone Control
+  const { localParticipant } = useLocalParticipant();
 
   // Music controller state
   const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full' | 'minimized'>('hidden');
@@ -97,6 +174,14 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
+
+  // Audio device state
+  const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
+  const [currentAudioDevice, setCurrentAudioDevice] = useState<AudioDeviceType>('speaker');
+  const [showAudioMenu, setShowAudioMenu] = useState(false);
+  const [isAudioConnected, setIsAudioConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
+  const [audioLevel, setAudioLevel] = useState(0);
 
   // User data
   useEffect(() => {
@@ -130,20 +215,17 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [roomPassword, setRoomPassword] = useState<string>("");
   const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
   const [micMode, setMicMode] = useState<number>(9);
-  const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
   const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg");
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
 
   // Presence and users
   const [showChatInput, setShowChatInput] = useState(false);
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
-
   const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([]);
 
   // Seat helpers
@@ -178,6 +260,124 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     });
     setShowUserProfile(true);
   };
+
+  // Detect audio devices
+  useEffect(() => {
+    const detectAudioDevices = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
+        
+        const deviceList: AudioDevice[] = [];
+        
+        audioOutputs.forEach(device => {
+          const label = device.label.toLowerCase();
+          if (label.includes('bluetooth') || label.includes('bt') || label.includes('airpods')) {
+            deviceList.push({ deviceId: device.deviceId, label: device.label || 'Bluetooth Device', type: 'bluetooth' });
+          } else if (label.includes('headphone') || label.includes('headset') || label.includes('earphone')) {
+            deviceList.push({ deviceId: device.deviceId, label: device.label || 'Headphones', type: 'headphones' });
+          } else {
+            deviceList.push({ deviceId: device.deviceId, label: device.label || 'Speaker', type: 'speaker' });
+          }
+        });
+        
+        if (!deviceList.find(d => d.type === 'bluetooth')) {
+          deviceList.push({ deviceId: 'default-bluetooth', label: 'Bluetooth Device', type: 'bluetooth' });
+        }
+        if (!deviceList.find(d => d.type === 'headphones')) {
+          deviceList.push({ deviceId: 'default-headphones', label: 'Headphones', type: 'headphones' });
+        }
+        if (!deviceList.find(d => d.type === 'speaker')) {
+          deviceList.push({ deviceId: 'default-speaker', label: 'Speaker', type: 'speaker' });
+        }
+        
+        setAudioDevices(deviceList);
+      } catch (error) {
+        console.error("Error detecting audio devices:", error);
+        setAudioDevices([
+          { deviceId: 'default-bluetooth', label: 'Bluetooth Device', type: 'bluetooth' },
+          { deviceId: 'default-headphones', label: 'Headphones', type: 'headphones' },
+          { deviceId: 'default-speaker', label: 'Speaker', type: 'speaker' }
+        ]);
+      }
+    };
+    
+    detectAudioDevices();
+  }, []);
+
+  // Handle audio device switching
+  const handleAudioDeviceChange = async (deviceType: AudioDeviceType) => {
+    try {
+      setConnectionStatus('connecting');
+      setCurrentAudioDevice(deviceType);
+      
+      const device = audioDevices.find(d => d.type === deviceType);
+      
+      if (device && device.deviceId !== 'default-' + deviceType) {
+        if (typeof (document as any).setSinkId === 'function') {
+          const audioElements = document.querySelectorAll('audio');
+          audioElements.forEach(async (audio: HTMLAudioElement) => {
+            try {
+              await (audio as any).setSinkId(device.deviceId);
+            } catch (err) {
+              console.error("Error setting sink ID:", err);
+            }
+          });
+        }
+      }
+      
+      if (localParticipant) {
+        await localParticipant.setMicrophoneEnabled(false);
+        await localParticipant.setMicrophoneEnabled(hasSeat && !currentUserSeat?.isMuted);
+      }
+      
+      setIsAudioConnected(true);
+      setConnectionStatus('connected');
+      
+      alert(`${deviceType.charAt(0).toUpperCase() + deviceType.slice(1)} connected successfully!`);
+      
+    } catch (error) {
+      console.error("Error switching audio device:", error);
+      setConnectionStatus('disconnected');
+      alert(`Failed to connect ${deviceType}. Please try again.`);
+    }
+  };
+
+  // Monitor audio levels
+  useEffect(() => {
+    if (!localParticipant) return;
+    
+    const tracks = Array.from(localParticipant.audioTrackPublications.values());
+    
+    tracks.forEach(publication => {
+      if (publication.track) {
+        const audioTrack = publication.track as LocalAudioTrack;
+        
+        const interval = setInterval(() => {
+          const level = audioTrack.getAudioLevel?.() || 0;
+          setAudioLevel(level);
+        }, 100);
+        
+        return () => clearInterval(interval);
+      }
+    });
+  }, [localParticipant]);
+
+  // Auto-connect to default speaker on mount
+  useEffect(() => {
+    if (localParticipant && !isAudioConnected) {
+      handleAudioDeviceChange('speaker');
+    }
+  }, [localParticipant]);
+
+  // Sync LiveKit Microphone state with Seat Mute & Occupied Status
+  useEffect(() => {
+    if (localParticipant) {
+      const isMuted = currentUserSeat?.isMuted ?? true;
+      const isInSeat = hasSeat;
+      localParticipant.setMicrophoneEnabled(isInSeat && !isMuted);
+    }
+  }, [currentUserSeat?.isMuted, hasSeat, localParticipant]);
 
   // Fetch room data from Firestore
   useEffect(() => {
@@ -231,7 +431,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const messagesCollection = `roomMessages/${roomId}/messages`;
   const seatsCollection = `roomSeats/${roomId}/seats`;
 
-  // Clear messages on room change
   useEffect(() => {
     setMessages([]);
     joinMessageSentRef.current = false;
@@ -399,18 +598,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     };
   }, [showChatInput]);
 
-  const handleCopyId = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(roomOwner.accountId || '');
+  const handleCopyId = (text: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleCopyUserId = (accountId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(accountId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    handleCopyId(accountId, e);
   };
 
   const handleImageClick = (e: React.MouseEvent) => {
@@ -460,11 +656,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
-  const handleTakeSeat = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleTakeSeat = async () => {
     if (selectedSeat === null) return;
     
     try {
@@ -506,11 +698,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
-  const handleLeaveSeat = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleLeaveSeat = async () => {
     if (selectedSeat === null) return;
     
     try {
@@ -535,11 +723,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const handleBottomMicToggle = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    
     if (!currentUserSeat) return;
 
     const newMuteState = !currentUserSeat.isMuted;
-
     const updatedSeats = seats.map(seat => 
       seat.number === currentUserSeat.number 
         ? { ...seat, isMuted: newMuteState } 
@@ -550,11 +736,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
   };
 
-  const handleToggleMute = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleToggleMute = async () => {
     if (selectedSeat === null) return;
     
     const updatedSeats = seats.map(s => {
@@ -571,11 +753,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setSelectedSeat(null);
   };
 
-  const handleToggleLock = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleToggleLock = async () => {
     if (selectedSeat === null) return;
     const updatedSeats = seats.map(s => {
       if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked };
@@ -587,11 +765,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setSelectedSeat(null);
   };
 
-  const handleInvite = (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleInvite = () => {
     if (selectedSeat === null) return;
     alert(`Invite sent to join seat ${selectedSeat}!`);
     setShowSeatSheet(false);
@@ -632,14 +806,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 100);
   };
 
-  const closeBottomSheet = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const closeBottomSheet = () => {
     setShowSeatSheet(false);
     setSelectedSeat(null);
   };
 
-  const closeExitMenu = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const closeExitMenu = () => {
     setShowExitMenu(false);
   };
 
@@ -679,9 +851,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     }
   };
 
-  // Clear messages on exit
-  const handleExit = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const handleExit = () => {
     setShowExitMenu(false);
     localStorage.removeItem('keptRoom');
     setMessages([]);
@@ -689,8 +859,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     if (onClose) onClose();
   };
 
-  const handleKeep = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const handleKeep = () => {
     const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' };
     localStorage.setItem('keptRoom', JSON.stringify(roomData));
     setShowExitMenu(false);
@@ -720,7 +889,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             seatNumber={num}
             seatData={seat}
             onClick={handleSeatClick(num)}
-            onAvatarClick={handleSeatAvatarClick(seat!)}
+            onAvatarClick={seat ? handleSeatAvatarClick(seat) : undefined}
             accountId={userAccountId}
             roomOwnerId={roomOwnerId}
           />
@@ -764,7 +933,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     );
   };
 
-  // Music playback handlers
   const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
     if (playlist && playlist.length > 0) {
       setMusicPlaylist(playlist);
@@ -802,7 +970,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setMusicControllerState('full');
     setMusicCurrentTime(0);
     setMusicDuration(0);
-    setDragPosition(null);
   };
 
   const handleToggleMusicPlay = () => {
@@ -876,8 +1043,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setMusicControllerState('hidden');
     setCurrentTrack(null);
     setIsMusicPlaying(false);
-    setDragPosition(null);
-    setIsDraggingMusicIcon(false);
   };
 
   const handleMinimizeMusicController = () => {
@@ -888,7 +1053,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     setMusicControllerState('full');
   };
 
-  // Cleanup music on unmount
   useEffect(() => {
     return () => {
       if (musicAudioRef.current) {
@@ -898,89 +1062,11 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     };
   }, []);
 
-  // Update audio volume when volume changes
   useEffect(() => {
     if (musicAudioRef.current) {
       musicAudioRef.current.volume = musicVolume;
     }
   }, [musicVolume]);
-
-  // Format time helper
-  const formatTime = (seconds: number) => {
-    if (isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Drag and drop logic for minimized music icon
-  const [isDraggingMusicIcon, setIsDraggingMusicIcon] = useState(false);
-  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
-  const [isOverDropTarget, setIsOverDropTarget] = useState(false);
-  const didDragRef = useRef(false);
-  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const dropTargetRef = useRef<HTMLDivElement>(null);
-
-  const isPointInsideDropTarget = (clientX: number, clientY: number) => {
-    const rect = dropTargetRef.current?.getBoundingClientRect();
-    if (!rect) return false;
-    return (
-      clientX >= rect.left &&
-      clientX <= rect.right &&
-      clientY >= rect.top &&
-      clientY <= rect.bottom
-    );
-  };
-
-  const handleMinimizedIconPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    e.preventDefault();
-    didDragRef.current = false;
-    setIsDraggingMusicIcon(true);
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    setDragPosition(prev => prev ?? { x: rect.left, y: rect.top });
-    dragOffsetRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-
-  const handleMinimizedIconPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (!isDraggingMusicIcon) return;
-    e.preventDefault();
-
-    const dx = Math.abs(e.clientX - (dragOffsetRef.current.x + (dragPosition?.x ?? 0)));
-    const dy = Math.abs(e.clientY - (dragOffsetRef.current.y + (dragPosition?.y ?? 0)));
-    if (dx > 3 || dy > 3) {
-      didDragRef.current = true;
-    }
-
-    const newX = e.clientX - dragOffsetRef.current.x;
-    const newY = e.clientY - dragOffsetRef.current.y;
-    setDragPosition({ x: newX, y: newY });
-
-    if (isPointInsideDropTarget(e.clientX, e.clientY)) {
-      setIsOverDropTarget(true);
-    } else {
-      setIsOverDropTarget(false);
-    }
-  };
-
-  const handleMinimizedIconPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (!isDraggingMusicIcon) return;
-    setIsDraggingMusicIcon(false);
-
-    if (didDragRef.current && isOverDropTarget) {
-      handleCloseMusicController();
-    } else if (!didDragRef.current) {
-      handleMaximizeMusicController();
-    }
-    e.currentTarget.releasePointerCapture(e.pointerId);
-    setIsOverDropTarget(false);
-  };
 
   if (showSettingPage) {
     return (
@@ -1014,7 +1100,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         <div className="flex justify-between items-center text-white flex-shrink-0">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
+              onClick={() => setShowRoomInfo(true)}
               className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer hover:border-white/50 transition-colors"
             >
               <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" draggable={false} />
@@ -1038,15 +1124,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                       </svg>
                     ) : (
-                      <>
-                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white absolute">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                        <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 relative">
-                          <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                          <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                        </svg>
-                      </>
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </svg>
                     )}
                   </button>
                 )}
@@ -1094,7 +1174,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
             {renderSeats()}
           </div>
 
-          <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
+          <div className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
             <div className="mx-2 mb-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3">
               <p className="text-white/80 text-[11px] leading-relaxed">
                 Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban
@@ -1215,6 +1295,34 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
                   )}
                 </button>
               )}
+              
+              {/* Audio Device Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAudioMenu(true);
+                }}
+                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
+                aria-label="Audio Settings"
+              >
+                {currentAudioDevice === 'bluetooth' ? (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-blue-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11" />
+                  </svg>
+                ) : currentAudioDevice === 'headphones' ? (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-purple-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  </svg>
+                )}
+              </button>
+
               <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </button>
@@ -1240,6 +1348,136 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         </div>
       </div>
 
+      {/* Audio Device Menu */}
+      {showAudioMenu && (
+        <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/50" onClick={() => setShowAudioMenu(false)}>
+          <div className="bg-white rounded-2xl p-5 shadow-xl max-w-xs w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Audio Output</h3>
+            
+            <div className="space-y-3">
+              {/* Bluetooth */}
+              <button
+                onClick={() => {
+                  setShowAudioMenu(false);
+                  handleAudioDeviceChange('bluetooth');
+                }}
+                className={`w-full p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  currentAudioDevice === 'bluetooth' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current text-blue-500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11" />
+                  </svg>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-800">Bluetooth</p>
+                    <p className="text-xs text-gray-500">
+                      {connectionStatus === 'connected' && currentAudioDevice === 'bluetooth' ? 'Connected' : 'Wireless devices'}
+                    </p>
+                  </div>
+                  {currentAudioDevice === 'bluetooth' && (
+                    <span className="ml-auto text-green-500">✓</span>
+                  )}
+                </div>
+              </button>
+
+              {/* Headphones */}
+              <button
+                onClick={() => {
+                  setShowAudioMenu(false);
+                  handleAudioDeviceChange('headphones');
+                }}
+                className={`w-full p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  currentAudioDevice === 'headphones' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current text-purple-500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                  </svg>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-800">Headphones</p>
+                    <p className="text-xs text-gray-500">
+                      {connectionStatus === 'connected' && currentAudioDevice === 'headphones' ? 'Connected' : 'Wired headsets'}
+                    </p>
+                  </div>
+                  {currentAudioDevice === 'headphones' && (
+                    <span className="ml-auto text-green-500">✓</span>
+                  )}
+                </div>
+              </button>
+
+              {/* Speaker */}
+              <button
+                onClick={() => {
+                  setShowAudioMenu(false);
+                  handleAudioDeviceChange('speaker');
+                }}
+                className={`w-full p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  currentAudioDevice === 'speaker' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-current text-green-500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  </svg>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-800">Speaker</p>
+                    <p className="text-xs text-gray-500">
+                      {connectionStatus === 'connected' && currentAudioDevice === 'speaker' ? 'Connected' : 'Phone speaker'}
+                    </p>
+                  </div>
+                  {currentAudioDevice === 'speaker' && (
+                    <span className="ml-auto text-green-500">✓</span>
+                  )}
+                </div>
+              </button>
+            </div>
+
+            {/* Connection Status */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-green-500' : 
+                  connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
+                }`} />
+                <p className="text-xs text-gray-600">
+                  {connectionStatus === 'connected' ? 'Audio connected' : 
+                   connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                </p>
+              </div>
+              {isAudioConnected && (
+                <div className="mt-2">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div 
+                      className="bg-blue-500 h-1.5 rounded-full transition-all" 
+                      style={{ width: `${audioLevel * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Microphone level</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowAudioMenu(false)}
+              className="w-full mt-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-full transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Public Msg Off Modal */}
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
@@ -1258,124 +1496,31 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       )}
 
       {/* Active Users Sheet */}
-      {showActiveUsers && (
-        <div className="absolute inset-0 z-40 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '30vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-3 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-              {roomUsers.length > 0 ? (
-                <div className="space-y-2">
-                  {roomUsers.map((user) => (
-                    <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
-                        <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
-                        <div className="flex items-center gap-1">
-                          <p className="text-xs text-gray-400">ID: {user.accountId}</p>
-                          <button onClick={(e) => handleCopyUserId(user.accountId, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer" title="Copy ID">
-                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-400 text-sm">No active users</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <ActiveUsers
+        isOpen={showActiveUsers}
+        onClose={() => setShowActiveUsers(false)}
+        roomUsers={roomUsers}
+        onOpenProfile={openProfile}
+        onCopyUserId={handleCopyUserId}
+      />
 
       {/* Room Info Sheet */}
-      {showRoomInfo && (
-        <div className="absolute inset-0 z-40 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            {!isRoomOwner && (
-              <svg viewBox="0 0 24 24" className="absolute top-3 left-3 w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-            )}
-
-            <div className="px-6 pt-6 pb-2 flex items-center justify-center">
-              <h2 className="text-lg font-bold text-gray-800">Room Information</h2>
-            </div>
-            <div className="flex border-b border-gray-200 px-6">
-              <button onClick={() => setRoomInfoTab('profile')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'profile' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Profile</button>
-              <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {roomInfoTab === 'profile' ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
-                      <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{roomName || 'Room'}</h3>
-                      <div className="flex items-center gap-1 text-xs text-gray-400">
-                        <span>ID: {roomOwner.accountId}</span>
-                        <button onClick={handleCopyId} className="p-0.5 hover:bg-gray-100 rounded transition-colors cursor-pointer" title="Copy ID">
-                          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                        </button>
-                        {copied && <span className="text-green-500 text-xs">Copied!</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-400 font-medium">Host</span>
-                    <p className="text-sm font-medium text-gray-800 mt-1">{roomOwner.name || "Unknown"}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-400 font-medium">Announcement:</span>
-                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement || '—'}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}>
-                      <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                    </div>
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <h4 className="text-sm font-medium text-gray-800 truncate">{roomOwner.name}</h4>
-                      <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
-                      </span>
-                    </div>
-                  </div>
-                  {roomFollowers.map(follower => (
-                    <div key={follower.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}>
-                        <img src={follower.image || "/default-avatar.png"} alt={follower.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-800 truncate">{follower.name}</h4>
-                      </div>
-                    </div>
-                  ))}
-                  {roomFollowers.length === 0 && <p className="text-center text-gray-400 text-sm py-8">No followers yet</p>}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <RoomInfo
+        isOpen={showRoomInfo}
+        onClose={() => setShowRoomInfo(false)}
+        isRoomOwner={isRoomOwner}
+        roomOwner={roomOwner}
+        roomData={{
+          roomName,
+          roomImage,
+          roomAnnouncement,
+          roomId
+        }}
+        roomFollowers={roomFollowers}
+        onOpenProfile={openProfile}
+        onCopyId={handleCopyId}
+        copied={copied}
+      />
 
       {/* RoomProfile Bottom Sheet */}
       {showUserProfile && profileUser && (
@@ -1408,49 +1553,27 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       )}
 
       {/* Exit Menu */}
-      {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40" onClick={closeExitMenu}>
-          <div className="flex flex-col items-center gap-8" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col items-center gap-2">
-              <button onClick={handleKeep} className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer">
-                <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><line x1="5" y1="12" x2="19" y2="12" /></svg>
-              </button>
-              <span className="text-white font-semibold text-base">Keep</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <button onClick={handleExit} className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer">
-                <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-              </button>
-              <span className="text-white/70 font-medium text-sm">Exit</span>
-            </div>
-          </div>
-          <button onClick={closeExitMenu} className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 cursor-pointer">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
-        </div>
-      )}
+      <ExitMenu
+        isOpen={showExitMenu}
+        onClose={closeExitMenu}
+        onKeep={handleKeep}
+        onExit={handleExit}
+      />
 
       {/* Seat Actions Sheet */}
-      {showSeatSheet && selectedSeat !== null && (
-        <div className="absolute inset-0 z-30 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
-          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[25vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="space-y-2">
-              {!isSelectedSeatTakenByOther && !isSelectedSeatMySeat && (
-                <button onClick={handleTakeSeat} disabled={selectedSeatData?.isLocked && !selectedSeatData?.isOccupied} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Take Mic</button>
-              )}
-              {isSelectedSeatMySeat && <button onClick={handleLeaveSeat} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Leave Seat</button>}
-              {isSelectedSeatMySeat && (
-                <button onClick={handleToggleMute} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
-                  {selectedSeatData?.isMuted ? 'Unmute' : 'Mute'}
-                </button>
-              )}
-              <button onClick={handleToggleLock} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">{selectedSeatData?.isLocked ? 'Unlock Mic' : 'Lock Mic'}</button>
-              <button onClick={handleInvite} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Invite</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SeatActions
+        isOpen={showSeatSheet}
+        onClose={closeBottomSheet}
+        seatNumber={selectedSeat}
+        seatData={selectedSeatData}
+        isMySeat={isSelectedSeatMySeat}
+        isTakenByOther={isSelectedSeatTakenByOther}
+        onTakeSeat={handleTakeSeat}
+        onLeaveSeat={handleLeaveSeat}
+        onToggleMute={handleToggleMute}
+        onToggleLock={handleToggleLock}
+        onInvite={handleInvite}
+      />
 
       {/* Full Image Modal */}
       {fullImageModal && (
@@ -1509,208 +1632,23 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         />
       )}
 
-      {/* Music Controller - Full Size */}
-      {musicControllerState === 'full' && currentTrack && !showFourGride && (
-        <div 
-          className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
-          style={{ bottom: '10vh' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div 
-            className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
-            style={{
-              padding: '16px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            }}
-          >
-            <button
-              onClick={handleCloseMusicController}
-              className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-              aria-label="Close music controller"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
-                <line x1="12" y1="2" x2="12" y2="12" />
-              </svg>
-            </button>
-
-            <button
-              onClick={handleMinimizeMusicController}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-              aria-label="Minimize music controller"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <line x1="7" y1="17" x2="17" y2="7" />
-                <polyline points="7 7 17 7 17 17" />
-              </svg>
-            </button>
-
-            <div className="text-center mb-3 mt-6">
-              <p className="text-white text-sm font-semibold truncate px-8">
-                {currentTrack.name}
-              </p>
-            </div>
-
-            <div className="px-2 mb-3">
-              <input
-                type="range"
-                min="0"
-                max={musicDuration || 0}
-                step="0.1"
-                value={musicCurrentTime}
-                onChange={handleProgressChange}
-                className="w-full h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
-                style={{
-                  background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
-                }}
-              />
-              <div className="flex justify-between text-[10px] text-white/60 mt-1">
-                <span>{formatTime(musicCurrentTime)}</span>
-                <span>{formatTime(musicDuration)}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-8 mb-3">
-              <button
-                onClick={handlePrevTrack}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Previous track"
-              >
-                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-                </svg>
-              </button>
-
-              <button
-                onClick={handleToggleMusicPlay}
-                className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
-                aria-label={isMusicPlaying ? 'Pause' : 'Play'}
-              >
-                {isMusicPlaying ? (
-                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white">
-                    <rect x="6" y="4" width="4" height="16" rx="1" />
-                    <rect x="14" y="4" width="4" height="16" rx="1" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" className="w-10 h-10 fill-white">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                )}
-              </button>
-
-              <button
-                onClick={handleNextTrack}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Next track"
-              >
-                <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-                  <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3 px-2">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0">
-                <path d="M3 9v6h4l5 5V4L7 9H3z" />
-                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-                <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-              </svg>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={musicVolume}
-                onChange={handleVolumeChange}
-                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
-                style={{
-                  background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
-                }}
-              />
-              <span className="text-white text-xs font-semibold w-10 text-right">
-                {Math.round(musicVolume * 100)}%
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Music Controller - Minimized */}
-      {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
-        <>
-          {isDraggingMusicIcon && (
-            <div
-              ref={dropTargetRef}
-              style={{
-                position: 'fixed',
-                bottom: '0px',
-                right: '0px',
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(220, 38, 38, 0.3)',
-                border: '2px solid rgba(239, 68, 68, 0.6)',
-                boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 60,
-                transition: 'transform 0.2s, background-color 0.2s',
-                transform: isOverDropTarget ? 'scale(1.15)' : 'scale(1)',
-                pointerEvents: 'none',
-                borderLeftColor: 'transparent',
-                borderBottomColor: 'transparent',
-                borderTopColor: 'transparent',
-                animation: 'wavePulse 1.5s ease-in-out infinite',
-              }}
-              className="select-none"
-            />
-          )}  
-          
-          <div
-            className="fixed z-[45]"
-            style={{
-              left: dragPosition ? dragPosition.x : undefined,
-              top: dragPosition ? dragPosition.y : undefined,
-              bottom: dragPosition ? 'auto' : '8vh',
-              right: dragPosition ? 'auto' : '12px',
-              cursor: isDraggingMusicIcon ? 'grabbing' : 'grab',
-              touchAction: 'none',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-red-600/50 animate-ping-slow" />
-                <div className="absolute w-16 h-16 rounded-full bg-red-700/40 animate-ping-slow" style={{ animationDelay: '0.5s' }} />
-              </div>
-              
-              <button
-                onPointerDown={handleMinimizedIconPointerDown}
-                onPointerMove={handleMinimizedIconPointerMove}
-                onPointerUp={handleMinimizedIconPointerUp}
-                onPointerCancel={() => {
-                  setIsDraggingMusicIcon(false);
-                  setIsOverDropTarget(false);
-                }}
-                className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  border: '3px solid black',
-                  backgroundColor: 'black',
-                  touchAction: 'none',
-                }}
-                aria-label="Draggable music icon"
-              >
-                <div className="absolute inset-0 flex items-center justify-center music-minimize-icon">
-                  <img src="/IMG_20260815_133309.png" alt="Music" className="w-15 h-15 object-contain" />
-                </div>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Music Controller */}
+      <MusicController
+        state={musicControllerState}
+        currentTrack={currentTrack}
+        isPlaying={isMusicPlaying}
+        volume={musicVolume}
+        currentTime={musicCurrentTime}
+        duration={musicDuration}
+        onTogglePlay={handleToggleMusicPlay}
+        onVolumeChange={handleVolumeChange}
+        onProgressChange={handleProgressChange}
+        onNextTrack={handleNextTrack}
+        onPrevTrack={handlePrevTrack}
+        onClose={handleCloseMusicController}
+        onMinimize={handleMinimizeMusicController}
+        onMaximize={handleMaximizeMusicController}
+      />
 
       {/* Custom styles for sliders */}
       <style jsx global>{`
@@ -1766,31 +1704,12 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
           border-radius: 3px;
         }
 
-        @keyframes ping-slow {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(1.5); opacity: 0; }
-        }
-        .animate-ping-slow {
-          animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-
         @keyframes rotate-slow {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
         .music-minimize-icon {
           animation: rotate-slow 4s linear infinite;
-        }
-
-        @keyframes wavePulse {
-          0%, 100% { 
-            transform: scale(1); 
-            opacity: 0.5; 
-          }
-          50% { 
-            transform: scale(1.1); 
-            opacity: 0.8; 
-          }
         }
       `}</style>
 
@@ -1811,116 +1730,3 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
     </div>
   );
 }
-
-// SeatItem Component - With WebGL overlay from separate file
-function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
-  seatNumber: number;
-  seatData?: Seat;
-  onClick: (e: React.MouseEvent) => void;
-  onAvatarClick?: (e: React.MouseEvent) => void;
-  accountId: string;
-  roomOwnerId: string;
-}) {
-  const isLocked = seatData?.isLocked ?? false;
-  const isOccupied = seatData?.isOccupied ?? false;
-  const isSpeaking = seatData?.isSpeaking ?? false;
-  const isMuted = seatData?.isMuted ?? false;
-  const user = seatData?.user;
-  const isRoomOwnerSeat = isOccupied && user?.accountId === roomOwnerId;
-
-  return (
-    <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      <div className="relative overflow-visible">
-        {isSpeaking && (
-          <>
-            <div className="absolute rounded-full bg-blue-400 wave-ripple pointer-events-none" style={{ width: '60px', height: '60px', left: '50%', top: '50%', zIndex: 0 }} />
-            <div className="absolute rounded-full bg-blue-500 wave-ripple-delayed pointer-events-none" style={{ width: '60px', height: '60px', left: '50%', top: '50%', zIndex: 0 }} />
-            <div className="absolute rounded-full pointer-events-none" style={{ width: '64px', height: '64px', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
-          </>
-        )}
-        <div className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${isSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
-          {isLocked ? (
-            <div className="w-8 h-8 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="5" y="11" width="14" height="10" rx="2.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><circle cx="12" cy="16" r="1.2" fill="#94a7be" /></svg>
-            </div>
-          ) : isOccupied && user ? (
-            <>
-              <div className="relative w-full h-full rounded-full overflow-visible">
-                <img
-                  src={user.image || "/default-avatar.png"}
-                  alt={user.name}
-                  className="w-full h-full rounded-full object-cover pointer-events-none"
-                  draggable={false}
-                  onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
-                  onClick={onAvatarClick}
-                  style={{ 
-                    cursor: 'pointer', 
-                    pointerEvents: 'auto',
-                    borderRadius: '50%',
-                    position: 'relative',
-                    zIndex: 1
-                  }}
-                />
-                {/* WebGL Overlay - From separate file - Full image visible, can overflow */}
-                <div 
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: '160%',
-                    height: '160%',
-                    zIndex: 2,
-                    overflow: 'visible',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <WhiteColorRemovalShader
-                    imageSrc="/1786867564769.png"
-                    threshold={0.85}
-                    className="w-full h-full"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      maxWidth: 'none',
-                      maxHeight: 'none',
-                      overflow: 'visible',
-                    }}
-                  />
-                </div>
-              </div>
-              {isMuted && (
-                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="w-[58%] h-[58%] flex items-center justify-center pointer-events-none relative">
-              <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style={{ overflow: "visible", display: "block" }}>
-                <g fill="none" stroke="#94a7be" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"><path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" /><path d="M 50 74 L 50 86" /><path d="M 38 90 L 62 90" /></g>
-                <g fill="#94a7be" stroke="#5a6d89" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" transform="translate(0, 6)"><path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" /></g>
-              </svg>
-              {isMuted && (
-                <div className="absolute -right-2 -bottom-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      <span className="text-[10px] font-medium text-white/80 pointer-events-none flex items-center gap-1">
-        {isRoomOwnerSeat && (
-          <span className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center inline-flex">
-            <svg viewBox="0 0 24 24" className="w-2 h-2 fill-white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
-          </span>
-        )}
-        {isLocked ? `No ${seatNumber}` : (isOccupied && user ? user.name : `No ${seatNumber}`)}
-      </span>
-    </div>
-  );
-      }
