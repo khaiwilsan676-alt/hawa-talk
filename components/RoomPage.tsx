@@ -37,7 +37,7 @@ interface RoomPageProps {
 interface Seat { number: number; isOccupied: boolean; isLocked?: boolean; user?: { name: string; image: string; accountId: string }; isMuted?: boolean; isSpeaking?: boolean; }
 interface Message { id: string; text: string; sender: string; senderImage: string; senderAccountId?: string; timestamp: number; type?: 'message' | 'join' | 'leave'; imageUrl?: string; }
 interface RoomUser { accountId: string; name: string; image: string; }
-interface MusicTrack { id: string; name: string; url: string; }
+interface MusicTrack { id: string; name: string; url: string; blob?: Blob; }
 
 const THEME_BACKGROUNDS: { [key: string]: string } = {
   'forest-night': '/1784875884052~2.jpg',
@@ -99,6 +99,13 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
   const [musicDuration, setMusicDuration] = useState(0);
+  
+  // Draggable Music Icon State
+  const [musicIconPosition, setMusicIconPosition] = useState({ x: window.innerWidth - 120, y: window.innerHeight - 200 });
+  const [isDraggingMusicIcon, setIsDraggingMusicIcon] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const musicIconRef = useRef<HTMLDivElement>(null);
+
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
   const musicStreamRef = useRef<MediaStream | null>(null);
   const musicAudioTrackRef = useRef<any>(null);
@@ -153,48 +160,138 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     return Array.from({ length: mode }, (_, i) => ({ number: i + 1, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false }));
   };
 
-  // Sync microphone with seat status
+  // Sync microphone with seat status - KEEP LIVEKIT CONNECTED
   useEffect(() => {
     if (localParticipant) {
       const isMuted = currentUserSeat?.isMuted ?? true;
       const isInSeat = hasSeat;
-      localParticipant.setMicrophoneEnabled(isInSeat && !isMuted);
+      localParticipant.setMicrophoneEnabled(isInSeat && !isMuted).catch(err => {
+        console.debug("Mic toggle error:", err);
+      });
     }
   }, [currentUserSeat?.isMuted, hasSeat, localParticipant]);
 
-  // Music sharing via LiveKit
+  // Music sharing via LiveKit - STABLE
   useEffect(() => {
     if (!localParticipant) return;
     
-    // Create audio context for music streaming
+    let isMounted = true;
+    
     const setupMusicStream = async () => {
       try {
+        if (!isMounted) return;
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         const destination = audioContext.createMediaStreamDestination();
         musicStreamRef.current = destination.stream;
         
-        // Publish music track to LiveKit
         const track = await localParticipant.publishTrack(destination.stream.getAudioTracks()[0], {
           name: 'music',
           source: 'microphone'
         });
-        musicAudioTrackRef.current = track;
+        if (isMounted) {
+          musicAudioTrackRef.current = track;
+        }
       } catch (err) {
-        console.error("Error setting up music stream:", err);
+        console.debug("Music stream setup:", err);
       }
     };
     
     setupMusicStream();
     
     return () => {
+      isMounted = false;
       if (musicAudioTrackRef.current && localParticipant) {
-        localParticipant.unpublishTrack(musicAudioTrackRef.current);
+        try {
+          localParticipant.unpublishTrack(musicAudioTrackRef.current);
+        } catch (err) {
+          console.debug("Unpublish track error:", err);
+        }
       }
       if (musicStreamRef.current) {
         musicStreamRef.current.getTracks().forEach(track => track.stop());
       }
     };
   }, [localParticipant]);
+
+  // Draggable Music Icon Handlers
+  const handleMusicIconMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!musicIconRef.current) return;
+    
+    const rect = musicIconRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+    setIsDraggingMusicIcon(true);
+  };
+
+  const handleMusicIconTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!musicIconRef.current) return;
+    
+    const touch = e.touches[0];
+    const rect = musicIconRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top
+    });
+    setIsDraggingMusicIcon(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingMusicIcon) return;
+      
+      let newX = e.clientX - dragOffset.x;
+      let newY = e.clientY - dragOffset.y;
+      
+      const iconSize = 60;
+      newX = Math.max(0, Math.min(window.innerWidth - iconSize, newX));
+      newY = Math.max(0, Math.min(window.innerHeight - iconSize, newY));
+      
+      setMusicIconPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingMusicIcon(false);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDraggingMusicIcon) return;
+      e.preventDefault();
+      
+      const touch = e.touches[0];
+      let newX = touch.clientX - dragOffset.x;
+      let newY = touch.clientY - dragOffset.y;
+      
+      const iconSize = 60;
+      newX = Math.max(0, Math.min(window.innerWidth - iconSize, newX));
+      newY = Math.max(0, Math.min(window.innerHeight - iconSize, newY));
+      
+      setMusicIconPosition({ x: newX, y: newY });
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingMusicIcon(false);
+    };
+
+    if (isDraggingMusicIcon) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDraggingMusicIcon, dragOffset]);
 
   // Open Profile
   const openProfile = (user: { name: string; image: string; accountId: string; flag?: string; country?: string; gender?: string; age?: number; followers?: number; }) => {
@@ -400,7 +497,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (onBack) onBack();
   };
 
-  // Music handlers with LiveKit sharing
+  // Music handlers
   const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
     if (playlist && playlist.length > 0) {
       setMusicPlaylist(playlist);
@@ -408,21 +505,19 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       setCurrentTrackIndex(index >= 0 ? index : 0);
     } else { setMusicPlaylist([track]); setCurrentTrackIndex(0); }
 
-    // Play music locally
-    if (musicAudioRef.current) { 
-      musicAudioRef.current.pause(); 
-      musicAudioRef.current.src = track.url; 
-      musicAudioRef.current.volume = musicVolume; 
-      musicAudioRef.current.play(); 
-    } else {
-      const audio = new Audio(track.url);
-      audio.volume = musicVolume;
+    if (!musicAudioRef.current) {
+      const audio = new Audio();
       musicAudioRef.current = audio;
-      audio.play();
       audio.addEventListener('timeupdate', () => setMusicCurrentTime(audio.currentTime));
       audio.addEventListener('loadedmetadata', () => setMusicDuration(audio.duration));
       audio.addEventListener('ended', () => handleNextTrack());
     }
+
+    const audio = musicAudioRef.current;
+    audio.pause();
+    audio.src = track.url;
+    audio.volume = musicVolume;
+    audio.play().catch(err => console.debug("Audio play error:", err));
     
     setCurrentTrack(track); 
     setIsMusicPlaying(true); 
@@ -437,7 +532,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       musicAudioRef.current.pause(); 
       setIsMusicPlaying(false); 
     } else { 
-      musicAudioRef.current.play(); 
+      musicAudioRef.current.play().catch(err => console.debug("Audio play error:", err)); 
       setIsMusicPlaying(true); 
     }
   };
@@ -458,21 +553,54 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (musicPlaylist.length === 0) return;
     const nextIndex = (currentTrackIndex + 1) % musicPlaylist.length;
     const nextTrack = musicPlaylist[nextIndex];
-    if (musicAudioRef.current) { musicAudioRef.current.src = nextTrack.url; musicAudioRef.current.volume = musicVolume; musicAudioRef.current.play(); }
-    setCurrentTrackIndex(nextIndex); setCurrentTrack(nextTrack); setIsMusicPlaying(true); setMusicCurrentTime(0); setMusicDuration(0);
+    const audio = musicAudioRef.current;
+    if (audio) {
+      audio.src = nextTrack.url;
+      audio.volume = musicVolume;
+      audio.play().catch(err => console.debug("Audio play error:", err));
+    }
+    setCurrentTrackIndex(nextIndex); 
+    setCurrentTrack(nextTrack); 
+    setIsMusicPlaying(true); 
+    setMusicCurrentTime(0); 
+    setMusicDuration(0);
   };
 
   const handlePrevTrack = () => {
     if (musicPlaylist.length === 0) return;
     const prevIndex = (currentTrackIndex - 1 + musicPlaylist.length) % musicPlaylist.length;
     const prevTrack = musicPlaylist[prevIndex];
-    if (musicAudioRef.current) { musicAudioRef.current.src = prevTrack.url; musicAudioRef.current.volume = musicVolume; musicAudioRef.current.play(); }
-    setCurrentTrackIndex(prevIndex); setCurrentTrack(prevTrack); setIsMusicPlaying(true); setMusicCurrentTime(0); setMusicDuration(0);
+    const audio = musicAudioRef.current;
+    if (audio) {
+      audio.src = prevTrack.url;
+      audio.volume = musicVolume;
+      audio.play().catch(err => console.debug("Audio play error:", err));
+    }
+    setCurrentTrackIndex(prevIndex); 
+    setCurrentTrack(prevTrack); 
+    setIsMusicPlaying(true); 
+    setMusicCurrentTime(0); 
+    setMusicDuration(0);
   };
 
   const handleCloseMusicController = () => {
-    if (musicAudioRef.current) { musicAudioRef.current.pause(); musicAudioRef.current = null; }
-    setMusicControllerState('hidden'); setCurrentTrack(null); setIsMusicPlaying(false);
+    if (musicAudioRef.current) { 
+      musicAudioRef.current.pause(); 
+      musicAudioRef.current = null; 
+    }
+    setMusicControllerState('hidden'); 
+    setCurrentTrack(null); 
+    setIsMusicPlaying(false);
+  };
+
+  const handleMusicIconClick = () => {
+    if (musicControllerState === 'hidden') {
+      setMusicControllerState('full');
+    } else if (musicControllerState === 'minimized') {
+      setMusicControllerState('full');
+    } else {
+      setMusicControllerState('minimized');
+    }
   };
 
   const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null;
@@ -511,8 +639,79 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={() => { if (musicControllerState === 'full') setMusicControllerState('minimized'); }}>
+    <div 
+      className="fixed inset-0 z-50 bg-black flex flex-col"
+      onClick={() => {
+        // Screen par click karne se chat input close ho jaye
+        if (showChatInput) {
+          setShowChatInput(false);
+        }
+        // Music controller minimize
+        if (musicControllerState === 'full') {
+          setMusicControllerState('minimized');
+        }
+      }}
+    >
       <img src={backgroundImage} alt="Room Background" className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" draggable={false} />
+      
+      {/* Draggable Music Icon - NO DOT */}
+      {currentTrack && (
+        <div
+          ref={musicIconRef}
+          className="fixed z-[60] w-[60px] h-[60px] rounded-full cursor-grab active:cursor-grabbing select-none"
+          style={{
+            left: musicIconPosition.x,
+            top: musicIconPosition.y,
+            touchAction: 'none'
+          }}
+          onMouseDown={handleMusicIconMouseDown}
+          onTouchStart={handleMusicIconTouchStart}
+          onClick={handleMusicIconClick}
+        >
+          <div className="relative w-full h-full rounded-full overflow-hidden bg-black/60 backdrop-blur-md border-2 border-white/30 shadow-lg">
+            <img 
+              src="/music-icon.png" 
+              alt="Music" 
+              className="w-full h-full object-cover"
+              draggable={false}
+            />
+            
+            {/* Red Voice Wave Animation - SIRF YEH */}
+            {isMusicPlaying && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-full h-full rounded-full border-2 border-red-500/80"
+                      style={{
+                        animation: `voiceWave ${1.2 + i * 0.2}s ease-out infinite`,
+                        animationDelay: `${i * 0.3}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-center gap-[3px] h-[30px]">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-[3px] bg-red-500 rounded-full"
+                      style={{
+                        height: `${10 + Math.random() * 20}px`,
+                        animation: `voiceBar ${0.8 + Math.random() * 0.4}s ease-in-out infinite`,
+                        animationDelay: `${i * 0.1}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ❌ DOT HATAYA - YE LINE REMOVE KARDI */}
+          </div>
+        </div>
+      )}
+
       <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -657,7 +856,35 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       </div>
 
-      {/* All Modals and Sheets - Same as before */}
+      {/* CSS Animations */}
+      <style jsx global>{`
+        @keyframes voiceWave {
+          0% { transform: scale(0.8); opacity: 0.8; }
+          100% { transform: scale(1.8); opacity: 0; }
+        }
+        @keyframes voiceBar {
+          0%, 100% { transform: scaleY(0.3); }
+          50% { transform: scaleY(1); }
+        }
+        .music-volume-slider { -webkit-appearance: none; appearance: none; }
+        .music-volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 0px; height: 0px; background: transparent; }
+        .music-volume-slider::-moz-range-thumb { width: 0px; height: 0px; background: transparent; border: none; }
+        .music-volume-slider::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; }
+        .music-volume-slider::-moz-range-track { height: 8px; border-radius: 4px; }
+        .music-progress-slider { -webkit-appearance: none; appearance: none; }
+        .music-progress-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 0px; height: 0px; background: transparent; }
+        .music-progress-slider::-moz-range-thumb { width: 0px; height: 0px; background: transparent; border: none; }
+        .music-progress-slider::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; }
+        .music-progress-slider::-moz-range-track { height: 6px; border-radius: 3px; }
+        @keyframes rotate-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .music-minimize-icon { animation: rotate-slow 4s linear infinite; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+      `}</style>
+
+      {/* All Modals and Sheets */}
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
           <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
@@ -755,34 +982,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         onMaximize={() => setMusicControllerState('full')}
       />
 
-      <style jsx global>{`
-        .music-volume-slider { -webkit-appearance: none; appearance: none; }
-        .music-volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 0px; height: 0px; background: transparent; }
-        .music-volume-slider::-moz-range-thumb { width: 0px; height: 0px; background: transparent; border: none; }
-        .music-volume-slider::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; }
-        .music-volume-slider::-moz-range-track { height: 8px; border-radius: 4px; }
-        .music-progress-slider { -webkit-appearance: none; appearance: none; }
-        .music-progress-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 0px; height: 0px; background: transparent; }
-        .music-progress-slider::-moz-range-thumb { width: 0px; height: 0px; background: transparent; border: none; }
-        .music-progress-slider::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; }
-        .music-progress-slider::-moz-range-track { height: 6px; border-radius: 3px; }
-        @keyframes rotate-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .music-minimize-icon { animation: rotate-slow 4s linear infinite; }
-      `}</style>
-
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={(emoji: string) => console.log("Selected Emoji:", emoji)} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
-
-      <style jsx>{`
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .animate-slide-up { animation: slideUp 0.3s ease-out; }
-        @keyframes waveBehind { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.4; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
-        @keyframes voicePulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.08); } }
-        .wave-ripple { animation: waveBehind 1.2s ease-out infinite; }
-        .wave-ripple-delayed { animation: waveBehind 1.2s ease-out 0.4s infinite; }
-        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-        .scrollbar-none::-webkit-scrollbar { display: none; }
-      `}</style>
     </div>
   );
 }
