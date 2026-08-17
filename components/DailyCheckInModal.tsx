@@ -152,12 +152,12 @@ const WhiteColorRemovalShader = ({
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
     const texCoords = new Float32Array([
-      0.0, 1.0,   // Top-left (flipped)
-      1.0, 1.0,   // Top-right (flipped)
-      0.0, 0.0,   // Bottom-left (flipped)
-      0.0, 0.0,   // Bottom-left (flipped)
-      1.0, 1.0,   // Top-right (flipped)
-      1.0, 0.0,   // Bottom-right (flipped)
+      0.0, 1.0,
+      1.0, 1.0,
+      0.0, 0.0,
+      0.0, 0.0,
+      1.0, 1.0,
+      1.0, 0.0,// Bottom-right (flipped)
     ])
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
