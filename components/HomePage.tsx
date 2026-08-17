@@ -108,10 +108,10 @@ interface GlobalRoom {
 
 const BANNERS = [
   {
-    image: '/1784458869444~2.jpg'
+    image: '/1786985730056~2.jpg'
   },
   {
-    image: '/1784458869444~2.jpg'
+    image: '/1786985730056~2.jpg'
   }
 ]
 
