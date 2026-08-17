@@ -1,0 +1,9 @@
+--- app/owner/page.tsx
++++ app/owner/page.tsx
+@@ -70,6 +70,7 @@
+         if (isDirtied.current) {
+           // User has unsaved local changes!
+           // DO NOT OVERWRITE THEIR TYPING!
++          isLoadedFromFirestore.current = true;
+           return;
+         }
