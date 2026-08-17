@@ -145,7 +145,6 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     localStorage.setItem("accountNumber", finalAccountId)
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
 
-    console.log("User synced successfully with ID:", finalAccountId)
     return { accountId: finalAccountId, name: finalName, image: finalImage }
   } catch (err) {
     console.error("Error syncing user to Firestore:", err)
