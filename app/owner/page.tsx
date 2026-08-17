@@ -300,6 +300,7 @@ export default function OwnerPanel() {
     }
 
     const timeoutId = setTimeout(() => {
+      isDirty.current = false;
       handleSave();
       isDirtied.current = false; // Mark as saved!
     }, 1000);
