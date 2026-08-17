@@ -189,10 +189,13 @@ function AudioConnectionManager({
   hasSeat: boolean;
   isMuted: boolean;
 }) {
-  const { localParticipant, room } = useLocalParticipant();
+  const { localParticipant } = useLocalParticipant();
+  // We can get the room via useRoomContext() or pass it as a prop if needed,
+  // but AudioConnectionManager is actually unused or can be refactored.
+  // Actually, we don't strictly need room for updateMicrophoneState.
   
   useEffect(() => {
-    if (!localParticipant || !room) return;
+    if (!localParticipant) return;
     
     const updateMicrophoneState = async () => {
       try {
@@ -209,35 +212,10 @@ function AudioConnectionManager({
     };
     
     updateMicrophoneState();
-  }, [localParticipant, room, hasSeat, isMuted, currentUserName]);
+  }, [localParticipant, hasSeat, isMuted, currentUserName]);
 
-  useEffect(() => {
-    if (!room) return;
-    
-    const handleParticipantConnected = (participant: RemoteParticipant) => {
-      console.log(`Participant connected: ${participant.identity}`);
-    };
-    
-    const handleParticipantDisconnected = (participant: RemoteParticipant) => {
-      console.log(`Participant disconnected: ${participant.identity}`);
-    };
-    
-    const handleTrackSubscribed = (track: RemoteTrackPublication, participant: RemoteParticipant) => {
-      if (track.kind === LKTrack.Kind.Audio) {
-        console.log(`Audio track subscribed from ${participant.identity}`);
-      }
-    };
-    
-    room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);
-    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
-    room.on(RoomEvent.TrackSubscribed, handleTrackSubscribed);
-    
-    return () => {
-      room.off(RoomEvent.ParticipantConnected, handleParticipantConnected);
-      room.off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
-      room.off(RoomEvent.TrackSubscribed, handleTrackSubscribed);
-    };
-  }, [room]);
+  // Removing room event listener since room is not returned from useLocalParticipant
+  // and this component is mainly for localParticipant microphone state.
 
   return null;
 }
@@ -272,7 +250,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   return (
     <LiveKitRoom
-      audio={true}
+      audio={false}
       video={false}
       token={livekitToken}
       serverUrl={livekitUrl}
@@ -294,7 +272,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         onKeepRoom={onKeepRoom}
         onFollowToggle={onFollowToggle}
       />
-      <RoomAudioRenderer />
     </LiveKitRoom>
   );
 }
@@ -304,6 +281,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [showExitMenu, setShowExitMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [showMessageSheet, setShowMessageSheet] = useState(false);
   const [showSettingPage, setShowSettingPage] = useState(false);
   const [showRoomInfo, setShowRoomInfo] = useState(false);
@@ -314,7 +292,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
 
   // LiveKit Hook for Microphone Control
-  const { localParticipant, room } = useLocalParticipant();
+  const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
 
   // Music controller state
@@ -981,10 +959,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     localStorage.removeItem('keptRoom');
     setMessages([]);
     
-    // Disconnect from LiveKit room
-    if (room) {
-      room.disconnect();
-    }
+    // We rely on unmounting the LiveKitRoom component to disconnect from the room automatically.
     
     if (onBack) onBack();
     if (onClose) onClose();
@@ -1744,6 +1719,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           onClearChat={handleClearChat}
           publicMsgOff={publicMsgOff}
           onTogglePublicMsg={() => setPublicMsgOff(prev => !prev)}
+          speaker={isSpeakerOn}
+          onToggleSpeaker={() => setIsSpeakerOn(prev => !prev)}
           onMusicPlay={(track) => {
             const db = indexedDB.open('HurryMusicDB', 1);
             db.onsuccess = () => {
@@ -2292,6 +2269,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {/* Emoji & Gift Pickers */}
 {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
 {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
+
+{isSpeakerOn && <RoomAudioRenderer />}
 
 <style jsx>{`
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
