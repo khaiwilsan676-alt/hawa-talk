@@ -12,7 +12,7 @@ export default function OwnerPanel() {
       setIsLoggedIn(localStorage.getItem('ownerPanelLoggedIn') === 'true');
     }
   }, []);
-  
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState("official_id");
   const [saveMessage, setSaveMessage] = useState("");
@@ -72,14 +72,13 @@ export default function OwnerPanel() {
         if (isDirtied.current) {
           // User has unsaved local changes!
           // DO NOT OVERWRITE THEIR TYPING!
-          isLoadedFromFirestore.current = true;
           return;
         }
 
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
           const mergedData = getDefaultIdsData();
-          
+
           Object.keys(getDefaultIdsData()).forEach(id => {
             if (serverData[id]) {
               mergedData[id as keyof typeof mergedData] = {
@@ -104,7 +103,7 @@ export default function OwnerPanel() {
             }
 
             isLoadedFromFirestore.current = true;
-            
+
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
           });
@@ -195,7 +194,7 @@ export default function OwnerPanel() {
         querySnapshot.forEach(async (document) => {
           const data = document.data();
           const feedbackTime = data.timestamp || 0;
-          
+
           if (now - feedbackTime > fortyEightHours) {
             await deleteDoc(doc(db, "feedbacks", document.id));
             console.log(`Deleted old feedback: ${document.id}`);
@@ -253,7 +252,7 @@ export default function OwnerPanel() {
     try {
       const targetData = customData || idsData;
       const credentials: any[] = [];
-      
+
       Object.entries(targetData).forEach(([id, data]: [string, any]) => {
         const email = (data.email || "").trim();
         const password = (data.password || "").trim();
@@ -475,7 +474,7 @@ export default function OwnerPanel() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      
+
       {/* TOP NAVBAR */}
       <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
         <div className="flex items-center gap-4">
@@ -525,7 +524,7 @@ export default function OwnerPanel() {
                 <Shield className="w-6 h-6 text-blue-400" />
                 <span className="font-bold text-lg text-white">Owner Menu</span>
               </div>
-              
+
               <button
                 onClick={() => { setActiveView("official_id"); setIsDrawerOpen(false); }}
                 className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer mb-3 ${
@@ -534,7 +533,7 @@ export default function OwnerPanel() {
               >
                 Manage IDs
               </button>
-              
+
               <button
                 onClick={() => { setActiveView("moderator"); setIsDrawerOpen(false); }}
                 className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer mb-3 ${
@@ -543,7 +542,7 @@ export default function OwnerPanel() {
               >
                 Moderator (Feedbacks)
               </button>
-              
+
               <button
                 onClick={() => { setActiveView("hawa_ai"); setIsDrawerOpen(false); }}
                 className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer ${
@@ -562,7 +561,7 @@ export default function OwnerPanel() {
 
       {/* MAIN CONTENT */}
       <main className="p-8">
-        
+
         {/* HAWA AI VIEW */}
         {activeView === "hawa_ai" && (
           <div className="space-y-6">
@@ -699,7 +698,7 @@ export default function OwnerPanel() {
         {/* MANAGE IDs VIEW */}
         {activeView === "official_id" && (
           <div className="space-y-8 max-w-5xl mx-auto">
-            
+
             {/* Special Official IDs */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
