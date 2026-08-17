@@ -43,12 +43,14 @@ export default function DailyCheckInModal({
 
   if (!isOpen) return null;
 
+  // Web shader: strict white removal via SVG filter (feColorMatrix)
   const renderIcon = (imageSrc: string, size: string = 'w-8 h-8') => {
     return (
-      <img 
-        src={imageSrc} 
-        alt="reward" 
-        className={`${size} mx-auto object-contain`} 
+      <img
+        src={imageSrc}
+        alt="reward"
+        className={`${size} mx-auto object-contain`}
+        style={{ filter: 'url(#removeWhiteFilter)' }}
       />
     );
   };
@@ -78,19 +80,42 @@ export default function DailyCheckInModal({
       }}
       onClick={onClose}
     >
+      {/* SVG filter definition (web shader) */}
+      <svg width="0" height="0" style={{ position: 'absolute' }}>
+        <defs>
+          <filter id="removeWhiteFilter">
+            <feColorMatrix
+              type="matrix"
+              values="
+                1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                -0.333 -0.333 -0.333 1 0
+              "
+            />
+          </filter>
+        </defs>
+      </svg>
+
       <div className="absolute inset-0 bg-black/60" />
 
-      {/* Header image OUTSIDE the card */}
-      <div className="relative bg-white rounded-t-3xl w-full max-w-xl overflow-hidden mb-2">
-        <img 
-          src="IMG_20260817_121025.png" 
-          alt="Daily Sign-in header" 
-          className="w-full h-auto mix-blend-multiply"
+      {/* Header image OUTSIDE the card – moved down with mt-2 */}
+      <div className="relative bg-white rounded-t-3xl w-full max-w-xl overflow-hidden mb-2 mt-2">
+        <img
+          src="IMG_20260817_121025.png"
+          alt="Daily Sign-in header"
+          className="w-full h-auto"
+          style={{ filter: 'url(#removeWhiteFilter)' }}
         />
+        {/* Blue strip below header image */}
+        <div className="bg-blue-500 text-white text-center font-bold py-2 text-base">
+          7 Days Rewards
+        </div>
       </div>
 
+      {/* Main reward card – blue border */}
       <div
-        className="relative bg-white rounded-3xl w-full max-w-xl overflow-hidden mb-4"
+        className="relative bg-white rounded-3xl w-full max-w-xl overflow-hidden mb-4 border-2 border-blue-500"
         style={{
           animation: 'modalFadeIn 0.3s ease-out',
           boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
@@ -109,7 +134,7 @@ export default function DailyCheckInModal({
                     ? 'border-2 border-green-400'
                     : index + 1 === currentDay
                     ? 'border-2 border-blue-500 animate-pulse'
-                    : 'border-2 border-gray-200'
+                    : 'border-2 border-gray-200' // ← Reverted to gray
                 }`}
               >
                 <span className="absolute top-0 left-0 w-8 h-6 bg-blue-500 rounded-tl-lg rounded-br-lg flex items-center justify-center text-white text-xs font-bold">
@@ -137,7 +162,7 @@ export default function DailyCheckInModal({
                   ? 'border-2 border-green-400'
                   : 5 === currentDay
                   ? 'border-2 border-blue-500 animate-pulse'
-                  : 'border-2 border-gray-200'
+                  : 'border-2 border-gray-200' // ← Reverted to gray
               }`}
             >
               <span className="absolute top-0 left-0 w-8 h-6 bg-blue-500 rounded-tl-lg rounded-br-lg flex items-center justify-center text-white text-xs font-bold">
@@ -161,7 +186,7 @@ export default function DailyCheckInModal({
                   ? 'border-2 border-green-400'
                   : 6 === currentDay
                   ? 'border-2 border-blue-500 animate-pulse'
-                  : 'border-2 border-gray-200'
+                  : 'border-2 border-gray-200' // ← Reverted to gray
               }`}
             >
               <span className="absolute top-0 left-0 w-8 h-6 bg-blue-500 rounded-tl-lg rounded-br-lg flex items-center justify-center text-white text-xs font-bold">
@@ -186,7 +211,7 @@ export default function DailyCheckInModal({
                   ? 'border-2 border-green-400'
                   : 7 === currentDay
                   ? 'border-2 border-blue-500 animate-pulse'
-                  : 'border-2 border-gray-200'
+                  : 'border-2 border-gray-200' // ← Reverted to gray
               }`}
             >
               <span className="absolute top-0 left-0 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-tl-lg rounded-br-lg text-white text-xs font-bold whitespace-nowrap">
@@ -253,4 +278,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-                }
+          }
