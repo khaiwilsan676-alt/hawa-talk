@@ -1,7 +1,233 @@
-import React, { useEffect, useState } from 'react';
-import WhiteColorRemovalShader from './WhiteColorRemovalShader';
+'use client'
 
-// Rewards data – different images and custom text
+import React, { useEffect, useState, useRef } from 'react';
+
+// WebGL Shader Component (integrated)
+const WhiteColorRemovalShader = ({ 
+  imageSrc, 
+  className = "",
+  style = {},
+  removeWhiteEverywhere = false,
+  threshold = 0.80
+}: { 
+  imageSrc: string
+  className?: string
+  style?: React.CSSProperties
+  removeWhiteEverywhere?: boolean
+  threshold?: number
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const gl = canvas.getContext('webgl', { 
+      premultipliedAlpha: true,
+      alpha: true 
+    })
+    if (!gl) {
+      console.warn('WebGL not supported')
+      return
+    }
+
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `
+
+    const fragmentShaderSource = `
+      precision mediump float;
+      
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture;
+      uniform bool u_removeEverywhere;
+      uniform float u_threshold;
+      
+      void main() {
+        vec4 color = texture2D(u_texture, v_texCoord);
+        
+        float maxChannel = max(color.r, max(color.g, color.b));
+        float minChannel = min(color.r, min(color.g, color.b));
+        float difference = maxChannel - minChannel;
+        
+        bool isWhite = (minChannel >= u_threshold) && (difference < 0.15);
+        
+        bool shouldRemove = false;
+        
+        if (u_removeEverywhere) {
+          shouldRemove = isWhite;
+        } else {
+          vec2 topLeft = vec2(0.0, 0.0);
+          vec2 topRight = vec2(1.0, 0.0);
+          vec2 bottomLeft = vec2(0.0, 1.0);
+          vec2 bottomRight = vec2(1.0, 1.0);
+          
+          vec2 center = vec2(0.5, 0.5);
+          
+          float cornerRadius = 0.3;
+          float centerRadius = 0.25;
+          
+          float distToTopLeft = distance(v_texCoord, topLeft);
+          float distToTopRight = distance(v_texCoord, topRight);
+          float distToBottomLeft = distance(v_texCoord, bottomLeft);
+          float distToBottomRight = distance(v_texCoord, bottomRight);
+          float distToCenter = distance(v_texCoord, center);
+          
+          bool inRemovalZone = 
+            distToTopLeft < cornerRadius ||
+            distToTopRight < cornerRadius ||
+            distToBottomLeft < cornerRadius ||
+            distToBottomRight < cornerRadius ||
+            distToCenter < centerRadius;
+          
+          shouldRemove = inRemovalZone && isWhite;
+        }
+        
+        if (shouldRemove) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `
+
+    const compileShader = (type: number, source: string) => {
+      const shader = gl.createShader(type)
+      if (!shader) return null
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+      
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
+        gl.deleteShader(shader)
+        return null
+      }
+      return shader
+    }
+
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
+    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
+    
+    if (!vertexShader || !fragmentShader) return
+
+    const program = gl.createProgram()
+    if (!program) return
+    
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program))
+      return
+    }
+
+    gl.useProgram(program)
+
+    const positionBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    const positions = new Float32Array([
+      -1.0, -1.0,
+       1.0, -1.0,
+      -1.0,  1.0,
+      -1.0,  1.0,
+       1.0, -1.0,
+       1.0,  1.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(positionLocation)
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    const texCoords = new Float32Array([
+      0.0, 0.0,
+      1.0, 0.0,
+      0.0, 1.0,
+      0.0, 1.0,
+      1.0, 0.0,
+      1.0, 1.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
+    gl.enableVertexAttribArray(texCoordLocation)
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+      
+      canvas.width = image.width
+      canvas.height = image.height
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      
+      gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      
+      const removeEverywhereLocation = gl.getUniformLocation(program, 'u_removeEverywhere')
+      gl.uniform1i(removeEverywhereLocation, removeWhiteEverywhere ? 1 : 0)
+      
+      const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
+      gl.uniform1f(thresholdLocation, threshold)
+      
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      
+      setIsLoaded(true)
+    }
+    image.onerror = () => {
+      console.error('Failed to load image for WebGL processing')
+    }
+    image.src = imageSrc
+
+    return () => {
+      gl.deleteProgram(program)
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      gl.deleteBuffer(positionBuffer)
+      gl.deleteBuffer(texCoordBuffer)
+      gl.deleteTexture(texture)
+    }
+  }, [imageSrc, removeWhiteEverywhere, threshold])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={className}
+      style={{
+        ...style,
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
+      }}
+    />
+  )
+}
+
+// Rewards data
 const SIGN_IN_REWARDS = [
   { day: 1, reward: '+5000', image: '1786855398290.png', color: '#FF6B6B' },
   { day: 2, reward: '+5000', image: '1786855398290.png', color: '#FFA726' },
@@ -75,38 +301,25 @@ export default function DailyCheckInModal({
       style={{
         animation: 'modalOverlayIn 0.3s ease-out',
         height: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
-        paddingTop: '80px',
+        paddingTop: '60px',
       }}
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/60" />
 
-      {/* Header image - Niche kiya hua */}
-      <div className="relative rounded-t-3xl w-full max-w-xl overflow-hidden mb-2 mt-6">
-        {/* Background me original image */}
-        <img 
-          src="IMG_20260817_121025.png" 
-          alt="Daily Sign-in header" 
+      {/* Header - Sirf WebGL processed image (NO gap) */}
+      <div className="relative rounded-t-3xl w-full max-w-xl overflow-hidden" style={{ marginBottom: '-2px' }}>
+        <WhiteColorRemovalShader
+          imageSrc="IMG_20260817_121025.png"
+          removeWhiteEverywhere={true}
+          threshold={0.75}
           className="w-full h-auto"
+          style={{
+            width: '100%',
+            height: 'auto',
+            display: 'block',
+          }}
         />
-        
-        {/* WebGL Shader - Isi image ka white remove karega */}
-        <div className="absolute inset-0 pointer-events-none">
-          <WhiteColorRemovalShader
-            imageSrc="IMG_20260817_121025.png"
-            removeWhiteEverywhere={true}
-            className="w-full h-full"
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-        </div>
       </div>
 
       <div
@@ -200,7 +413,7 @@ export default function DailyCheckInModal({
             </div>
           </div>
 
-          {/* Day 7 (Row 3) - full width, lamba card */}
+          {/* Day 7 (Row 3) - full width */}
           <div className="mb-5">
             <div
               className={`relative rounded-lg p-4 text-center transition-all bg-white ${
@@ -241,7 +454,7 @@ export default function DailyCheckInModal({
         </div>
       </div>
 
-      {/* Close button - below card */}
+      {/* Close button */}
       <button
         onClick={onClose}
         className="relative z-10 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/40 transition-all"
@@ -275,4 +488,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-                  }
+            }
