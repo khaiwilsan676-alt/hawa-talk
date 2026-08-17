@@ -19,6 +19,98 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 // Import the WebRTC ChatScreen component
 import ChatScreen from './ChatScreen' // adjust path if necessary
 
+// ============ IndexedDB Functions for Profile Data ============
+const PROFILE_DB_NAME = 'ProfileDataDB';
+const PROFILE_STORE = 'profileData';
+
+const openProfileDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(PROFILE_DB_NAME, 1);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(PROFILE_STORE)) {
+        db.createObjectStore(PROFILE_STORE, { keyPath: 'uid' });
+      }
+    };
+  });
+};
+
+// Save complete profile data to IndexedDB
+const saveProfileToDB = async (profileData: any) => {
+  try {
+    const db = await openProfileDB();
+    const transaction = db.transaction([PROFILE_STORE], 'readwrite');
+    const store = transaction.objectStore(PROFILE_STORE);
+    
+    const completeData = {
+      ...profileData,
+      cachedAt: Date.now(),
+      lastUpdated: new Date().toISOString(),
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      const request = store.put(completeData);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    console.log('✅ Profile data IndexedDB mein save hua (Photo, Name, ID, Bio, Album sab):', completeData);
+  } catch (error) {
+    console.error('❌ Profile save error:', error);
+  }
+};
+
+// Load profile data from IndexedDB
+const loadProfileFromDB = async (uid: string): Promise<any> => {
+  try {
+    const db = await openProfileDB();
+    const transaction = db.transaction([PROFILE_STORE], 'readonly');
+    const store = transaction.objectStore(PROFILE_STORE);
+
+    const profileData = await new Promise<any>((resolve, reject) => {
+      const request = store.get(uid);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    
+    if (profileData) {
+      console.log('✅ IndexedDB se profile data mila:', profileData);
+    }
+    
+    return profileData || null;
+  } catch (error) {
+    console.error('❌ Profile load error:', error);
+    return null;
+  }
+};
+
+// Delete profile from IndexedDB
+const deleteProfileFromDB = async (uid: string): Promise<void> => {
+  try {
+    const db = await openProfileDB();
+    const transaction = db.transaction([PROFILE_STORE], 'readwrite');
+    const store = transaction.objectStore(PROFILE_STORE);
+    
+    await new Promise<void>((resolve, reject) => {
+      const request = store.delete(uid);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    console.log('🗑️ Profile data IndexedDB se delete hua');
+  } catch (error) {
+    console.error('❌ Profile delete error:', error);
+  }
+};
+
 export interface TargetUser {
   id?: string
   uid?: string
@@ -428,6 +520,29 @@ export default function PublicProfile({
     }
   }
 
+  // Save current user data to IndexedDB
+  const saveCurrentUserToDB = async () => {
+    const uid = user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone');
+    if (uid && uid !== 'N/A') {
+      const profileData = {
+        uid: uid,
+        name: user.name,
+        displayAccountNumber: user.displayAccountNumber,
+        photo: user.photo,
+        coverPhoto: user.coverPhoto,
+        gender: user.gender,
+        age: user.age,
+        followers: user.followers,
+        bio: user.bio,
+        location: user.location,
+        flag: user.flag,
+        countryCode: user.countryCode,
+        albumImages: albumImages,
+      };
+      await saveProfileToDB(profileData);
+    }
+  };
+
   useEffect(() => {
     let unsubscribe: () => void
 
@@ -452,10 +567,32 @@ export default function PublicProfile({
         let album: string[] = []
 
         if (targetUid && targetUid !== 'N/A') {
+          // Check IndexedDB first for other user
+          const cachedProfile = await loadProfileFromDB(targetUid);
+          if (cachedProfile) {
+            console.log('✅ Other user profile IndexedDB se mila:', cachedProfile);
+            setUser({
+              name: cachedProfile.name || initialName,
+              uid: targetUid,
+              displayAccountNumber: cachedProfile.displayAccountNumber || displayAccNum,
+              photo: cachedProfile.photo || photo,
+              coverPhoto: cachedProfile.coverPhoto || coverPhoto,
+              gender: cachedProfile.gender || gender,
+              age: cachedProfile.age || age,
+              followers: cachedProfile.followers || followers,
+              bio: cachedProfile.bio || bio,
+              location: cachedProfile.location || country,
+              flag: cachedProfile.flag || '🇮🇳',
+              countryCode: cachedProfile.countryCode || countryCode,
+            });
+            setAlbumImages(cachedProfile.albumImages || []);
+            return;
+          }
+
           try {
             const userDocRef = doc(db, 'users', targetUid)
 
-            unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
               if (docSnap.exists()) {
                 const data = docSnap.data()
 
@@ -489,10 +626,9 @@ export default function PublicProfile({
                     c.code === countryCode || c.name === country || c.flag === country
                 ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
 
-                setAlbumImages(album)
-                setUser({
-                  name: finalName,
+                const profileData = {
                   uid: targetUid,
+                  name: finalName,
                   displayAccountNumber: displayAccNum,
                   photo,
                   coverPhoto,
@@ -503,7 +639,14 @@ export default function PublicProfile({
                   location: matchedCountry.name,
                   flag: matchedCountry.flag,
                   countryCode: matchedCountry.code,
-                })
+                  albumImages: album,
+                };
+
+                setAlbumImages(album);
+                setUser(profileData);
+                
+                // Save to IndexedDB for future use
+                await saveProfileToDB(profileData);
               }
             })
           } catch (err) {
@@ -513,8 +656,39 @@ export default function PublicProfile({
         return
       }
 
+      // For current user
       const uid =
         localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
+      
+      // Check IndexedDB first for current user
+      if (uid !== 'N/A') {
+        const cachedProfile = await loadProfileFromDB(uid);
+        if (cachedProfile && cachedProfile.name) {
+          console.log('✅ Current user profile IndexedDB se mila:', cachedProfile);
+          setUser({
+            name: cachedProfile.name || 'Hurry User',
+            uid: uid,
+            displayAccountNumber: cachedProfile.displayAccountNumber || '',
+            photo: cachedProfile.photo || '',
+            coverPhoto: cachedProfile.coverPhoto || '',
+            gender: cachedProfile.gender || '♂',
+            age: cachedProfile.age || 24,
+            followers: cachedProfile.followers || 0,
+            bio: cachedProfile.bio || '',
+            location: cachedProfile.location || 'India',
+            flag: cachedProfile.flag || '🇮🇳',
+            countryCode: cachedProfile.countryCode || 'IN',
+          });
+          setAlbumImages(cachedProfile.albumImages || []);
+          setEditName(cachedProfile.name || '');
+          setEditAge(String(cachedProfile.age || '24'));
+          setEditBio(cachedProfile.bio || '');
+          setEditCountry(cachedProfile.location || 'India');
+          setEditCountryCode(cachedProfile.countryCode || 'IN');
+          return;
+        }
+      }
+
       let storedName = localStorage.getItem('userName') || ''
       let photo = localStorage.getItem('userPhoto') || ''
       let coverPhoto = localStorage.getItem('userCoverPhoto') || ''
@@ -541,7 +715,7 @@ export default function PublicProfile({
         try {
           const userDocRef = doc(db, 'users', uid)
 
-          unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+          unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data()
               if (data.accountId) {
@@ -607,9 +781,9 @@ export default function PublicProfile({
                   c.name === storedCountry
               ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
 
-              setUser({
-                name: storedName || 'Hurry User',
+              const profileData = {
                 uid: uid,
+                name: storedName || 'Hurry User',
                 displayAccountNumber: displayAccNum,
                 photo,
                 coverPhoto,
@@ -620,7 +794,13 @@ export default function PublicProfile({
                 gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
                 age: storedAge ? parseInt(storedAge) : 24,
                 followers: data.followers || 0,
-              })
+                albumImages: data.albumImages || [],
+              };
+
+              setUser(profileData);
+              
+              // Save to IndexedDB
+              await saveProfileToDB(profileData);
 
               setEditName(storedName || 'Hurry User')
               setEditAge(storedAge || '24')
@@ -649,6 +829,13 @@ export default function PublicProfile({
       if (unsubscribe) unsubscribe()
     }
   }, [isOtherUser, targetUser])
+
+  // Save to IndexedDB whenever user data changes
+  useEffect(() => {
+    if (user.uid && user.uid !== 'N/A') {
+      saveCurrentUserToDB();
+    }
+  }, [user, albumImages]);
 
   const handleCopyID = () => {
     if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
@@ -780,15 +967,17 @@ export default function PublicProfile({
       (c) => c.name === editCountry || c.code === editCountryCode
     ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
 
-    setUser((prev) => ({
-      ...prev,
+    const updatedUser = {
+      ...user,
       name: editName,
-      age: parseInt(editAge) || prev.age,
+      age: parseInt(editAge) || user.age,
       bio: editBio,
       location: matchedCountry.name,
       flag: matchedCountry.flag,
       countryCode: matchedCountry.code,
-    }))
+    };
+
+    setUser(updatedUser);
 
     await saveToFirestore({
       name: editName,
@@ -803,15 +992,28 @@ export default function PublicProfile({
       countryLocked: true,
     })
 
+    // Save to IndexedDB
+    await saveProfileToDB({
+      ...updatedUser,
+      albumImages: albumImages,
+    });
+
     setShowEditSheet(false)
     setShowBioInput(false)
   }
 
   const handleBioSave = async () => {
     localStorage.setItem('userBio', editBio)
-    setUser((prev) => ({ ...prev, bio: editBio }))
-    setShowBioInput(false)
-    await saveToFirestore({ bio: editBio, about: editBio })
+    const updatedUser = { ...user, bio: editBio };
+    setUser(updatedUser);
+    setShowBioInput(false);
+    await saveToFirestore({ bio: editBio, about: editBio });
+    
+    // Save to IndexedDB
+    await saveProfileToDB({
+      ...updatedUser,
+      albumImages: albumImages,
+    });
   }
 
   const getDisplayID = () => {
@@ -1427,4 +1629,4 @@ export default function PublicProfile({
       `}</style>
     </div>
   )
-  }
+}
