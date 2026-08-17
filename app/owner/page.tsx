@@ -334,27 +334,40 @@ export default function OwnerPanel() {
 
   const handleLogoutGroup = async (ids: string[]) => {
     try {
+      await Promise.all(
+        ids.map(async (id) => {
+          const docRef = doc(db, "adminSettings", `sessions_${id}`);
+          await setDoc(
+            docRef,
+            {
+              isLoggedIn: false,
+              forceLogoutTimestamp: Date.now(),
+            },
+            { merge: true }
+          );
+        })
+      );
+
+      const loggedInSessions = JSON.parse(
+        localStorage.getItem("loggedInSessions") || "{}"
+      );
       for (const id of ids) {
-        const docRef = doc(db, "adminSettings", `sessions_${id}`);
-        await setDoc(docRef, {
-          isLoggedIn: false,
-          forceLogoutTimestamp: Date.now()
-        }, { merge: true });
-
-        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-        delete loggedInSessions[id]
-        localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
-        localStorage.removeItem(`session_${id}`)
-        localStorage.removeItem(`user_data_${id}`)
-        localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
+        delete loggedInSessions[id];
+        localStorage.removeItem(`session_${id}`);
+        localStorage.removeItem(`user_data_${id}`);
+        localStorage.setItem(`forceLogout_${id}`, Date.now().toString());
       }
+      localStorage.setItem(
+        "loggedInSessions",
+        JSON.stringify(loggedInSessions)
+      );
 
-      setSaveMessage(`Selected IDs logged out successfully!`)
-      setTimeout(() => setSaveMessage(""), 3000)
+      setSaveMessage(`Selected IDs logged out successfully!`);
+      setTimeout(() => setSaveMessage(""), 3000);
     } catch (error: any) {
       console.error(`Error logging out group:`, error);
     }
-  }
+  };
 
   // Format timestamp to readable date
   const formatDate = (timestamp: number) => {
