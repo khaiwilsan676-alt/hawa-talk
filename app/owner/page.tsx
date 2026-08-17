@@ -60,7 +60,7 @@ export default function OwnerPanel() {
   });
 
   const focusedField = useRef<string | null>(null);
-  const skipNextSave = useRef(true);
+  const isDirtied = useRef(false);
   const isLoadedFromFirestore = useRef(false);
 
   // Load from firestore (Real-time sync)
@@ -70,6 +70,9 @@ export default function OwnerPanel() {
       docRef,
       (docSnap: any) => {
         if (docSnap.exists()) {
+          if (isDirtied.current) {
+            return;
+          }
           const serverData = docSnap.data().ownerPanelCredentials || {};
           const mergedData = getDefaultIdsData();
           
@@ -96,7 +99,6 @@ export default function OwnerPanel() {
               return currentData;
             }
 
-            skipNextSave.current = true;
             isLoadedFromFirestore.current = true;
             
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
@@ -106,7 +108,7 @@ export default function OwnerPanel() {
           isLoadedFromFirestore.current = true;
         }
       },
-      (error) => {
+      (error: any) => {
         console.error("Error fetching credentials:", error);
         isLoadedFromFirestore.current = true;
       }
@@ -280,8 +282,7 @@ export default function OwnerPanel() {
   }, [idsData]);
 
   useEffect(() => {
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
+    if (!isDirtied.current) {
       return;
     }
 
@@ -291,13 +292,14 @@ export default function OwnerPanel() {
 
     const timeoutId = setTimeout(() => {
       handleSave();
+      isDirtied.current = false;
     }, 1000);
 
     return () => clearTimeout(timeoutId);
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
-    skipNextSave.current = false;
+    isDirtied.current = true;
     setIdsData((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
@@ -846,7 +848,10 @@ export default function OwnerPanel() {
 
             {/* Save Button */}
             <button
-              onClick={() => handleSave()}
+              onClick={() => {
+                handleSave();
+                isDirtied.current = false;
+              }}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <Save className="w-5 h-5" /> Save All Credentials

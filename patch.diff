@@ -1,0 +1,105 @@
+<<<<<<< SEARCH
+  const focusedField = useRef<string | null>(null);
+  const skipNextSave = useRef(true);
+  const isLoadedFromFirestore = useRef(false);
+
+  // Load from firestore (Real-time sync)
+  useEffect(() => {
+    const docRef = doc(db, "adminSettings", "credentials");
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap: any) => {
+        if (docSnap.exists()) {
+          const serverData = docSnap.data().ownerPanelCredentials || {};
+=======
+  const focusedField = useRef<string | null>(null);
+  const isDirtied = useRef(false);
+  const isLoadedFromFirestore = useRef(false);
+
+  // Load from firestore (Real-time sync)
+  useEffect(() => {
+    const docRef = doc(db, "adminSettings", "credentials");
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap: any) => {
+        if (docSnap.exists()) {
+          if (isDirtied.current) {
+            return;
+          }
+          const serverData = docSnap.data().ownerPanelCredentials || {};
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
+              return currentData;
+            }
+
+            skipNextSave.current = true;
+            isLoadedFromFirestore.current = true;
+
+            localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
+=======
+            if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
+              return currentData;
+            }
+
+            isLoadedFromFirestore.current = true;
+
+            localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+  useEffect(() => {
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+
+    if (!isLoadedFromFirestore.current) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      handleSave();
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [idsData, handleSave]);
+
+  const handleChange = (id: string, field: string, value: string) => {
+    skipNextSave.current = false;
+=======
+  useEffect(() => {
+    if (!isDirtied.current) {
+      return;
+    }
+
+    if (!isLoadedFromFirestore.current) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      handleSave();
+      isDirtied.current = false;
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [idsData, handleSave]);
+
+  const handleChange = (id: string, field: string, value: string) => {
+    isDirtied.current = true;
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            {/* Save Button */}
+            <button
+              onClick={() => handleSave()}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+=======
+            {/* Save Button */}
+            <button
+              onClick={() => {
+                handleSave();
+                isDirtied.current = false;
+              }}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+>>>>>>> REPLACE
