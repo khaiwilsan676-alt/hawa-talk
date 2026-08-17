@@ -79,6 +79,16 @@ export default function DailyCheckInModal({
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/60" />
+
+      {/* Header image OUTSIDE the card */}
+      <div className="relative bg-white rounded-t-3xl w-full max-w-xl overflow-hidden mb-2">
+        <img 
+          src="IMG_20260817_121025.png" 
+          alt="Daily Sign-in header" 
+          className="w-full h-auto mix-blend-multiply"
+        />
+      </div>
+
       <div
         className="relative bg-white rounded-3xl w-full max-w-xl overflow-hidden mb-4"
         style={{
@@ -87,23 +97,14 @@ export default function DailyCheckInModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header image */}
-        <div className="relative bg-white">
-          <img 
-            src="IMG_20260817_121025.png" 
-            alt="Daily Sign-in header" 
-            className="w-full h-auto mix-blend-multiply"
-          />
-        </div>
-
         {/* Rewards grid */}
         <div className="px-6 pt-6 pb-5">
-          {/* Days 1-4: now 2 columns, wider cards */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          {/* Days 1-4 (Row 1) */}
+          <div className="grid grid-cols-4 gap-2 mb-2">
             {SIGN_IN_REWARDS.slice(0, 4).map((item, index) => (
               <div
                 key={item.day}
-                className={`relative rounded-lg aspect-square flex flex-col items-center justify-center p-3 transition-all bg-white ${
+                className={`relative rounded-lg aspect-square flex flex-col items-center justify-center p-2 transition-all bg-white ${
                   index + 1 < currentDay
                     ? 'border-2 border-green-400'
                     : index + 1 === currentDay
@@ -114,8 +115,8 @@ export default function DailyCheckInModal({
                 <span className="absolute top-0 left-0 w-8 h-6 bg-blue-500 rounded-tl-lg rounded-br-lg flex items-center justify-center text-white text-xs font-bold">
                   {item.day}
                 </span>
-                <div className="mb-1 mt-2">{renderIcon(item.image, 'w-9 h-9')}</div>
-                <div className="text-[11px] font-semibold text-gray-700 whitespace-nowrap">{item.reward}</div>
+                <div className="mb-1 mt-2">{renderIcon(item.image, 'w-8 h-8')}</div>
+                <div className="text-[10px] font-semibold text-gray-700 whitespace-nowrap">{item.reward}</div>
                 {index + 1 < currentDay && (
                   <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -127,11 +128,11 @@ export default function DailyCheckInModal({
             ))}
           </div>
 
-          {/* Days 5-6: still 2 columns, square cards */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          {/* Days 5-6 (Row 2) */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
             {/* Day 5 */}
             <div
-              className={`relative rounded-lg aspect-square flex flex-col items-center justify-center p-3.5 transition-all bg-white ${
+              className={`relative rounded-lg aspect-square flex flex-col items-center justify-center p-3 transition-all bg-white ${
                 5 < currentDay
                   ? 'border-2 border-green-400'
                   : 5 === currentDay
@@ -155,7 +156,7 @@ export default function DailyCheckInModal({
 
             {/* Day 6 - Special with two rewards */}
             <div
-              className={`relative rounded-lg aspect-square flex flex-col items-center justify-center p-3.5 transition-all bg-white ${
+              className={`relative rounded-lg aspect-square flex flex-col items-center justify-center p-3 transition-all bg-white ${
                 6 < currentDay
                   ? 'border-2 border-green-400'
                   : 6 === currentDay
@@ -177,10 +178,10 @@ export default function DailyCheckInModal({
             </div>
           </div>
 
-          {/* Day 7 - Square and centered to match others */}
-          <div className="flex justify-center mb-5">
+          {/* Day 7 (Row 3) - full width, lamba card */}
+          <div className="mb-5">
             <div
-              className={`relative rounded-lg aspect-square w-1/2 flex flex-col items-center justify-center p-4 transition-all bg-white ${
+              className={`relative rounded-lg p-4 text-center transition-all bg-white ${
                 7 < currentDay
                   ? 'border-2 border-green-400'
                   : 7 === currentDay
@@ -218,7 +219,7 @@ export default function DailyCheckInModal({
         </div>
       </div>
 
-      {/* Close button */}
+      {/* Close button - below card */}
       <button
         onClick={onClose}
         className="relative z-10 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/40 transition-all"
@@ -252,4 +253,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-                  }
+                }
