@@ -4,6 +4,16 @@ import React, { useState, useRef } from 'react'
 import { db } from "../src/lib/supabase"
 import { doc, setDoc } from "../src/lib/supabase"
 
+export interface RoomSettingsData {
+  roomImage: string;
+  roomName: string;
+  announcement: string;
+  isLocked: boolean;
+  roomPassword?: string;
+  micMode: number;
+  theme: string;
+}
+
 interface RoomSettingPageProps {
   onBack: () => void
   roomOwnerId?: string
@@ -17,7 +27,7 @@ interface RoomSettingPageProps {
     roomPassword?: string
     micMode?: number
   }
-  onSave?: (data: any) => void
+  onSave?: (data: Partial<RoomSettingsData>) => void
 }
 
 // ---------- Mic mode image card component ----------

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import EmojiPicker from './Emojipicker';
 import GiftPicker from './GiftPicker';
-import RoomSettingPage from './RoomSettingPage';
+import RoomSettingPage, { RoomSettingsData } from './RoomSettingPage';
 import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
@@ -929,7 +929,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const closeSettings = () => setShowSettingPage(false);
 
-  const handleSaveSettings = async (data: any) => {
+  const handleSaveSettings = async (data: Partial<RoomSettingsData>) => {
     if (data.roomName) setRoomName(data.roomName);
     if (data.announcement !== undefined) setRoomAnnouncement(data.announcement);
     if (data.roomImage) setRoomImage(data.roomImage);
