@@ -18,6 +18,84 @@ import {
 } from 'firebase/firestore';
 import { db } from '../src/lib/firebase';
 
+// ============ IndexedDB Functions for Messages ============
+const MESSAGES_DB_NAME = 'ChatMessagesDB';
+const MESSAGES_STORE = 'messages';
+
+const openMessagesDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(MESSAGES_DB_NAME, 1);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(MESSAGES_STORE)) {
+        const store = db.createObjectStore(MESSAGES_STORE, { keyPath: 'id' });
+        store.createIndex('chatId', 'chatId', { unique: false });
+        store.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+    };
+  });
+};
+
+// Messages save karo IndexedDB mein
+const saveMessagesToDB = async (chatId: string, messages: Message[]) => {
+  try {
+    const db = await openMessagesDB();
+    const transaction = db.transaction([MESSAGES_STORE], 'readwrite');
+    const store = transaction.objectStore(MESSAGES_STORE);
+
+    // Sirf is chat ke messages clear karo
+    const index = store.index('chatId');
+    const oldMessages = await new Promise<any[]>((resolve, reject) => {
+      const request = index.getAll(chatId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    oldMessages.forEach(msg => {
+      store.delete(msg.id);
+    });
+
+    // Naye messages save karo
+    messages.forEach(msg => {
+      store.put({
+        ...msg,
+        chatId: chatId,
+      });
+    });
+
+    db.close();
+    console.log('Messages IndexedDB mein save ho gaye:', messages.length);
+  } catch (error) {
+    console.error('Messages save error:', error);
+  }
+};
+
+// Messages load karo IndexedDB se
+const loadMessagesFromDB = async (chatId: string): Promise<Message[]> => {
+  try {
+    const db = await openMessagesDB();
+    const transaction = db.transaction([MESSAGES_STORE], 'readonly');
+    const store = transaction.objectStore(MESSAGES_STORE);
+    const index = store.index('chatId');
+
+    const messages = await new Promise<Message[]>((resolve, reject) => {
+      const request = index.getAll(chatId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return messages;
+  } catch (error) {
+    console.error('Messages load error:', error);
+    return [];
+  }
+};
+
 interface Message {
   id: string;
   text: string;
@@ -75,6 +153,7 @@ export default function ChatScreen({
   const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
   const [swipeMsgId, setSwipeMsgId] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastSentInviteRoomIdRef = useRef<string | null>(null);
@@ -102,6 +181,25 @@ export default function ChatScreen({
     return () => unsubscribe();
   }, [targetUser.uid, isFixedChat]);
 
+  // ========== Pehle IndexedDB se messages load karo ==========
+  useEffect(() => {
+    const loadCachedMessages = async () => {
+      try {
+        const cachedMessages = await loadMessagesFromDB(chatId);
+        if (cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+          console.log('Chat messages IndexedDB se load huye:', cachedMessages.length);
+        }
+        setIsLoadingMessages(false);
+      } catch (error) {
+        console.error('Error loading cached messages:', error);
+        setIsLoadingMessages(false);
+      }
+    };
+
+    loadCachedMessages();
+  }, [chatId]);
+
   // ========== Firestore messages listener ==========
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -122,7 +220,7 @@ export default function ChatScreen({
 
       unsubMessages = onSnapshot(
         q,
-        (snapshot) => {
+        async (snapshot) => {
           const loadedMessages: Message[] = snapshot.docs
             .map((doc) => {
               const data = doc.data();
@@ -141,6 +239,9 @@ export default function ChatScreen({
 
           setMessages(loadedMessages);
           setConnected(true);
+          
+          // Messages ko IndexedDB mein save karo
+          await saveMessagesToDB(chatId, loadedMessages);
         },
         (error) => {
           console.error('Firestore listener error:', error);
@@ -178,7 +279,7 @@ export default function ChatScreen({
         ],
         lastMessage: messageText,
         lastTimestamp: serverTimestamp(),
-        lastSenderUid: currentUser.uid, // ✅ required for auto‑unhide
+        lastSenderUid: currentUser.uid,
       },
       { merge: true }
     );
@@ -200,7 +301,6 @@ export default function ChatScreen({
         },
       });
 
-      // ✅ update conversation
       await updateConversation(`Room invite: ${roomData.roomName}`);
     } catch (error) {
       console.error('Error sending room invite:', error);
@@ -229,7 +329,6 @@ export default function ChatScreen({
           : null,
       });
 
-      // ✅ update conversation
       await updateConversation(messageText);
 
       setReplyTo(null);
@@ -274,7 +373,6 @@ export default function ChatScreen({
           : null,
       });
 
-      // ✅ update conversation (use 'Image' as last message)
       await updateConversation('Image');
 
       setReplyTo(null);
@@ -289,12 +387,11 @@ export default function ChatScreen({
     }
   };
 
-  // ========== Clear Chat (only clears messages, NOT the conversation) ==========
+  // ========== Clear Chat ==========
   const handleClearChat = async () => {
     try {
       const timestamp = Date.now();
 
-      // 1️⃣ Update the chat document – this hides messages inside the chat.
       const chatDocRef = doc(db, 'chats', chatId);
       await setDoc(
         chatDocRef,
@@ -305,9 +402,6 @@ export default function ChatScreen({
         },
         { merge: true }
       );
-
-      // 2️⃣ ❌ DO NOT update the 'conversations' document.
-      //     The conversation card will stay visible in the message list.
 
       setMessages([]);
       setShowOptions(false);
@@ -424,7 +518,7 @@ export default function ChatScreen({
     setSelectedMessages(newSelected);
   };
 
-  // ========== Long press handlers (for copy) ==========
+  // ========== Long press handlers ==========
   const handleTouchStart = (msg: Message) => {
     longPressTimerRef.current = setTimeout(() => {
       handleCopyMessage(msg);
@@ -451,7 +545,7 @@ export default function ChatScreen({
     }
   };
 
-  // ========== Swipe handlers (for reply) ==========
+  // ========== Swipe handlers ==========
   const handleSwipeStart = (e: React.TouchEvent, msg: Message) => {
     setSwipeStartX(e.touches[0].clientX);
     setSwipeMsgId(msg.id);
@@ -613,13 +707,20 @@ export default function ChatScreen({
 
       {/* ----- Messages area ----- */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
-        {messages.length === 0 && (
+        {isLoadingMessages && messages.length === 0 && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        )}
+        
+        {!isLoadingMessages && messages.length === 0 && (
           <p className="text-center text-gray-400 mt-20">
             {isFixedChat
               ? 'No messages from ' + targetUser.name + ' yet'
               : 'No messages yet. Say hello!'}
           </p>
         )}
+        
         {messages.map((msg) => {
           const isMine = msg.sender === 'me';
           const isSelected = selectedMessages.has(msg.id);
@@ -963,4 +1064,4 @@ export default function ChatScreen({
       )}
     </div>
   );
-  }
+    }
