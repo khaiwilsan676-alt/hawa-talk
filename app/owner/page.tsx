@@ -108,8 +108,6 @@ export default function OwnerPanel() {
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
           });
-        } else {
-          isLoadedFromFirestore.current = true;
         }
       },
       (error: any) => {
@@ -152,7 +150,7 @@ export default function OwnerPanel() {
     setLoadingFeedbacks(true);
     try {
       const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot: any = await getDocs(q);
       const feedbackList: any[] = [];
       querySnapshot.forEach((doc: any) => {
         feedbackList.push({ id: doc.id, ...doc.data() });
@@ -170,7 +168,7 @@ export default function OwnerPanel() {
     setLoadingAiChats(true);
     try {
       const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot: any = await getDocs(q);
       const chatList: any[] = [];
       querySnapshot.forEach((doc: any) => {
         chatList.push({ id: doc.id, ...doc.data() });
@@ -188,7 +186,7 @@ export default function OwnerPanel() {
     const checkAndDeleteOldFeedbacks = async () => {
       try {
         const q = query(collection(db, "feedbacks"));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot: any = await getDocs(q);
         const now = Date.now();
         const fortyEightHours = 48 * 60 * 60 * 1000;
 
@@ -256,6 +254,7 @@ export default function OwnerPanel() {
 
   // FIRESTORE SAVE & SYNC FUNCTION
   const handleSave = useCallback(async (customData?: Record<string, any>) => {
+    pendingSave.current = false;
     try {
       const targetData = customData || idsData;
       const credentials: any[] = [];
