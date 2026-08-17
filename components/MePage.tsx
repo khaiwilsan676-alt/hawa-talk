@@ -10,6 +10,112 @@ import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
 
+// ============ IndexedDB Functions for User Data ============
+const USER_DB_NAME = 'UserDataDB';
+const USER_STORE = 'userData';
+const FEEDBACK_STORE = 'feedbacks';
+
+const openUserDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(USER_DB_NAME, 1);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(USER_STORE)) {
+        db.createObjectStore(USER_STORE, { keyPath: 'uid' });
+      }
+      if (!db.objectStoreNames.contains(FEEDBACK_STORE)) {
+        const feedbackStore = db.createObjectStore(FEEDBACK_STORE, { keyPath: 'id', autoIncrement: true });
+        feedbackStore.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+    };
+  });
+};
+
+// User data save karo IndexedDB mein (permanent)
+const saveUserToDB = async (userData: any) => {
+  try {
+    const db = await openUserDB();
+    const transaction = db.transaction([USER_STORE], 'readwrite');
+    const store = transaction.objectStore(USER_STORE);
+    
+    store.put({
+      ...userData,
+      cachedAt: Date.now(),
+    });
+
+    db.close();
+    console.log('User data IndexedDB mein save hua (permanent)');
+  } catch (error) {
+    console.error('User save error:', error);
+  }
+};
+
+// User data load karo IndexedDB se (no expiry)
+const loadUserFromDB = async (uid: string): Promise<any> => {
+  try {
+    const db = await openUserDB();
+    const transaction = db.transaction([USER_STORE], 'readonly');
+    const store = transaction.objectStore(USER_STORE);
+
+    const userData = await new Promise<any>((resolve, reject) => {
+      const request = store.get(uid);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return userData;
+  } catch (error) {
+    console.error('User load error:', error);
+    return null;
+  }
+};
+
+// Feedback save karo IndexedDB mein (offline support)
+const saveFeedbackToDB = async (feedbackData: any) => {
+  try {
+    const db = await openUserDB();
+    const transaction = db.transaction([FEEDBACK_STORE], 'readwrite');
+    const store = transaction.objectStore(FEEDBACK_STORE);
+    
+    store.add({
+      ...feedbackData,
+      cachedAt: Date.now(),
+      synced: false,
+    });
+
+    db.close();
+    console.log('Feedback IndexedDB mein save hua (offline)');
+  } catch (error) {
+    console.error('Feedback save error:', error);
+  }
+};
+
+// Pending feedbacks load karo IndexedDB se
+const loadPendingFeedbacksFromDB = async (): Promise<any[]> => {
+  try {
+    const db = await openUserDB();
+    const transaction = db.transaction([FEEDBACK_STORE], 'readonly');
+    const store = transaction.objectStore(FEEDBACK_STORE);
+
+    const feedbacks = await new Promise<any[]>((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return feedbacks.filter(fb => !fb.synced);
+  } catch (error) {
+    console.error('Feedback load error:', error);
+    return [];
+  }
+};
+
 interface MenuItem {
   id: string
   labelKey: keyof typeof translations['en']
@@ -388,18 +494,22 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     setFeedbackSubmitting(true);
 
-    try {
-      const feedbackData = {
-        type: selectedType,
-        typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
-        description: problemDescription.trim(),
-        contactInfo: contactInfo.trim(),
-        createdAt: new Date().toISOString(),
-        timestamp: Date.now(),
-        status: 'pending'
-      };
+    const feedbackData = {
+      type: selectedType,
+      typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
+      description: problemDescription.trim(),
+      contactInfo: contactInfo.trim(),
+      createdAt: new Date().toISOString(),
+      timestamp: Date.now(),
+      status: 'pending'
+    };
 
+    try {
+      // Firebase mein save karo
       await addDoc(collection(db, "feedbacks"), feedbackData);
+      
+      // IndexedDB mein bhi save karo (backup)
+      await saveFeedbackToDB(feedbackData);
       
       setFeedbackSuccess(true);
       setSelectedType('');
@@ -414,7 +524,25 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      setFeedbackError("Failed to submit feedback. Please try again.");
+      
+      // Agar Firebase fail ho jaye to IndexedDB mein save karo (offline mode)
+      try {
+        await saveFeedbackToDB(feedbackData);
+        setFeedbackSuccess(true);
+        setSelectedType('');
+        setProblemDescription('');
+        setContactInfo('');
+        
+        setTimeout(() => {
+          setShowFeedbackPage(false);
+          setFeedbackSuccess(false);
+        }, 2000);
+        
+        console.log('Feedback saved offline in IndexedDB');
+      } catch (dbError) {
+        console.error('Failed to save feedback offline:', dbError);
+        setFeedbackError("Failed to submit feedback. Please try again.");
+      }
     } finally {
       setFeedbackSubmitting(false);
     }
@@ -427,9 +555,24 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       const phone = localStorage.getItem("userPhone") || ""
       const photo = localStorage.getItem("userPhoto") || ""
 
+      // Pehle IndexedDB se check karo (NO TIME LIMIT - PERMANENT)
+      if (uid && uid !== "N/A") {
+        try {
+          const cachedUser = await loadUserFromDB(uid);
+          if (cachedUser) {
+            // Data mila to turant use karo, koi expiry check nahi
+            console.log('User data IndexedDB se load hua (permanent cache)');
+            setUser(cachedUser);
+            return; // Firebase check nahi karenge agar data mila
+          }
+        } catch (error) {
+          console.warn('Error loading from IndexedDB:', error);
+        }
+      }
+
+      // Agar IndexedDB mein data nahi hai to Firebase se fetch karo
       let finalAccNum = localStorage.getItem("accountNumber") || ""
 
-      // 1. Fetch exact accountId directly from Firestore 'users' collection
       if (uid && uid !== "N/A") {
         try {
           const userDocRef = doc(db, "users", uid)
@@ -443,20 +586,26 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         }
       }
 
-      // Fallback calculation if no Firestore accountId exists
       if (!finalAccNum) {
         const { fullAccNum } = getOrCreateAccountNumber(uid)
         finalAccNum = fullAccNum
       }
 
-      setUser({ 
+      const userData = { 
         name, 
         uid, 
         accountNumber: finalAccNum, 
         displayAccountNumber: finalAccNum, 
         phone, 
         photo
-      })
+      };
+      
+      setUser(userData);
+      
+      // User data ko IndexedDB mein save karo (permanent - no expiry)
+      if (uid && uid !== "N/A") {
+        await saveUserToDB(userData);
+      }
     }
 
     fetchUserData()
@@ -832,4 +981,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-      }
+}
