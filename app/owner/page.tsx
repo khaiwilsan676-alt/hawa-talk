@@ -60,8 +60,8 @@ export default function OwnerPanel() {
   });
 
   const focusedField = useRef<string | null>(null);
-  const skipNextSave = useRef(true);
-  const isLoadedFromFirestore = useRef(false);
+  const pendingSaveDataRef = useRef<Record<string, any> | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load from firestore (Real-time sync)
   useEffect(() => {
@@ -83,6 +83,9 @@ export default function OwnerPanel() {
           });
 
           setIdsData(currentData => {
+            if (pendingSaveDataRef.current) {
+              return currentData;
+            }
             const finalData = JSON.parse(JSON.stringify(mergedData));
 
             if (focusedField.current) {
@@ -96,19 +99,16 @@ export default function OwnerPanel() {
               return currentData;
             }
 
-            skipNextSave.current = true;
-            isLoadedFromFirestore.current = true;
             
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
           });
         } else {
-          isLoadedFromFirestore.current = true;
+          // No credentials found
         }
       },
-      (error) => {
+      (error: any) => {
         console.error("Error fetching credentials:", error);
-        isLoadedFromFirestore.current = true;
       }
     );
 
@@ -279,29 +279,31 @@ export default function OwnerPanel() {
     }
   }, [idsData]);
 
-  useEffect(() => {
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
 
-    if (!isLoadedFromFirestore.current) {
+  useEffect(() => {
+    if (!pendingSaveDataRef.current) {
       return;
     }
 
     const timeoutId = setTimeout(() => {
-      handleSave();
+      if (pendingSaveDataRef.current) {
+        handleSave(pendingSaveDataRef.current);
+        pendingSaveDataRef.current = null;
+      }
     }, 1000);
 
     return () => clearTimeout(timeoutId);
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
-    skipNextSave.current = false;
-    setIdsData((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value },
-    }));
+    setIdsData((prev) => {
+      const updatedData = {
+        ...prev,
+        [id]: { ...prev[id], [field]: value },
+      };
+      pendingSaveDataRef.current = updatedData;
+      return updatedData;
+    });
   };
 
   const handleIDLogout = async (id: string) => {
