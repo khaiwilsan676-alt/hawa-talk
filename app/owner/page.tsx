@@ -60,8 +60,7 @@ export default function OwnerPanel() {
   });
 
   const focusedField = useRef<string | null>(null);
-  const skipNextSave = useRef(true);
-  const isLoadedFromFirestore = useRef(false);
+    const isLoadedFromFirestore = useRef(false);
 
   // Load from firestore (Real-time sync)
   useEffect(() => {
@@ -96,8 +95,7 @@ export default function OwnerPanel() {
               return currentData;
             }
 
-            skipNextSave.current = true;
-            isLoadedFromFirestore.current = true;
+                        isLoadedFromFirestore.current = true;
             
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
@@ -280,11 +278,6 @@ export default function OwnerPanel() {
   }, [idsData]);
 
   useEffect(() => {
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
-
     if (!isLoadedFromFirestore.current) {
       return;
     }
@@ -297,8 +290,7 @@ export default function OwnerPanel() {
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
-    skipNextSave.current = false;
-    setIdsData((prev) => ({
+        setIdsData((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
     }));
