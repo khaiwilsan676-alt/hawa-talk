@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { db } from '../src/lib/firebase'
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
+import { useUser } from '../src/contexts/UserContext'
 
 // Import the WebRTC ChatScreen component
 import ChatScreen from './ChatScreen' // adjust path if necessary
@@ -429,7 +430,7 @@ export default function PublicProfile({
   }
 
   useEffect(() => {
-    let unsubscribe: () => void
+    let unsubscribe: (() => void) | null = null
 
     const loadProfileData = async () => {
       if (isOtherUser && targetUser) {
@@ -454,191 +455,112 @@ export default function PublicProfile({
         if (targetUid && targetUid !== 'N/A') {
           try {
             const userDocRef = doc(db, 'users', targetUid)
+            const docSnap = await getDoc(userDocRef)
 
-            unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-              if (docSnap.exists()) {
-                const data = docSnap.data()
-
-                displayAccNum = data.accountId
-                  ? String(data.accountId)
-                  : data.displayAccountNumber || displayAccNum
-                const docName = data.name || data.displayName || data.userName || data.fullName
-                const finalName = docName || initialName
-
-                photo = data.photo || data.photoURL || data.image || data.avatar || photo
-                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
-                bio = data.bio || data.about || bio
-                country = data.country || data.location || country
-                countryCode = data.countryCode || countryCode
-                gender = data.gender || gender
-                age = data.age ? parseInt(data.age) : age
-                followers = data.followers !== undefined ? data.followers : followers
-
-                if (data.albumImages && Array.isArray(data.albumImages)) {
-                  album = data.albumImages
-                } else if (data.album && Array.isArray(data.album)) {
-                  album = data.album
-                }
-
-                if (!displayAccNum) {
-                  displayAccNum = getOrCreateAccountNumber(targetUid)
-                }
-
-                const matchedCountry = COUNTRIES.find(
-                  (c) =>
-                    c.code === countryCode || c.name === country || c.flag === country
-                ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-                setAlbumImages(album)
-                setUser({
-                  name: finalName,
-                  uid: targetUid,
-                  displayAccountNumber: displayAccNum,
-                  photo,
-                  coverPhoto,
-                  gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
-                  age,
-                  followers,
-                  bio,
-                  location: matchedCountry.name,
-                  flag: matchedCountry.flag,
-                  countryCode: matchedCountry.code,
-                })
-              }
-            })
-          } catch (err) {
-            console.warn('Firestore fetch error for Target User:', err)
-          }
-        }
-        return
-      }
-
-      const uid =
-        localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
-      let storedName = localStorage.getItem('userName') || ''
-      let photo = localStorage.getItem('userPhoto') || ''
-      let coverPhoto = localStorage.getItem('userCoverPhoto') || ''
-      let storedBio = localStorage.getItem('userBio') || ''
-      let storedCountry = localStorage.getItem('userCountry') || '🇮🇳'
-      let storedCountryCode = localStorage.getItem('userCountryCode') || 'IN'
-      let storedAge = localStorage.getItem('userAge') || '24'
-      let storedGender =
-        localStorage.getItem('userGender') ||
-        localStorage.getItem('userGenderLocked') ||
-        ''
-      let isCountryLockedInStorage =
-        localStorage.getItem('userCountryLocked') === 'true' ||
-        localStorage.getItem('setupComplete') === 'true'
-
-      const storedAlbum = localStorage.getItem('userAlbumImages')
-      if (storedAlbum) {
-        setAlbumImages(JSON.parse(storedAlbum))
-      }
-
-      let displayAccNum = localStorage.getItem('accountNumber') || ''
-
-      if (uid && uid !== 'N/A') {
-        try {
-          const userDocRef = doc(db, 'users', uid)
-
-          unsubscribe = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data()
-              if (data.accountId) {
-                displayAccNum = String(data.accountId)
-                localStorage.setItem('accountNumber', displayAccNum)
-              }
-              if (data.name || data.displayName || data.userName) {
-                storedName = data.name || data.displayName || data.userName
-                localStorage.setItem('userName', storedName)
-              }
-              if (data.photo || data.photoURL || data.image) {
-                photo = data.photo || data.photoURL || data.image || photo
-                localStorage.setItem('userPhoto', photo)
-              }
-              if (data.coverPhoto || data.coverImage) {
-                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
-                localStorage.setItem('userCoverPhoto', coverPhoto)
-              }
-              if (data.bio) {
-                storedBio = data.bio
-                localStorage.setItem('userBio', storedBio)
-              }
-              if (data.country || data.location) {
-                storedCountry = data.country || data.location
-                localStorage.setItem('userCountry', storedCountry)
-              }
-              if (data.countryCode) {
-                storedCountryCode = data.countryCode
-                localStorage.setItem('userCountryCode', storedCountryCode)
-              }
-              if (data.countryLocked !== undefined) {
-                isCountryLockedInStorage = data.countryLocked
-                if (data.countryLocked) localStorage.setItem('userCountryLocked', 'true')
-              }
-              if (data.setupComplete) {
-                isCountryLockedInStorage = true
-                localStorage.setItem('userCountryLocked', 'true')
-              }
-              if (data.gender) {
-                storedGender = data.gender
-                localStorage.setItem('userGender', storedGender)
-              }
-              if (data.age) {
-                storedAge = String(data.age)
-                localStorage.setItem('userAge', storedAge)
-              }
+
+              displayAccNum = data.accountId
+                ? String(data.accountId)
+                : data.displayAccountNumber || displayAccNum
+              const docName = data.name || data.displayName || data.userName || data.fullName
+              const finalName = docName || initialName
+
+              photo = data.photo || data.photoURL || data.image || data.avatar || photo
+              coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
+              bio = data.bio || data.about || bio
+              country = data.country || data.location || country
+              countryCode = data.countryCode || countryCode
+              gender = data.gender || gender
+              age = data.age ? parseInt(data.age) : age
+              followers = data.followers !== undefined ? data.followers : followers
+
               if (data.albumImages && Array.isArray(data.albumImages)) {
-                setAlbumImages(data.albumImages)
-                localStorage.setItem(
-                  'userAlbumImages',
-                  JSON.stringify(data.albumImages)
-                )
-              }
-
-              if (!displayAccNum) {
-                displayAccNum = getOrCreateAccountNumber(uid)
-              }
-
-              const matchedCountry = COUNTRIES.find(
-                (c) =>
-                  c.code === storedCountryCode ||
-                  c.flag === storedCountry ||
-                  c.name === storedCountry
-              ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-              setUser({
-                name: storedName || 'Hurry User',
-                uid: uid,
-                displayAccountNumber: displayAccNum,
-                photo,
-                coverPhoto,
-                bio: storedBio,
-                location: matchedCountry.name,
-                flag: matchedCountry.flag,
-                countryCode: matchedCountry.code,
-                gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
-                age: storedAge ? parseInt(storedAge) : 24,
-                followers: data.followers || 0,
-              })
-
-              setEditName(storedName || 'Hurry User')
-              setEditAge(storedAge || '24')
-              setEditBio(storedBio || '')
-              setEditCountry(matchedCountry.name)
-              setEditCountryCode(matchedCountry.code)
-              setCountryLocked(isCountryLockedInStorage)
-
-              if (storedGender) {
-                setEditGender(
-                  storedGender === 'female' || storedGender === '♀' ? 'female' : 'male'
-                )
-                setGenderLocked(true)
+                album = data.albumImages
+              } else if (data.album && Array.isArray(data.album)) {
+                album = data.album
               }
             }
-          })
-        } catch (err) {
-          console.warn('Firestore fetch error in PublicProfile:', err)
+
+            setDisplayAccountNumber(displayAccNum)
+            setProfileName(finalName)
+            setProfilePhoto(photo)
+            setProfileCover(coverPhoto)
+            setProfileBio(bio)
+            setProfileCountry(country)
+            setProfileCountryCode(countryCode)
+            setProfileGender(gender)
+            setProfileAge(age)
+            setProfileFollowers(followers)
+            setAlbumImages(album)
+          } catch (err) {
+            console.error('Error fetching target profile:', err)
+          }
+        } else {
+          setDisplayAccountNumber(displayAccNum)
+          setProfileName(initialName)
+          setProfilePhoto(photo)
+          setProfileCover(coverPhoto)
+          setProfileBio(bio)
+          setProfileCountry(country)
+          setProfileCountryCode(countryCode)
+          setProfileGender(gender)
+          setProfileAge(age)
+          setProfileFollowers(followers)
+          setAlbumImages(album)
+        }
+      } else {
+        // Render My Profile
+        if (currentUserProfile) {
+          let displayAccNum = currentUserProfile.accountId ? String(currentUserProfile.accountId) : localStorage.getItem('accountNumber') || ''
+          let storedName = currentUserProfile.name || currentUserProfile.displayName || currentUserProfile.userName || localStorage.getItem('userName') || localStorage.getItem('userEmail') || 'User'
+          let photo = currentUserProfile.photo || currentUserProfile.photoURL || currentUserProfile.image || localStorage.getItem('userPhoto') || ''
+          let coverPhoto = currentUserProfile.coverPhoto || currentUserProfile.coverImage || localStorage.getItem('userCoverPhoto') || ''
+          let storedBio = currentUserProfile.bio || currentUserProfile.about || localStorage.getItem('userBio') || ''
+          let storedCountry = currentUserProfile.country || currentUserProfile.location || localStorage.getItem('userCountry') || '🇮🇳'
+          let storedCountryCode = currentUserProfile.countryCode || localStorage.getItem('userCountryCode') || 'IN'
+          let storedAge = currentUserProfile.age ? String(currentUserProfile.age) : localStorage.getItem('userAge') || '24'
+          let storedGender = currentUserProfile.gender || localStorage.getItem('userGender') || localStorage.getItem('userGenderLocked') || ''
+          let isCountryLockedInStorage = currentUserProfile.countryLocked !== undefined ? currentUserProfile.countryLocked : (localStorage.getItem('userCountryLocked') === 'true' || localStorage.getItem('setupComplete') === 'true')
+
+          const album = currentUserProfile.albumImages || currentUserProfile.album || []
+
+          setDisplayAccountNumber(displayAccNum)
+          setProfileName(storedName)
+          setProfilePhoto(photo)
+          setProfileCover(coverPhoto)
+          setProfileBio(storedBio)
+          setProfileCountry(storedCountry)
+          setProfileCountryCode(storedCountryCode)
+          setProfileAge(parseInt(storedAge))
+          setProfileGender(storedGender)
+          setIsCountryLocked(isCountryLockedInStorage)
+
+          if (Array.isArray(album) && album.length > 0) {
+            setAlbumImages(album)
+          } else {
+            const storedAlbum = localStorage.getItem('userAlbumImages')
+            if (storedAlbum) {
+              setAlbumImages(JSON.parse(storedAlbum))
+            }
+          }
+        } else {
+          // Fallback to local storage if userProfile is somehow null
+          setDisplayAccountNumber(localStorage.getItem('accountNumber') || '')
+          setProfileName(localStorage.getItem('userName') || 'User')
+          setProfilePhoto(localStorage.getItem('userPhoto') || '')
+          setProfileCover(localStorage.getItem('userCoverPhoto') || '')
+          setProfileBio(localStorage.getItem('userBio') || '')
+          setProfileCountry(localStorage.getItem('userCountry') || '🇮🇳')
+          setProfileCountryCode(localStorage.getItem('userCountryCode') || 'IN')
+          setProfileAge(parseInt(localStorage.getItem('userAge') || '24'))
+          setProfileGender(localStorage.getItem('userGender') || '')
+          setIsCountryLocked(localStorage.getItem('userCountryLocked') === 'true')
+
+          const storedAlbum = localStorage.getItem('userAlbumImages')
+          if (storedAlbum) {
+            setAlbumImages(JSON.parse(storedAlbum))
+          }
         }
       }
     }
@@ -646,9 +568,11 @@ export default function PublicProfile({
     loadProfileData()
 
     return () => {
-      if (unsubscribe) unsubscribe()
+      if (unsubscribe) {
+        unsubscribe()
+      }
     }
-  }, [isOtherUser, targetUser])
+  }, [isOtherUser, targetUser, currentUserProfile])
 
   const handleCopyID = () => {
     if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {

@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import { UserProvider } from '../src/contexts/UserContext'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -35,8 +36,10 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased">
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <UserProvider>
+          {children}
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+        </UserProvider>
       </body>
     </html>
   )
