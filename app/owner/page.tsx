@@ -62,6 +62,7 @@ export default function OwnerPanel() {
   const focusedField = useRef<string | null>(null);
   const isDirtied = useRef(false);
   const isLoadedFromFirestore = useRef(false);
+  const lastTypingTime = useRef<number>(0);
 
   // Load from firestore (Real-time sync)
   useEffect(() => {
