@@ -16,7 +16,71 @@ import {
 import { db } from '../src/lib/firebase';
 import ChatScreen from './ChatScreen';
 
-// Types
+// ============ Simple IndexedDB Functions ============
+const DB_NAME = 'MessagesDB';
+const STORE_NAME = 'conversations';
+
+// IndexedDB kholo
+const openDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'chatId' });
+      }
+    };
+  });
+};
+
+// IndexedDB mein save karo
+const saveToDB = async (conversations: ChatPreview[]) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+
+    // Purana data clear karo
+    store.clear();
+
+    // Naya data save karo
+    conversations.forEach(chat => {
+      store.put(chat);
+    });
+
+    db.close();
+    console.log('IndexedDB mein save ho gaya:', conversations.length);
+  } catch (error) {
+    console.error('Save error:', error);
+  }
+};
+
+// IndexedDB se load karo
+const loadFromDB = async (): Promise<ChatPreview[]> => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+
+    const chats = await new Promise<ChatPreview[]>((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return chats;
+  } catch (error) {
+    console.error('Load error:', error);
+    return [];
+  }
+};
+
+// ============ Types ============
 interface ChatPreview {
   chatId: string;
   otherUser: {
@@ -66,10 +130,31 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
 
   const currentUserUid = getCurrentUserData().uid;
 
-  // ---------- Listen to conversations ----------
+  // Sirf IndexedDB se load karo
+  useEffect(() => {
+    const loadData = async () => {
+      if (currentUserUid === 'N/A') {
+        setIsLoading(false);
+        return;
+      }
+
+      // IndexedDB se data load karo
+      const cachedChats = await loadFromDB();
+      
+      if (cachedChats.length > 0) {
+        setDynamicChats(cachedChats);
+        console.log('IndexedDB se data load hua:', cachedChats.length);
+      }
+      
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, [currentUserUid]);
+
+  // Firebase se sirf naya data aane par save karo
   useEffect(() => {
     if (!currentUserUid || currentUserUid === 'N/A') {
-      setIsLoading(false);
       return;
     }
 
@@ -90,19 +175,16 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           const participantsData = data.participantsData || [];
           let otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
 
-          // Get lastTimestamp
           const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function"
             ? data.lastTimestamp.toMillis()
             : (data.lastTimestamp || 0);
 
-          // Skip if no other user or no messages
           if (!otherUser || seenUids.has(otherUser.uid) || lastTimestamp === 0) {
             continue;
           }
 
           seenUids.add(otherUser.uid);
 
-          // Fetch fresh user data from users collection
           try {
             const userDocRef = doc(db, 'users', otherUser.uid);
             const userDocSnap = await getDoc(userDocRef);
@@ -131,17 +213,15 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           });
         }
 
-        // Sort by timestamp
         chats.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
-        setDynamicChats(chats);
-        setIsLoading(false);
+        
+        // Sirf IndexedDB mein save karo, screen update nahi karo
+        await saveToDB(chats);
+        console.log('Firebase se naya data IndexedDB mein save hua');
+        
       } catch (error) {
-        console.error('Error processing conversations:', error);
-        setIsLoading(false);
+        console.error('Error:', error);
       }
-    }, (error) => {
-      console.error('Firestore listener error:', error);
-      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -216,7 +296,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           </div>
         ))}
 
-        {/* Dynamic chats – no loading spinner, just show the list */}
+        {/* Dynamic chats from IndexedDB */}
         {dynamicChats.map((chat) => (
           <div
             key={chat.chatId}
@@ -247,7 +327,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
           </div>
         ))}
 
-        {/* Show message if no conversations (and not loading) */}
+        {/* Empty state */}
         {!isLoading && dynamicChats.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 text-sm">No conversations yet</p>
@@ -267,4 +347,4 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
       )}
     </div>
   );
-    }
+              }
