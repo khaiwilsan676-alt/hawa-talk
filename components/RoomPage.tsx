@@ -1722,6 +1722,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           speaker={isSpeakerOn}
           onToggleSpeaker={() => setIsSpeakerOn(prev => !prev)}
           onMusicPlay={(track) => {
+            if (typeof indexedDB === 'undefined') return;
             const db = indexedDB.open('HurryMusicDB', 1);
             db.onsuccess = () => {
               const request = db.result
