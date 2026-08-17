@@ -112,7 +112,7 @@ export default function OwnerPanel() {
           isLoadedFromFirestore.current = true;
         }
       },
-      (error) => {
+      (error: any) => {
         console.error("Error fetching credentials:", error);
         isLoadedFromFirestore.current = true;
       }
@@ -192,15 +192,21 @@ export default function OwnerPanel() {
         const now = Date.now();
         const fortyEightHours = 48 * 60 * 60 * 1000;
 
-        querySnapshot.forEach(async (document) => {
+        const deletePromises: Promise<void>[] = [];
+
+        querySnapshot.forEach((document: any) => {
           const data = document.data();
           const feedbackTime = data.timestamp || 0;
           
           if (now - feedbackTime > fortyEightHours) {
-            await deleteDoc(doc(db, "feedbacks", document.id));
-            console.log(`Deleted old feedback: ${document.id}`);
+            const p = deleteDoc(doc(db, "feedbacks", document.id)).then(() => {
+              console.log(`Deleted old feedback: ${document.id}`);
+            });
+            deletePromises.push(p);
           }
         });
+
+        await Promise.all(deletePromises);
 
         loadFeedbacks();
       } catch (error: any) {
