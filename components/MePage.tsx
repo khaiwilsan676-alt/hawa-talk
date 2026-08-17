@@ -35,26 +35,41 @@ const openUserDB = (): Promise<IDBDatabase> => {
   });
 };
 
-// User data save karo IndexedDB mein (permanent)
+// User data save karo IndexedDB mein (PERMANENT - Photo, Name, ID sab)
 const saveUserToDB = async (userData: any) => {
   try {
     const db = await openUserDB();
     const transaction = db.transaction([USER_STORE], 'readwrite');
     const store = transaction.objectStore(USER_STORE);
     
-    store.put({
-      ...userData,
+    // Complete user data with photo save karo
+    const completeUserData = {
+      uid: userData.uid,
+      name: userData.name,
+      accountNumber: userData.accountNumber,
+      displayAccountNumber: userData.displayAccountNumber,
+      phone: userData.phone,
+      photo: userData.photo, // Photo URL bhi save hoga
+      photoBase64: userData.photoBase64 || null, // Agar base64 photo hai to wo bhi
+      email: userData.email || '',
       cachedAt: Date.now(),
+      lastUpdated: new Date().toISOString(),
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      const request = store.put(completeUserData);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
 
     db.close();
-    console.log('User data IndexedDB mein save hua (permanent)');
+    console.log('✅ Complete user data IndexedDB mein save hua (Photo, Name, ID sab):', completeUserData);
   } catch (error) {
-    console.error('User save error:', error);
+    console.error('❌ User save error:', error);
   }
 };
 
-// User data load karo IndexedDB se (no expiry)
+// User data load karo IndexedDB se (PERMANENT - No expiry)
 const loadUserFromDB = async (uid: string): Promise<any> => {
   try {
     const db = await openUserDB();
@@ -68,10 +83,41 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
     });
 
     db.close();
-    return userData;
+    
+    if (userData) {
+      console.log('✅ IndexedDB se complete user data mila:', userData);
+    }
+    
+    return userData || null;
   } catch (error) {
-    console.error('User load error:', error);
+    console.error('❌ User load error:', error);
     return null;
+  }
+};
+
+// Check if user data exists in IndexedDB
+const checkUserExistsInDB = async (uid: string): Promise<boolean> => {
+  const data = await loadUserFromDB(uid);
+  return data !== null && data !== undefined;
+};
+
+// Delete user from IndexedDB (logout ke time use hoga)
+const deleteUserFromDB = async (uid: string): Promise<void> => {
+  try {
+    const db = await openUserDB();
+    const transaction = db.transaction([USER_STORE], 'readwrite');
+    const store = transaction.objectStore(USER_STORE);
+    
+    await new Promise<void>((resolve, reject) => {
+      const request = store.delete(uid);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    console.log('🗑️ User data IndexedDB se delete hua');
+  } catch (error) {
+    console.error('❌ User delete error:', error);
   }
 };
 
@@ -340,16 +386,16 @@ const WhiteColorRemovalShader = ({
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
     // Setup texture coordinates - FLIP Y axis
-const texCoordBuffer = gl.createBuffer()
-gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-const texCoords = new Float32Array([
-  0.0, 1.0,  // Bottom-left
-  1.0, 1.0,  // Bottom-right
-  0.0, 0.0,  // Top-left
-  0.0, 0.0,  // Top-left
-  1.0, 1.0,  // Bottom-right
-  1.0, 0.0,  // Top-right
-])
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    const texCoords = new Float32Array([
+      0.0, 1.0,  // Bottom-left
+      1.0, 1.0,  // Bottom-right
+      0.0, 0.0,  // Top-left
+      0.0, 0.0,  // Top-left
+      1.0, 1.0,  // Bottom-right
+      1.0, 0.0,  // Top-right
+    ])
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
     const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
@@ -433,6 +479,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       onPublicProfileChange(currentView !== 'me' || showFeedbackPage)
     }
   }, [showFeedbackPage, currentView])
+  
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
   const [contactInfo, setContactInfo] = useState('')
@@ -459,7 +506,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const t = getTranslation(appLang)
 
   const [user, setUser] = useState({
-    name: "Guest",
+    name: "",
     uid: "",
     accountNumber: "",
     displayAccountNumber: "",
@@ -550,69 +597,118 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const name = localStorage.getItem("userName") || "Guest"
-      const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || "N/A"
-      const phone = localStorage.getItem("userPhone") || ""
-      const photo = localStorage.getItem("userPhoto") || ""
+      try {
+        // Step 1: Get UID from localStorage (multiple sources)
+        const uid = localStorage.getItem("userUID") || 
+                    localStorage.getItem("userPhone") || 
+                    localStorage.getItem("userId") || 
+                    "";
+        
+        console.log('🔍 Fetching user data for UID:', uid);
 
-      // Pehle IndexedDB se check karo (NO TIME LIMIT - PERMANENT)
-      if (uid && uid !== "N/A") {
-        try {
-          const cachedUser = await loadUserFromDB(uid);
-          if (cachedUser) {
-            // Data mila to turant use karo, koi expiry check nahi
-            console.log('User data IndexedDB se load hua (permanent cache)');
-            setUser(cachedUser);
-            return; // Firebase check nahi karenge agar data mila
-          }
-        } catch (error) {
-          console.warn('Error loading from IndexedDB:', error);
+        if (!uid || uid === "N/A") {
+          console.log('❌ No UID found');
+          setUser({
+            name: "",
+            uid: "N/A",
+            accountNumber: "",
+            displayAccountNumber: "",
+            phone: "",
+            photo: "",
+          });
+          return;
         }
-      }
 
-      // Agar IndexedDB mein data nahi hai to Firebase se fetch karo
-      let finalAccNum = localStorage.getItem("accountNumber") || ""
-
-      if (uid && uid !== "N/A") {
-        try {
-          const userDocRef = doc(db, "users", uid)
-          const docSnap = await getDoc(userDocRef)
-          if (docSnap.exists() && docSnap.data().accountId) {
-            finalAccNum = String(docSnap.data().accountId)
-            localStorage.setItem("accountNumber", finalAccNum)
-          }
-        } catch (err) {
-          console.warn("Firestore user fetch error in MePage:", err)
+        // Step 2: Check IndexedDB FIRST (PERMANENT STORAGE - Photo, Name, ID sab)
+        const cachedUser = await loadUserFromDB(uid);
+        
+        if (cachedUser && cachedUser.name) {
+          console.log('✅ IndexedDB se complete data mila (Photo, Name, ID):', cachedUser);
+          setUser(cachedUser);
+          return; // IndexedDB data mila to yahi use karo
         }
-      }
 
-      if (!finalAccNum) {
-        const { fullAccNum } = getOrCreateAccountNumber(uid)
-        finalAccNum = fullAccNum
-      }
+        // Step 3: IndexedDB mein data nahi hai, Firebase se fetch karo
+        console.log('⚠️ IndexedDB mein data nahi, Firebase se fetch kar rahe hai...');
+        
+        try {
+          const userDocRef = doc(db, "users", uid);
+          const docSnap = await getDoc(userDocRef);
+          
+          if (docSnap.exists()) {
+            const firebaseData = docSnap.data();
+            console.log('✅ Firebase se data mila:', firebaseData);
+            
+            // Account number set karo
+            let accountNumber = firebaseData.accountId || localStorage.getItem("accountNumber") || "";
+            if (!accountNumber) {
+              const { fullAccNum } = getOrCreateAccountNumber(uid);
+              accountNumber = fullAccNum;
+            }
+            
+            // COMPLETE user data - Photo, Name, ID sab
+            const userData = {
+              name: firebaseData.name || firebaseData.displayName || localStorage.getItem("userName") || "",
+              uid: uid,
+              accountNumber: accountNumber,
+              displayAccountNumber: accountNumber,
+              phone: firebaseData.phone || localStorage.getItem("userPhone") || "",
+              photo: firebaseData.photo || firebaseData.photoURL || firebaseData.avatar || localStorage.getItem("userPhoto") || "",
+              email: firebaseData.email || "",
+            };
+            
+            // IndexedDB mein COMPLETE data save karo (Photo, Name, ID sab)
+            await saveUserToDB(userData);
+            
+            // localStorage update karo (backup)
+            if (userData.name) localStorage.setItem("userName", userData.name);
+            if (userData.accountNumber) localStorage.setItem("accountNumber", userData.accountNumber);
+            if (userData.photo) localStorage.setItem("userPhoto", userData.photo);
+            
+            setUser(userData);
+            return;
+          } else {
+            console.log('⚠️ Firebase mein data nahi hai');
+          }
+        } catch (firebaseError) {
+          console.warn('⚠️ Firebase fetch error:', firebaseError);
+        }
 
-      const userData = { 
-        name, 
-        uid, 
-        accountNumber: finalAccNum, 
-        displayAccountNumber: finalAccNum, 
-        phone, 
-        photo
-      };
-      
-      setUser(userData);
-      
-      // User data ko IndexedDB mein save karo (permanent - no expiry)
-      if (uid && uid !== "N/A") {
+        // Step 4: Firebase se data nahi mila, localStorage se try karo
+        const name = localStorage.getItem("userName") || "";
+        const phone = localStorage.getItem("userPhone") || "";
+        const photo = localStorage.getItem("userPhoto") || "";
+        let accountNumber = localStorage.getItem("accountNumber") || "";
+        
+        if (!accountNumber) {
+          const { fullAccNum } = getOrCreateAccountNumber(uid);
+          accountNumber = fullAccNum;
+          localStorage.setItem("accountNumber", accountNumber);
+        }
+        
+        const userData = {
+          name,
+          uid,
+          accountNumber,
+          displayAccountNumber: accountNumber,
+          phone,
+          photo,
+        };
+        
+        console.log('📦 localStorage se data use kar rahe hai:', userData);
+        
+        // IndexedDB mein save karo future ke liye
         await saveUserToDB(userData);
+        
+        setUser(userData);
+
+      } catch (error) {
+        console.error('❌ Error in fetchUserData:', error);
       }
-    }
+    };
 
-    fetchUserData()
-
-    window.addEventListener("storage", fetchUserData)
-    return () => window.removeEventListener("storage", fetchUserData)
-  }, [])
+    fetchUserData();
+  }, []); // Only run once when component mounts
 
   const handleCopyAccountNumber = () => {
     if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
@@ -788,7 +884,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 />
               ) : (
                 <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
-                  {user.name.charAt(0).toUpperCase() || "G"}
+                  {user.name ? user.name.charAt(0).toUpperCase() : "?"}
                 </div>
               )}
               
@@ -812,7 +908,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
             <div className="flex flex-col">
               {/* Name */}
-              <h2 className="text-2xl font-bold text-gray-900 mb-0.5">{user.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-0.5">
+                {user.name || "User"}
+              </h2>
 
               {/* Account Number Display */}
               <div className="flex items-center gap-1 mt-1">
@@ -829,11 +927,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 ) : (
                   <p className="text-gray-700 text-xs font-semibold">
-                    ID: {user.displayAccountNumber}
+                    ID: {user.displayAccountNumber || "N/A"}
                   </p>
                 )}
 
-                {user.accountNumber !== 'N/A' && (
+                {user.accountNumber && user.accountNumber !== 'N/A' && (
                   <button
                     onClick={handleCopyAccountNumber}
                     className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
@@ -981,4 +1079,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-}
+  }
