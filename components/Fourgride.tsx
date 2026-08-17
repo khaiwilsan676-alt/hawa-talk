@@ -301,7 +301,7 @@ export default function Fourgride({
                 >
                   <div
                     className={`w-3 h-3 bg-white rounded-full transform transition-transform ${
-                      publicMsgOff ? 'translate-x-4' : 'translate-x-0.5'
+                      publicMsgOff ? 'translate-x-[10px]' : 'translate-x-0.5'
                     }`}
                   />
                 </button>
@@ -321,7 +321,7 @@ export default function Fourgride({
                 >
                   <div
                     className={`w-3 h-3 bg-white rounded-full transform transition-transform ${
-                      entryEffect ? 'translate-x-4' : 'translate-x-0.5'
+                      entryEffect ? 'translate-x-[10px]' : 'translate-x-0.5'
                     }`}
                   />
                 </button>
@@ -341,7 +341,7 @@ export default function Fourgride({
                 >
                   <div
                     className={`w-3 h-3 bg-white rounded-full transform transition-transform ${
-                      giftEffect ? 'translate-x-4' : 'translate-x-0.5'
+                      giftEffect ? 'translate-x-[10px]' : 'translate-x-0.5'
                     }`}
                   />
                 </button>
@@ -376,7 +376,7 @@ export default function Fourgride({
                 >
                   <div
                     className={`w-3 h-3 bg-white rounded-full transform transition-transform ${
-                      speaker ? 'translate-x-4' : 'translate-x-0.5'
+                      speaker ? 'translate-x-[10px]' : 'translate-x-0.5'
                     }`}
                   />
                 </button>

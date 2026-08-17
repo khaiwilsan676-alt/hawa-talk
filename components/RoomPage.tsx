@@ -175,50 +175,6 @@ function VoiceActivityIndicator({ participantIdentity, isLocal, isMuted }: {
   );
 }
 
-// Audio Connection Manager Component
-function AudioConnectionManager({ 
-  roomId, 
-  userAccountId, 
-  currentUserName, 
-  hasSeat, 
-  isMuted 
-}: { 
-  roomId: string;
-  userAccountId: string;
-  currentUserName: string;
-  hasSeat: boolean;
-  isMuted: boolean;
-}) {
-  const { localParticipant } = useLocalParticipant();
-  // We can get the room via useRoomContext() or pass it as a prop if needed,
-  // but AudioConnectionManager is actually unused or can be refactored.
-  // Actually, we don't strictly need room for updateMicrophoneState.
-  
-  useEffect(() => {
-    if (!localParticipant) return;
-    
-    const updateMicrophoneState = async () => {
-      try {
-        if (hasSeat && !isMuted) {
-          await localParticipant.setMicrophoneEnabled(true);
-          console.log(`Microphone enabled for ${currentUserName}`);
-        } else {
-          await localParticipant.setMicrophoneEnabled(false);
-          console.log(`Microphone disabled for ${currentUserName}`);
-        }
-      } catch (error) {
-        console.error("Error updating microphone state:", error);
-      }
-    };
-    
-    updateMicrophoneState();
-  }, [localParticipant, hasSeat, isMuted, currentUserName]);
-
-  // Removing room event listener since room is not returned from useLocalParticipant
-  // and this component is mainly for localParticipant microphone state.
-
-  return null;
-}
 
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   // LiveKit Token State
@@ -391,11 +347,19 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   };
 
   // Sync LiveKit Microphone state with Seat Mute & Occupied Status
+  const desiredAudioStateRef = useRef<boolean | null>(null);
+
   useEffect(() => {
     if (localParticipant) {
       const isMuted = currentUserSeat?.isMuted ?? true;
       const isInSeat = hasSeat;
-      localParticipant.setMicrophoneEnabled(isInSeat && !isMuted).catch(console.error);
+      const desiredState = isInSeat && !isMuted;
+
+      if (desiredAudioStateRef.current !== desiredState) {
+        desiredAudioStateRef.current = desiredState;
+        localParticipant.setMicrophoneEnabled(desiredState).catch(console.error);
+        console.log("Microphone state synced to:", desiredState);
+      }
     }
   }, [currentUserSeat?.isMuted, hasSeat, localParticipant]);
 
@@ -753,10 +717,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-      // Enable microphone when taking seat
-      if (localParticipant) {
-        await localParticipant.setMicrophoneEnabled(true);
-      }
 
       setShowSeatSheet(false);
       setSelectedSeat(null);
@@ -785,10 +745,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-      // Disable microphone when leaving seat
-      if (localParticipant) {
-        await localParticipant.setMicrophoneEnabled(false);
-      }
 
       setShowSeatSheet(false);
       setSelectedSeat(null);
@@ -811,10 +767,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     setSeats(updatedSeats);
     await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
 
-    // Update LiveKit microphone state
-    if (localParticipant) {
-      await localParticipant.setMicrophoneEnabled(!newMuteState);
-    }
   };
 
   const handleToggleMute = async (e?: React.MouseEvent) => {
@@ -835,11 +787,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     setSeats(updatedSeats);
     updatedSeats.forEach(seat => updateSeatInFirestore(seat));
 
-    // Update LiveKit microphone state if this is the current user's seat
-    const targetSeat = updatedSeats.find(s => s.number === selectedSeat);
-    if (targetSeat && targetSeat.user?.accountId === userAccountId && localParticipant) {
-      await localParticipant.setMicrophoneEnabled(!targetSeat.isMuted);
-    }
 
     setShowSeatSheet(false);
     setSelectedSeat(null);
