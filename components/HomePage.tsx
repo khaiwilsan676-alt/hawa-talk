@@ -337,7 +337,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
 
     try {
-      const api = new window.JitsiMeetExternalAPI(domain, options)
+      const api = new (window as any).JitsiMeetExternalAPI(domain, options)
       jitsiApiRef.current = api
       jitsiJoinedRef.current = false
 
@@ -795,7 +795,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const handleRoomPasswordSubmit = async () => {
     if (!selectedLockedRoom) return;
     try {
-      const docRef = doc(db, "globalRooms", selectedLockedRoom.id || selectedLockedRoom.accountId);
+      const docRef = doc(db, "globalRooms", (selectedLockedRoom.id || selectedLockedRoom.accountId) as string);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
