@@ -7,12 +7,16 @@ const WhiteColorRemovalShader = ({
   imageSrc, 
   className = "",
   style = {},
-  threshold = 0.75
+  threshold = 0.75,
+  yOffset = 0.0,
+  xScale = 1.0
 }: { 
   imageSrc: string
   className?: string
   style?: React.CSSProperties
   threshold?: number
+  yOffset?: number
+  xScale?: number
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isLoaded, setIsLoaded] = useState(false)
@@ -47,9 +51,26 @@ const WhiteColorRemovalShader = ({
       varying vec2 v_texCoord;
       uniform sampler2D u_texture;
       uniform float u_threshold;
+      uniform float u_yOffset;
+      uniform float u_xScale;
       
       void main() {
-        vec4 color = texture2D(u_texture, v_texCoord);
+        // X coordinate ko scale karo (wide karne ke liye)
+        float scaledX = (v_texCoord.x - 0.5) / u_xScale + 0.5;
+        
+        // Y coordinate ko shift karo (niche karne ke liye)
+        float shiftedY = v_texCoord.y + u_yOffset;
+        
+        vec2 shiftedCoord = vec2(scaledX, shiftedY);
+        
+        // Check if coordinates are valid
+        if (shiftedCoord.x < 0.0 || shiftedCoord.x > 1.0 || 
+            shiftedCoord.y < 0.0 || shiftedCoord.y > 1.0) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+          return;
+        }
+        
+        vec4 color = texture2D(u_texture, shiftedCoord);
         
         float maxChannel = max(color.r, max(color.g, color.b));
         float minChannel = min(color.r, min(color.g, color.b));
@@ -115,7 +136,7 @@ const WhiteColorRemovalShader = ({
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // Texture coordinates - CORRECT orientation (NOT flipped)
+    // Texture coordinates - CORRECT orientation
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
     const texCoords = new Float32Array([
@@ -140,7 +161,6 @@ const WhiteColorRemovalShader = ({
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     
-    // Set UNPACK_FLIP_Y_WEBGL to true to flip image during upload
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
     
     gl.enable(gl.BLEND)
@@ -161,7 +181,12 @@ const WhiteColorRemovalShader = ({
       gl.clear(gl.COLOR_BUFFER_BIT)
       
       const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
+      const yOffsetLocation = gl.getUniformLocation(program, 'u_yOffset')
+      const xScaleLocation = gl.getUniformLocation(program, 'u_xScale')
+      
       gl.uniform1f(thresholdLocation, threshold)
+      gl.uniform1f(yOffsetLocation, yOffset)
+      gl.uniform1f(xScaleLocation, xScale)
       
       gl.drawArrays(gl.TRIANGLES, 0, 6)
       
@@ -180,7 +205,7 @@ const WhiteColorRemovalShader = ({
       gl.deleteBuffer(texCoordBuffer)
       gl.deleteTexture(texture)
     }
-  }, [imageSrc, threshold])
+  }, [imageSrc, threshold, yOffset, xScale])
 
   return (
     <canvas
@@ -276,15 +301,18 @@ export default function DailyCheckInModal({
       <div className="absolute inset-0 bg-black/60" />
 
       {/* Header image - SIDHI with white removed */}
-      <div className="relative rounded-t-3xl w-full max-w-xl overflow-hidden" style={{ marginBottom: '-2px' }}>
+      <div className="relative w-full max-w-xl overflow-hidden" style={{ marginBottom: '0px', lineHeight: 0 }}>
         <WhiteColorRemovalShader
           imageSrc="IMG_20260817_121025.png"
           threshold={0.75}
+          yOffset={0.15}
+          xScale={1.15}
           className="w-full h-auto"
           style={{
             width: '100%',
             height: 'auto',
             display: 'block',
+            marginBottom: '0px',
           }}
         />
       </div>
@@ -294,6 +322,7 @@ export default function DailyCheckInModal({
         style={{
           animation: 'modalFadeIn 0.3s ease-out',
           boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
+          marginTop: '0px',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -455,4 +484,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-      }
+        }
