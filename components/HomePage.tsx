@@ -288,13 +288,15 @@ interface GlobalRoom {
   createdAt: number
   isLocked?: boolean
   roomPassword?: string
+  isExplicitlyCreated?: boolean
 }
 
 // ============ CONSTANTS ============
 const BANNERS = [
-  { image: '/1786985730056~2.jpg' },
-  { image: '/1786985730056~2.jpg' }
+  { image: '/IMG-20260818-WA0000.jpg' },
+  { image: '/IMG-20260818-WA0001.jpg' }
 ]
+
 
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
@@ -645,22 +647,57 @@ export default function HomePage({ onLogout }: HomePageProps) {
     loadAllRoomsFromDB().then(cachedRooms => {
       if (cachedRooms.length > 0) {
         console.log('✅ IndexedDB se rooms loaded:', cachedRooms.length);
-        setGlobalRooms(cachedRooms);
+        // Filter only explicitly created rooms
+        const validRooms = cachedRooms.filter(room => 
+          room && 
+          room.isExplicitlyCreated === true &&
+          room.name !== 'User' &&
+          room.name !== 'Hurry Room' &&
+          room.accountId !== 'undefined' &&
+          room.accountId !== 'null' &&
+          room.accountId !== ''
+        );
+        setGlobalRooms(validRooms);
       }
     });
 
     // Firebase se sync (background)
     const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
-      const rooms = snapshot.docs.map((d) => ({
-        ...(d.data() as GlobalRoom)
-      }));
-      setGlobalRooms(rooms);
+      const rooms = snapshot.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name || 'User',
+          country: data.country || '🇮🇳',
+          image: data.image || '/default-avatar.png',
+          accountId: data.accountId || d.id,
+          createdAt: data.createdAt || Date.now(),
+          isLocked: data.isLocked || false,
+          roomPassword: data.roomPassword || null,
+          isExplicitlyCreated: data.isExplicitlyCreated || false
+        } as GlobalRoom;
+      });
+      
+      console.log('🔥 Firebase rooms synced:', rooms.length, rooms);
+      
+      // Filter only explicitly created rooms
+      const validRooms = rooms.filter(room => 
+        room.isExplicitlyCreated === true &&
+        room.name !== 'User' &&
+        room.name !== 'Hurry Room' &&
+        room.accountId !== 'undefined' &&
+        room.accountId !== 'null' &&
+        room.accountId !== ''
+      );
+      
+      setGlobalRooms(validRooms);
       
       // IndexedDB mein save karo
-      rooms.forEach(room => {
+      validRooms.forEach(room => {
         saveRoomToDB(room);
       });
     });
+    
     return () => unsub();
   }, []);
 
@@ -872,7 +909,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setFollowingRooms(prev => {
       const updated = prev.filter(r => r.accountId !== roomId);
       return updated;
-    });
+    })
   }
 
   // ============ DRAG HANDLERS ============
@@ -1066,9 +1103,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // ============ CREATE ROOM (ON CLICK ONLY) ============
+  // ============ CREATE ROOM (ON CLICK ONLY) - FIXED ============
   const handleCardClick = async () => {
-    setEnteredFromKept(false)
+    setEnteredFromKept(false);
 
     const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
     const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
@@ -1090,19 +1127,28 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setIsRoomCreated(true)
       setMyRoom(createdRoomCard)
 
-      // Save to IndexedDB
-      await saveRoomToDB(createdRoomCard);
+      // Save to IndexedDB with explicit flag
+      await saveRoomToDB({
+        ...createdRoomCard,
+        isExplicitlyCreated: true,
+        createdAt: Date.now()
+      });
 
-      // Save to Firebase
-      await setDoc(doc(db, "globalRooms", userUID), {
+      // Save to Firebase - Add explicit creation flag
+      const roomData = {
         id: userUID,
         name: defaultRoomName,
         country: localStorage.getItem("userCountry") || "🇮🇳",
         countryCode: localStorage.getItem("userCountryCode") || "IN",
         image: userPhoto || '/default-avatar.png',
         accountId: storedAccNum,
-        createdAt: Date.now()
-      }, { merge: true });
+        createdAt: Date.now(),
+        isLocked: false,
+        roomPassword: null,
+        isExplicitlyCreated: true // IMPORTANT: Mark as explicitly created
+      };
+
+      await setDoc(doc(db, "globalRooms", userUID), roomData, { merge: true });
 
       await setDoc(doc(db, "users", userUID), {
         id: userUID,
@@ -1111,8 +1157,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
         countryCode: localStorage.getItem("userCountryCode") || "IN",
         image: userPhoto || '/default-avatar.png',
         accountId: storedAccNum,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        isExplicitlyCreated: true
       }, { merge: true });
+
+      // Update local state immediately
+      setGlobalRooms(prev => {
+        const filtered = prev.filter(r => r.accountId !== storedAccNum);
+        return [...filtered, roomData as GlobalRoom];
+      });
     }
 
     addToRecent({ name: createdRoomCard.name, image: createdRoomCard.image, accountId: storedAccNum })
@@ -1302,9 +1355,18 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
-  // ============ ALL ROOMS FILTER ============
-  const allRooms = globalRooms.filter(room =>
-    !/jiys/i.test(room.name) && room.name !== 'User'
+  // ============ ALL ROOMS FILTER - STRICTER ============
+  const allRooms = globalRooms.filter(room => 
+    room && 
+    room.name && 
+    room.image && 
+    room.isExplicitlyCreated === true && // Must be explicitly created
+    !/jiys/i.test(room.name) && 
+    room.name !== 'User' &&
+    room.name !== 'Hurry Room' && // Exclude default name
+    room.accountId !== 'undefined' &&
+    room.accountId !== 'null' &&
+    room.accountId !== ''
   )
 
   // ============ RENDER MINE TAB ============
@@ -1526,119 +1588,140 @@ export default function HomePage({ onLogout }: HomePageProps) {
     </div>
   );
 
- // ============ RENDER POPULAR TAB (FIXED) ============
-const renderPopularTab = () => (
-  <>
-    <div className="px-4" style={{ marginTop: '-85px', position: 'relative', zIndex: 10 }}>
-      {/* Category Cards - same rahenge */}
-      <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
-        {CATEGORY_CARDS.map((card, i) => (
-          <div
-            key={card.label}
-            className="group flex-1"
-            style={{
-              height: '90px',
-              borderRadius: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '8px 6px 6px 6px',
-              border: '1.5px solid rgba(0,0,0,0.06)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-              background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
-              opacity: mounted ? 1 : 0,
-              transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
-              transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
-              animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
-              animationDelay: `${i * 100}ms`,
-            }}
-          >
+  // ============ RENDER POPULAR TAB (FIXED) ============
+  const renderPopularTab = () => (
+    <>
+      <div className="px-4" style={{ marginTop: '-85px', position: 'relative', zIndex: 10 }}>
+        {/* Category Cards - same rahenge */}
+        <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
+          {CATEGORY_CARDS.map((card, i) => (
             <div
+              key={card.label}
+              className="group flex-1"
               style={{
-                textAlign: 'center',
-                fontSize: '14px',
-                fontWeight: 700,
-                color: card.textColor,
-                marginBottom: '4px',
-                textShadow: '0 1px 0 rgba(255,255,255,0.7)',
-              }}
-            >
-              {card.label}
-            </div>
-            <div
-              style={{
-                flex: 1,
-                borderRadius: '10px',
-                backgroundColor: card.innerBg,
-                border: `1.5px solid ${card.innerBorder}`,
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
-                position: 'relative',
-                overflow: 'hidden',
+                height: '90px',
+                borderRadius: '16px',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                flexDirection: 'column',
+                padding: '8px 6px 6px 6px',
+                border: '1.5px solid rgba(0,0,0,0.06)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
+                opacity: mounted ? 1 : 0,
+                transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
+                transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
+                animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
+                animationDelay: `${i * 100}ms`,
               }}
             >
-              <span className="text-xl relative z-10">{card.icon}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-    
-    {allRooms.length > 0 && (
-      <div className="px-4 mt-4">
-        <div className="grid grid-cols-2 gap-4">
-          {allRooms.map((room) => (
-            <div
-              key={room.accountId}
-              onClick={() => handleUserCardClick({
-                id: room.id || room.accountId,
-                accountId: room.accountId,
-                name: room.name,
-                country: room.country,
-                image: room.image,
-                isLocked: room.isLocked
-              })}
-              className="cursor-pointer group"
-            >
-              {/* Image Card - No name overlay */}
-              <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                style={{ height: '180px' }}
+              <div
+                style={{
+                  textAlign: 'center',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: card.textColor,
+                  marginBottom: '4px',
+                  textShadow: '0 1px 0 rgba(255,255,255,0.7)',
+                }}
               >
-                <img
-                  src={room.image}
-                  alt={room.name}
-                  className="w-full h-full object-cover"
-                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                  draggable="false"
-                />
-                
-                {/* Lock icon - only if locked */}
-                {room.isLocked && (
-                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
-                      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
-                    </svg>
-                  </div>
-                )}
+                {card.label}
               </div>
-              
-              {/* Name - Card ke NICHE */}
-              <div className="mt-2 px-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm">{room.country}</span>
-                  <span className="font-semibold text-gray-900 text-sm truncate">
-                    {room.name}
-                  </span>
-                </div>
+              <div
+                style={{
+                  flex: 1,
+                  borderRadius: '10px',
+                  backgroundColor: card.innerBg,
+                  border: `1.5px solid ${card.innerBorder}`,
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <span className="text-xl relative z-10">{card.icon}</span>
               </div>
             </div>
           ))}
         </div>
       </div>
-    )}
-  </>
-);
+      
+      {allRooms.length > 0 ? (
+        <div className="px-4 mt-4">
+          <div className="grid grid-cols-2 gap-4">
+            {allRooms.map((room) => (
+              <div
+                key={room.accountId}
+                onClick={() => handleUserCardClick({
+                  id: room.id || room.accountId,
+                  accountId: room.accountId,
+                  name: room.name,
+                  country: room.country,
+                  image: room.image,
+                  isLocked: room.isLocked
+                })}
+                className="cursor-pointer group"
+              >
+                {/* Image Card - No name overlay */}
+                <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                  style={{ height: '180px' }}
+                >
+                  <img
+                    src={room.image}
+                    alt={room.name}
+                    className="w-full h-full object-cover"
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                    draggable="false"
+                  />
+                  
+                  {/* Lock icon - only if locked */}
+                  {room.isLocked && (
+                    <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Name - Card ke NICHE */}
+                <div className="mt-2 px-1">
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-sm">{room.country}</span>
+                    <span className="font-semibold text-gray-900 text-sm truncate">
+                      {room.name}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 mt-8">
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
+              <path
+                d="M32 8C45.2 8 56 18.8 56 32C56 45.2 45.2 56 32 56C18.8 56 8 45.2 8 32C8 18.8 18.8 8 32 8Z"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+              <path
+                d="M32 20V32L38 38"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            <p className="text-sm">No rooms yet</p>
+            <p className="text-xs text-gray-400 mt-1">Create your room in Mine tab</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   // ============ MAIN RETURN ============
   return (
     <div
@@ -2280,4 +2363,4 @@ const renderPopularTab = () => (
       )}
     </div>
   )
-                                       }
+}
