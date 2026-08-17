@@ -328,7 +328,7 @@ export default function OwnerPanel() {
 
   const handleLogoutGroup = async (ids: string[]) => {
     try {
-      for (const id of ids) {
+      await Promise.all(ids.map(async (id) => {
         const docRef = doc(db, "adminSettings", `sessions_${id}`);
         await setDoc(docRef, {
           isLoggedIn: false,
@@ -341,7 +341,7 @@ export default function OwnerPanel() {
         localStorage.removeItem(`session_${id}`)
         localStorage.removeItem(`user_data_${id}`)
         localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
-      }
+      }));
 
       setSaveMessage(`Selected IDs logged out successfully!`)
       setTimeout(() => setSaveMessage(""), 3000)
