@@ -25,7 +25,10 @@ const openUserDB = (): Promise<IDBDatabase> => {
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(USER_STORE)) {
-        db.createObjectStore(USER_STORE, { keyPath: 'uid' });
+        const userStore = db.createObjectStore(USER_STORE, { keyPath: 'uid' });
+        // Indexes for faster queries
+        userStore.createIndex('name', 'name', { unique: false });
+        userStore.createIndex('updatedAt', 'updatedAt', { unique: false });
       }
       if (!db.objectStoreNames.contains(FEEDBACK_STORE)) {
         const feedbackStore = db.createObjectStore(FEEDBACK_STORE, { keyPath: 'id', autoIncrement: true });
@@ -35,27 +38,19 @@ const openUserDB = (): Promise<IDBDatabase> => {
   });
 };
 
-// User data save karo IndexedDB mein (PERMANENT - Photo, Name, ID sab)
+// User data save karo IndexedDB mein (PERMANENT - with image and all data)
 const saveUserToDB = async (userData: any) => {
   try {
     const db = await openUserDB();
     const transaction = db.transaction([USER_STORE], 'readwrite');
     const store = transaction.objectStore(USER_STORE);
     
-    // Complete user data with photo save karo
     const completeUserData = {
-      uid: userData.uid,
-      name: userData.name,
-      accountNumber: userData.accountNumber,
-      displayAccountNumber: userData.displayAccountNumber,
-      phone: userData.phone,
-      photo: userData.photo, // Photo URL bhi save hoga
-      photoBase64: userData.photoBase64 || null, // Agar base64 photo hai to wo bhi
-      email: userData.email || '',
+      ...userData,
       cachedAt: Date.now(),
-      lastUpdated: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-
+    
     await new Promise<void>((resolve, reject) => {
       const request = store.put(completeUserData);
       request.onsuccess = () => resolve();
@@ -63,13 +58,18 @@ const saveUserToDB = async (userData: any) => {
     });
 
     db.close();
-    console.log('✅ Complete user data IndexedDB mein save hua (Photo, Name, ID sab):', completeUserData);
+    console.log('✅ User data IndexedDB mein save hua (PERMANENT):', {
+      name: completeUserData.name,
+      uid: completeUserData.uid,
+      hasPhoto: !!completeUserData.photo,
+      accountNumber: completeUserData.accountNumber
+    });
   } catch (error) {
     console.error('❌ User save error:', error);
   }
 };
 
-// User data load karo IndexedDB se (PERMANENT - No expiry)
+// User data load karo IndexedDB se (PERMANENT - no expiry)
 const loadUserFromDB = async (uid: string): Promise<any> => {
   try {
     const db = await openUserDB();
@@ -85,7 +85,11 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
     db.close();
     
     if (userData) {
-      console.log('✅ IndexedDB se complete user data mila:', userData);
+      console.log('✅ IndexedDB se user data mila:', {
+        name: userData.name,
+        hasPhoto: !!userData.photo,
+        accountNumber: userData.accountNumber
+      });
     }
     
     return userData || null;
@@ -95,14 +99,29 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
   }
 };
 
-// Check if user data exists in IndexedDB
-const checkUserExistsInDB = async (uid: string): Promise<boolean> => {
-  const data = await loadUserFromDB(uid);
-  return data !== null && data !== undefined;
+// All users data load karo (for debugging)
+const getAllUsersFromDB = async (): Promise<any[]> => {
+  try {
+    const db = await openUserDB();
+    const transaction = db.transaction([USER_STORE], 'readonly');
+    const store = transaction.objectStore(USER_STORE);
+
+    const allUsers = await new Promise<any[]>((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return allUsers;
+  } catch (error) {
+    console.error('Get all users error:', error);
+    return [];
+  }
 };
 
-// Delete user from IndexedDB (logout ke time use hoga)
-const deleteUserFromDB = async (uid: string): Promise<void> => {
+// Delete user from IndexedDB (only when app is deleted)
+const deleteUserFromDB = async (uid: string) => {
   try {
     const db = await openUserDB();
     const transaction = db.transaction([USER_STORE], 'readwrite');
@@ -117,11 +136,11 @@ const deleteUserFromDB = async (uid: string): Promise<void> => {
     db.close();
     console.log('🗑️ User data IndexedDB se delete hua');
   } catch (error) {
-    console.error('❌ User delete error:', error);
+    console.error('Delete user error:', error);
   }
 };
 
-// Feedback save karo IndexedDB mein (offline support)
+// Feedback functions (unchanged)
 const saveFeedbackToDB = async (feedbackData: any) => {
   try {
     const db = await openUserDB();
@@ -141,7 +160,6 @@ const saveFeedbackToDB = async (feedbackData: any) => {
   }
 };
 
-// Pending feedbacks load karo IndexedDB se
 const loadPendingFeedbacksFromDB = async (): Promise<any[]> => {
   try {
     const db = await openUserDB();
@@ -270,7 +288,7 @@ export const getOrCreateAccountNumber = (uid: string) => {
   return { fullAccNum: generated, displayAccNum: generated }
 }
 
-// WebGL Shader Component for removing white color
+// WebGL Shader Component (unchanged)
 const WhiteColorRemovalShader = ({ 
   imageSrc, 
   threshold = 0.9,
@@ -521,7 +539,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   }
 
-  // Handle Feedback Submit
+  // Handle Feedback Submit (unchanged)
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
@@ -596,15 +614,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   };
 
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+
     const fetchUserData = async () => {
       try {
-        // Step 1: Get UID from localStorage (multiple sources)
+        // Step 1: Get UID from localStorage
         const uid = localStorage.getItem("userUID") || 
                     localStorage.getItem("userPhone") || 
                     localStorage.getItem("userId") || 
                     "";
         
-        console.log('🔍 Fetching user data for UID:', uid);
+        console.log('🔍 User data fetch kar rahe hai, UID:', uid);
 
         if (!uid || uid === "N/A") {
           console.log('❌ No UID found');
@@ -619,88 +639,121 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           return;
         }
 
-        // Step 2: Check IndexedDB FIRST (PERMANENT STORAGE - Photo, Name, ID sab)
+        // Step 2: Check IndexedDB FIRST (PERMANENT STORAGE)
         const cachedUser = await loadUserFromDB(uid);
         
-        if (cachedUser && cachedUser.name) {
-          console.log('✅ IndexedDB se complete data mila (Photo, Name, ID):', cachedUser);
+        if (cachedUser) {
+          console.log('✅ IndexedDB se data mila (PERMANENT):', {
+            name: cachedUser.name,
+            hasPhoto: !!cachedUser.photo,
+            accountNumber: cachedUser.accountNumber
+          });
           setUser(cachedUser);
-          return; // IndexedDB data mila to yahi use karo
         }
 
-        // Step 3: IndexedDB mein data nahi hai, Firebase se fetch karo
-        console.log('⚠️ IndexedDB mein data nahi, Firebase se fetch kar rahe hai...');
-        
+        // Step 3: Firebase se real-time sync (background mein)
         try {
           const userDocRef = doc(db, "users", uid);
-          const docSnap = await getDoc(userDocRef);
           
-          if (docSnap.exists()) {
-            const firebaseData = docSnap.data();
-            console.log('✅ Firebase se data mila:', firebaseData);
-            
-            // Account number set karo
-            let accountNumber = firebaseData.accountId || localStorage.getItem("accountNumber") || "";
-            if (!accountNumber) {
-              const { fullAccNum } = getOrCreateAccountNumber(uid);
-              accountNumber = fullAccNum;
+          // Real-time listener for Firebase updates
+          unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
+            if (docSnap.exists()) {
+              const firebaseData = docSnap.data();
+              console.log('🔥 Firebase se new data mila:', {
+                name: firebaseData.name,
+                hasPhoto: !!firebaseData.photo
+              });
+              
+              // Account number set karo
+              let accountNumber = firebaseData.accountId || 
+                                 cachedUser?.accountNumber || 
+                                 localStorage.getItem("accountNumber") || 
+                                 "";
+              
+              if (!accountNumber) {
+                const { fullAccNum } = getOrCreateAccountNumber(uid);
+                accountNumber = fullAccNum;
+              }
+              
+              const updatedUserData = {
+                name: firebaseData.name || cachedUser?.name || "",
+                uid: uid,
+                accountNumber: accountNumber,
+                displayAccountNumber: accountNumber,
+                phone: firebaseData.phone || cachedUser?.phone || "",
+                photo: firebaseData.photo || cachedUser?.photo || "",
+              };
+              
+              // Check if data changed
+              const hasChanged = JSON.stringify(updatedUserData) !== JSON.stringify(cachedUser);
+              
+              if (hasChanged) {
+                console.log('🔄 Firebase mein naya data hai, IndexedDB update kar rahe hai');
+                
+                // IndexedDB mein update karo
+                await saveUserToDB(updatedUserData);
+                
+                // localStorage update karo
+                if (updatedUserData.name) localStorage.setItem("userName", updatedUserData.name);
+                if (updatedUserData.accountNumber) localStorage.setItem("accountNumber", updatedUserData.accountNumber);
+                if (updatedUserData.photo) localStorage.setItem("userPhoto", updatedUserData.photo);
+                if (updatedUserData.phone) localStorage.setItem("userPhone", updatedUserData.phone);
+                
+                // UI update karo
+                setUser(updatedUserData);
+              } else {
+                console.log('✅ Firebase aur IndexedDB ka data same hai');
+              }
+            } else {
+              console.log('⚠️ Firebase mein user document nahi hai');
             }
-            
-            // COMPLETE user data - Photo, Name, ID sab
-            const userData = {
-              name: firebaseData.name || firebaseData.displayName || localStorage.getItem("userName") || "",
-              uid: uid,
-              accountNumber: accountNumber,
-              displayAccountNumber: accountNumber,
-              phone: firebaseData.phone || localStorage.getItem("userPhone") || "",
-              photo: firebaseData.photo || firebaseData.photoURL || firebaseData.avatar || localStorage.getItem("userPhoto") || "",
-              email: firebaseData.email || "",
-            };
-            
-            // IndexedDB mein COMPLETE data save karo (Photo, Name, ID sab)
-            await saveUserToDB(userData);
-            
-            // localStorage update karo (backup)
-            if (userData.name) localStorage.setItem("userName", userData.name);
-            if (userData.accountNumber) localStorage.setItem("accountNumber", userData.accountNumber);
-            if (userData.photo) localStorage.setItem("userPhoto", userData.photo);
-            
-            setUser(userData);
-            return;
-          } else {
-            console.log('⚠️ Firebase mein data nahi hai');
-          }
+          }, (error) => {
+            console.error('❌ Firebase listener error:', error);
+          });
+          
         } catch (firebaseError) {
-          console.warn('⚠️ Firebase fetch error:', firebaseError);
+          console.warn('⚠️ Firebase sync error:', firebaseError);
         }
 
-        // Step 4: Firebase se data nahi mila, localStorage se try karo
-        const name = localStorage.getItem("userName") || "";
-        const phone = localStorage.getItem("userPhone") || "";
-        const photo = localStorage.getItem("userPhoto") || "";
-        let accountNumber = localStorage.getItem("accountNumber") || "";
-        
-        if (!accountNumber) {
-          const { fullAccNum } = getOrCreateAccountNumber(uid);
-          accountNumber = fullAccNum;
-          localStorage.setItem("accountNumber", accountNumber);
+        // Step 4: Agar IndexedDB mein data nahi tha, to Firebase se fetch karo
+        if (!cachedUser) {
+          try {
+            const userDocRef = doc(db, "users", uid);
+            const docSnap = await getDoc(userDocRef);
+            
+            if (docSnap.exists()) {
+              const firebaseData = docSnap.data();
+              console.log('✅ Firebase se initial data mila:', firebaseData);
+              
+              let accountNumber = firebaseData.accountId || localStorage.getItem("accountNumber") || "";
+              if (!accountNumber) {
+                const { fullAccNum } = getOrCreateAccountNumber(uid);
+                accountNumber = fullAccNum;
+              }
+              
+              const userData = {
+                name: firebaseData.name || localStorage.getItem("userName") || "",
+                uid: uid,
+                accountNumber: accountNumber,
+                displayAccountNumber: accountNumber,
+                phone: firebaseData.phone || localStorage.getItem("userPhone") || "",
+                photo: firebaseData.photo || localStorage.getItem("userPhoto") || "",
+              };
+              
+              // IndexedDB mein save karo (PERMANENT)
+              await saveUserToDB(userData);
+              
+              // localStorage update karo
+              if (userData.name) localStorage.setItem("userName", userData.name);
+              if (userData.accountNumber) localStorage.setItem("accountNumber", userData.accountNumber);
+              if (userData.photo) localStorage.setItem("userPhoto", userData.photo);
+              
+              setUser(userData);
+            }
+          } catch (error) {
+            console.warn('⚠️ Firebase initial fetch error:', error);
+          }
         }
-        
-        const userData = {
-          name,
-          uid,
-          accountNumber,
-          displayAccountNumber: accountNumber,
-          phone,
-          photo,
-        };
-        
-        console.log('📦 localStorage se data use kar rahe hai:', userData);
-        
-        // IndexedDB mein save karo future ke liye
-        await saveUserToDB(userData);
-        
-        setUser(userData);
 
       } catch (error) {
         console.error('❌ Error in fetchUserData:', error);
@@ -708,6 +761,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     fetchUserData();
+
+    // Cleanup function
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []); // Only run once when component mounts
 
   const handleCopyAccountNumber = () => {
@@ -719,7 +779,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // Feedback Page View
+  // Feedback Page View (unchanged)
   if (showFeedbackPage) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -881,8 +941,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   src={user.photo}
                   className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
                   alt="Profile"
+                  onError={(e) => {
+                    // Agar image load nahi ho to fallback dikhao
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              ) : (
+              ) : null}
+              
+              {!user.photo && (
                 <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
                   {user.name ? user.name.charAt(0).toUpperCase() : "?"}
                 </div>
@@ -1079,4 +1146,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-  }
+}
