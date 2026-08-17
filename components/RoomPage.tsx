@@ -765,16 +765,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     }
   };
 
-  const handleLeaveSeat = async (e?: React.MouseEvent) => {
+  const handleLeaveSeat = async (e?: React.MouseEvent, targetSeatNum?: number) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null) return;
+    const seatToActOn = targetSeatNum !== undefined ? targetSeatNum : selectedSeat;
+    if (seatToActOn === null) return;
     
     try {
       const updatedSeats = seats.map(s => {
-        if (s.number === selectedSeat && s.user?.accountId === userAccountId) {
+        if (s.number === seatToActOn && (s.user?.accountId === userAccountId || isRoomOwner)) {
           return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
         }
         return s;
@@ -785,13 +786,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-      // Disable microphone when leaving seat
-      if (localParticipant) {
+      // Disable microphone when leaving seat (only if the user leaving is the local user)
+      const seatLeft = seats.find(s => s.number === seatToActOn);
+      if (seatLeft?.user?.accountId === userAccountId && localParticipant) {
         await localParticipant.setMicrophoneEnabled(false);
       }
 
       setShowSeatSheet(false);
-      setSelectedSeat(null);
+      if (targetSeatNum === undefined) setSelectedSeat(null);
     } catch (err) {
       console.error("Error leaving seat:", err);
     }
@@ -817,15 +819,16 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     }
   };
 
-  const handleToggleMute = async (e?: React.MouseEvent) => {
+  const handleToggleMute = async (e?: React.MouseEvent, targetSeatNum?: number) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null) return;
+    const seatToActOn = targetSeatNum !== undefined ? targetSeatNum : selectedSeat;
+    if (seatToActOn === null) return;
     
     const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) {
+      if (s.number === seatToActOn) {
         const newMuteState = !s.isMuted;
         return { ...s, isMuted: newMuteState };
       }
@@ -836,29 +839,30 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     updatedSeats.forEach(seat => updateSeatInFirestore(seat));
 
     // Update LiveKit microphone state if this is the current user's seat
-    const targetSeat = updatedSeats.find(s => s.number === selectedSeat);
+    const targetSeat = updatedSeats.find(s => s.number === seatToActOn);
     if (targetSeat && targetSeat.user?.accountId === userAccountId && localParticipant) {
       await localParticipant.setMicrophoneEnabled(!targetSeat.isMuted);
     }
 
     setShowSeatSheet(false);
-    setSelectedSeat(null);
+    if (targetSeatNum === undefined) setSelectedSeat(null);
   };
 
-  const handleToggleLock = async (e?: React.MouseEvent) => {
+  const handleToggleLock = async (e?: React.MouseEvent, targetSeatNum?: number) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null) return;
+    const seatToActOn = targetSeatNum !== undefined ? targetSeatNum : selectedSeat;
+    if (seatToActOn === null) return;
     const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked };
+      if (s.number === seatToActOn) return { ...s, isLocked: !s.isLocked };
       return s;
     });
     setSeats(updatedSeats);
     updatedSeats.forEach(seat => updateSeatInFirestore(seat));
     setShowSeatSheet(false);
-    setSelectedSeat(null);
+    if (targetSeatNum === undefined) setSelectedSeat(null);
   };
 
   const handleInvite = (e?: React.MouseEvent) => {
@@ -1607,32 +1611,28 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     onLeaveSeat={() => {
       const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
       if (userSeat) {
-        setSelectedSeat(userSeat.number);
-        setTimeout(() => handleLeaveSeat(), 100);
+        handleLeaveSeat(undefined, userSeat.number);
       }
       setShowUserProfile(false);
     }}
     onMute={() => {
       const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
       if (userSeat) {
-        setSelectedSeat(userSeat.number);
-        setTimeout(() => handleToggleMute(), 100);
+        handleToggleMute(undefined, userSeat.number);
       }
       setShowUserProfile(false);
     }}
     onLock={() => {
       const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
       if (userSeat) {
-        setSelectedSeat(userSeat.number);
-        setTimeout(() => handleToggleLock(), 100);
+        handleToggleLock(undefined, userSeat.number);
       }
       setShowUserProfile(false);
     }}
     onKickOut={() => {
       const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
       if (userSeat) {
-        setSelectedSeat(userSeat.number);
-        setTimeout(() => handleLeaveSeat(), 100);
+        handleLeaveSeat(undefined, userSeat.number);
       }
       setShowUserProfile(false);
     }}
