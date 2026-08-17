@@ -60,7 +60,7 @@ export default function OwnerPanel() {
   });
 
   const focusedField = useRef<string | null>(null);
-  const skipNextSave = useRef(true);
+  const pendingSave = useRef(false);
   const isLoadedFromFirestore = useRef(false);
 
   // Load from firestore (Real-time sync)
@@ -69,6 +69,8 @@ export default function OwnerPanel() {
     const unsubscribe = onSnapshot(
       docRef,
       (docSnap: any) => {
+        isLoadedFromFirestore.current = true;
+
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
           const mergedData = getDefaultIdsData();
@@ -95,18 +97,13 @@ export default function OwnerPanel() {
             if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
               return currentData;
             }
-
-            skipNextSave.current = true;
-            isLoadedFromFirestore.current = true;
             
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
           });
-        } else {
-          isLoadedFromFirestore.current = true;
         }
       },
-      (error) => {
+      (error: any) => {
         console.error("Error fetching credentials:", error);
         isLoadedFromFirestore.current = true;
       }
@@ -146,7 +143,7 @@ export default function OwnerPanel() {
     setLoadingFeedbacks(true);
     try {
       const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot: any = await getDocs(q);
       const feedbackList: any[] = [];
       querySnapshot.forEach((doc: any) => {
         feedbackList.push({ id: doc.id, ...doc.data() });
@@ -164,7 +161,7 @@ export default function OwnerPanel() {
     setLoadingAiChats(true);
     try {
       const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot: any = await getDocs(q);
       const chatList: any[] = [];
       querySnapshot.forEach((doc: any) => {
         chatList.push({ id: doc.id, ...doc.data() });
@@ -182,11 +179,11 @@ export default function OwnerPanel() {
     const checkAndDeleteOldFeedbacks = async () => {
       try {
         const q = query(collection(db, "feedbacks"));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot: any = await getDocs(q);
         const now = Date.now();
         const fortyEightHours = 48 * 60 * 60 * 1000;
 
-        querySnapshot.forEach(async (document) => {
+        querySnapshot.forEach(async (document: any) => {
           const data = document.data();
           const feedbackTime = data.timestamp || 0;
           
@@ -244,6 +241,7 @@ export default function OwnerPanel() {
 
   // FIRESTORE SAVE & SYNC FUNCTION
   const handleSave = useCallback(async (customData?: Record<string, any>) => {
+    pendingSave.current = false;
     try {
       const targetData = customData || idsData;
       const credentials: any[] = [];
@@ -280,8 +278,7 @@ export default function OwnerPanel() {
   }, [idsData]);
 
   useEffect(() => {
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
+    if (!pendingSave.current) {
       return;
     }
 
@@ -297,7 +294,7 @@ export default function OwnerPanel() {
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
-    skipNextSave.current = false;
+    pendingSave.current = true;
     setIdsData((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
