@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import * as React from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star, MessageSquare, Trash2, RefreshCw, Bot, ChevronDown, ChevronUp } from "lucide-react";
 
 import { supabase, db, doc, onSnapshot, query, collection, orderBy, getDocs, deleteDoc, setDoc } from '../../src/lib/supabase';
@@ -60,7 +61,7 @@ export default function OwnerPanel() {
   });
 
   const focusedField = useRef<string | null>(null);
-  const skipNextSave = useRef(true);
+  const isLocalUpdate = useRef(false);
   const isLoadedFromFirestore = useRef(false);
 
   // Load from firestore (Real-time sync)
@@ -96,7 +97,7 @@ export default function OwnerPanel() {
               return currentData;
             }
 
-            skipNextSave.current = true;
+
             isLoadedFromFirestore.current = true;
             
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
@@ -148,7 +149,7 @@ export default function OwnerPanel() {
       const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
       const querySnapshot = await getDocs(q);
       const feedbackList: any[] = [];
-      querySnapshot.forEach((doc: any) => {
+      (querySnapshot.docs || querySnapshot).forEach((doc: any) => {
         feedbackList.push({ id: doc.id, ...doc.data() });
       });
       setFeedbacks(feedbackList);
@@ -166,7 +167,7 @@ export default function OwnerPanel() {
       const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
       const querySnapshot = await getDocs(q);
       const chatList: any[] = [];
-      querySnapshot.forEach((doc: any) => {
+      (querySnapshot.docs || querySnapshot).forEach((doc: any) => {
         chatList.push({ id: doc.id, ...doc.data() });
       });
       setAiChats(chatList);
@@ -186,7 +187,7 @@ export default function OwnerPanel() {
         const now = Date.now();
         const fortyEightHours = 48 * 60 * 60 * 1000;
 
-        querySnapshot.forEach(async (document) => {
+        (querySnapshot.docs || querySnapshot).forEach(async (document) => {
           const data = document.data();
           const feedbackTime = data.timestamp || 0;
           
@@ -280,8 +281,7 @@ export default function OwnerPanel() {
   }, [idsData]);
 
   useEffect(() => {
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
+    if (!isLocalUpdate.current) {
       return;
     }
 
@@ -291,13 +291,14 @@ export default function OwnerPanel() {
 
     const timeoutId = setTimeout(() => {
       handleSave();
+      isLocalUpdate.current = false;
     }, 1000);
 
     return () => clearTimeout(timeoutId);
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
-    skipNextSave.current = false;
+    isLocalUpdate.current = true;
     setIdsData((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
