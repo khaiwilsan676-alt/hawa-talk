@@ -2,18 +2,16 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 
-// WebGL Shader Component (integrated) - with vertical flip fix
+// Simple WebGL - Just remove white, keep image as-is (no flip)
 const WhiteColorRemovalShader = ({ 
   imageSrc, 
   className = "",
   style = {},
-  removeWhiteEverywhere = false,
   threshold = 0.80
 }: { 
   imageSrc: string
   className?: string
   style?: React.CSSProperties
-  removeWhiteEverywhere?: boolean
   threshold?: number
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -48,7 +46,6 @@ const WhiteColorRemovalShader = ({
       
       varying vec2 v_texCoord;
       uniform sampler2D u_texture;
-      uniform bool u_removeEverywhere;
       uniform float u_threshold;
       
       void main() {
@@ -60,38 +57,7 @@ const WhiteColorRemovalShader = ({
         
         bool isWhite = (minChannel >= u_threshold) && (difference < 0.15);
         
-        bool shouldRemove = false;
-        
-        if (u_removeEverywhere) {
-          shouldRemove = isWhite;
-        } else {
-          vec2 topLeft = vec2(0.0, 0.0);
-          vec2 topRight = vec2(1.0, 0.0);
-          vec2 bottomLeft = vec2(0.0, 1.0);
-          vec2 bottomRight = vec2(1.0, 1.0);
-          
-          vec2 center = vec2(0.5, 0.5);
-          
-          float cornerRadius = 0.3;
-          float centerRadius = 0.25;
-          
-          float distToTopLeft = distance(v_texCoord, topLeft);
-          float distToTopRight = distance(v_texCoord, topRight);
-          float distToBottomLeft = distance(v_texCoord, bottomLeft);
-          float distToBottomRight = distance(v_texCoord, bottomRight);
-          float distToCenter = distance(v_texCoord, center);
-          
-          bool inRemovalZone = 
-            distToTopLeft < cornerRadius ||
-            distToTopRight < cornerRadius ||
-            distToBottomLeft < cornerRadius ||
-            distToBottomRight < cornerRadius ||
-            distToCenter < centerRadius;
-          
-          shouldRemove = inRemovalZone && isWhite;
-        }
-        
-        if (shouldRemove) {
+        if (isWhite) {
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
           gl_FragColor = color;
@@ -148,16 +114,16 @@ const WhiteColorRemovalShader = ({
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // FIX: Flip Y coordinates for texture (vertical flip)
+    // Simple texture coordinates - NO FLIP
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
     const texCoords = new Float32Array([
+      0.0, 0.0,
+      1.0, 0.0,
       0.0, 1.0,
+      0.0, 1.0,
+      1.0, 0.0,
       1.0, 1.0,
-      0.0, 0.0,
-      0.0, 0.0,
-      1.0, 1.0,
-      1.0, 0.0,// Bottom-right (flipped)
     ])
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
@@ -172,9 +138,6 @@ const WhiteColorRemovalShader = ({
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    
-    // FIX: Flip Y for WebGL texture upload
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1)
     
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -192,9 +155,6 @@ const WhiteColorRemovalShader = ({
       
       gl.clearColor(0.0, 0.0, 0.0, 0.0)
       gl.clear(gl.COLOR_BUFFER_BIT)
-      
-      const removeEverywhereLocation = gl.getUniformLocation(program, 'u_removeEverywhere')
-      gl.uniform1i(removeEverywhereLocation, removeWhiteEverywhere ? 1 : 0)
       
       const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
       gl.uniform1f(thresholdLocation, threshold)
@@ -216,7 +176,7 @@ const WhiteColorRemovalShader = ({
       gl.deleteBuffer(texCoordBuffer)
       gl.deleteTexture(texture)
     }
-  }, [imageSrc, removeWhiteEverywhere, threshold])
+  }, [imageSrc, threshold])
 
   return (
     <canvas
@@ -311,11 +271,10 @@ export default function DailyCheckInModal({
     >
       <div className="absolute inset-0 bg-black/60" />
 
-      {/* Header - Sirf WebGL processed image (NO gap) */}
+      {/* Header - Simple, no flip, just white removal */}
       <div className="relative rounded-t-3xl w-full max-w-xl overflow-hidden" style={{ marginBottom: '-2px' }}>
         <WhiteColorRemovalShader
           imageSrc="IMG_20260817_121025.png"
-          removeWhiteEverywhere={true}
           threshold={0.75}
           className="w-full h-auto"
           style={{
@@ -492,4 +451,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-      }
+                }
