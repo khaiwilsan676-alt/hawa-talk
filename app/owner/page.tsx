@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star, MessageSquare, Trash2, RefreshCw, Bot, ChevronDown, ChevronUp } from "lucide-react";
 
-import { supabase, db, doc, onSnapshot, query, collection, orderBy, getDocs, deleteDoc, setDoc } from '../../src/lib/supabase';
+import { supabase, db, doc, onSnapshot, query, collection, orderBy, getDocs, deleteDoc, setDoc, where } from '../../src/lib/supabase';
 
 export default function OwnerPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -119,25 +119,42 @@ export default function OwnerPanel() {
   const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const unsubscribes = Object.keys(idsData).map(id => {
-      const docRef = doc(db, "adminSettings", `sessions_${id}`);
-      return onSnapshot(docRef, (docSnap: any) => {
-        if (docSnap.exists()) {
-          setOnlineStatus(prev => ({
-            ...prev,
-            [id]: docSnap.data().isLoggedIn === true
-          }));
-        } else {
-          setOnlineStatus(prev => ({
-            ...prev,
-            [id]: false
-          }));
-        }
-      });
+    const idsToFetch = Object.keys(idsData).map(id => `sessions_${id}`);
+
+    if (idsToFetch.length === 0) {
+      setOnlineStatus({});
+      return;
+    }
+
+    const adminSettingsCol = collection(db, "adminSettings");
+    const adminSettingsQuery = query(adminSettingsCol, where("id", "in", idsToFetch));
+
+    const unsubscribe = onSnapshot(adminSettingsQuery, (snapshot: any) => {
+      if (snapshot.docs) {
+        setOnlineStatus(() => {
+          const newStatus: Record<string, boolean> = {};
+
+          // Initialize all tracked IDs to false by default (handles document deletions)
+          Object.keys(idsData).forEach(id => {
+            newStatus[id] = false;
+          });
+
+          // Update status based on snapshot docs
+          snapshot.docs.forEach((doc: any) => {
+            if (doc.id && doc.id.startsWith("sessions_")) {
+              const id = doc.id.replace("sessions_", "");
+              if (idsData[id] !== undefined) {
+                newStatus[id] = doc.data().isLoggedIn === true;
+              }
+            }
+          });
+          return newStatus;
+        });
+      }
     });
 
     return () => {
-      unsubscribes.forEach(unsub => unsub());
+      unsubscribe();
     };
   }, [idsData]);
 

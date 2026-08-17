@@ -81,6 +81,7 @@ export const getDocs = async (q: any) => {
           if (arg.op === '==') builder = builder.eq(arg.field, arg.value);
           if (arg.op === '>=') builder = builder.gte(arg.field, arg.value);
           if (arg.op === '<=') builder = builder.lte(arg.field, arg.value);
+          if (arg.op === 'in') builder = builder.in(arg.field, arg.value);
         }
         if (arg.type === 'orderBy') {
           builder = builder.order(arg.field, { ascending: arg.dir === 'asc' });
