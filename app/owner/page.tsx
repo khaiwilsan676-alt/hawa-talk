@@ -60,7 +60,7 @@ export default function OwnerPanel() {
   });
 
   const focusedField = useRef<string | null>(null);
-  const skipNextSave = useRef(true);
+  const hasUnsavedChanges = useRef(false);
   const isLoadedFromFirestore = useRef(false);
 
   // Load from firestore (Real-time sync)
@@ -96,7 +96,6 @@ export default function OwnerPanel() {
               return currentData;
             }
 
-            skipNextSave.current = true;
             isLoadedFromFirestore.current = true;
             
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
@@ -106,7 +105,7 @@ export default function OwnerPanel() {
           isLoadedFromFirestore.current = true;
         }
       },
-      (error) => {
+      (error: any) => {
         console.error("Error fetching credentials:", error);
         isLoadedFromFirestore.current = true;
       }
@@ -148,7 +147,7 @@ export default function OwnerPanel() {
       const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
       const querySnapshot = await getDocs(q);
       const feedbackList: any[] = [];
-      querySnapshot.forEach((doc: any) => {
+      (querySnapshot as any).forEach((doc: any) => {
         feedbackList.push({ id: doc.id, ...doc.data() });
       });
       setFeedbacks(feedbackList);
@@ -166,7 +165,7 @@ export default function OwnerPanel() {
       const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
       const querySnapshot = await getDocs(q);
       const chatList: any[] = [];
-      querySnapshot.forEach((doc: any) => {
+      (querySnapshot as any).forEach((doc: any) => {
         chatList.push({ id: doc.id, ...doc.data() });
       });
       setAiChats(chatList);
@@ -186,7 +185,7 @@ export default function OwnerPanel() {
         const now = Date.now();
         const fortyEightHours = 48 * 60 * 60 * 1000;
 
-        querySnapshot.forEach(async (document) => {
+        (querySnapshot as any).forEach(async (document: any) => {
           const data = document.data();
           const feedbackTime = data.timestamp || 0;
           
@@ -280,8 +279,7 @@ export default function OwnerPanel() {
   }, [idsData]);
 
   useEffect(() => {
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
+    if (!hasUnsavedChanges.current) {
       return;
     }
 
@@ -290,6 +288,7 @@ export default function OwnerPanel() {
     }
 
     const timeoutId = setTimeout(() => {
+      hasUnsavedChanges.current = false;
       handleSave();
     }, 1000);
 
@@ -297,7 +296,7 @@ export default function OwnerPanel() {
   }, [idsData, handleSave]);
 
   const handleChange = (id: string, field: string, value: string) => {
-    skipNextSave.current = false;
+    hasUnsavedChanges.current = true;
     setIdsData((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },

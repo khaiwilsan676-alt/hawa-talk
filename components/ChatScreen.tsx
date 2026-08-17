@@ -129,7 +129,7 @@ export default function ChatScreen({
               return {
                 id: doc.id,
                 text: data.text || '',
-                sender: data.senderUid === currentUser.uid ? 'me' : 'other',
+                sender: (data.senderUid === currentUser.uid ? 'me' : 'other') as "me" | "other",
                 timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
                 type: data.type || 'message',
                 imageUrl: data.imageUrl || undefined,
