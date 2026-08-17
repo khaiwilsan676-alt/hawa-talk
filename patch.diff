@@ -1,16 +1,29 @@
 --- app/owner/page.tsx
 +++ app/owner/page.tsx
-@@ -60,8 +60,8 @@
+@@ -60,15 +60,21 @@
    });
 
    const focusedField = useRef<string | null>(null);
 -  const skipNextSave = useRef(true);
-+  const isDirty = useRef(false);
++  const isDirtied = useRef(false);
    const isLoadedFromFirestore = useRef(false);
 
    // Load from firestore (Real-time sync)
-@@ -95,8 +95,7 @@
-             if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
+   useEffect(() => {
+     const docRef = doc(db, "adminSettings", "credentials");
+     const unsubscribe = onSnapshot(
+       docRef,
+       (docSnap: any) => {
++        if (isDirtied.current) {
++          // User has unsaved local changes!
++          // DO NOT OVERWRITE THEIR TYPING!
++          return;
++        }
++
+         if (docSnap.exists()) {
+           const serverData = docSnap.data().ownerPanelCredentials || {};
+           const mergedData = getDefaultIdsData();
+@@ -95,7 +101,6 @@
                return currentData;
              }
 
@@ -18,22 +31,21 @@
              isLoadedFromFirestore.current = true;
 
              localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
-@@ -280,8 +279,8 @@
+@@ -280,8 +285,7 @@
    }, [idsData]);
 
    useEffect(() => {
 -    if (skipNextSave.current) {
 -      skipNextSave.current = false;
-+    if (!isDirty.current) {
++    if (!isDirtied.current) {
        return;
      }
 
-@@ -290,13 +289,14 @@
-     }
+@@ -291,13 +295,14 @@
 
      const timeoutId = setTimeout(() => {
-+      isDirty.current = false;
        handleSave();
++      isDirtied.current = false; // Mark as saved!
      }, 1000);
 
      return () => clearTimeout(timeoutId);
@@ -41,6 +53,19 @@
 
    const handleChange = (id: string, field: string, value: string) => {
 -    skipNextSave.current = false;
-+    isDirty.current = true;
++    isDirtied.current = true;
      setIdsData((prev) => ({
        ...prev,
+       [id]: { ...prev[id], [field]: value },
+@@ -846,7 +851,10 @@
+
+             {/* Save Button */}
+             <button
+-              onClick={() => handleSave()}
++              onClick={() => {
++                handleSave();
++                isDirtied.current = false;
++              }}
+               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+             >
+               <Save className="w-5 h-5" /> Save All Credentials

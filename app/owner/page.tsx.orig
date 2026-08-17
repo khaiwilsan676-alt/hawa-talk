@@ -12,7 +12,7 @@ export default function OwnerPanel() {
       setIsLoggedIn(localStorage.getItem('ownerPanelLoggedIn') === 'true');
     }
   }, []);
-  
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeView, setActiveView] = useState("official_id");
   const [saveMessage, setSaveMessage] = useState("");
@@ -72,14 +72,13 @@ export default function OwnerPanel() {
         if (isDirtied.current) {
           // User has unsaved local changes!
           // DO NOT OVERWRITE THEIR TYPING!
-          isLoadedFromFirestore.current = true;
           return;
         }
 
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
           const mergedData = getDefaultIdsData();
-          
+
           Object.keys(getDefaultIdsData()).forEach(id => {
             if (serverData[id]) {
               mergedData[id as keyof typeof mergedData] = {
@@ -104,13 +103,15 @@ export default function OwnerPanel() {
             }
 
             isLoadedFromFirestore.current = true;
-            
+
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
           });
+        } else {
+          isLoadedFromFirestore.current = true;
         }
       },
-      (error: any) => {
+      (error) => {
         console.error("Error fetching credentials:", error);
         isLoadedFromFirestore.current = true;
       }
@@ -150,7 +151,7 @@ export default function OwnerPanel() {
     setLoadingFeedbacks(true);
     try {
       const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
-      const querySnapshot: any = await getDocs(q);
+      const querySnapshot = await getDocs(q);
       const feedbackList: any[] = [];
       querySnapshot.forEach((doc: any) => {
         feedbackList.push({ id: doc.id, ...doc.data() });
@@ -168,7 +169,7 @@ export default function OwnerPanel() {
     setLoadingAiChats(true);
     try {
       const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
-      const querySnapshot: any = await getDocs(q);
+      const querySnapshot = await getDocs(q);
       const chatList: any[] = [];
       querySnapshot.forEach((doc: any) => {
         chatList.push({ id: doc.id, ...doc.data() });
@@ -186,25 +187,19 @@ export default function OwnerPanel() {
     const checkAndDeleteOldFeedbacks = async () => {
       try {
         const q = query(collection(db, "feedbacks"));
-        const querySnapshot: any = await getDocs(q);
+        const querySnapshot = await getDocs(q);
         const now = Date.now();
         const fortyEightHours = 48 * 60 * 60 * 1000;
 
-        const deletePromises: Promise<void>[] = [];
-
-        querySnapshot.forEach((document: any) => {
+        querySnapshot.forEach(async (document) => {
           const data = document.data();
           const feedbackTime = data.timestamp || 0;
-          
+
           if (now - feedbackTime > fortyEightHours) {
-            const p = deleteDoc(doc(db, "feedbacks", document.id)).then(() => {
-              console.log(`Deleted old feedback: ${document.id}`);
-            });
-            deletePromises.push(p);
+            await deleteDoc(doc(db, "feedbacks", document.id));
+            console.log(`Deleted old feedback: ${document.id}`);
           }
         });
-
-        await Promise.all(deletePromises);
 
         loadFeedbacks();
       } catch (error: any) {
@@ -254,11 +249,10 @@ export default function OwnerPanel() {
 
   // FIRESTORE SAVE & SYNC FUNCTION
   const handleSave = useCallback(async (customData?: Record<string, any>) => {
-    pendingSave.current = false;
     try {
       const targetData = customData || idsData;
       const credentials: any[] = [];
-      
+
       Object.entries(targetData).forEach(([id, data]: [string, any]) => {
         const email = (data.email || "").trim();
         const password = (data.password || "").trim();
@@ -300,7 +294,6 @@ export default function OwnerPanel() {
     }
 
     const timeoutId = setTimeout(() => {
-      isDirty.current = false;
       handleSave();
       isDirtied.current = false; // Mark as saved!
     }, 1000);
@@ -340,40 +333,27 @@ export default function OwnerPanel() {
 
   const handleLogoutGroup = async (ids: string[]) => {
     try {
-      await Promise.all(
-        ids.map(async (id) => {
-          const docRef = doc(db, "adminSettings", `sessions_${id}`);
-          await setDoc(
-            docRef,
-            {
-              isLoggedIn: false,
-              forceLogoutTimestamp: Date.now(),
-            },
-            { merge: true }
-          );
-        })
-      );
-
-      const loggedInSessions = JSON.parse(
-        localStorage.getItem("loggedInSessions") || "{}"
-      );
       for (const id of ids) {
-        delete loggedInSessions[id];
-        localStorage.removeItem(`session_${id}`);
-        localStorage.removeItem(`user_data_${id}`);
-        localStorage.setItem(`forceLogout_${id}`, Date.now().toString());
-      }
-      localStorage.setItem(
-        "loggedInSessions",
-        JSON.stringify(loggedInSessions)
-      );
+        const docRef = doc(db, "adminSettings", `sessions_${id}`);
+        await setDoc(docRef, {
+          isLoggedIn: false,
+          forceLogoutTimestamp: Date.now()
+        }, { merge: true });
 
-      setSaveMessage(`Selected IDs logged out successfully!`);
-      setTimeout(() => setSaveMessage(""), 3000);
+        const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
+        delete loggedInSessions[id]
+        localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
+        localStorage.removeItem(`session_${id}`)
+        localStorage.removeItem(`user_data_${id}`)
+        localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
+      }
+
+      setSaveMessage(`Selected IDs logged out successfully!`)
+      setTimeout(() => setSaveMessage(""), 3000)
     } catch (error: any) {
       console.error(`Error logging out group:`, error);
     }
-  };
+  }
 
   // Format timestamp to readable date
   const formatDate = (timestamp: number) => {
@@ -494,7 +474,7 @@ export default function OwnerPanel() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      
+
       {/* TOP NAVBAR */}
       <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
         <div className="flex items-center gap-4">
@@ -544,7 +524,7 @@ export default function OwnerPanel() {
                 <Shield className="w-6 h-6 text-blue-400" />
                 <span className="font-bold text-lg text-white">Owner Menu</span>
               </div>
-              
+
               <button
                 onClick={() => { setActiveView("official_id"); setIsDrawerOpen(false); }}
                 className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer mb-3 ${
@@ -553,7 +533,7 @@ export default function OwnerPanel() {
               >
                 Manage IDs
               </button>
-              
+
               <button
                 onClick={() => { setActiveView("moderator"); setIsDrawerOpen(false); }}
                 className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer mb-3 ${
@@ -562,7 +542,7 @@ export default function OwnerPanel() {
               >
                 Moderator (Feedbacks)
               </button>
-              
+
               <button
                 onClick={() => { setActiveView("hawa_ai"); setIsDrawerOpen(false); }}
                 className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer ${
@@ -581,7 +561,7 @@ export default function OwnerPanel() {
 
       {/* MAIN CONTENT */}
       <main className="p-8">
-        
+
         {/* HAWA AI VIEW */}
         {activeView === "hawa_ai" && (
           <div className="space-y-6">
@@ -718,7 +698,7 @@ export default function OwnerPanel() {
         {/* MANAGE IDs VIEW */}
         {activeView === "official_id" && (
           <div className="space-y-8 max-w-5xl mx-auto">
-            
+
             {/* Special Official IDs */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
