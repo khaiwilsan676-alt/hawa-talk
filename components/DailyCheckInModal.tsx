@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 
-// WebGL Shader Component (integrated)
+// WebGL Shader Component (integrated) - with vertical flip fix
 const WhiteColorRemovalShader = ({ 
   imageSrc, 
   className = "",
@@ -148,16 +148,16 @@ const WhiteColorRemovalShader = ({
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
+    // FIX: Flip Y coordinates for texture (vertical flip)
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    // FIX: Flip texture coordinates vertically to correct image orientation
     const texCoords = new Float32Array([
-      0.0, 1.0,
-      1.0, 1.0,
-      0.0, 0.0,
-      0.0, 0.0,
-      1.0, 1.0,
-      1.0, 0.0,
+      0.0, 1.0,   // Top-left (flipped)
+      1.0, 1.0,   // Top-right (flipped)
+      0.0, 0.0,   // Bottom-left (flipped)
+      0.0, 0.0,   // Bottom-left (flipped)
+      1.0, 1.0,   // Top-right (flipped)
+      1.0, 0.0,   // Bottom-right (flipped)
     ])
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
@@ -173,7 +173,7 @@ const WhiteColorRemovalShader = ({
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     
-    // FIX: Flip image vertically before uploading to texture
+    // FIX: Flip Y for WebGL texture upload
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1)
     
     gl.enable(gl.BLEND)
@@ -492,4 +492,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-   }
+      }
