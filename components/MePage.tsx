@@ -7,7 +7,6 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-import { useUser } from '../src/contexts/UserContext'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
 
@@ -430,10 +429,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
       let finalAccNum = localStorage.getItem("accountNumber") || ""
 
-      // 1. Fetch exact accountId directly from Context or fallback
-      if (currentUserProfile && currentUserProfile.accountId) {
-        finalAccNum = String(currentUserProfile.accountId)
-        localStorage.setItem("accountNumber", finalAccNum)
+      // 1. Fetch exact accountId directly from Firestore 'users' collection
+      if (uid && uid !== "N/A") {
+        try {
+          const userDocRef = doc(db, "users", uid)
+          const docSnap = await getDoc(userDocRef)
+          if (docSnap.exists() && docSnap.data().accountId) {
+            finalAccNum = String(docSnap.data().accountId)
+            localStorage.setItem("accountNumber", finalAccNum)
+          }
+        } catch (err) {
+          console.warn("Firestore user fetch error in MePage:", err)
+        }
       }
 
       // Fallback calculation if no Firestore accountId exists
