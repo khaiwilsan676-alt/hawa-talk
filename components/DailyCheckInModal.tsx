@@ -92,8 +92,26 @@ export default function DailyCheckInModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* TOP IMAGE with Web Shader to remove white */}
+        <div className="w-full flex justify-center pt-4 pb-2 relative">
+          {/* Web Shader overlay for white removal */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15))',
+            mixBlendMode: 'multiply',
+          }} />
+          
+          <img 
+            src="path/to/your/top-image.png" 
+            alt="Daily Check-in" 
+            className="w-20 h-20 object-contain relative z-10"
+            style={{
+              filter: 'saturate(1.2) contrast(1.1) brightness(0.95)',
+            }}
+          />
+        </div>
+
         {/* Removed Blue Header - Only rewards grid now */}
-        <div className="px-6 pt-6 pb-5">
+        <div className="px-6 pb-5">
           {/* Days 1-4 - SQUARE CARDS */}
           <div className="grid grid-cols-4 gap-2 mb-2">
             {SIGN_IN_REWARDS.slice(0, 4).map((item, index) => (
@@ -190,24 +208,8 @@ export default function DailyCheckInModal({
                 7 Days Big Rewards
               </span>
               
-              {/* Web Shader effect for white color removal */}
-              <div className="absolute inset-0 pointer-events-none" style={{
-                background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15))',
-                mixBlendMode: 'multiply',
-              }} />
-              
               <div className="relative z-10 flex flex-col items-center justify-center">
-                <div className="mb-0.5">
-                  {/* REPLACED IMAGE - Add your new image path here */}
-                  <img 
-                    src="path/to/your/new-day7-image.png" 
-                    alt="Day 7 Reward" 
-                    className="w-10 h-10 mx-auto object-contain" 
-                    style={{
-                      filter: 'saturate(1.2) contrast(1.1)',
-                    }}
-                  />
-                </div>
+                <div className="mb-0.5">{renderIcon(SIGN_IN_REWARDS[6].image, 'w-10 h-10')}</div>
                 <div className="text-[11px] font-bold text-gray-800 whitespace-nowrap">{SIGN_IN_REWARDS[6].reward}</div>
               </div>
               {7 < currentDay && (
@@ -269,4 +271,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-              }
+      }
