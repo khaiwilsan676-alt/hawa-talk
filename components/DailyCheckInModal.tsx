@@ -150,13 +150,14 @@ const WhiteColorRemovalShader = ({
 
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    // FIX: Flip texture coordinates vertically to correct image orientation
     const texCoords = new Float32Array([
-      0.0, 0.0,
-      1.0, 0.0,
       0.0, 1.0,
-      0.0, 1.0,
-      1.0, 0.0,
       1.0, 1.0,
+      0.0, 0.0,
+      0.0, 0.0,
+      1.0, 1.0,
+      1.0, 0.0,
     ])
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
@@ -171,6 +172,9 @@ const WhiteColorRemovalShader = ({
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    
+    // FIX: Flip image vertically before uploading to texture
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1)
     
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -488,4 +492,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-            }
+   }
