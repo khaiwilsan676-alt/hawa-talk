@@ -7,6 +7,8 @@ interface FourgrideProps {
   onClearChat: () => void;
   publicMsgOff: boolean;
   onTogglePublicMsg: () => void;
+  speaker: boolean;
+  onToggleSpeaker: () => void;
   onMusicPlay?: (track: { id: string; name: string; url: string }) => void;
 }
 
@@ -70,12 +72,13 @@ export default function Fourgride({
   onClearChat,
   publicMsgOff,
   onTogglePublicMsg,
+  speaker,
+  onToggleSpeaker,
   onMusicPlay,
 }: FourgrideProps) {
   // Toggle states (except publicMsgOff, which is controlled)
   const [entryEffect, setEntryEffect] = useState(false);
   const [giftEffect, setGiftEffect] = useState(false);
-  const [speaker, setSpeaker] = useState(false);
 
   // Music sheet state
   const [showMusicSheet, setShowMusicSheet] = useState(false);
@@ -92,7 +95,6 @@ export default function Fourgride({
   // Toggle handlers
   const toggleEntryEffect = () => setEntryEffect(!entryEffect);
   const toggleGiftEffect = () => setGiftEffect(!giftEffect);
-  const toggleSpeaker = () => setSpeaker(!speaker);
 
   // Clear chat handler
   const handleClearChat = () => {
@@ -367,7 +369,7 @@ export default function Fourgride({
               <div className="flex items-center mt-1 space-x-1">
                 <span className="text-[10px] text-gray-700 whitespace-nowrap">Speaker</span>
                 <button
-                  onClick={toggleSpeaker}
+                  onClick={onToggleSpeaker}
                   className={`w-6 h-4 rounded-full flex items-center transition-colors ${
                     speaker ? 'bg-blue-500' : 'bg-gray-300'
                   }`}
