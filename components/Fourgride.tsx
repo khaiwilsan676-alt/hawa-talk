@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { db as firestoreDb } from '../src/lib/firebase';
 
 interface FourgrideProps {
   onClose: () => void;
@@ -12,13 +14,49 @@ interface FourgrideProps {
   onMusicPlay?: (track: { id: string; name: string; url: string }) => void;
 }
 
+
 // ---------- IndexedDB Helpers (Music Storage) ----------
 const DB_NAME = 'HurryMusicDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'music';
 
+async function syncMusicFromFirebase() {
+  try {
+    const musicSnapshot = await getDocs(collection(firestoreDb, 'globalMusic'));
+    const db = await openDB();
+
+    // Process each track from Firebase
+    for (const document of musicSnapshot.docs) {
+      const data = document.data();
+      if (data.blobData && data.name) {
+        // Convert base64 back to Blob
+        try {
+          const fetchResponse = await fetch(data.blobData);
+          const blob = await fetchResponse.blob();
+
+          // Add to IndexedDB
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            store.put({ id: document.id, name: data.name, blob });
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+          });
+        } catch (e) {
+          console.error("Error converting firebase music blob:", e);
+        }
+      }
+    }
+    db.close();
+  } catch (error) {
+    console.error('Error syncing music from Firebase:', error);
+  }
+}
+
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') { resolve(null as any); return; }
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
@@ -31,28 +69,61 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
+
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
 async function addMusicToDB(music: { id: string; name: string; blob: Blob }): Promise<void> {
   const db = await openDB();
-  return new Promise((resolve, reject) => {
+
+  // 1. Save to IndexedDB
+  await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     store.put(music);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
-    db.close();
   });
+  db.close();
+
+  // 2. Sync to Firebase
+  try {
+    const base64data = await blobToBase64(music.blob);
+    await setDoc(doc(firestoreDb, 'globalMusic', music.id), {
+      name: music.name,
+      blobData: base64data,
+      timestamp: Date.now()
+    }, { merge: true });
+  } catch (error) {
+    console.error("Failed to sync music to Firebase", error);
+  }
 }
 
 async function deleteMusicFromDB(id: string): Promise<void> {
   const db = await openDB();
-  return new Promise((resolve, reject) => {
+
+  // 1. Delete from IndexedDB
+  await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     store.delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
-    db.close();
   });
+  db.close();
+
+  // 2. Delete from Firebase
+  try {
+    await deleteDoc(doc(firestoreDb, 'globalMusic', id));
+  } catch (error) {
+    console.error("Failed to delete music from Firebase", error);
+  }
 }
 
 async function getAllMusicFromDB(): Promise<{ id: string; name: string; blob: Blob }[]> {
@@ -105,6 +176,10 @@ export default function Fourgride({
   useEffect(() => {
     const loadMusic = async () => {
       try {
+        // First sync from Firebase to update local IndexedDB
+        await syncMusicFromFirebase();
+
+        // Then load all from local IndexedDB
         const dbMusic = await getAllMusicFromDB();
         const files = dbMusic.map((item) => ({
           id: item.id,
@@ -135,24 +210,24 @@ export default function Fourgride({
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
-    const validFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
+    const validFiles = Array.from(files).filter((file: any) => file.type.startsWith('audio/'));
     
     if (validFiles.length === 0) {
       alert('Please select audio files');
       return;
     }
     
-    const newMusicFiles = validFiles.map(file => {
+    const newMusicFiles = validFiles.map((file: any) => {
       const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
       return {
         id,
         name: file.name,
-        url: URL.createObjectURL(file),
-        blob: file
+        url: URL.createObjectURL(file as Blob),
+        blob: file as Blob
       };
     });
     
-    setMusicFiles(prev => [...prev, ...newMusicFiles.map(({ blob, ...rest }) => rest)]);
+    setMusicFiles(prev => [...prev, ...newMusicFiles.map(({ blob, ...rest }: any) => rest)]);
     
     // Save all files to IndexedDB
     newMusicFiles.forEach(({ id, name, blob }) => {
@@ -444,7 +519,7 @@ export default function Fourgride({
             </div>
           </div>
 
-          <style jsx>{`
+          <style>{`
             @keyframes slideUp {
               from { transform: translateY(100%); }
               to { transform: translateY(0); }
