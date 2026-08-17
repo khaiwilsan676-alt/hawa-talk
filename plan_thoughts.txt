@@ -1,0 +1,63 @@
+The issue is a race condition in `app/owner/page.tsx` with `skipNextSave`.
+
+1. User types in an input -> `handleChange` runs, sets `skipNextSave.current = false`, updates `idsData`.
+2. A Firestore `onSnapshot` event arrives (which could just be latency compensation from a previous save, or another client's update) and runs immediately (before the React `useEffect` for `idsData`).
+3. `onSnapshot` callback sees `docSnap.exists()`, merges data, sets `idsData` state, AND sets `skipNextSave.current = true`.
+4. React runs the `useEffect` that is supposed to save the user's typing.
+5. The `useEffect` checks `skipNextSave.current`. Since `onSnapshot` set it to `true`, the `useEffect` just does `skipNextSave.current = false; return;`!
+6. The user's typing is never saved!
+
+How to fix:
+Instead of `skipNextSave` which cancels the next save if `onSnapshot` runs, we should use a `isDirty` ref that tracks if there are unsaved local changes.
+
+```typescript
+const isDirty = useRef(false);
+
+const handleChange = (id, field, value) => {
+  isDirty.current = true;
+  setIdsData(...);
+};
+
+useEffect(() => {
+  if (!isDirty.current) return;
+  const timeoutId = setTimeout(() => {
+    isDirty.current = false;
+    handleSave();
+  }, 1000);
+  return () => clearTimeout(timeoutId);
+}, [idsData, handleSave]);
+```
+
+What about `onSnapshot` overwriting `idsData`?
+The `onSnapshot` ALREADY protects the currently focused field!
+```typescript
+            if (focusedField.current) {
+              const [focusedId, focusedKey] = focusedField.current.split('-');
+              if (finalData[focusedId] && currentData[focusedId]) {
+                finalData[focusedId][focusedKey] = currentData[focusedId][focusedKey];
+              }
+            }
+```
+And it does a deep comparison:
+```typescript
+            if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
+              return currentData;
+            }
+```
+It currently has:
+```typescript
+            skipNextSave.current = true;
+```
+If we remove `skipNextSave.current = true` from `onSnapshot`, what happens?
+If `onSnapshot` updates state with new data from server, `idsData` changes, `useEffect` runs.
+But `isDirty.current` will be `false` (unless user was typing).
+So the `useEffect` returns early. NO INFINITE LOOP! No redundant saves!
+
+Wait, what if `onSnapshot` updates state while `isDirty` is true?
+User types "A", `isDirty = true`.
+`onSnapshot` runs, updates state to "A" + other server changes.
+`useEffect` runs, `isDirty` is `true`.
+Timer starts. Timer fires, saves the merged data back to the server.
+This is perfectly fine, it preserves the user's typing.
+
+So the fix is just renaming and changing the logic of `skipNextSave` to `isDirty`.

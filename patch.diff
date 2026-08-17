@@ -1,0 +1,46 @@
+--- app/owner/page.tsx
++++ app/owner/page.tsx
+@@ -60,8 +60,8 @@
+   });
+
+   const focusedField = useRef<string | null>(null);
+-  const skipNextSave = useRef(true);
++  const isDirty = useRef(false);
+   const isLoadedFromFirestore = useRef(false);
+
+   // Load from firestore (Real-time sync)
+@@ -95,8 +95,7 @@
+             if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
+               return currentData;
+             }
+
+-            skipNextSave.current = true;
+             isLoadedFromFirestore.current = true;
+
+             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
+@@ -280,8 +279,8 @@
+   }, [idsData]);
+
+   useEffect(() => {
+-    if (skipNextSave.current) {
+-      skipNextSave.current = false;
++    if (!isDirty.current) {
+       return;
+     }
+
+@@ -290,13 +289,14 @@
+     }
+
+     const timeoutId = setTimeout(() => {
++      isDirty.current = false;
+       handleSave();
+     }, 1000);
+
+     return () => clearTimeout(timeoutId);
+   }, [idsData, handleSave]);
+
+   const handleChange = (id: string, field: string, value: string) => {
+-    skipNextSave.current = false;
++    isDirty.current = true;
+     setIdsData((prev) => ({
+       ...prev,
