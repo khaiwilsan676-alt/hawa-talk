@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 
-// Simple WebGL - Just remove white, keep image as-is (no flip)
+// WebGL Shader - Image SIDHI dikhegi, sirf white remove hoga
 const WhiteColorRemovalShader = ({ 
   imageSrc, 
   className = "",
   style = {},
-  threshold = 0.80
+  threshold = 0.75
 }: { 
   imageSrc: string
   className?: string
@@ -98,6 +98,7 @@ const WhiteColorRemovalShader = ({
 
     gl.useProgram(program)
 
+    // Position buffer
     const positionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
     const positions = new Float32Array([
@@ -114,16 +115,16 @@ const WhiteColorRemovalShader = ({
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // Simple texture coordinates - NO FLIP
+    // Texture coordinates - CORRECT orientation (NOT flipped)
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
     const texCoords = new Float32Array([
-      0.0, 0.0,
-      1.0, 0.0,
-      0.0, 1.0,
-      0.0, 1.0,
-      1.0, 0.0,
-      1.0, 1.0,
+      0.0, 0.0,   // Bottom-left
+      1.0, 0.0,   // Bottom-right
+      0.0, 1.0,   // Top-left
+      0.0, 1.0,   // Top-left
+      1.0, 0.0,   // Bottom-right
+      1.0, 1.0,   // Top-right
     ])
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
@@ -138,6 +139,9 @@ const WhiteColorRemovalShader = ({
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    
+    // Set UNPACK_FLIP_Y_WEBGL to true to flip image during upload
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
     
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -271,7 +275,7 @@ export default function DailyCheckInModal({
     >
       <div className="absolute inset-0 bg-black/60" />
 
-      {/* Header - Simple, no flip, just white removal */}
+      {/* Header image - SIDHI with white removed */}
       <div className="relative rounded-t-3xl w-full max-w-xl overflow-hidden" style={{ marginBottom: '-2px' }}>
         <WhiteColorRemovalShader
           imageSrc="IMG_20260817_121025.png"
@@ -324,7 +328,7 @@ export default function DailyCheckInModal({
             ))}
           </div>
 
-          {/* Days 5-6 (Row 2) - Height choti ki hui */}
+          {/* Days 5-6 (Row 2) */}
           <div className="grid grid-cols-2 gap-2 mb-2">
             {/* Day 5 */}
             <div
@@ -351,7 +355,7 @@ export default function DailyCheckInModal({
               )}
             </div>
 
-            {/* Day 6 - Special with two rewards */}
+            {/* Day 6 */}
             <div
               className={`relative rounded-lg flex flex-col items-center justify-center p-2 transition-all bg-white ${
                 6 < currentDay
@@ -376,7 +380,7 @@ export default function DailyCheckInModal({
             </div>
           </div>
 
-          {/* Day 7 (Row 3) - full width */}
+          {/* Day 7 */}
           <div className="mb-5">
             <div
               className={`relative rounded-lg p-4 text-center transition-all bg-white ${
@@ -451,4 +455,4 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-                }
+      }
