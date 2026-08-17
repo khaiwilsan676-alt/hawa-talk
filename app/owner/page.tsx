@@ -62,6 +62,7 @@ export default function OwnerPanel() {
   const focusedField = useRef<string | null>(null);
   const skipNextSave = useRef(true);
   const isLoadedFromFirestore = useRef(false);
+  const lastTypingTime = useRef<number>(0);
 
   // Load from firestore (Real-time sync)
   useEffect(() => {
@@ -69,6 +70,12 @@ export default function OwnerPanel() {
     const unsubscribe = onSnapshot(
       docRef,
       (docSnap: any) => {
+        isLoadedFromFirestore.current = true;
+
+        if (Date.now() - lastTypingTime.current < 5000) {
+          return;
+        }
+
         if (docSnap.exists()) {
           const serverData = docSnap.data().ownerPanelCredentials || {};
           const mergedData = getDefaultIdsData();
@@ -97,13 +104,10 @@ export default function OwnerPanel() {
             }
 
             skipNextSave.current = true;
-            isLoadedFromFirestore.current = true;
             
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
           });
-        } else {
-          isLoadedFromFirestore.current = true;
         }
       },
       (error) => {
@@ -298,6 +302,7 @@ export default function OwnerPanel() {
 
   const handleChange = (id: string, field: string, value: string) => {
     skipNextSave.current = false;
+    lastTypingTime.current = Date.now();
     setIdsData((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: value },
