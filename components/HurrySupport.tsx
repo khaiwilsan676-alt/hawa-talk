@@ -48,13 +48,16 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
         const q = query(collection(db, "aiChats"));
         const querySnapshot = await getDocs(q);
         
-        querySnapshot.forEach(async (document) => {
+        const deletePromises: Promise<void>[] = [];
+        querySnapshot.forEach((document: any) => {
           const data = document.data();
           const chatTime = data.timestamp || 0;
           if (now - chatTime > twentyFourHours) {
-            await deleteDoc(doc(db, "aiChats", document.id));
+            deletePromises.push(deleteDoc(doc(db, "aiChats", document.id)));
           }
         });
+
+        await Promise.all(deletePromises);
       } catch (error) {
         console.error("Error clearing old chats:", error);
       }
