@@ -92,12 +92,13 @@ export default function OwnerPanel() {
               }
             }
 
+            isLoadedFromFirestore.current = true;
+
             if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
               return currentData;
             }
 
             skipNextSave.current = true;
-            isLoadedFromFirestore.current = true;
             
             localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
             return finalData;
