@@ -22,6 +22,14 @@ export default function StatusBarController() {
         if ((StatusBar as any).setStyle) {
           await StatusBar.setStyle({ style: Style.Dark })
         }
+
+        // Get status bar height and set CSS custom property
+        if ((StatusBar as any).getInfo) {
+          const info = await StatusBar.getInfo()
+          if (info && typeof info.height === 'number' && info.height > 0) {
+            document.documentElement.style.setProperty('--status-bar-height', `${info.height}px`)
+          }
+        }
       } catch (e) {
         console.warn('StatusBar plugin not available or failed:', e)
       }

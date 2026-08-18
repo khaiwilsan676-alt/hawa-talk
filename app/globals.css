@@ -47,6 +47,7 @@
 
 :root {
   color-scheme: light;
+  --status-bar-height: 0px;
   --background: #60a5fa;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -146,7 +147,7 @@ html, body {
 }
 
 .safe-top {
-  padding-top: max(env(safe-area-inset-top), 12px);
+  padding-top: max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 12px);
 }
 
 .safe-bottom {
