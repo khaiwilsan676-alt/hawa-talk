@@ -20,7 +20,7 @@ export default function StatusBarController() {
 
         // set style dark so icons remain visible (adjust if needed)
         if ((StatusBar as any).setStyle) {
-          await StatusBar.setStyle({ style: Style.Dark })
+          await StatusBar.setStyle({ style: Style.Light })
         }
       } catch (e) {
         console.warn('StatusBar plugin not available or failed:', e)

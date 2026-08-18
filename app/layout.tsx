@@ -35,7 +35,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="antialiased app-root bg-transparent" style={{paddingTop: 'env(safe-area-inset-top)'}}>
+      <body className="antialiased app-root bg-transparent">
         {/* Client runtime controller: StatusBar plugin + DOM fixes */}
         <StatusBarController />
         {children}
