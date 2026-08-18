@@ -2168,7 +2168,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     ref={bannerRef}
                     className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
                     style={{
-                      height: '110px',
+                      height: '100px',
                       width: '100%',
                       display: 'flex',
                       alignItems: 'center',
