@@ -18,9 +18,9 @@ export default function StatusBarController() {
           await StatusBar.setBackgroundColor({ color: '#00000000' })
         }
 
-        // set style dark so icons remain visible (adjust if needed)
+        // set style dark so icons remain visible on status bar
         if ((StatusBar as any).setStyle) {
-          await StatusBar.setStyle({ style: Style.Light })
+          await StatusBar.setStyle({ style: Style.Dark })
         }
       } catch (e) {
         console.warn('StatusBar plugin not available or failed:', e)
@@ -28,8 +28,6 @@ export default function StatusBarController() {
     }
 
     applyStatusBar()
-
-
   }, [])
 
   return null
