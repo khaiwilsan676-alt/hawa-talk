@@ -1645,8 +1645,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
       </div>
       
       {allRooms.length > 0 ? (
-        <div className="px-4 mt-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="px-4 mt-1">
+          <div className="grid grid-cols-2 gap-1">
             {allRooms.map((room) => (
               <div
                 key={room.accountId}
@@ -1662,7 +1662,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               >
                 {/* Image Card - No name overlay */}
                 <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                  style={{ height: '180px' }}
+                  style={{ height: '170px' }}
                 >
                   <img
                     src={room.image}
