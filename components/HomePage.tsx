@@ -650,7 +650,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         // Filter only explicitly created rooms
         const validRooms = cachedRooms.filter(room => 
           room && 
-          room.isExplicitlyCreated === true &&
           room.name !== 'User' &&
           room.name !== 'Hurry Room' &&
           room.accountId !== 'undefined' &&
@@ -682,7 +681,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       
       // Filter only explicitly created rooms
       const validRooms = rooms.filter(room => 
-        room.isExplicitlyCreated === true &&
         room.name !== 'User' &&
         room.name !== 'Hurry Room' &&
         room.accountId !== 'undefined' &&
@@ -1164,7 +1162,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       // Update local state immediately
       setGlobalRooms(prev => {
         const filtered = prev.filter(r => r.accountId !== storedAccNum);
-        return [...filtered, roomData as GlobalRoom];
+        return [...filtered, roomData as unknown as GlobalRoom];
       });
     }
 
@@ -1211,7 +1209,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const handleRoomPasswordSubmit = async () => {
     if (!selectedLockedRoom) return;
     try {
-      const docRef = doc(db, "globalRooms", selectedLockedRoom.id || selectedLockedRoom.accountId);
+      const docRef = doc(db, "globalRooms", selectedLockedRoom.id || selectedLockedRoom.accountId || '');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -1360,7 +1358,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     room && 
     room.name && 
     room.image && 
-    room.isExplicitlyCreated === true && // Must be explicitly created
     !/jiys/i.test(room.name) && 
     room.name !== 'User' &&
     room.name !== 'Hurry Room' && // Exclude default name
