@@ -18,11 +18,15 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
 
         try {
-          // Let the WebView draw behind system bars (status bar)
-          WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+          Window window = getWindow();
+          // Let the WebView draw behind system bars (status bar & nav bar)
+          WindowCompat.setDecorFitsSystemWindows(window, false);
 
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(Color.TRANSPARENT);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
           }
         } catch (Throwable t) {
           // ignore if any device specific issue

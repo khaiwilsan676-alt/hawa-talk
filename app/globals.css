@@ -47,8 +47,7 @@
 
 :root {
   color-scheme: light;
-  /* Top gradient/theme matching color (Blue/App primary) taaki header white na dikhe */
-  --background: #60a5fa; /* Aapke login/loading page ka blue shade */
+  --background: #60a5fa;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -125,7 +124,7 @@
   }
 }
 
-/* Base resets full-screen webview overflow ke liye */
+/* Base resets full-screen webview overflow */
 html, body {
   margin: 0 !important;
   padding: 0 !important;
@@ -133,17 +132,25 @@ html, body {
   height: 100%;
   min-height: 100dvh;
   overflow-x: hidden;
-  /* Force transparent so native status bar shows app background */
   background-color: transparent !important;
   overscroll-behavior: none;
 }
 
 /* Ensure the app-root container covers the safe-area and shows the gradient under the status bar */
 .app-root {
-  padding-top: 0;
+  margin: 0 !important;
+  padding-top: 0 !important;
   min-height: 100dvh;
   background: linear-gradient(180deg, #3b82f6 0%, #eff6ff 40%, #ffffff 100%);
   -webkit-backdrop-filter: blur(0);
+}
+
+.safe-top {
+  padding-top: max(env(safe-area-inset-top), 12px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @layer base {
@@ -164,12 +171,3 @@ html, body {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
-
-/* Defensive rule: hide a plain text "Hurry" element if present at top-level */
-/* This hides exact single-word elements to satisfy the immediate request. */
-h1, h2, h3, span, div {
-  /* no-op default */
-}
-
-/* Specific: remove nodes that are only the word Hurry (used as emergency fix) */
-/* We can't select by text in pure CSS; inline JS in layout.tsx will hide them. */
