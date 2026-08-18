@@ -255,7 +255,7 @@ export default function OwnerPanel() {
 
   // FIRESTORE SAVE & SYNC FUNCTION
   const handleSave = useCallback(async (customData?: Record<string, any>) => {
-    pendingSave.current = false;
+    isDirtied.current = false;
     try {
       const targetData = customData || idsData;
       const credentials: any[] = [];
@@ -301,7 +301,7 @@ export default function OwnerPanel() {
     }
 
     const timeoutId = setTimeout(() => {
-      isDirty.current = false;
+      isDirtied.current = false;
       handleSave();
       isDirtied.current = false; // Mark as saved!
     }, 1000);

@@ -609,7 +609,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
 
     try {
-      const api = new window.JitsiMeetExternalAPI(domain, options)
+      const JitsiMeetExternalAPI = (window as any).JitsiMeetExternalAPI; const api = new JitsiMeetExternalAPI(domain, options)
       jitsiApiRef.current = api
       jitsiJoinedRef.current = false
 

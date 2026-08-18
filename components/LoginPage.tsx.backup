@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
-import { GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
-import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, provider, db } from "../src/lib/firebase";
 import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
 
@@ -571,28 +570,20 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const handleActualGmailLogin = async () => {
     setShowGoogleSheet(false);
     setLoading(true);
-    setAuthError(null);
-
     try {
-      const result = await FirebaseAuthentication.signInWithGoogle();
-
-      const user = result.user;
-
-      if (!user?.uid) {
-        throw new Error("Google sign-in failed: user information not received.");
+      if (provider instanceof GoogleAuthProvider) {
+        provider.setCustomParameters({ prompt: 'select_account' });
       }
 
-      const userName = user.displayName || "Google User";
-      const userEmail = user.email || "";
-      const userPhoto = user.photoUrl || "/default-avatar.png";
-      const userUID = user.uid;
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-      const syncResult = await syncUserToFirestore(
-        userUID,
-        userName,
-        userEmail,
-        userPhoto
-      );
+      const userName = user.displayName || "Google User"
+      const userEmail = user.email || ""
+      const userPhoto = user.photoURL || "/default-avatar.png"
+      const userUID = user.uid
+
+      const syncResult = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
 
       localStorage.setItem("userName", syncResult.name);
       localStorage.setItem("userEmail", userEmail);
@@ -600,27 +591,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       localStorage.setItem("userUID", userUID);
       localStorage.setItem("accountNumber", syncResult.accountId);
 
-      await processLoginSuccess({
-        uid: userUID,
-        id: userUID,
-        displayName: userName,
-        email: userEmail,
-        photoURL: userPhoto,
-      });
-
+      await processLoginSuccess(user);
     } catch (error: any) {
-      console.error("Native Google login error:", error);
-
-      let errorMessage = "Google sign-in failed. Please try again.";
-
-      if (error?.message?.toLowerCase().includes("cancel")) {
-        errorMessage = "Google sign-in was cancelled.";
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-
-      setAuthError(errorMessage);
-    } finally {
+      console.error(error);
+    } finally { 
       setLoading(false);
     }
   };

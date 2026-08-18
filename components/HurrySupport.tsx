@@ -49,7 +49,7 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
         const querySnapshot = await getDocs(q);
         
         const deletePromises: Promise<void>[] = [];
-        querySnapshot.forEach((document: any) => {
+        querySnapshot.docs.forEach((document: any) => {
           const data = document.data();
           const chatTime = data.timestamp || 0;
           if (now - chatTime > twentyFourHours) {
