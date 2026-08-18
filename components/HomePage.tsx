@@ -2200,7 +2200,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-1.5" style={{ marginTop: '8px', marginBottom: '0px' }}>
+                  <div className="flex justify-center gap-1.5" style={{ marginTop: '2px', marginBottom: '0px' }}>
                     {BANNERS.map((_, index) => (
                       <div
                         key={index}
