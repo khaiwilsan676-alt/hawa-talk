@@ -140,7 +140,7 @@ html, body {
 
 /* Ensure the app-root container covers the safe-area and shows the gradient under the status bar */
 .app-root {
-  padding-top: env(safe-area-inset-top);
+  padding-top: 0;
   min-height: 100dvh;
   background: linear-gradient(180deg, #3b82f6 0%, #eff6ff 40%, #ffffff 100%);
   -webkit-backdrop-filter: blur(0);
@@ -150,8 +150,18 @@ html, body {
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    padding: 0;
+    overscroll-behavior: none;
+  }
+
   body {
     @apply bg-transparent text-foreground;
+    padding-top: 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
