@@ -1646,7 +1646,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       
       {allRooms.length > 0 ? (
         <div className="px-4 mt-1">
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid grid-cols-2 gap-1.5">
             {allRooms.map((room) => (
               <div
                 key={room.accountId}
@@ -2168,7 +2168,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     ref={bannerRef}
                     className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
                     style={{
-                      height: '90px',
+                      height: '110px',
                       width: '100%',
                       display: 'flex',
                       alignItems: 'center',
