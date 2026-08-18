@@ -268,10 +268,10 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
     <div className="w-full min-h-screen bg-white">
       {/* Header */}
       <div
-        className="px-4 pb-4 flex items-center justify-between sticky top-0 z-10"
+        className="px-4 pb-4 flex items-center justify-between sticky top-0 z-10 safe-top"
         style={{
           background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)'
+          paddingTop: 'max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 24px)'
         }}
       >
         <h1 className="text-3xl font-bold text-gray-800">Message</h1>

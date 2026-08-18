@@ -1829,7 +1829,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
           }}
         >
-          <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-gray-100 safe-top">
+          <div className="flex items-center gap-2.5 px-4 pb-3 border-b border-gray-100 safe-top">
             <button
               onClick={() => setIsSearchOpen(false)}
               className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
@@ -2086,17 +2086,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
             }}
           >
             <div
-              className="w-full pt-3 px-4"
+              className="w-full px-4 safe-top"
               style={{
-                height: activeTab === 'mine' ? 'auto' : '34vh',
-                minHeight: activeTab === 'mine' ? 'auto' : '34vh',
+                height: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
+                minHeight: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
                 background: activeTab === 'mine'
                   ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
                 paddingBottom: activeTab === 'mine' ? '12px' : '0px'
               }}
             >
-              <div className="w-full flex justify-between items-center py-1 box-border mb-4 safe-top">
+              <div className="w-full flex justify-between items-center py-1 box-border mb-4">
                 <button
                   type="button"
                   onClick={handleHouseClick}
