@@ -29,6 +29,9 @@ importers:
       '@livekit/components-styles':
         specifier: ^1.2.0
         version: 1.2.0
+      '@next/swc-wasm-nodejs':
+        specifier: ^16.3.1
+        version: 16.3.1
       '@supabase/supabase-js':
         specifier: ^2.112.3
         version: 2.112.3
@@ -856,6 +859,9 @@ packages:
     os: [linux]
     libc: [musl]
 
+  '@next/swc-wasm-nodejs@16.3.1':
+    resolution: {integrity: sha512-vVVW6GW6a52HfhOb9aVaOde+rKcl4qscER+5KIWbNCcn6u+Op4MXsJfXkNKt8aLyXhP8ptNgga1bnjdJpzVvpw==}
+
   '@next/swc-win32-arm64-msvc@16.2.6':
     resolution: {integrity: sha512-LZXpTlPyS5v7HhSmnvsLGP3iIYgYOBnc8r8ArlT55sGHV89bR2HlDdBjWQ+PY6SJMmk8TuVGFuxalnP3k/0Dwg==}
     engines: {node: '>= 10'}
@@ -1245,6 +1251,7 @@ packages:
   '@xmldom/xmldom@0.9.10':
     resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
     engines: {node: '>=14.6'}
+    deprecated: this version has critical issues, please update to the latest version
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -3932,6 +3939,8 @@ snapshots:
 
   '@next/swc-linux-x64-musl@16.2.6':
     optional: true
+
+  '@next/swc-wasm-nodejs@16.3.1': {}
 
   '@next/swc-win32-arm64-msvc@16.2.6':
     optional: true
