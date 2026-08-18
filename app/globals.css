@@ -150,8 +150,18 @@ html, body {
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    padding: 0;
+    overscroll-behavior: none;
+  }
+
   body {
     @apply bg-transparent text-foreground;
+    padding-top: 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
