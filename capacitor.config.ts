@@ -4,11 +4,12 @@ const config: CapacitorConfig = {
   appId: 'com.hawa.app',
   appName: 'Hurry',
   webDir: 'out',
+
   plugins: {
     StatusBar: {
       style: 'LIGHT',
-      overlaysWebView: true,
-      backgroundColor: '#00000000'
+      overlaysWebView: false,
+      backgroundColor: '#ffffff'
     }
   }
 };
