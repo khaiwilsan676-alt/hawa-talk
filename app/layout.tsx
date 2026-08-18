@@ -14,9 +14,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fef3c7' },
-  ],
+  viewportFit: 'cover',
+  themeColor: '#000000',
 }
 
 export default function RootLayout({
@@ -30,6 +29,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="theme-color" content="#000000" />
         <meta name="apple-mobile-web-app-title" content="Hawa" />
         <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="mobile-web-app-capable" content="yes" />
