@@ -84,98 +84,6 @@ const THEME_BACKGROUNDS: { [key: string]: string } = {
   'mood-light': '/1784533036732~2.jpg',
 };
 
-// Voice Activity Detection Component
-function VoiceActivityIndicator({ participantIdentity, isLocal, isMuted }: { 
-  participantIdentity: string; 
-  isLocal: boolean;
-  isMuted: boolean;
-}) {
-  const [audioLevel, setAudioLevel] = useState(0);
-  const { localParticipant } = useLocalParticipant();
-  const remoteParticipants = useRemoteParticipants();
-
-  useEffect(() => {
-    let audioContext: AudioContext | null = null;
-    let analyser: AnalyserNode | null = null;
-    let animationFrame: number;
-    
-    const analyzeAudio = () => {
-      if (!analyser) return;
-      
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteFrequencyData(dataArray);
-      
-      const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-      setAudioLevel(average / 255);
-      
-      animationFrame = requestAnimationFrame(analyzeAudio);
-    };
-
-    const setupAudioAnalysis = async () => {
-      try {
-        audioContext = new AudioContext();
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        
-        let stream: MediaStream | null = null;
-        
-        if (isLocal && localParticipant) {
-          const track = localParticipant.getTrackPublication(LKTrack.Source.Microphone);
-          if (track && track.audioTrack) {
-            stream = new MediaStream([track.audioTrack.mediaStreamTrack]);
-          }
-        } else if (!isLocal) {
-          const participant = remoteParticipants.find(p => p.identity === participantIdentity);
-          if (participant) {
-            const track = participant.getTrackPublication(LKTrack.Source.Microphone);
-            if (track && track.audioTrack) {
-              stream = new MediaStream([track.audioTrack.mediaStreamTrack]);
-            }
-          }
-        }
-        
-        if (stream && audioContext && analyser) {
-          const source = audioContext.createMediaStreamSource(stream);
-          source.connect(analyser);
-          analyzeAudio();
-        }
-      } catch (error) {
-        console.error("Error setting up audio analysis:", error);
-      }
-    };
-
-    if (!isMuted) {
-      setupAudioAnalysis();
-    }
-
-    return () => {
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
-      }
-      if (audioContext) {
-        audioContext.close();
-      }
-    };
-  }, [participantIdentity, isLocal, isMuted, localParticipant, remoteParticipants]);
-
-  const indicatorColor = audioLevel > 0.3 ? '#ef4444' : audioLevel > 0.15 ? '#f59e0b' : '#10b981';
-  const scale = 1 + Math.min(audioLevel * 0.5, 0.3);
-
-  return (
-    <div 
-      className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center transition-all duration-100"
-      style={{ 
-        backgroundColor: indicatorColor,
-        transform: `scale(${scale})`,
-        boxShadow: `0 0 ${Math.round(audioLevel * 20)}px ${indicatorColor}`
-      }}
-    >
-      <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-    </div>
-  );
-}
-
-
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   // LiveKit Token State
   const [livekitToken, setLivekitToken] = useState<string>("");
@@ -575,6 +483,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const joinMessageSentRef = useRef(false);
   const joinedAtRef = useRef(Date.now());
   const clearedAtRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (joinMessageSentRef.current || userAccountId === "guest" || !currentUser.name) return;
     joinMessageSentRef.current = true;
@@ -717,7 +626,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-
       setShowSeatSheet(false);
       setSelectedSeat(null);
     } catch (err) {
@@ -745,7 +653,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-
       setShowSeatSheet(false);
       setSelectedSeat(null);
     } catch (err) {
@@ -766,7 +673,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     
     setSeats(updatedSeats);
     await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
-
   };
 
   const handleToggleMute = async (e?: React.MouseEvent) => {
@@ -786,7 +692,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     
     setSeats(updatedSeats);
     updatedSeats.forEach(seat => updateSeatInFirestore(seat));
-
 
     setShowSeatSheet(false);
     setSelectedSeat(null);
@@ -1233,26 +1138,26 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-        {/* Middle Section */}
+        {/* Middle Section - Fixed spacing */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-7">
+          <div className="flex-shrink-0 flex flex-col gap-2 pt-2">
             {renderSeats()}
           </div>
 
-          <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
-           <div className="mx-1 mb-1.5 flex justify-start">
-  <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/5 px-3 py-2 max-w-[80%]">
-    <p className="text-white text-[12px] leading-snug font-medium">
-      Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
-    </p>
-    {roomAnnouncement && (
-      <div className="flex items-start gap-1.5 mt-1">
-        <span className="text-white text-[11px] font-semibold whitespace-nowrap shrink-0">ANNOUNCEMENT:</span>
-        <p className="text-white text-[12px] leading-snug font-medium">{roomAnnouncement}</p>
-      </div>
-    )}
-  </div>
-</div>
+          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
+            <div className="mx-1 mb-2 flex justify-start">
+              <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/5 px-3 py-2 max-w-[80%]">
+                <p className="text-white text-[12px] leading-snug font-medium">
+                  Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
+                </p>
+                {roomAnnouncement && (
+                  <div className="flex items-start gap-1.5 mt-1">
+                    <span className="text-white text-[11px] font-semibold whitespace-nowrap shrink-0">ANNOUNCEMENT:</span>
+                    <p className="text-white text-[12px] leading-snug font-medium">{roomAnnouncement}</p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="space-y-0.5">
               {messages.map((msg) => (
@@ -1403,46 +1308,47 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
       )}
-{/* Active Users Sheet */}
-{showActiveUsers && (
-  <div className="absolute inset-0 z-40 flex items-end justify-center">
-    <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
-    <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden flex flex-col" style={{ height: '40vh', maxHeight: '40vh' }} onClick={(e) => e.stopPropagation()}>
-      <div className="px-6 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
-        <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
-      </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3" style={{ minHeight: 0 }}>
-        {roomUsers.length > 0 ? (
-          <div className="space-y-2 pb-4">
-            {roomUsers.map((user) => (
-              <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
-                  <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+
+      {/* Active Users Sheet */}
+      {showActiveUsers && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden flex flex-col" style={{ height: '40vh', maxHeight: '40vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
+              <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-3" style={{ minHeight: 0 }}>
+              {roomUsers.length > 0 ? (
+                <div className="space-y-2 pb-4">
+                  {roomUsers.map((user) => (
+                    <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
+                        <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-gray-400">ID: {user.accountId}</p>
+                          <button onClick={(e) => handleCopyUserId(user.accountId, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer" title="Copy ID">
+                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
-                  <div className="flex items-center gap-1">
-                    <p className="text-xs text-gray-400">ID: {user.accountId}</p>
-                    <button onClick={(e) => handleCopyUserId(user.accountId, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer" title="Copy ID">
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                    </button>
-                  </div>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-400 text-sm">No active users</p>
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-gray-400 text-sm">No active users</p>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-)}
-     
+        </div>
+      )}
+
       {/* Room Info Sheet */}
       {showRoomInfo && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
@@ -1956,8 +1862,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-
-// SeatItem Component - With WebGL overlay from separate file
+// SeatItem Component - Fixed corner positioning
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1973,7 +1878,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
   const user = seatData?.user;
   const isRoomOwnerSeat = isOccupied && user?.accountId === roomOwnerId;
 
-  // Remote participants hook to detect speaking status from LiveKit
   const remoteParticipants = useRemoteParticipants();
   const { localParticipant } = useLocalParticipant();
 
@@ -1990,23 +1894,22 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
   const activeSpeaking = isSpeaking || isUserSpeaking;
 
   return (
-    <div className="flex flex-col items-center gap-1 cursor-pointer relative" onClick={onClick}>
-      {/* Special card for Seat 1 - Left corner (No border) */}
+    <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
+      {/* Special card for Seat 1 - Left corner (Fixed to screen corners) */}
       {seatNumber === 1 && (
         <div 
-          className="absolute left-0 flex items-center"
+          className="fixed left-0 z-20"
           style={{
             top: '50%',
-            transform: 'translateY(-50%) translateX(-100%)',
-            marginLeft: '-12px',
+            transform: 'translateY(-50%)',
+            marginLeft: '-8px',
           }}
         >
           <div 
-            className="relative overflow-hidden"
+            className="relative overflow-visible"
             style={{
-              width: '50px',
-              height: '50px',
-              // No border, no background, no box shadow
+              width: '25px',
+              height: '25px',
               backgroundColor: 'transparent',
               border: 'none',
               boxShadow: 'none',
@@ -2045,22 +1948,21 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Special card for Seat 1 - Right corner (No border, White color removal) */}
+      {/* Special card for Seat 1 - Right corner (Fixed to screen corners) */}
       {seatNumber === 1 && (
         <div 
-          className="absolute right-0 flex items-center"
+          className="fixed right-0 z-20"
           style={{
             top: '50%',
-            transform: 'translateY(-50%) translateX(100%)',
-            marginRight: '-12px',
+            transform: 'translateY(-50%)',
+            marginRight: '-8px',
           }}
         >
           <div 
-            className="relative overflow-hidden"
+            className="relative overflow-visible"
             style={{
-              width: '20px',
-              height: '20px',
-              // No border, no background, no box shadow
+              width: '50px',
+              height: '50px',
               backgroundColor: 'transparent',
               border: 'none',
               boxShadow: 'none',
@@ -2114,7 +2016,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                     zIndex: 1
                   }}
                 />
-                {/* WebGL Overlay - From separate file - Full image visible, can overflow */}
+                {/* WebGL Overlay */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
@@ -2176,4 +2078,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-              }
+}
