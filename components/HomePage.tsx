@@ -25,11 +25,12 @@ import DailyCheckInModal from '../components/DailyCheckInModal'
 
 // ============ INDEXEDDB FUNCTIONS ============
 const DB_NAME = 'HurryAppDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const ROOM_STORE = 'rooms';
 const USER_STORE = 'users';
 const RECENT_STORE = 'recentRooms';
 const FOLLOWING_STORE = 'followingRooms';
+const GLOBAL_ROOMS_STORE = 'globalRooms';
 
 const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
@@ -38,9 +39,11 @@ const openDB = (): Promise<IDBDatabase> => {
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
+      const oldVersion = event.oldVersion;
       
+      // Create stores if they don't exist
       if (!db.objectStoreNames.contains(ROOM_STORE)) {
         db.createObjectStore(ROOM_STORE, { keyPath: 'accountId' });
       }
@@ -54,11 +57,15 @@ const openDB = (): Promise<IDBDatabase> => {
       if (!db.objectStoreNames.contains(FOLLOWING_STORE)) {
         db.createObjectStore(FOLLOWING_STORE, { keyPath: 'accountId' });
       }
+      if (!db.objectStoreNames.contains(GLOBAL_ROOMS_STORE)) {
+        const globalRoomsStore = db.createObjectStore(GLOBAL_ROOMS_STORE, { keyPath: 'accountId' });
+        globalRoomsStore.createIndex('createdAt', 'createdAt', { unique: false });
+      }
     };
   });
 };
 
-// Room save to IndexedDB
+// Save room to IndexedDB (for Mine tab)
 const saveRoomToDB = async (roomData: any) => {
   try {
     const db = await openDB();
@@ -81,28 +88,94 @@ const saveRoomToDB = async (roomData: any) => {
   }
 };
 
-// All rooms load from IndexedDB
-const loadAllRoomsFromDB = async (): Promise<any[]> => {
+// Load room from IndexedDB
+const loadRoomFromDB = async (accountId: string): Promise<any | null> => {
   try {
     const db = await openDB();
     const transaction = db.transaction([ROOM_STORE], 'readonly');
     const store = transaction.objectStore(ROOM_STORE);
 
-    const allRooms = await new Promise<any[]>((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
+    const room = await new Promise<any | null>((resolve, reject) => {
+      const request = store.get(accountId);
+      request.onsuccess = () => resolve(request.result || null);
       request.onerror = () => reject(request.error);
     });
 
     db.close();
-    return allRooms;
+    return room;
   } catch (error) {
-    console.error('❌ Load all rooms error:', error);
+    console.error('❌ Load room error:', error);
+    return null;
+  }
+};
+
+// Save global rooms to IndexedDB
+const saveGlobalRoomsToDB = async (rooms: any[]) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([GLOBAL_ROOMS_STORE], 'readwrite');
+    const store = transaction.objectStore(GLOBAL_ROOMS_STORE);
+    
+    for (const room of rooms) {
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put({
+          ...room,
+          cachedAt: Date.now(),
+        });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    db.close();
+    console.log('✅ Global rooms saved to IndexedDB:', rooms.length);
+  } catch (error) {
+    console.error('❌ Global rooms save error:', error);
+  }
+};
+
+// Load all global rooms from IndexedDB
+const loadGlobalRoomsFromDB = async (): Promise<any[]> => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([GLOBAL_ROOMS_STORE], 'readonly');
+    const store = transaction.objectStore(GLOBAL_ROOMS_STORE);
+
+    const rooms = await new Promise<any[]>((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return rooms;
+  } catch (error) {
+    console.error('❌ Load global rooms error:', error);
     return [];
   }
 };
 
-// Recent rooms save to IndexedDB
+// Delete room from global rooms IndexedDB
+const deleteGlobalRoomFromDB = async (accountId: string) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([GLOBAL_ROOMS_STORE], 'readwrite');
+    const store = transaction.objectStore(GLOBAL_ROOMS_STORE);
+    
+    await new Promise<void>((resolve, reject) => {
+      const request = store.delete(accountId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    console.log('✅ Room deleted from IndexedDB:', accountId);
+  } catch (error) {
+    console.error('❌ Delete room error:', error);
+  }
+};
+
+// Save recent rooms to IndexedDB
 const saveRecentToDB = async (recentRooms: any[]) => {
   try {
     const db = await openDB();
@@ -126,37 +199,45 @@ const saveRecentToDB = async (recentRooms: any[]) => {
     }
 
     db.close();
+    console.log('✅ Recent rooms saved to IndexedDB:', recentRooms.length);
   } catch (error) {
     console.error('❌ Recent save error:', error);
   }
 };
 
-// Recent rooms load from IndexedDB
+// Load recent rooms from IndexedDB
 const loadRecentFromDB = async (): Promise<any[]> => {
   try {
     const db = await openDB();
     const transaction = db.transaction([RECENT_STORE], 'readonly');
     const store = transaction.objectStore(RECENT_STORE);
+    const index = store.index('timestamp');
 
     const recentRooms = await new Promise<any[]>((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
+      const request = index.getAll();
+      request.onsuccess = () => resolve(request.result || []);
       request.onerror = () => reject(request.error);
     });
 
     db.close();
     
+    // Sort by timestamp descending
+    recentRooms.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
     // Filter expired (5 min)
     const now = Date.now();
     const fiveMinutesAgo = now - (5 * 60 * 1000);
-    return recentRooms.filter(room => room.timestamp >= fiveMinutesAgo);
+    const validRooms = recentRooms.filter(room => room.timestamp >= fiveMinutesAgo);
+    
+    console.log('✅ Recent rooms loaded from IndexedDB:', validRooms.length);
+    return validRooms;
   } catch (error) {
     console.error('❌ Recent load error:', error);
     return [];
   }
 };
 
-// Following rooms save to IndexedDB
+// Save following rooms to IndexedDB
 const saveFollowingToDB = async (followingRooms: any[]) => {
   try {
     const db = await openDB();
@@ -180,12 +261,13 @@ const saveFollowingToDB = async (followingRooms: any[]) => {
     }
 
     db.close();
+    console.log('✅ Following rooms saved to IndexedDB:', followingRooms.length);
   } catch (error) {
     console.error('❌ Following save error:', error);
   }
 };
 
-// Following rooms load from IndexedDB
+// Load following rooms from IndexedDB
 const loadFollowingFromDB = async (): Promise<any[]> => {
   try {
     const db = await openDB();
@@ -194,11 +276,12 @@ const loadFollowingFromDB = async (): Promise<any[]> => {
 
     const followingRooms = await new Promise<any[]>((resolve, reject) => {
       const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => resolve(request.result || []);
       request.onerror = () => reject(request.error);
     });
 
     db.close();
+    console.log('✅ Following rooms loaded from IndexedDB:', followingRooms.length);
     return followingRooms;
   } catch (error) {
     console.error('❌ Following load error:', error);
@@ -641,26 +724,26 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // ============ GLOBAL ROOMS SYNC (Firebase + IndexedDB) - FIXED ============
+  // ============ GLOBAL ROOMS SYNC (Firebase + IndexedDB) ============
   useEffect(() => {
-    // Pehle IndexedDB se load karo (fast)
-    loadAllRoomsFromDB().then(cachedRooms => {
+    // First load from IndexedDB for instant display
+    loadGlobalRoomsFromDB().then(cachedRooms => {
       if (cachedRooms.length > 0) {
-        console.log('✅ IndexedDB se rooms loaded:', cachedRooms.length);
-        // Keep all rooms including "Hurry Room" from Mine tab
+        console.log('✅ IndexedDB se global rooms loaded:', cachedRooms.length);
         const validRooms = cachedRooms.filter(room => 
           room && 
           room.name &&
           room.accountId !== 'undefined' &&
           room.accountId !== 'null' &&
           room.accountId !== '' &&
-          room.accountId !== null
+          room.accountId !== null &&
+          room.name !== 'User'
         );
         setGlobalRooms(validRooms);
       }
     });
 
-    // Firebase se sync (background)
+    // Then sync from Firebase
     const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
       const rooms = snapshot.docs.map((d) => {
         const data = d.data();
@@ -677,24 +760,21 @@ export default function HomePage({ onLogout }: HomePageProps) {
         } as GlobalRoom;
       });
       
-      console.log('🔥 Firebase rooms synced:', rooms.length, rooms);
+      console.log('🔥 Firebase rooms synced:', rooms.length);
       
-      // Keep all valid rooms - ONLY filter out "User" placeholder and invalid IDs
       const validRooms = rooms.filter(room => 
         room.accountId !== 'undefined' &&
         room.accountId !== 'null' &&
         room.accountId !== '' &&
         room.accountId !== null &&
         room.name &&
-        room.name !== 'User' // Only filter "User" placeholder, keep "Hurry Room"
+        room.name !== 'User'
       );
       
       setGlobalRooms(validRooms);
       
-      // IndexedDB mein save karo
-      validRooms.forEach(room => {
-        saveRoomToDB(room);
-      });
+      // Save to IndexedDB for offline access
+      saveGlobalRoomsToDB(validRooms);
     });
     
     return () => unsub();
@@ -736,7 +816,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setUserPhoto(photo)
       setUserUID(uid)
 
-      // Room creation check (NO AUTO CREATE)
       const roomCreated = localStorage.getItem('isRoomCreated')
       const roomData = localStorage.getItem('myRoom')
 
@@ -749,11 +828,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
             const accObj = getOrCreateAccountNumber(uid);
             finalAccNum = accObj.fullAccNum;
           }
-          setMyRoom({
+          const updatedRoom = {
             ...parsed,
             id: uid,
             accountId: finalAccNum
-          })
+          };
+          setMyRoom(updatedRoom);
+          
+          // Save to IndexedDB
+          await saveRoomToDB(updatedRoom);
         } catch (e) {
           setIsRoomCreated(false)
           setMyRoom(null)
@@ -761,6 +844,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
       } else {
         setIsRoomCreated(false)
         setMyRoom(null)
+        
+        // Try loading from IndexedDB
+        if (storedAccNum) {
+          const indexedRoom = await loadRoomFromDB(storedAccNum);
+          if (indexedRoom) {
+            setIsRoomCreated(true);
+            setMyRoom(indexedRoom);
+            localStorage.setItem('isRoomCreated', 'true');
+            localStorage.setItem('myRoom', JSON.stringify(indexedRoom));
+          }
+        }
       }
 
       const keptRoomData = localStorage.getItem('keptRoom')
@@ -772,7 +866,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       }
 
-      // ✅ RECENT ROOMS - 5 MIN EXPIRY
+      // Load recent rooms - try localStorage first, then IndexedDB
       const storedRecent = localStorage.getItem('recentRooms')
       if (storedRecent) {
         try {
@@ -789,21 +883,32 @@ export default function HomePage({ onLogout }: HomePageProps) {
           if (validRecent.length !== parsed.length) {
             localStorage.setItem('recentRooms', JSON.stringify(validRecent));
           }
-        } catch {}
+          
+          // Also save to IndexedDB
+          saveRecentToDB(validRecent);
+        } catch {
+          // If localStorage fails, try IndexedDB
+          const indexedRecent = await loadRecentFromDB();
+          setRecentRooms(indexedRecent);
+        }
       } else {
         // Try IndexedDB
         const indexedRecent = await loadRecentFromDB();
         setRecentRooms(indexedRecent);
       }
 
-      // ✅ FOLLOWING ROOMS - NO EXPIRY
+      // Load following rooms - try localStorage first, then IndexedDB
       const storedFollowing = localStorage.getItem('followingRooms')
       if (storedFollowing) {
         try { 
-          setFollowingRooms(JSON.parse(storedFollowing)) 
-        } catch {}
+          const parsed = JSON.parse(storedFollowing);
+          setFollowingRooms(parsed);
+          saveFollowingToDB(parsed);
+        } catch {
+          const indexedFollowing = await loadFollowingFromDB();
+          setFollowingRooms(indexedFollowing);
+        }
       } else {
-        // Try IndexedDB
         const indexedFollowing = await loadFollowingFromDB();
         setFollowingRooms(indexedFollowing);
       }
@@ -814,13 +919,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => window.removeEventListener('storage', loadProfile)
   }, [])
 
-  // ============ SAVE RECENT ROOMS ============
+  // ============ SAVE RECENT ROOMS (localStorage + IndexedDB) ============
   useEffect(() => {
     localStorage.setItem('recentRooms', JSON.stringify(recentRooms))
     saveRecentToDB(recentRooms);
   }, [recentRooms])
 
-  // ============ SAVE FOLLOWING ROOMS ============
+  // ============ SAVE FOLLOWING ROOMS (localStorage + IndexedDB) ============
   useEffect(() => {
     localStorage.setItem('followingRooms', JSON.stringify(followingRooms))
     saveFollowingToDB(followingRooms);
@@ -845,7 +950,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       });
     };
 
-    const interval = setInterval(checkRecentRoomsExpiry, 30000); // Har 30 second
+    const interval = setInterval(checkRecentRoomsExpiry, 30000);
     checkRecentRoomsExpiry();
 
     return () => clearInterval(interval);
@@ -891,7 +996,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const addToRecent = (room: KeptRoomData) => {
     setRecentRooms(prev => {
       const filtered = prev.filter(r => r.accountId !== room.accountId)
-      return [{ ...room, timestamp: Date.now() }, ...filtered].slice(0, 20)
+      const updated = [{ ...room, timestamp: Date.now() }, ...filtered].slice(0, 20);
+      
+      // Save to IndexedDB immediately
+      saveRecentToDB(updated);
+      
+      return updated;
     })
   }
 
@@ -899,14 +1009,23 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const handleFollowRoom = (room: KeptRoomData) => {
     setFollowingRooms(prev => {
       if (prev.some(r => r.accountId === room.accountId)) return prev
-      return [...prev, room]
+      const updated = [...prev, room];
+      
+      // Save to IndexedDB immediately
+      saveFollowingToDB(updated);
+      
+      return updated;
     })
   }
 
-  // ============ UNFOLLOW ROOM (Card remove) ============
+  // ============ UNFOLLOW ROOM ============
   const handleUnfollowRoom = (roomId: string) => {
     setFollowingRooms(prev => {
       const updated = prev.filter(r => r.accountId !== roomId);
+      
+      // Save to IndexedDB immediately
+      saveFollowingToDB(updated);
+      
       return updated;
     })
   }
@@ -1102,15 +1221,27 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // ============ CREATE ROOM (ON CLICK ONLY) - FIXED ============
+  // ============ CREATE ROOM (ON CLICK ONLY) ============
   const handleCardClick = async () => {
     setEnteredFromKept(false);
 
     const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
     const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
 
+    // If room already created, just enter it
+    if (isRoomCreated && myRoom) {
+      addToRecent({ 
+        name: myRoom.name, 
+        image: myRoom.image, 
+        accountId: myRoom.accountId || storedAccNum 
+      })
+      setSelectedUser(myRoom)
+      setCurrentPage('room')
+      return;
+    }
+
     // Default room name
-    const defaultRoomName = "Hurry Room"
+    const defaultRoomName = "My Room"
 
     const createdRoomCard: UserCard = {
       id: userUID,
@@ -1120,55 +1251,63 @@ export default function HomePage({ onLogout }: HomePageProps) {
       image: userPhoto || '/default-avatar.png'
     }
 
-    if (!isRoomCreated) {
-      localStorage.setItem('isRoomCreated', 'true')
-      localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
-      setIsRoomCreated(true)
-      setMyRoom(createdRoomCard)
+    // Save to localStorage
+    localStorage.setItem('isRoomCreated', 'true')
+    localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
+    setIsRoomCreated(true)
+    setMyRoom(createdRoomCard)
 
-      // Save to IndexedDB with explicit flag
-      await saveRoomToDB({
-        ...createdRoomCard,
-        isExplicitlyCreated: true,
-        createdAt: Date.now()
-      });
+    // Save to IndexedDB
+    await saveRoomToDB({
+      ...createdRoomCard,
+      isExplicitlyCreated: true,
+      createdAt: Date.now()
+    });
 
-      // Save to Firebase - With all flags
-      const roomData = {
-        id: userUID,
-        name: defaultRoomName,
-        country: localStorage.getItem("userCountry") || "🇮🇳",
-        countryCode: localStorage.getItem("userCountryCode") || "IN",
-        image: userPhoto || '/default-avatar.png',
-        accountId: storedAccNum,
-        createdAt: Date.now(),
-        isLocked: false,
-        roomPassword: null,
-        isExplicitlyCreated: true,
-        createdFromMineTab: true // Add this flag to identify Mine tab rooms
-      };
+    // Save to Firebase
+    const roomData = {
+      id: userUID,
+      name: defaultRoomName,
+      country: localStorage.getItem("userCountry") || "🇮🇳",
+      countryCode: localStorage.getItem("userCountryCode") || "IN",
+      image: userPhoto || '/default-avatar.png',
+      accountId: storedAccNum,
+      createdAt: Date.now(),
+      isLocked: false,
+      roomPassword: null,
+      isExplicitlyCreated: true,
+      createdFromMineTab: true
+    };
 
-      await setDoc(doc(db, "globalRooms", userUID), roomData, { merge: true });
+    await setDoc(doc(db, "globalRooms", userUID), roomData, { merge: true });
 
-      await setDoc(doc(db, "users", userUID), {
-        id: userUID,
-        name: userName || defaultRoomName,
-        country: localStorage.getItem("userCountry") || "🇮🇳",
-        countryCode: localStorage.getItem("userCountryCode") || "IN",
-        image: userPhoto || '/default-avatar.png',
-        accountId: storedAccNum,
-        createdAt: Date.now(),
-        isExplicitlyCreated: true
-      }, { merge: true });
+    await setDoc(doc(db, "users", userUID), {
+      id: userUID,
+      name: userName || defaultRoomName,
+      country: localStorage.getItem("userCountry") || "🇮🇳",
+      countryCode: localStorage.getItem("userCountryCode") || "IN",
+      image: userPhoto || '/default-avatar.png',
+      accountId: storedAccNum,
+      createdAt: Date.now(),
+      isExplicitlyCreated: true
+    }, { merge: true });
 
-      // Update local state immediately - Add to globalRooms
-      setGlobalRooms(prev => {
-        const filtered = prev.filter(r => r.accountId !== storedAccNum);
-        return [...filtered, roomData as unknown as GlobalRoom];
-      });
-    }
+    // Update local state
+    setGlobalRooms(prev => {
+      const filtered = prev.filter(r => r.accountId !== storedAccNum);
+      const updated = [...filtered, roomData as unknown as GlobalRoom];
+      
+      // Save to IndexedDB
+      saveGlobalRoomsToDB(updated);
+      
+      return updated;
+    });
 
-    addToRecent({ name: createdRoomCard.name, image: createdRoomCard.image, accountId: storedAccNum })
+    addToRecent({ 
+      name: createdRoomCard.name, 
+      image: createdRoomCard.image, 
+      accountId: storedAccNum 
+    })
     setSelectedUser(createdRoomCard)
     setCurrentPage('room')
   }
@@ -1355,13 +1494,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
-  // ============ ALL ROOMS FILTER - FIXED (Keep "Hurry Room") ============
+  // ============ ALL ROOMS FILTER ============
   const allRooms = globalRooms.filter(room => 
     room && 
     room.name && 
     room.image && 
     !/jiys/i.test(room.name) && 
-    room.name !== 'User' && // Only exclude "User", keep "Hurry Room"
+    room.name !== 'User' &&
     room.accountId !== 'undefined' &&
     room.accountId !== 'null' &&
     room.accountId !== ''
@@ -1370,12 +1509,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
   // ============ RENDER MINE TAB ============
   const renderMineTab = () => (
     <div className="px-4 mt-6">
+      {/* Mine Tab Card */}
       <div
         onClick={handleCardClick}
-        className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
+        className={`rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6 ${
+          isRoomCreated ? 'bg-gradient-to-r from-purple-500 to-indigo-600' : 'bg-gradient-to-r from-blue-500 to-purple-600'
+        }`}
         style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
+          boxShadow: isRoomCreated 
+            ? '0 8px 32px rgba(139, 92, 246, 0.4)' 
+            : '0 8px 32px rgba(102, 126, 234, 0.4)',
         }}
       >
         {!isRoomCreated ? (
@@ -1402,7 +1545,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           </>
         ) : (
           <>
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/50">
               {myRoom?.image ? (
                 <img
                   src={myRoom.image}
@@ -1417,7 +1560,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </div>
             <div className="flex flex-col">
               <h3 className="text-white font-bold text-xl leading-tight">
-                {myRoom?.name || "Hurry Room"}
+                {myRoom?.name || "My Room"}
               </h3>
               <p className="text-white/80 text-sm mt-1 font-medium">
                 Tap to enter your room
@@ -1426,6 +1569,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
           </>
         )}
       </div>
+
+      {/* Following/Recent Tabs */}
       <div className="flex gap-4 mb-4">
         <button
           type="button"
@@ -1457,6 +1602,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </button>
       </div>
 
+      {/* Following Rooms Grid */}
       {activeMineTab === 'following' && (
         followingRooms.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5">
@@ -1483,13 +1629,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
                   {room.isLocked && (
-                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
-                      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
-                    </svg>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                    <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className="text-base">🇮🇳</span>
                       <div className="flex-1 min-w-0">
@@ -1523,6 +1669,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )
       )}
 
+      {/* Recent Rooms Grid */}
       {activeMineTab === 'recent' && (
         recentRooms.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5">
@@ -1549,13 +1696,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
                   {room.isLocked && (
-                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
-                      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
-                    </svg>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                    <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className="text-base">🇮🇳</span>
                       <div className="flex-1 min-w-0">
@@ -1589,9 +1736,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
   // ============ RENDER POPULAR TAB (FIXED) ============
   const renderPopularTab = () => (
     <>
-      <div className="px-4" style={{ marginTop: '-106px', position: 'relative', zIndex: 10 }}>
-        {/* Category Cards - same rahenge */}
-        <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
+      <div className="px-4" style={{ 
+        marginTop: '-106px', 
+        position: 'relative', 
+        zIndex: 10 
+      }}>
+        {/* Category Cards */}
+        <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
+          fontFamily: 'Nunito, Inter, sans-serif', 
+          marginBottom: '6px' 
+        }}>
           {CATEGORY_CARDS.map((card, i) => (
             <div
               key={card.label}
@@ -1646,7 +1800,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       </div>
       
       {allRooms.length > 0 ? (
-        <div className="px-4 mt-1">
+        <div className="px-4" style={{ marginTop: '4px' }}>
           <div className="grid grid-cols-2 gap-1.5">
             {allRooms.map((room) => (
               <div
@@ -1661,7 +1815,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 })}
                 className="cursor-pointer group"
               >
-                {/* Image Card - No name overlay */}
                 <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
                   style={{ height: '170px' }}
                 >
@@ -1673,7 +1826,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     draggable="false"
                   />
                   
-                  {/* Lock icon - only if locked */}
                   {room.isLocked && (
                     <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
                       <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
@@ -1683,7 +1835,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   )}
                 </div>
                 
-                {/* Name - Card ke NICHE */}
                 <div className="mt-2 px-1">
                   <div className="flex items-center gap-0.5">
                     <span className="text-sm">{room.country}</span>
@@ -2201,7 +2352,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-1.5" style={{ marginTop: '2px', marginBottom: '0px' }}>
+                  <div className="flex justify-center gap-1.5" style={{ 
+                    marginTop: '2px', 
+                    marginBottom: '0px',
+                    minHeight: '6px'
+                  }}>
                     {BANNERS.map((_, index) => (
                       <div
                         key={index}
@@ -2361,4 +2516,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-      }
+          }
