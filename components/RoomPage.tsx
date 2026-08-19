@@ -1900,8 +1900,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         <div 
           className="absolute pointer-events-none"
           style={{
-            left: '-120px', // Adjust this value for spacing from seat
-            top: '50%',
+            left: '-130px', // Adjust this value for spacing from seat
+            top: '-10px',
             transform: 'translateY(-50%)',
             zIndex: 40,
             display: 'flex',
@@ -1950,8 +1950,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         <div 
           className="absolute pointer-events-none"
           style={{
-            right: '-120px', // Adjust this value for spacing from seat
-            top: '50%',
+            right: '-130px', // Adjust this value for spacing from seat
+            top: '-10px',
             transform: 'translateY(-50%)',
             zIndex: 40,
           }}
