@@ -1862,7 +1862,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// SeatItem Component - Fixed corner positioning
+// SeatItem Component - Fixed to screen corners
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1895,67 +1895,18 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 
   return (
     <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      {/* Special card for Seat 1 - Left corner (Fixed to screen corners) */}
-      {seatNumber === 1 && (
-        <div 
-          className="fixed left-0 z-20"
-          style={{
-            top: '50%',
-            transform: 'translateY(-50%)',
-            marginLeft: '-8px',
-          }}
-        >
-          <div 
-            className="relative overflow-visible"
-            style={{
-              width: '25px',
-              height: '25px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              boxShadow: 'none',
-            }}
-          >
-            <WhiteColorRemovalShader
-              imageSrc="/1787158869902.png"
-              threshold={0.85}
-              className="w-full h-full"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                maxWidth: 'none',
-                maxHeight: 'none',
-              }}
-            />
-            <div 
-              className="absolute bottom-0 left-0 right-0 text-center"
-              style={{
-                padding: '2px 0',
-              }}
-            >
-              <span 
-                className="text-[8px] font-bold"
-                style={{
-                  color: '#FFD700',
-                  textShadow: '0 0 4px rgba(255,215,0,0.8), 0 0 8px rgba(255,215,0,0.5)',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                500K
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+     
 
-      {/* Special card for Seat 1 - Right corner (Fixed to screen corners) */}
+      {/* Special card for Seat 1 - RIGHT SCREEN CORNER */}
       {seatNumber === 1 && (
         <div 
-          className="fixed right-0 z-20"
+          className="fixed pointer-events-none"
           style={{
+            right: '0px',
             top: '50%',
             transform: 'translateY(-50%)',
-            marginRight: '-8px',
+            zIndex: 40,
+            marginRight: '-5px',
           }}
         >
           <div 
@@ -1979,12 +1930,70 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                 objectFit: 'contain',
                 maxWidth: 'none',
                 maxHeight: 'none',
+                pointerEvents: 'none',
               }}
             />
           </div>
         </div>
       )}
-
+{/* Special card for Seat 1 - LEFT SCREEN CORNER */}
+{seatNumber === 1 && (
+  <div 
+    className="fixed pointer-events-none"
+    style={{
+      left: '0px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      zIndex: 40,
+    }}
+  >
+    <div 
+      className="flex items-center gap-1"
+      style={{
+        backgroundColor: 'transparent',
+        border: 'none',
+        boxShadow: 'none',
+      }}
+    >
+      {/* Image */}
+      <div 
+        className="relative overflow-visible"
+        style={{
+          width: '25px',
+          height: '25px',
+          flexShrink: 0,
+        }}
+      >
+        <WhiteColorRemovalShader
+          imageSrc="/1787158869902.png"
+          threshold={0.85}
+          className="w-full h-full"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            maxWidth: 'none',
+            maxHeight: 'none',
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+      
+      {/* 500K Text - Side mein */}
+      <span 
+        className="text-[10px] font-bold whitespace-nowrap"
+        style={{
+          color: '#FFD700',
+          textShadow: '0 0 4px rgba(255,215,0,0.8), 0 0 8px rgba(255,215,0,0.5)',
+          letterSpacing: '0.5px',
+        }}
+      >
+        500K
+      </span>
+    </div>
+  </div>
+)}
+      {/* Seat circle - rest of the code remains same */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2016,7 +2025,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                     zIndex: 1
                   }}
                 />
-                {/* WebGL Overlay */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
