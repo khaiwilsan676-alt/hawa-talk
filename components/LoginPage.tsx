@@ -1399,7 +1399,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-65 bg-white/90 backdrop-blur-md rounded-full p-3.5 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-70 bg-white/90 backdrop-blur-md rounded-full p-3.5 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               boxShadow: '0 4px 0 #e0e0e0, 0 6px 20px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.05), inset 0 2px 4px rgba(255,255,255,0.8)',
               background: 'linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)',
@@ -1427,7 +1427,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
           <button
             onClick={() => setShowLoginPage(true)}
-            className="w-65 rounded-full p-3.5 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer text-white"
+            className="w-70 rounded-full p-3.5 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer text-white"
             style={{
               boxShadow: '0 4px 0 #1d4ed8, 0 6px 20px rgba(37,99,235,0.4), inset 0 -2px 4px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.2)',
               background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
