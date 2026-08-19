@@ -922,13 +922,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full min-h-screen bg-white" style={{ paddingTop: '80px' }}>
+    <div className="w-full min-h-screen bg-white" >
       {/* Profile Header */}
       <div
         className="px-4 pb-6 relative safe-top"
         style={{
           background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-          paddingTop: 'max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 24px)'
+          paddingTop: 'max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 35px)'
         }}
       >
         {/* User Card */}
