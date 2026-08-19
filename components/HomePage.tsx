@@ -1588,7 +1588,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   // ============ RENDER POPULAR TAB (FIXED) ============
   const renderPopularTab = () => (
     <>
-      <div className="px-4" style={{ marginTop: '-101px', position: 'relative', zIndex: 10 }}>
+      <div className="px-4" style={{ marginTop: '-106px', position: 'relative', zIndex: 10 }}>
         {/* Category Cards - same rahenge */}
         <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ fontFamily: 'Nunito, Inter, sans-serif', marginBottom: '6px' }}>
           {CATEGORY_CARDS.map((card, i) => (
