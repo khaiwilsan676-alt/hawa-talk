@@ -1235,20 +1235,20 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-4">
+          <div className="flex-shrink-0 flex flex-col gap-2 pt-7">
             {renderSeats()}
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
            <div className="mx-1 mb-1.5 flex justify-start">
-  <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/5 px-2.5 py-1.5 max-w-[80%]">
-    <p className="text-white/50 text-[9px] leading-snug">
+  <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/5 px-3 py-2 max-w-[80%]">
+    <p className="text-white text-[12px] leading-snug font-medium">
       Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
     </p>
     {roomAnnouncement && (
-      <div className="flex items-start gap-1 mt-0.5">
-        <span className="text-white/40 text-[8px] font-medium whitespace-nowrap shrink-0">ANNOUNCEMENT:</span>
-        <p className="text-white/60 text-[9px] leading-snug">{roomAnnouncement}</p>
+      <div className="flex items-start gap-1.5 mt-1">
+        <span className="text-white text-[11px] font-semibold whitespace-nowrap shrink-0">ANNOUNCEMENT:</span>
+        <p className="text-white text-[12px] leading-snug font-medium">{roomAnnouncement}</p>
       </div>
     )}
   </div>
@@ -1991,25 +1991,25 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer relative" onClick={onClick}>
-      {/* Special card for Seat 1 - Left side */}
+      {/* Special card for Seat 1 - Left corner (No border) */}
       {seatNumber === 1 && (
         <div 
           className="absolute left-0 flex items-center"
           style={{
             top: '50%',
             transform: 'translateY(-50%) translateX(-100%)',
-            marginLeft: '-8px',
+            marginLeft: '-12px',
           }}
         >
           <div 
-            className="relative rounded-xl overflow-hidden"
+            className="relative overflow-hidden"
             style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(4px)',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              width: '50px',
+              height: '50px',
+              // No border, no background, no box shadow
+              backgroundColor: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
             }}
           >
             <WhiteColorRemovalShader
@@ -2028,7 +2028,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
               className="absolute bottom-0 left-0 right-0 text-center"
               style={{
                 padding: '2px 0',
-                background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
               }}
             >
               <span 
@@ -2046,31 +2045,31 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Special card for Seat 1 - Right side (Black color removal) */}
+      {/* Special card for Seat 1 - Right corner (No border, White color removal) */}
       {seatNumber === 1 && (
         <div 
           className="absolute right-0 flex items-center"
           style={{
             top: '50%',
             transform: 'translateY(-50%) translateX(100%)',
-            marginRight: '-8px',
+            marginRight: '-12px',
           }}
         >
           <div 
-            className="relative rounded-xl overflow-hidden"
+            className="relative overflow-hidden"
             style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(4px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              width: '20px',
+              height: '20px',
+              // No border, no background, no box shadow
+              backgroundColor: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
             }}
           >
             <WhiteColorRemovalShader
-              imageSrc="/1787160574776.png"
+              imageSrc="/1787162568668.png"
               threshold={0.85}
-              removeColor="black"
+              removeColor="white"
               className="w-full h-full"
               style={{
                 width: '100%',
@@ -2177,4 +2176,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-  }
+              }
