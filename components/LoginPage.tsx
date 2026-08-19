@@ -1373,7 +1373,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
       <div className="relative z-10 w-full flex flex-col items-center justify-between min-h-screen">
         
-        <div className="w-full flex justify-end pt-4 pr-2">
+        <div className="w-full flex justify-end pt-8 pr-2">
           <button 
             onClick={() => setShowFeedbackPage(true)}
             className="text-sm font-medium text-white/90 hover:text-white transition-all cursor-pointer"
