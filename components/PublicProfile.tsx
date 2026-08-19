@@ -1043,115 +1043,115 @@ export default function PublicProfile({
     return { uid, name, photo }
   }
 
-  return (
-    <div
-      className={`w-full bg-white min-h-screen text-gray-900 relative ${
-        isOtherUser ? 'pb-24' : 'pb-10'
-      }`}
-    >
-      {/* Cover Image & Header Section */}
-      <div className="relative w-full h-[340px] bg-gray-800">
-        {user.coverPhoto ? (
-          <img src={user.coverPhoto} alt="" className="w-full h-full object-cover" />
-        ) : user.photo ? (
-          <img src={user.photo} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white text-4xl font-bold">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-        )}
+ return (
+  <div
+    className={`w-full bg-white min-h-screen text-gray-900 relative -mt-[95px] ${
+      isOtherUser ? 'pb-24' : 'pb-10'
+    }`}
+  >
+    {/* Cover Image & Header Section */}
+    <div className="relative w-full h-[340px] bg-gray-800 pt-[95px]">
+      {user.coverPhoto ? (
+        <img src={user.coverPhoto} alt="" className="w-full h-full object-cover" />
+      ) : user.photo ? (
+        <img src={user.photo} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white text-4xl font-bold pt-[95px]">
+          {user.name.charAt(0).toUpperCase()}
+        </div>
+      )}
 
-        <div className="absolute top-4 left-0 right-0 px-4 flex items-center justify-between z-10">
-          <button onClick={onBack} className="text-white">
-            <ChevronLeft size={28} />
-          </button>
+      <div className="absolute top-[110px] left-0 right-0 px-4 flex items-center justify-between z-10">
+        <button onClick={onBack} className="text-white">
+          <ChevronLeft size={28} />
+        </button>
 
-          {isOtherUser ? (
-            <div className="relative">
-              <button
-                onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
-                className="text-white"
-              >
-                <MoreHorizontal size={24} />
-              </button>
-
-              {showThreeDotMenu && (
-                <div className="absolute right-0 top-8 bg-white rounded-xl shadow-lg py-2 w-48 z-50">
-                  <button
-                    onClick={() => {
-                      setShowThreeDotMenu(false)
-                      alert('Report user')
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                  >
-                    Report
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowThreeDotMenu(false)
-                      alert('Block user')
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Block
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowThreeDotMenu(false)
-                      alert('Share profile')
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Share Profile
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button onClick={handleOpenEditSheet} className="text-white">
-              <Edit3 size={22} />
+        {isOtherUser ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
+              className="text-white"
+            >
+              <MoreHorizontal size={24} />
             </button>
-          )}
-        </div>
 
-        <div className="absolute top-16 right-4 bg-emerald-500/90 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
-        </div>
+            {showThreeDotMenu && (
+              <div className="absolute right-0 top-8 bg-white rounded-xl shadow-lg py-2 w-48 z-50">
+                <button
+                  onClick={() => {
+                    setShowThreeDotMenu(false)
+                    alert('Report user')
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  Report
+                </button>
+                <button
+                  onClick={() => {
+                    setShowThreeDotMenu(false)
+                    alert('Block user')
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Block
+                </button>
+                <button
+                  onClick={() => {
+                    setShowThreeDotMenu(false)
+                    alert('Share profile')
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Share Profile
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button onClick={handleOpenEditSheet} className="text-white">
+            <Edit3 size={22} />
+          </button>
+        )}
+      </div>
 
-        {/* Avatar with WebGL Shader Overlay */}
-        <div className="absolute bottom-2 left-6 flex items-center">
-          <div className="relative w-24 h-24 rounded-full shadow-lg border-3 border-white bg-gray-700">
-            <div className="w-full h-full rounded-full overflow-hidden">
-              {user.photo ? (
-                <img src={user.photo} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <img
-                  src={getDefaultAvatar(user.gender)}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              )}
-            </div>
-            
-            {/* WebGL Overlay */}
-            <div className="absolute inset-0 pointer-events-none">
-              <WhiteColorRemovalShader
-                imageSrc="/1786867564769.png"
-                threshold={0.85}
-                className="w-full h-full"
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%) scale(1.5)',
-                  width: '100%',
-                  height: '100%',
-                }}
+      <div className="absolute top-[172px] right-4 bg-emerald-500/90 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium shadow-sm">
+        <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Online
+      </div>
+
+      {/* Avatar with WebGL Shader Overlay */}
+      <div className="absolute bottom-2 left-6 flex items-center">
+        <div className="relative w-24 h-24 rounded-full shadow-lg border-3 border-white bg-gray-700">
+          <div className="w-full h-full rounded-full overflow-hidden">
+            {user.photo ? (
+              <img src={user.photo} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <img
+                src={getDefaultAvatar(user.gender)}
+                alt=""
+                className="w-full h-full object-cover"
               />
-            </div>
+            )}
+          </div>
+          
+          {/* WebGL Overlay */}
+          <div className="absolute inset-0 pointer-events-none">
+            <WhiteColorRemovalShader
+              imageSrc="/1786867564769.png"
+              threshold={0.85}
+              className="w-full h-full"
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%) scale(1.5)',
+                width: '100%',
+                height: '100%',
+              }}
+            />
           </div>
         </div>
       </div>
+    </div>
 
       {/* Profile Info Details Section */}
       <div className="px-5 pt-5">
