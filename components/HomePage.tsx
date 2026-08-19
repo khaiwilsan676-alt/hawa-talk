@@ -297,7 +297,6 @@ const BANNERS = [
   { image: '/IMG-20260818-WA0001.jpg' }
 ]
 
-
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
 type Page = 'home' | 'message' | 'me' | 'room' | 'public_profile'
@@ -609,7 +608,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
 
     try {
-      const JitsiMeetExternalAPI = (window as any).JitsiMeetExternalAPI; const api = new JitsiMeetExternalAPI(domain, options)
+      const JitsiMeetExternalAPI = (window as any).JitsiMeetExternalAPI; 
+      const api = new JitsiMeetExternalAPI(domain, options)
       jitsiApiRef.current = api
       jitsiJoinedRef.current = false
 
@@ -641,20 +641,20 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // ============ GLOBAL ROOMS SYNC (Firebase + IndexedDB) ============
+  // ============ GLOBAL ROOMS SYNC (Firebase + IndexedDB) - FIXED ============
   useEffect(() => {
     // Pehle IndexedDB se load karo (fast)
     loadAllRoomsFromDB().then(cachedRooms => {
       if (cachedRooms.length > 0) {
         console.log('✅ IndexedDB se rooms loaded:', cachedRooms.length);
-        // Filter only explicitly created rooms
+        // Keep all rooms including "Hurry Room" from Mine tab
         const validRooms = cachedRooms.filter(room => 
           room && 
-          room.name !== 'User' &&
-          room.name !== 'Hurry Room' &&
+          room.name &&
           room.accountId !== 'undefined' &&
           room.accountId !== 'null' &&
-          room.accountId !== ''
+          room.accountId !== '' &&
+          room.accountId !== null
         );
         setGlobalRooms(validRooms);
       }
@@ -679,13 +679,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
       
       console.log('🔥 Firebase rooms synced:', rooms.length, rooms);
       
-      // Filter only explicitly created rooms
+      // Keep all valid rooms - ONLY filter out "User" placeholder and invalid IDs
       const validRooms = rooms.filter(room => 
-        room.name !== 'User' &&
-        room.name !== 'Hurry Room' &&
         room.accountId !== 'undefined' &&
         room.accountId !== 'null' &&
-        room.accountId !== ''
+        room.accountId !== '' &&
+        room.accountId !== null &&
+        room.name &&
+        room.name !== 'User' // Only filter "User" placeholder, keep "Hurry Room"
       );
       
       setGlobalRooms(validRooms);
@@ -1132,7 +1133,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         createdAt: Date.now()
       });
 
-      // Save to Firebase - Add explicit creation flag
+      // Save to Firebase - With all flags
       const roomData = {
         id: userUID,
         name: defaultRoomName,
@@ -1143,7 +1144,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         createdAt: Date.now(),
         isLocked: false,
         roomPassword: null,
-        isExplicitlyCreated: true // IMPORTANT: Mark as explicitly created
+        isExplicitlyCreated: true,
+        createdFromMineTab: true // Add this flag to identify Mine tab rooms
       };
 
       await setDoc(doc(db, "globalRooms", userUID), roomData, { merge: true });
@@ -1159,7 +1161,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         isExplicitlyCreated: true
       }, { merge: true });
 
-      // Update local state immediately
+      // Update local state immediately - Add to globalRooms
       setGlobalRooms(prev => {
         const filtered = prev.filter(r => r.accountId !== storedAccNum);
         return [...filtered, roomData as unknown as GlobalRoom];
@@ -1353,14 +1355,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [currentPage])
 
-  // ============ ALL ROOMS FILTER - STRICTER ============
+  // ============ ALL ROOMS FILTER - FIXED (Keep "Hurry Room") ============
   const allRooms = globalRooms.filter(room => 
     room && 
     room.name && 
     room.image && 
     !/jiys/i.test(room.name) && 
-    room.name !== 'User' &&
-    room.name !== 'Hurry Room' && // Exclude default name
+    room.name !== 'User' && // Only exclude "User", keep "Hurry Room"
     room.accountId !== 'undefined' &&
     room.accountId !== 'null' &&
     room.accountId !== ''
@@ -2360,4 +2361,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-}
+      }
