@@ -1901,7 +1901,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none"
           style={{
             left: '-130px', // Adjust this value for spacing from seat
-            top: '-10px',
+            top: '-6px',
             transform: 'translateY(-50%)',
             zIndex: 40,
             display: 'flex',
@@ -1951,7 +1951,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none"
           style={{
             right: '-130px', // Adjust this value for spacing from seat
-            top: '-10px',
+            top: '-6px',
             transform: 'translateY(-50%)',
             zIndex: 40,
           }}
@@ -1959,8 +1959,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           <div 
             className="relative overflow-visible"
             style={{
-              width: '40px',
-              height: '40px',
+              width: '50px',
+              height: '50px',
               backgroundColor: 'transparent',
               border: 'none',
               boxShadow: 'none',
