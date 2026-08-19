@@ -906,8 +906,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     localStorage.removeItem('keptRoom');
     setMessages([]);
     
-    // We rely on unmounting the LiveKitRoom component to disconnect from the room automatically.
-    
     if (onBack) onBack();
     if (onClose) onClose();
   };
@@ -1242,17 +1240,19 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-1 flex-1 overflow-y-auto scrollbar-none">
-            <div className="mx-2 mb-2 bg-black/30 backdrop-blur-md rounded-xl border border-white/10 px-4 py-3">
-              <p className="text-white/80 text-[11px] leading-relaxed">
-                Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban
-              </p>
-              {roomAnnouncement && (
-                <div className="flex items-start gap-2 mt-2">
-                  <span className="text-white/60 text-[10px] font-medium whitespace-nowrap">ANNOUNCEMENT:</span>
-                  <p className="text-white/80 text-[11px] leading-relaxed">{roomAnnouncement}</p>
-                </div>
-              )}
-            </div>
+           <div className="mx-1 mb-1.5 flex justify-start">
+  <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/5 px-2.5 py-1.5 max-w-[80%]">
+    <p className="text-white/50 text-[9px] leading-snug">
+      Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
+    </p>
+    {roomAnnouncement && (
+      <div className="flex items-start gap-1 mt-0.5">
+        <span className="text-white/40 text-[8px] font-medium whitespace-nowrap shrink-0">ANNOUNCEMENT:</span>
+        <p className="text-white/60 text-[9px] leading-snug">{roomAnnouncement}</p>
+      </div>
+    )}
+  </div>
+</div>
 
             <div className="space-y-0.5">
               {messages.map((msg) => (
@@ -1391,7 +1391,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
           <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="text-4xl mb-3">🔒</div>
+            <div className="text-4xl mb-3"></div>
             <h3 className="text-lg font-bold text-gray-800 mb-1">Public msg are off</h3>
             <p className="text-sm text-gray-500 mb-4">Only the room owner can send messages right now.</p>
             <button
@@ -1403,47 +1403,46 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
       )}
-
-      {/* Active Users Sheet */}
-      {showActiveUsers && (
-        <div className="absolute inset-0 z-40 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '30vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-3 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-              {roomUsers.length > 0 ? (
-                <div className="space-y-2">
-                  {roomUsers.map((user) => (
-                    <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
-                        <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
-                        <div className="flex items-center gap-1">
-                          <p className="text-xs text-gray-400">ID: {user.accountId}</p>
-                          <button onClick={(e) => handleCopyUserId(user.accountId, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer" title="Copy ID">
-                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+{/* Active Users Sheet */}
+{showActiveUsers && (
+  <div className="absolute inset-0 z-40 flex items-end justify-center">
+    <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
+    <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden flex flex-col" style={{ height: '40vh', maxHeight: '40vh' }} onClick={(e) => e.stopPropagation()}>
+      <div className="px-6 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
+        <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 py-3" style={{ minHeight: 0 }}>
+        {roomUsers.length > 0 ? (
+          <div className="space-y-2 pb-4">
+            {roomUsers.map((user) => (
+              <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
+                  <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-400 text-sm">No active users</p>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
+                  <div className="flex items-center gap-1">
+                    <p className="text-xs text-gray-400">ID: {user.accountId}</p>
+                    <button onClick={(e) => handleCopyUserId(user.accountId, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer" title="Copy ID">
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
-        </div>
-      )}
-
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-400 text-sm">No active users</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+     
       {/* Room Info Sheet */}
       {showRoomInfo && (
         <div className="absolute inset-0 z-40 flex items-end justify-center">
@@ -1525,66 +1524,67 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       )}
 
       {/* RoomProfile Bottom Sheet */}
-{showUserProfile && profileUser && (
-  <RoomProfile
-    user={{ 
-      name: profileUser.name, 
-      image: profileUser.image, 
-      accountId: profileUser.accountId,
-      isInSeat: profileUser.isInSeat,
-      isMuted: seats.find(s => s.user?.accountId === profileUser.accountId)?.isMuted || false,
-      isLocked: seats.find(s => s.user?.accountId === profileUser.accountId)?.isLocked || false
-    }}
-    isCurrentUser={profileUser.accountId === userAccountId}
-    isRoomOwner={isRoomOwner}
-    onClose={() => setShowUserProfile(false)}
-    onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
-    onMessage={() => {
-      setShowUserProfile(false);
-      setShowChatInput(true);
-      setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
-    }}
-    onCopyId={() => console.log('Copy ID clicked')}
-    onMention={(username?: string) => {
-      setShowUserProfile(false);
-      setShowChatInput(true);
-      setMessage(`@${username} `);
-      setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
-    }}
-    onLeaveSeat={() => {
-      const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-      if (userSeat) {
-        setSelectedSeat(userSeat.number);
-        setTimeout(() => handleLeaveSeat(), 100);
-      }
-      setShowUserProfile(false);
-    }}
-    onMute={() => {
-      const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-      if (userSeat) {
-        setSelectedSeat(userSeat.number);
-        setTimeout(() => handleToggleMute(), 100);
-      }
-      setShowUserProfile(false);
-    }}
-    onLock={() => {
-      const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-      if (userSeat) {
-        setSelectedSeat(userSeat.number);
-        setTimeout(() => handleToggleLock(), 100);
-      }
-      setShowUserProfile(false);
-    }}
-    onKickOut={() => {
-      const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-      if (userSeat) {
-        setSelectedSeat(userSeat.number);
-        setTimeout(() => handleLeaveSeat(), 100);
-      }
-      setShowUserProfile(false);
-    }}
-  />
-)}
+      {showUserProfile && profileUser && (
+        <RoomProfile
+          user={{ 
+            name: profileUser.name, 
+            image: profileUser.image, 
+            accountId: profileUser.accountId,
+            isInSeat: profileUser.isInSeat,
+            isMuted: seats.find(s => s.user?.accountId === profileUser.accountId)?.isMuted || false,
+            isLocked: seats.find(s => s.user?.accountId === profileUser.accountId)?.isLocked || false
+          }}
+          isCurrentUser={profileUser.accountId === userAccountId}
+          isRoomOwner={isRoomOwner}
+          onClose={() => setShowUserProfile(false)}
+          onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
+          onMessage={() => {
+            setShowUserProfile(false);
+            setShowChatInput(true);
+            setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
+          }}
+          onCopyId={() => console.log('Copy ID clicked')}
+          onMention={(username?: string) => {
+            setShowUserProfile(false);
+            setShowChatInput(true);
+            setMessage(`@${username} `);
+            setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
+          }}
+          onLeaveSeat={() => {
+            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
+            if (userSeat) {
+              setSelectedSeat(userSeat.number);
+              setTimeout(() => handleLeaveSeat(), 100);
+            }
+            setShowUserProfile(false);
+          }}
+          onMute={() => {
+            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
+            if (userSeat) {
+              setSelectedSeat(userSeat.number);
+              setTimeout(() => handleToggleMute(), 100);
+            }
+            setShowUserProfile(false);
+          }}
+          onLock={() => {
+            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
+            if (userSeat) {
+              setSelectedSeat(userSeat.number);
+              setTimeout(() => handleToggleLock(), 100);
+            }
+            setShowUserProfile(false);
+          }}
+          onKickOut={() => {
+            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
+            if (userSeat) {
+              setSelectedSeat(userSeat.number);
+              setTimeout(() => handleLeaveSeat(), 100);
+            }
+            setShowUserProfile(false);
+          }}
+        />
+      )}
+
       {/* Exit Menu */}
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40" onClick={closeExitMenu}>
@@ -1690,459 +1690,173 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       )}
 
       {/* Music Controller - Full Size */}
-{musicControllerState === 'full' && currentTrack && !showFourGride && (
-  <div 
-    className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
-    style={{ 
-      bottom: '10vh',
-      cursor: 'grab',
-      userSelect: 'none',
-      touchAction: 'none'
-    }}
-    onClick={(e) => e.stopPropagation()}
-    onMouseDown={(e) => {
-      const card = e.currentTarget;
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startLeft = card.offsetLeft;
-      const startTop = card.offsetTop;
-      let isDragging = false;
-      let hasMoved = false;
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const dx = moveEvent.clientX - startX;
-        const dy = moveEvent.clientY - startY;
-        
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-          isDragging = true;
-          hasMoved = true;
-        }
-        
-        if (isDragging) {
-          card.style.cursor = 'grabbing';
-          card.style.left = `${startLeft + dx}px`;
-          card.style.top = `${startTop + dy}px`;
-          card.style.transform = 'none';
-        }
-      };
-
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        card.style.cursor = 'grab';
-        
-        if (hasMoved) {
-          // Prevent click after drag
-          setTimeout(() => {
-            hasMoved = false;
-          }, 100);
-        }
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }}
-    onTouchStart={(e) => {
-      const card = e.currentTarget;
-      const touch = e.touches[0];
-      const startX = touch.clientX;
-      const startY = touch.clientY;
-      const startLeft = card.offsetLeft;
-      const startTop = card.offsetTop;
-      let isDragging = false;
-
-      const handleTouchMove = (moveEvent: TouchEvent) => {
-        const moveTouch = moveEvent.touches[0];
-        const dx = moveTouch.clientX - startX;
-        const dy = moveTouch.clientY - startY;
-        
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-          isDragging = true;
-        }
-        
-        if (isDragging) {
-          card.style.left = `${startLeft + dx}px`;
-          card.style.top = `${startTop + dy}px`;
-          card.style.transform = 'none';
-        }
-      };
-
-      const handleTouchEnd = () => {
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-      };
-
-      document.addEventListener('touchmove', handleTouchMove);
-      document.addEventListener('touchend', handleTouchEnd);
-    }}
-  >
-    <div 
-      className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
-      style={{
-        padding: '12px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-      }}
-    >
-      <button
-        onClick={handleCloseMusicController}
-        className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-        aria-label="Close music controller"
-      >
-        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-          <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
-          <line x1="12" y1="2" x2="12" y2="12" />
-        </svg>
-      </button>
-
-      <button
-        onClick={handleMinimizeMusicController}
-        className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-        aria-label="Minimize music controller"
-      >
-        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-          <line x1="7" y1="17" x2="17" y2="7" />
-          <polyline points="7 7 17 7 17 17" />
-        </svg>
-      </button>
-
-      <div className="text-center mb-2 mt-5">
-        <p className="text-white text-sm font-semibold truncate px-8">
-          {currentTrack.name}
-        </p>
-      </div>
-
-      <div className="px-2 mb-2">
-        <input
-          type="range"
-          min="0"
-          max={musicDuration || 0}
-          step="0.1"
-          value={musicCurrentTime}
-          onChange={handleProgressChange}
-          className="w-full h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
-          style={{
-            background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
-          }}
-        />
-        <div className="flex justify-between text-[10px] text-white/60 mt-1">
-          <span>{formatTime(musicCurrentTime)}</span>
-          <span>{formatTime(musicDuration)}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center gap-6 mb-2">
-        <button
-          onClick={handlePrevTrack}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-          aria-label="Previous track"
-        >
-          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
-            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-          </svg>
-        </button>
-
-        <button
-          onClick={handleToggleMusicPlay}
-          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
-          aria-label={isMusicPlaying ? 'Pause' : 'Play'}
-        >
-          {isMusicPlaying ? (
-            <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-              <rect x="6" y="4" width="4" height="16" rx="1" />
-              <rect x="14" y="4" width="4" height="16" rx="1" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-          )}
-        </button>
-
-        <button
-          onClick={handleNextTrack}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-          aria-label="Next track"
-        >
-          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
-            <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2 px-2">
-        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
-          <path d="M3 9v6h4l5 5V4L7 9H3z" />
-          <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-          <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-        </svg>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={musicVolume}
-          onChange={handleVolumeChange}
-          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
-          style={{
-            background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
-          }}
-        />
-        <span className="text-white text-xs font-semibold w-8 text-right">
-          {Math.round(musicVolume * 100)}%
-        </span>
-      </div>
-    </div>
-  </div>
-)}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
-  <div 
-    className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
-    style={{ 
-      bottom: '10vh',
-    }}
-    onClick={(e) => e.stopPropagation()}
-  >
-    <div 
-      className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
-      style={{
-        padding: '12px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-      }}
-    >
-      <button
-        onClick={handleCloseMusicController}
-        className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-        aria-label="Close music controller"
-      >
-        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-          <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
-          <line x1="12" y1="2" x2="12" y2="12" />
-        </svg>
-      </button>
-
-      <button
-        onClick={handleMinimizeMusicController}
-        className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-        aria-label="Minimize music controller"
-      >
-        <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
-          <line x1="7" y1="17" x2="17" y2="7" />
-          <polyline points="7 7 17 7 17 17" />
-        </svg>
-      </button>
-
-      <div className="text-center mb-2 mt-5">
-        <p className="text-white text-sm font-semibold truncate px-8">
-          {currentTrack.name}
-        </p>
-      </div>
-
-      <div className="px-2 mb-2">
-        <input
-          type="range"
-          min="0"
-          max={musicDuration || 0}
-          step="0.1"
-          value={musicCurrentTime}
-          onChange={handleProgressChange}
-          className="w-full h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
-          style={{
-            background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
+        <div 
+          className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
+          style={{ 
+            bottom: '10vh',
           }}
-        />
-        <div className="flex justify-between text-[10px] text-white/60 mt-1">
-          <span>{formatTime(musicCurrentTime)}</span>
-          <span>{formatTime(musicDuration)}</span>
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
+            style={{
+              padding: '12px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            }}
+          >
+            <button
+              onClick={handleCloseMusicController}
+              className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+              aria-label="Close music controller"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
+                <line x1="12" y1="2" x2="12" y2="12" />
+              </svg>
+            </button>
+
+            <button
+              onClick={handleMinimizeMusicController}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+              aria-label="Minimize music controller"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                <line x1="7" y1="17" x2="17" y2="7" />
+                <polyline points="7 7 17 7 17 17" />
+              </svg>
+            </button>
+
+            <div className="text-center mb-2 mt-5">
+              <p className="text-white text-sm font-semibold truncate px-8">
+                {currentTrack.name}
+              </p>
+            </div>
+
+            <div className="px-2 mb-2">
+              <input
+                type="range"
+                min="0"
+                max={musicDuration || 0}
+                step="0.1"
+                value={musicCurrentTime}
+                onChange={handleProgressChange}
+                className="w-full h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
+                style={{
+                  background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
+                }}
+              />
+              <div className="flex justify-between text-[10px] text-white/60 mt-1">
+                <span>{formatTime(musicCurrentTime)}</span>
+                <span>{formatTime(musicDuration)}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-6 mb-2">
+              <button
+                onClick={handlePrevTrack}
+                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Previous track"
+              >
+                <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+                </svg>
+              </button>
+
+              <button
+                onClick={handleToggleMusicPlay}
+                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                aria-label={isMusicPlaying ? 'Pause' : 'Play'}
+              >
+                {isMusicPlaying ? (
+                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={handleNextTrack}
+                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Next track"
+              >
+                <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
+                  <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 px-2">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
+                <path d="M3 9v6h4l5 5V4L7 9H3z" />
+              </svg>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={musicVolume}
+                onChange={handleVolumeChange}
+                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
+                style={{
+                  background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
+                }}
+              />
+              <span className="text-white text-xs font-semibold w-8 text-right">
+                {Math.round(musicVolume * 100)}%
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex items-center justify-center gap-6 mb-2">
-        <button
-          onClick={handlePrevTrack}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-          aria-label="Previous track"
-        >
-          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
-            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-          </svg>
-        </button>
-
-        <button
-          onClick={handleToggleMusicPlay}
-          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
-          aria-label={isMusicPlaying ? 'Pause' : 'Play'}
-        >
-          {isMusicPlaying ? (
-            <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-              <rect x="6" y="4" width="4" height="16" rx="1" />
-              <rect x="14" y="4" width="4" height="16" rx="1" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-          )}
-        </button>
-
-        <button
-          onClick={handleNextTrack}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-          aria-label="Next track"
-        >
-          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
-            <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2 px-2">
-        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
-          <path d="M3 9v6h4l5 5V4L7 9H3z" />
-          <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-          <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-        </svg>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={musicVolume}
-          onChange={handleVolumeChange}
-          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
-          style={{
-            background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
+      {/* Music Controller - Minimized */}
+      {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
+        <div
+          className="fixed z-[45]"
+          style={{ 
+            bottom: '8vh', 
+            right: '12px',
           }}
-        />
-        <span className="text-white text-xs font-semibold w-8 text-right">
-          {Math.round(musicVolume * 100)}%
-        </span>
-      </div>
-    </div>
-  </div>
-)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={handleMaximizeMusicController}
+            className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
+            style={{
+              width: '56px',
+              height: '56px',
+              border: '3px solid black',
+              backgroundColor: 'black',
+            }}
+            aria-label="Maximize music controller"
+          >
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div className="relative w-full h-full flex items-center justify-center">
+                <div className="absolute w-18 h-18 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
+                <div className="absolute w-18 h-18 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
+                <div className="absolute w-18 h-18 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
+                <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+              </div>
+            </div>
 
-{/* Music Controller - Minimized */}
-{musicControllerState === 'minimized' && currentTrack && !showFourGride && (
-  <div
-    className="fixed z-[45]"
-    style={{ 
-      bottom: '8vh', 
-      right: '12px',
-      cursor: 'grab',
-      userSelect: 'none',
-      touchAction: 'none'
-    }}
-    onClick={(e) => e.stopPropagation()}
-    onMouseDown={(e) => {
-      const card = e.currentTarget;
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startLeft = card.offsetLeft;
-      const startTop = card.offsetTop;
-      let isDragging = false;
-      let hasMoved = false;
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const dx = moveEvent.clientX - startX;
-        const dy = moveEvent.clientY - startY;
-        
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-          isDragging = true;
-          hasMoved = true;
-        }
-        
-        if (isDragging) {
-          card.style.cursor = 'grabbing';
-          card.style.left = `${startLeft + dx}px`;
-          card.style.top = `${startTop + dy}px`;
-          card.style.right = 'auto';
-          card.style.bottom = 'auto';
-        }
-      };
-
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        card.style.cursor = 'grab';
-        
-        if (hasMoved) {
-          setTimeout(() => {
-            hasMoved = false;
-          }, 100);
-        }
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }}
-    onTouchStart={(e) => {
-      const card = e.currentTarget;
-      const touch = e.touches[0];
-      const startX = touch.clientX;
-      const startY = touch.clientY;
-      const startLeft = card.offsetLeft;
-      const startTop = card.offsetTop;
-      let isDragging = false;
-
-      const handleTouchMove = (moveEvent: TouchEvent) => {
-        const moveTouch = moveEvent.touches[0];
-        const dx = moveTouch.clientX - startX;
-        const dy = moveTouch.clientY - startY;
-        
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-          isDragging = true;
-        }
-        
-        if (isDragging) {
-          card.style.left = `${startLeft + dx}px`;
-          card.style.top = `${startTop + dy}px`;
-          card.style.right = 'auto';
-          card.style.bottom = 'auto';
-        }
-      };
-
-      const handleTouchEnd = () => {
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-      };
-
-      document.addEventListener('touchmove', handleTouchMove);
-      document.addEventListener('touchend', handleTouchEnd);
-    }}
-  >
-    <button
-      onClick={handleMaximizeMusicController}
-      className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
-      style={{
-        width: '56px',
-        height: '56px',
-        border: '3px solid black',
-        backgroundColor: 'black',
-      }}
-      aria-label="Maximize music controller"
-    >
-      {/* Voice Wave Rings - Beech mein */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <div className="relative w-full h-full flex items-center justify-center">
-          <div className="absolute w-18 h-18 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
-          <div className="absolute w-18 h-18 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
-          <div className="absolute w-18 h-18 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
-          <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+            <div className="absolute inset-0 flex items-center justify-center music-minimize-icon z-20">
+              <img 
+                src="/IMG_20260815_133309.png" 
+                alt="Music" 
+                className="w-full h-full object-cover rounded-full" 
+                style={{ borderRadius: '50%' }}
+              />
+            </div>
+          </button>
         </div>
-      </div>
+      )}
 
-      {/* Music Icon - Circle mein */}
-      <div className="absolute inset-0 flex items-center justify-center music-minimize-icon z-20">
-        <img 
-          src="/IMG_20260815_133309.png" 
-          alt="Music" 
-          className="w-full h-full object-cover rounded-full" 
-          style={{ borderRadius: '50%' }}
-        />
-      </div>
-    </button>
-  </div>
-)}
       {/* Custom styles for sliders */}
       <style jsx global>{`
         .music-volume-slider {
@@ -2213,34 +1927,35 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           animation: rotate-slow 4s linear infinite;
         }
       `}</style>
+
       {/* Emoji & Gift Pickers */}
-{showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
-{showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
+      {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
+      {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
 
-{isSpeakerOn && <RoomAudioRenderer />}
+      {isSpeakerOn && <RoomAudioRenderer />}
 
-<style jsx>{`
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .animate-slide-up { animation: slideUp 0.3s ease-out; }
-  @keyframes waveBehind { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.4; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
-  @keyframes voicePulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.08); } }
-  .wave-ripple { animation: waveBehind 1.2s ease-out infinite; }
-  .wave-ripple-delayed { animation: waveBehind 1.2s ease-out 0.4s infinite; }
-  .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-  .scrollbar-none::-webkit-scrollbar { display: none; }
-  
-  @keyframes ping-slow {
-    0% { transform: scale(0.8); opacity: 1; }
-    100% { transform: scale(1.5); opacity: 0; }
-  }
-  .animate-ping-slow {
-    animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-`}</style>
-</div>
-);
+      <style jsx>{`
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes waveBehind { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.4; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
+        @keyframes voicePulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.08); } }
+        .wave-ripple { animation: waveBehind 1.2s ease-out infinite; }
+        .wave-ripple-delayed { animation: waveBehind 1.2s ease-out 0.4s infinite; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        
+        @keyframes ping-slow {
+          0% { transform: scale(0.8); opacity: 1; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+        .animate-ping-slow {
+          animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+      `}</style>
+    </div>
+  );
 }
-      
+
 
 // SeatItem Component - With WebGL overlay from separate file
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
@@ -2275,7 +1990,100 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
   const activeSpeaking = isSpeaking || isUserSpeaking;
 
   return (
-    <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
+    <div className="flex flex-col items-center gap-1 cursor-pointer relative" onClick={onClick}>
+      {/* Special card for Seat 1 - Left side */}
+      {seatNumber === 1 && (
+        <div 
+          className="absolute left-0 flex items-center"
+          style={{
+            top: '50%',
+            transform: 'translateY(-50%) translateX(-100%)',
+            marginLeft: '-8px',
+          }}
+        >
+          <div 
+            className="relative rounded-xl overflow-hidden"
+            style={{
+              width: '48px',
+              height: '48px',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(255, 215, 0, 0.3)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            }}
+          >
+            <WhiteColorRemovalShader
+              imageSrc="/1787158869902.png"
+              threshold={0.85}
+              className="w-full h-full"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                maxWidth: 'none',
+                maxHeight: 'none',
+              }}
+            />
+            <div 
+              className="absolute bottom-0 left-0 right-0 text-center"
+              style={{
+                padding: '2px 0',
+                background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
+              }}
+            >
+              <span 
+                className="text-[8px] font-bold"
+                style={{
+                  color: '#FFD700',
+                  textShadow: '0 0 4px rgba(255,215,0,0.8), 0 0 8px rgba(255,215,0,0.5)',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                500K
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Special card for Seat 1 - Right side (Black color removal) */}
+      {seatNumber === 1 && (
+        <div 
+          className="absolute right-0 flex items-center"
+          style={{
+            top: '50%',
+            transform: 'translateY(-50%) translateX(100%)',
+            marginRight: '-8px',
+          }}
+        >
+          <div 
+            className="relative rounded-xl overflow-hidden"
+            style={{
+              width: '48px',
+              height: '48px',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            }}
+          >
+            <WhiteColorRemovalShader
+              imageSrc="/1787160574776.png"
+              threshold={0.85}
+              removeColor="black"
+              className="w-full h-full"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                maxWidth: 'none',
+                maxHeight: 'none',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2307,7 +2115,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                     zIndex: 1
                   }}
                 />
-                               {/* WebGL Overlay - From separate file - Full image visible, can overflow */}
+                {/* WebGL Overlay - From separate file - Full image visible, can overflow */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
@@ -2369,4 +2177,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-    }
+  }
