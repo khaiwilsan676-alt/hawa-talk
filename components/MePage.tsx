@@ -922,7 +922,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full min-h-screen bg-white">
+    <div className="w-full min-h-screen bg-white" style={{ paddingTop: '80px' }}>
       {/* Profile Header */}
       <div
         className="px-4 pb-6 relative safe-top"
