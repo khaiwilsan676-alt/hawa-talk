@@ -2214,24 +2214,24 @@ const renderMineTab = () => (
       )}
 
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
-        <div className="fixed right-4 z-40">
-          style={{
-          bottom: 'calc(75px + max(env(safe-area-inset-bottom, 0px),16px))'
-        }}
-         
-          <img
-            src="/IMG_20260719_203213.png"
-            alt="Corner decoration"
-            className="rounded-2xl object-cover cursor-pointer hover:scale-105 transition-transform active:scale-95"
-            style={{
-              width: '70px',
-              height: '70px',
-            }}
-            onClick={handleImageClick}
-          />
-        </div>
-      )}
-
+  <div 
+    className="fixed right-4 z-40"
+    style={{
+      bottom: 'calc(75px + max(env(safe-area-inset-bottom, 0px),16px))'
+    }}
+  >
+    <img
+      src="/IMG_20260719_203213.png"
+      alt="Corner decoration"
+      className="rounded-2xl object-cover cursor-pointer hover:scale-105 transition-transform active:scale-95"
+      style={{
+        width: '70px',
+        height: '70px',
+      }}
+      onClick={handleImageClick}
+    />
+  </div>
+)}
       <div className="w-full">
         {currentPage === 'home' && (
           <div
@@ -2433,13 +2433,14 @@ const renderMineTab = () => (
         )}
       </div>
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
-        <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom">
-          style={{
-          paddingBottom: 'max(env(safe-area-inset-bottom, 0px),8px)'
-        }}
-          
-         <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
+        {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
+  <div 
+    className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom"
+    style={{
+      paddingBottom: 'max(env(safe-area-inset-bottom, 0px),8px)'
+    }}
+  >
+    <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             <button
               onClick={() => setCurrentPage('home')}
               className="flex flex-col items-center gap-1 transition-all active:scale-95"
