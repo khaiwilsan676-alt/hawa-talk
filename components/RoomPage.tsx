@@ -858,7 +858,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       return (
         <>
           <div className="flex justify-center">{renderSeatItems([1])}</div>
-          <div className="flex justify-around items-center px-1">{renderSeatItems([2,3,4,5])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
         </>
       );
     }
@@ -866,8 +866,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       return (
         <>
           <div className="flex justify-center gap-4">{renderSeatItems([1,2])}</div>
-          <div className="flex justify-around items-center px-1">{renderSeatItems([3,4,5,6])}</div>
-          <div className="flex justify-around items-center px-1">{renderSeatItems([7,8,9,10])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([3,4,5,6])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([7,8,9,10])}</div>
         </>
       );
     }
@@ -875,17 +875,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       return (
         <>
           <div className="flex justify-center">{renderSeatItems([1])}</div>
-          <div className="flex justify-around items-center px-1">{renderSeatItems([2,3,4,5])}</div>
-          <div className="flex justify-around items-center px-1">{renderSeatItems([6,7,8,9])}</div>
-          <div className="flex justify-around items-center px-1">{renderSeatItems([10,11,12,13])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([6,7,8,9])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([10,11,12,13])}</div>
         </>
       );
     }
     return (
       <>
         <div className="flex justify-center">{renderSeatItems([1])}</div>
-        <div className="flex justify-around items-center px-1">{renderSeatItems([2,3,4,5])}</div>
-        <div className="flex justify-around items-center px-1">{renderSeatItems([6,7,8,9])}</div>
+        <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
+        <div className="flex justify-around items-center px-0">{renderSeatItems([6,7,8,9])}</div>
       </>
     );
   };
@@ -1140,12 +1140,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section - Fixed spacing */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-2">
+          <div className="flex-shrink-0 flex flex-col gap-2 pt-6">
             {renderSeats()}
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
-            <div className="mx-1 mb-2 flex justify-start">
+            <div className="mx-0 mb-2 flex justify-start">
               <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/5 px-3 py-2 max-w-[80%]">
                 <p className="text-white text-[12px] leading-snug font-medium">
                   Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
@@ -1937,7 +1937,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             style={{
               color: '#FFD700',
               textShadow: '0 0 4px rgba(255,215,0,0.8), 0 0 8px rgba(255,215,0,0.5)',
-              letterSpacing: '0.5px',
+              letterSpacing: '0.2px',
             }}
           >
             500K
