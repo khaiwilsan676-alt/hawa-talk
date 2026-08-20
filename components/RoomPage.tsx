@@ -865,7 +865,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (micMode === 10) {
       return (
         <>
-          <div className="flex justify-center gap-4">{renderSeatItems([1,2])}</div>
+          <div className="flex justify-center gap-2 sm:gap-4">{renderSeatItems([1,2])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([3,4,5,6])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([7,8,9,10])}</div>
         </>
@@ -1058,20 +1058,20 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
-      <div className="relative z-10 flex flex-col h-full px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }} onClick={(e) => e.stopPropagation()}>
+      <div className="relative z-10 flex flex-col h-full px-3 sm:px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }} onClick={(e) => e.stopPropagation()}>
 
-        {/* Top Header */}
+        {/* Top Header - Responsive */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
-              className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer hover:border-white/50 transition-colors"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer hover:border-white/50 transition-colors"
             >
               <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" draggable={false} />
             </button>
             <div className="text-left">
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-lg">{displayRoomName}</h2>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <h2 className="font-bold text-base sm:text-lg">{displayRoomName}</h2>
                 {!isRoomOwner && (
                   <button
                     onClick={(e) => {
@@ -1080,19 +1080,19 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       setIsFollowed(newFollow);
                       if (onFollowToggle) onFollowToggle(roomId, newFollow);
                     }}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-gray-500' : 'bg-blue-500'}`}
+                    className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${isFollowed ? 'bg-gray-500' : 'bg-blue-500'}`}
                     title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                   >
                     {isFollowed ? (
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white">
+                      <svg viewBox="0 0 24 24" className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-white">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                       </svg>
                     ) : (
                       <>
-                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white absolute">
+                        <svg viewBox="0 0 24 24" className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-white absolute">
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                         </svg>
-                        <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 relative">
+                        <svg viewBox="0 0 24 24" className="w-2 h-2 sm:w-2.5 sm:h-2.5 relative">
                           <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
                           <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
                         </svg>
@@ -1101,37 +1101,37 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   </button>
                 )}
               </div>
-              <p className="text-xs text-gray-300">ID: {roomOwner.accountId || roomOwner.id || ''}</p>
+              <p className="text-[10px] sm:text-xs text-gray-300">ID: {roomOwner.accountId || roomOwner.id || ''}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 h-7 cursor-pointer hover:bg-black/60 transition-colors">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-1.5 sm:px-2 py-0.5 rounded-full border border-white/10 h-6 sm:h-7 cursor-pointer hover:bg-black/60 transition-colors">
+              <svg viewBox="0 0 24 24" className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
                 <line x1="18" y1="8" x2="21" y2="8" /><line x1="18" y1="12" x2="21" y2="12" /><line x1="18" y1="16" x2="20" y2="16" />
               </svg>
-              <span className="text-white text-xs font-semibold leading-none">{liveUserCount}</span>
+              <span className="text-white text-[10px] sm:text-xs font-semibold leading-none">{liveUserCount}</span>
             </button>
 
             {isRoomOwner && (
-              <button onClick={openSettings} aria-label="Settings" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
-                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+              <button onClick={openSettings} aria-label="Settings" className="p-1 sm:p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                   <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
                   <circle cx="12" cy="12" r="2.8" />
                 </svg>
               </button>
             )}
 
-            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="p-1 sm:p-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
               </svg>
             </button>
 
-            <button onClick={openExitMenu} aria-label="Power" className="p-1.5 bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center w-9 h-9 cursor-pointer">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+            <button onClick={openExitMenu} aria-label="Power" className="p-1 sm:p-1.5 bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 cursor-pointer">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
                 <path d="M12 4v8" /><path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
               </svg>
             </button>
@@ -1140,20 +1140,20 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section - Fixed spacing */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-10">
+          <div className="flex-shrink-0 flex flex-col gap-2 pt-6 sm:pt-10">
             {renderSeats()}
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
             <div className="mx-0 mb-2 flex justify-start">
               <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/5 px-3 py-2 max-w-[80%]">
-                <p className="text-white text-[12px] leading-snug font-medium">
+                <p className="text-white text-[11px] sm:text-[12px] leading-snug font-medium">
                   Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
                 </p>
                 {roomAnnouncement && (
                   <div className="flex items-start gap-1.5 mt-1">
-                    <span className="text-white text-[11px] font-semibold whitespace-nowrap shrink-0">ANNOUNCEMENT:</span>
-                    <p className="text-white text-[12px] leading-snug font-medium">{roomAnnouncement}</p>
+                    <span className="text-white text-[10px] sm:text-[11px] font-semibold whitespace-nowrap shrink-0">ANNOUNCEMENT:</span>
+                    <p className="text-white text-[11px] sm:text-[12px] leading-snug font-medium">{roomAnnouncement}</p>
                   </div>
                 )}
               </div>
@@ -1161,31 +1161,31 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
             <div className="space-y-0.5">
               {messages.map((msg) => (
-                <div key={msg.id} className="leading-[1.9rem]">
+                <div key={msg.id} className="leading-[1.8rem] sm:leading-[1.9rem]">
                   {msg.type === 'join' ? (
                     <div className="flex items-start gap-1.5 px-1">
                       <div
-                        className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
                         onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || '' })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col bg-white/8 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/5">
-                        <span className="text-[9px] font-semibold text-white/80 leading-tight">{msg.sender}</span>
-                        <span className="text-[8px] text-white/50 leading-tight mt-0.5">Enter the Room</span>
+                        <span className="text-[8px] sm:text-[9px] font-semibold text-white/80 leading-tight">{msg.sender}</span>
+                        <span className="text-[7px] sm:text-[8px] text-white/50 leading-tight mt-0.5">Enter the Room</span>
                       </div>
                     </div>
                   ) : msg.imageUrl ? (
-                    <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.9rem)' }}>
+                    <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.8rem)' }}>
                       <div
-                        className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
                         onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[9px] font-semibold text-white/70 leading-tight">{msg.sender}</span>
-                        <div onClick={() => setFullImageModal(msg.imageUrl || null)} className="rounded-lg overflow-hidden border border-white/20 cursor-pointer hover:opacity-90 transition-opacity bg-black/40 flex items-center justify-center mt-0.5" style={{ height: 'calc(3.5 * 1.9rem)', width: 'calc(3.5 * 1.9rem)' }}>
+                        <span className="text-[8px] sm:text-[9px] font-semibold text-white/70 leading-tight">{msg.sender}</span>
+                        <div onClick={() => setFullImageModal(msg.imageUrl || null)} className="rounded-lg overflow-hidden border border-white/20 cursor-pointer hover:opacity-90 transition-opacity bg-black/40 flex items-center justify-center mt-0.5" style={{ height: 'calc(3.5 * 1.8rem)', width: 'calc(3.5 * 1.8rem)' }}>
                           <img src={msg.imageUrl} alt="Shared image" className="w-full h-full object-cover" draggable={false} />
                         </div>
                       </div>
@@ -1193,15 +1193,15 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   ) : (
                     <div className="flex items-start gap-2">
                       <div
-                        className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
                         onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[9px] font-semibold text-white/70 leading-tight">{msg.sender}</span>
-                        <div className="px-2.5 py-1 rounded-lg bg-white/15 text-white rounded-bl-none mt-0.5">
-                          <p className="text-[11px] break-words leading-tight">{msg.text}</p>
+                        <span className="text-[8px] sm:text-[9px] font-semibold text-white/70 leading-tight">{msg.sender}</span>
+                        <div className="px-2 py-1 rounded-lg bg-white/15 text-white rounded-bl-none mt-0.5">
+                          <p className="text-[10px] sm:text-[11px] break-words leading-tight">{msg.text}</p>
                         </div>
                       </div>
                     </div>
@@ -1216,10 +1216,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         {/* Footer Controls */}
         <div className="flex-shrink-0 pt-2">
           {showChatInput && (
-            <div ref={inputContainerRef} className="flex items-center gap-0 mb-2 -mx-4 w-screen">
-              <div className="flex-1 bg-white flex items-center px-4 py-3 shadow-lg w-full">
-                <button onMouseDown={(e) => e.preventDefault()} onClick={handleImageClick} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+            <div ref={inputContainerRef} className="flex items-center gap-0 mb-2 -mx-3 sm:-mx-4 w-screen">
+              <div className="flex-1 bg-white flex items-center px-3 sm:px-4 py-2 sm:py-3 shadow-lg w-full">
+                <button onMouseDown={(e) => e.preventDefault()} onClick={handleImageClick} className="p-1 sm:p-1.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
                   </svg>
                 </button>
@@ -1231,14 +1231,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   onKeyPress={handleKeyPress}
                   onFocus={handleInputFocus}
                   placeholder="Type a message..."
-                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-3 py-2 text-base outline-none border-none"
+                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base outline-none border-none"
                 />
                 <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={handleSendMessage}
-                  className="p-1.5 hover:bg-blue-50 rounded-full transition-colors cursor-pointer flex-shrink-0"
+                  className="p-1 sm:p-1.5 hover:bg-blue-50 rounded-full transition-colors cursor-pointer flex-shrink-0"
                 >
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                     <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
                 </button>
@@ -1249,43 +1249,43 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={openChatInput}
-              className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
+              className="bg-black/40 backdrop-blur-md border border-white/10 text-white text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
             >
               Say Hi
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {hasSeat && (
-                <button onClick={handleBottomMicToggle} className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer">
+                <button onClick={handleBottomMicToggle} className="bg-black/30 backdrop-blur-md p-1.5 sm:p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center cursor-pointer">
                   {currentUserSeat?.isMuted ? (
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                       <line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
                     </svg>
                   ) : (
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
                     </svg>
                   )}
                 </button>
               )}
-              <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 backdrop-blur-md p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 backdrop-blur-md p-1.5 sm:p-2 rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </button>
-              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 overflow-hidden cursor-pointer">
+              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-8 h-8 sm:w-10 sm:h-10 overflow-hidden cursor-pointer">
                 <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover" draggable={false} />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
                 aria-label="Message Box Menu"
-                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
+                className="bg-black/40 backdrop-blur-md p-1.5 sm:p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-8 h-8 sm:w-10 sm:h-10 cursor-pointer"
               >
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round"><rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" /></svg>
+                <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round"><rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" /></svg>
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
                 aria-label="Apps Menu"
-                className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-10 h-10 cursor-pointer"
+                className="bg-black/40 backdrop-blur-md p-1.5 sm:p-2 rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 w-8 h-8 sm:w-10 sm:h-10 cursor-pointer"
               >
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><rect x="3" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" /></svg>
+                <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 fill-white"><rect x="3" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" /></svg>
               </button>
             </div>
           </div>
@@ -1295,13 +1295,13 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {/* Public Msg Off Modal */}
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
-          <div className="bg-white rounded-2xl px-6 py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="text-4xl mb-3"></div>
-            <h3 className="text-lg font-bold text-gray-800 mb-1">Public msg are off</h3>
-            <p className="text-sm text-gray-500 mb-4">Only the room owner can send messages right now.</p>
+          <div className="bg-white rounded-2xl px-5 sm:px-6 py-4 sm:py-5 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="text-3xl sm:text-4xl mb-2 sm:mb-3"></div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1">Public msg are off</h3>
+            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Only the room owner can send messages right now.</p>
             <button
               onClick={() => setShowPublicMsgModal(false)}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full transition-colors cursor-pointer"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1.5 sm:py-2 px-5 sm:px-6 rounded-full transition-colors cursor-pointer"
             >
               OK
             </button>
@@ -1314,23 +1314,23 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden flex flex-col" style={{ height: '40vh', maxHeight: '40vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
-              <h2 className="text-lg font-bold text-gray-800 text-center">Active Users</h2>
+            <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-2 sm:pb-3 border-b border-gray-200 flex-shrink-0">
+              <h2 className="text-base sm:text-lg font-bold text-gray-800 text-center">Active Users</h2>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-3" style={{ minHeight: 0 }}>
+            <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 sm:py-3" style={{ minHeight: 0 }}>
               {roomUsers.length > 0 ? (
                 <div className="space-y-2 pb-4">
                   {roomUsers.map((user) => (
-                    <div key={user.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
+                    <div key={user.accountId} className="flex items-center gap-2 sm:gap-3 bg-gray-50 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
                         <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
+                        <h4 className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{user.name}</h4>
                         <div className="flex items-center gap-1">
-                          <p className="text-xs text-gray-400">ID: {user.accountId}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-400">ID: {user.accountId}</p>
                           <button onClick={(e) => handleCopyUserId(user.accountId, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer" title="Copy ID">
-                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                            <svg viewBox="0 0 24 24" className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                             </svg>
                           </button>
@@ -1341,7 +1341,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-400 text-sm">No active users</p>
+                  <p className="text-gray-400 text-xs sm:text-sm">No active users</p>
                 </div>
               )}
             </div>
@@ -1355,33 +1355,33 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
             {!isRoomOwner && (
-              <svg viewBox="0 0 24 24" className="absolute top-3 left-3 w-6 h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round">
+              <svg viewBox="0 0 24 24" className="absolute top-2 left-2 sm:top-3 sm:left-3 w-5 h-5 sm:w-6 sm:h-6 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             )}
 
-            <div className="px-6 pt-6 pb-2 flex items-center justify-center">
-              <h2 className="text-lg font-bold text-gray-800">Room Information</h2>
+            <div className="px-4 sm:px-6 pt-5 sm:pt-6 pb-2 flex items-center justify-center">
+              <h2 className="text-base sm:text-lg font-bold text-gray-800">Room Information</h2>
             </div>
-            <div className="flex border-b border-gray-200 px-6">
-              <button onClick={() => setRoomInfoTab('profile')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'profile' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Profile</button>
-              <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
+            <div className="flex border-b border-gray-200 px-4 sm:px-6">
+              <button onClick={() => setRoomInfoTab('profile')} className={`flex-1 py-2 sm:py-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'profile' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Profile</button>
+              <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-2 sm:py-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
             </div>
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
               {roomInfoTab === 'profile' ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
                       <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-800">{roomName || 'Room'}</h3>
-                      <div className="flex items-center gap-1 text-xs text-gray-400">
+                      <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{roomName || 'Room'}</h3>
+                      <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-400">
                         <span>ID: {roomOwner.accountId}</span>
                         <button onClick={handleCopyId} className="p-0.5 hover:bg-gray-100 rounded transition-colors cursor-pointer" title="Copy ID">
-                          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
+                          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                           </svg>
                         </button>
@@ -1390,38 +1390,38 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-400 font-medium">Host</span>
-                    <p className="text-sm font-medium text-gray-800 mt-1">{roomOwner.name || "Unknown"}</p>
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium">Host</span>
+                    <p className="text-xs sm:text-sm font-medium text-gray-800 mt-1">{roomOwner.name || "Unknown"}</p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-400 font-medium">Announcement:</span>
-                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement || '—'}</p>
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium">Announcement:</span>
+                    <p className="text-xs sm:text-sm text-gray-700 mt-1 leading-relaxed">{roomAnnouncement || '—'}</p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}>
+                  <div className="flex items-center gap-2 sm:gap-3 bg-gray-50 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}>
                       <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                     </div>
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <h4 className="text-sm font-medium text-gray-800 truncate">{roomOwner.name}</h4>
-                      <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+                    <div className="flex-1 min-w-0 flex items-center gap-1 sm:gap-2">
+                      <h4 className="text-xs sm:text-sm font-medium text-gray-800 truncate">{roomOwner.name}</h4>
+                      <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
                       </span>
                     </div>
                   </div>
                   {roomFollowers.map(follower => (
-                    <div key={follower.accountId} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5">
-                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}>
+                    <div key={follower.accountId} className="flex items-center gap-2 sm:gap-3 bg-gray-50 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}>
                         <img src={follower.image || "/default-avatar.png"} alt={follower.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-800 truncate">{follower.name}</h4>
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-800 truncate">{follower.name}</h4>
                       </div>
                     </div>
                   ))}
-                  {roomFollowers.length === 0 && <p className="text-center text-gray-400 text-sm py-8">No followers yet</p>}
+                  {roomFollowers.length === 0 && <p className="text-center text-gray-400 text-xs sm:text-sm py-6 sm:py-8">No followers yet</p>}
                 </div>
               )}
             </div>
@@ -1494,22 +1494,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {/* Exit Menu */}
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40" onClick={closeExitMenu}>
-          <div className="flex flex-col items-center gap-8" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-col items-center gap-6 sm:gap-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col items-center gap-2">
-              <button onClick={handleKeep} className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer">
-                <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              <button onClick={handleKeep} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer">
+                <svg viewBox="0 0 24 24" className="h-6 w-6 sm:h-8 sm:w-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><line x1="5" y1="12" x2="19" y2="12" /></svg>
               </button>
-              <span className="text-white font-semibold text-base">Keep</span>
+              <span className="text-white font-semibold text-sm sm:text-base">Keep</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <button onClick={handleExit} className="w-20 h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer">
-                <svg viewBox="0 0 24 24" className="h-8 w-8 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+              <button onClick={handleExit} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer">
+                <svg viewBox="0 0 24 24" className="h-6 w-6 sm:h-8 sm:w-8 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
               </button>
-              <span className="text-white/70 font-medium text-sm">Exit</span>
+              <span className="text-white/70 font-medium text-xs sm:text-sm">Exit</span>
             </div>
           </div>
-          <button onClick={closeExitMenu} className="absolute bottom-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 cursor-pointer">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          <button onClick={closeExitMenu} className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 cursor-pointer">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
       )}
@@ -1518,19 +1518,19 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {showSeatSheet && selectedSeat !== null && (
         <div className="absolute inset-0 z-30 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
-          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-6 py-4 animate-slide-up max-h-[25vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="space-y-2">
+          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-4 sm:px-6 py-3 sm:py-4 animate-slide-up max-h-[30vh] sm:max-h-[25vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-1 sm:space-y-2">
               {!isSelectedSeatTakenByOther && !isSelectedSeatMySeat && (
-                <button onClick={handleTakeSeat} disabled={selectedSeatData?.isLocked && !selectedSeatData?.isOccupied} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Take Mic</button>
+                <button onClick={handleTakeSeat} disabled={selectedSeatData?.isLocked && !selectedSeatData?.isOccupied} className="w-full py-2 sm:py-2.5 text-black font-medium text-sm sm:text-base hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Take Mic</button>
               )}
-              {isSelectedSeatMySeat && <button onClick={handleLeaveSeat} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Leave Seat</button>}
+              {isSelectedSeatMySeat && <button onClick={handleLeaveSeat} className="w-full py-2 sm:py-2.5 text-black font-medium text-sm sm:text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Leave Seat</button>}
               {isSelectedSeatMySeat && (
-                <button onClick={handleToggleMute} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                <button onClick={handleToggleMute} className="w-full py-2 sm:py-2.5 text-black font-medium text-sm sm:text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
                   {selectedSeatData?.isMuted ? 'Unmute' : 'Mute'}
                 </button>
               )}
-              <button onClick={handleToggleLock} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">{selectedSeatData?.isLocked ? 'Unlock Mic' : 'Lock Mic'}</button>
-              <button onClick={handleInvite} className="w-full py-2.5 text-black font-medium text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Invite</button>
+              <button onClick={handleToggleLock} className="w-full py-2 sm:py-2.5 text-black font-medium text-sm sm:text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">{selectedSeatData?.isLocked ? 'Unlock Mic' : 'Lock Mic'}</button>
+              <button onClick={handleInvite} className="w-full py-2 sm:py-2.5 text-black font-medium text-sm sm:text-base hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Invite</button>
             </div>
           </div>
         </div>
@@ -1541,8 +1541,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
           <div className="relative max-w-full max-h-full">
             <img src={fullImageModal} alt="Full preview" className="max-w-full max-h-[85vh] object-contain rounded-lg" />
-            <button onClick={() => setFullImageModal(null)} className="absolute -top-10 right-0 text-white bg-white/20 rounded-full p-2 hover:bg-white/40">
-              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-white stroke-[2.5]"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            <button onClick={() => setFullImageModal(null)} className="absolute -top-8 sm:-top-10 right-0 text-white bg-white/20 rounded-full p-1.5 sm:p-2 hover:bg-white/40">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 fill-none stroke-white stroke-[2.5]"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
           </div>
         </div>
@@ -1553,8 +1553,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <div className="absolute inset-0 z-40 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '60vh' }} onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowMessageSheet(false)} className="absolute top-3 left-3 z-20 p-1.5 bg-white/80 rounded-full shadow hover:bg-white transition-colors">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-700 stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+            <button onClick={() => setShowMessageSheet(false)} className="absolute top-2 sm:top-3 left-2 sm:left-3 z-20 p-1 sm:p-1.5 bg-white/80 rounded-full shadow hover:bg-white transition-colors">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 fill-none stroke-gray-700 stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
@@ -1598,25 +1598,25 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {/* Music Controller - Full Size */}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
         <div 
-          className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-md px-4"
+          className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm sm:max-w-md px-3 sm:px-4"
           style={{ 
-            bottom: '10vh',
+            bottom: 'var(--music-controller-bottom, 10vh)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
           <div 
             className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
             style={{
-              padding: '12px',
+              padding: '10px sm:12px',
               boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}
           >
             <button
               onClick={handleCloseMusicController}
-              className="absolute top-2 left-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+              className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 p-1 sm:p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
               aria-label="Close music controller"
             >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
                 <line x1="12" y1="2" x2="12" y2="12" />
               </svg>
@@ -1624,22 +1624,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
             <button
               onClick={handleMinimizeMusicController}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+              className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1 sm:p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
               aria-label="Minimize music controller"
             >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5 fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <line x1="7" y1="17" x2="17" y2="7" />
                 <polyline points="7 7 17 7 17 17" />
               </svg>
             </button>
 
-            <div className="text-center mb-2 mt-5">
-              <p className="text-white text-sm font-semibold truncate px-8">
+            <div className="text-center mb-1.5 sm:mb-2 mt-4 sm:mt-5">
+              <p className="text-white text-xs sm:text-sm font-semibold truncate px-6 sm:px-8">
                 {currentTrack.name}
               </p>
             </div>
 
-            <div className="px-2 mb-2">
+            <div className="px-1 sm:px-2 mb-1.5 sm:mb-2">
               <input
                 type="range"
                 min="0"
@@ -1647,40 +1647,40 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 step="0.1"
                 value={musicCurrentTime}
                 onChange={handleProgressChange}
-                className="w-full h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
+                className="w-full h-1 sm:h-1.5 rounded-lg appearance-none cursor-pointer music-progress-slider"
                 style={{
                   background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
                 }}
               />
-              <div className="flex justify-between text-[10px] text-white/60 mt-1">
+              <div className="flex justify-between text-[8px] sm:text-[10px] text-white/60 mt-0.5 sm:mt-1">
                 <span>{formatTime(musicCurrentTime)}</span>
                 <span>{formatTime(musicDuration)}</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-6 mb-2">
+            <div className="flex items-center justify-center gap-4 sm:gap-6 mb-1.5 sm:mb-2">
               <button
                 onClick={handlePrevTrack}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Previous track"
               >
-                <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-7 sm:h-7 fill-white">
                   <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
                 </svg>
               </button>
 
               <button
                 onClick={handleToggleMusicPlay}
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                className="p-2 sm:p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
                 aria-label={isMusicPlaying ? 'Pause' : 'Play'}
               >
                 {isMusicPlaying ? (
-                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 sm:w-8 sm:h-8 fill-white">
                     <rect x="6" y="4" width="4" height="16" rx="1" />
                     <rect x="14" y="4" width="4" height="16" rx="1" />
                   </svg>
                 ) : (
-                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 sm:w-8 sm:h-8 fill-white">
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>
                 )}
@@ -1688,17 +1688,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
               <button
                 onClick={handleNextTrack}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Next track"
               >
-                <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-7 sm:h-7 fill-white">
                   <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
                 </svg>
               </button>
             </div>
 
-            <div className="flex items-center gap-2 px-2">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-1 sm:px-2">
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white shrink-0">
                 <path d="M3 9v6h4l5 5V4L7 9H3z" />
               </svg>
               <input
@@ -1708,12 +1708,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 step="0.01"
                 value={musicVolume}
                 onChange={handleVolumeChange}
-                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
+                className="flex-1 h-1.5 sm:h-2 rounded-lg appearance-none cursor-pointer music-volume-slider"
                 style={{
                   background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
                 }}
               />
-              <span className="text-white text-xs font-semibold w-8 text-right">
+              <span className="text-white text-[10px] sm:text-xs font-semibold w-7 sm:w-8 text-right">
                 {Math.round(musicVolume * 100)}%
               </span>
             </div>
@@ -1726,8 +1726,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <div
           className="fixed z-[45]"
           style={{ 
-            bottom: '8vh', 
-            right: '12px',
+            bottom: '6vh sm:8vh', 
+            right: '8px sm:12px',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -1735,9 +1735,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             onClick={handleMaximizeMusicController}
             className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
             style={{
-              width: '56px',
-              height: '56px',
-              border: '3px solid black',
+              width: '44px sm:56px',
+              height: '44px sm:56px',
+              border: '2px sm:3px solid black',
               backgroundColor: 'black',
             }}
             aria-label="Maximize music controller"
@@ -1747,7 +1747,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 <div className="absolute w-18 h-18 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
                 <div className="absolute w-18 h-18 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
                 <div className="absolute w-18 h-18 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
-                <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500 animate-pulse" />
               </div>
             </div>
 
@@ -1763,8 +1763,35 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Custom styles for sliders */}
+      {/* Custom styles for sliders and responsive variables */}
       <style jsx global>{`
+        :root {
+          --seat-size: 60px;
+          --seat-side-offset: -130px;
+          --music-controller-bottom: 10vh;
+        }
+        @media (max-width: 480px) {
+          :root {
+            --seat-size: 52px;
+            --seat-side-offset: -100px;
+            --music-controller-bottom: 8vh;
+          }
+        }
+        @media (max-width: 360px) {
+          :root {
+            --seat-size: 44px;
+            --seat-side-offset: -70px;
+            --music-controller-bottom: 6vh;
+          }
+        }
+        @media (max-width: 320px) {
+          :root {
+            --seat-size: 40px;
+            --seat-side-offset: -50px;
+            --music-controller-bottom: 5vh;
+          }
+        }
+
         .music-volume-slider {
           -webkit-appearance: none;
           appearance: none;
@@ -1832,15 +1859,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         .music-minimize-icon {
           animation: rotate-slow 4s linear infinite;
         }
-      `}</style>
 
-      {/* Emoji & Gift Pickers */}
-      {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
-      {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
-
-      {isSpeakerOn && <RoomAudioRenderer />}
-
-      <style jsx>{`
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes waveBehind { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.4; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
@@ -1849,20 +1868,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         .wave-ripple-delayed { animation: waveBehind 1.2s ease-out 0.4s infinite; }
         .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-none::-webkit-scrollbar { display: none; }
-        
-        @keyframes ping-slow {
-          0% { transform: scale(0.8); opacity: 1; }
-          100% { transform: scale(1.5); opacity: 0; }
-        }
-        .animate-ping-slow {
-          animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
       `}</style>
+
+      {/* Emoji & Gift Pickers */}
+      {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
+      {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
+
+      {isSpeakerOn && <RoomAudioRenderer />}
     </div>
   );
 }
 
-// SeatItem Component - Images at seat row corners
+// SeatItem Component - Uses CSS variables for responsive sizing
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1898,10 +1915,10 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       {/* LEFT side image - positioned relative to seat */}
       {seatNumber === 1 && (
         <div 
-          className="absolute pointer-events-none"
+          className="absolute pointer-events-none hidden sm:flex"
           style={{
-            left: '-130px', // Adjust this value for spacing from seat
-            top: '15px',
+            left: 'var(--seat-side-offset)',
+            top: 'calc(var(--seat-size) / 2)',
             transform: 'translateY(-50%)',
             zIndex: 40,
             display: 'flex',
@@ -1912,8 +1929,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           <div 
             className="relative overflow-visible"
             style={{
-              width: '20px',
-              height: '20px',
+              width: 'calc(var(--seat-size) * 0.33)',
+              height: 'calc(var(--seat-size) * 0.33)',
               flexShrink: 0,
             }}
           >
@@ -1938,6 +1955,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
               color: '#FFD700',
               textShadow: '0 0 4px rgba(255,215,0,0.8), 0 0 8px rgba(255,215,0,0.5)',
               letterSpacing: '0.2px',
+              fontSize: 'calc(var(--seat-size) * 0.15)',
             }}
           >
             500K
@@ -1950,8 +1968,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         <div 
           className="absolute pointer-events-none"
           style={{
-            right: '-130px', // Adjust this value for spacing from seat
-            top: '15px',
+            right: 'var(--seat-side-offset)',
+            top: 'calc(var(--seat-size) / 2)',
             transform: 'translateY(-50%)',
             zIndex: 40,
           }}
@@ -1959,8 +1977,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           <div 
             className="relative overflow-visible"
             style={{
-              width: '50px',
-              height: '50px',
+              width: 'calc(var(--seat-size) * 0.83)',
+              height: 'calc(var(--seat-size) * 0.83)',
               backgroundColor: 'transparent',
               border: 'none',
               boxShadow: 'none',
@@ -1988,14 +2006,14 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
-            <div className="absolute rounded-full bg-blue-400 wave-ripple pointer-events-none" style={{ width: '60px', height: '60px', left: '50%', top: '50%', zIndex: 0 }} />
-            <div className="absolute rounded-full bg-blue-500 wave-ripple-delayed pointer-events-none" style={{ width: '60px', height: '60px', left: '50%', top: '50%', zIndex: 0 }} />
-            <div className="absolute rounded-full pointer-events-none" style={{ width: '64px', height: '64px', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
+            <div className="absolute rounded-full bg-blue-400 wave-ripple pointer-events-none" style={{ width: 'var(--seat-size)', height: 'var(--seat-size)', left: '50%', top: '50%', zIndex: 0 }} />
+            <div className="absolute rounded-full bg-blue-500 wave-ripple-delayed pointer-events-none" style={{ width: 'var(--seat-size)', height: 'var(--seat-size)', left: '50%', top: '50%', zIndex: 0 }} />
+            <div className="absolute rounded-full pointer-events-none" style={{ width: 'calc(var(--seat-size) * 1.066)', height: 'calc(var(--seat-size) * 1.066)', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
           </>
         )}
-        <div className={`w-[60px] h-[60px] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${activeSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
+        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${activeSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
           {isLocked ? (
-            <div className="w-8 h-8 flex items-center justify-center">
+            <div className="w-8 h-8 flex items-center justify-center" style={{ width: 'calc(var(--seat-size) * 0.53)', height: 'calc(var(--seat-size) * 0.53)' }}>
               <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="5" y="11" width="14" height="10" rx="2.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><circle cx="12" cy="16" r="1.2" fill="#94a7be" /></svg>
             </div>
           ) : isOccupied && user ? (
@@ -2047,8 +2065,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                 </div>
               </div>
               {isMuted && (
-                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`}>
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
+                <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 ${user.accountId === accountId ? 'bg-gray-400' : 'bg-red-500'}`} style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
             </>
@@ -2059,22 +2077,22 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                 <g fill="#94a7be" stroke="#5a6d89" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" transform="translate(0, 6)"><path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" /></g>
               </svg>
               {isMuted && (
-                <div className="absolute -right-2 -bottom-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
+                <div className="absolute -right-2 -bottom-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
-      <span className="text-[10px] font-medium text-white/80 pointer-events-none flex items-center gap-1">
+      <span className="text-[10px] font-medium text-white/80 pointer-events-none flex items-center gap-1" style={{ fontSize: 'calc(var(--seat-size) * 0.17)' }}>
         {isRoomOwnerSeat && (
-          <span className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center inline-flex">
-            <svg viewBox="0 0 24 24" className="w-2 h-2 fill-white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+          <span className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center inline-flex" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}>
+            <svg viewBox="0 0 24 24" className="w-2 h-2 fill-white" style={{ width: 'calc(var(--seat-size) * 0.13)', height: 'calc(var(--seat-size) * 0.13)' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
           </span>
         )}
         {isLocked ? `No ${seatNumber}` : (isOccupied && user ? user.name : `No ${seatNumber}`)}
       </span>
     </div>
   );
-            }
+    }
