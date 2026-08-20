@@ -166,6 +166,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [musicDuration, setMusicDuration] = useState(0);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Drag for minimized music
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
@@ -885,6 +890,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     );
   };
 
+  // Music controller functions
   const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
     if (playlist && playlist.length > 0) {
       setMusicPlaylist(playlist);
@@ -1005,6 +1011,43 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     setMusicControllerState('full');
   };
 
+  // Drag handlers for minimized music
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragRef.current = { x: clientX, y: clientY };
+  };
+
+  const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isDragging) return;
+    const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+    const dx = clientX - dragRef.current.x;
+    const dy = clientY - dragRef.current.y;
+    setDragOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    dragRef.current = { x: clientX, y: clientY };
+  }, [isDragging]);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
+      document.addEventListener('touchmove', handleDragMove);
+      document.addEventListener('touchend', handleDragEnd);
+      return () => {
+        document.removeEventListener('mousemove', handleDragMove);
+        document.removeEventListener('mouseup', handleDragEnd);
+        document.removeEventListener('touchmove', handleDragMove);
+        document.removeEventListener('touchend', handleDragEnd);
+      };
+    }
+  }, [isDragging, handleDragMove, handleDragEnd]);
+
   useEffect(() => {
     return () => {
       if (musicAudioRef.current) {
@@ -1039,11 +1082,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={() => {
-      if (musicControllerState === 'full') {
-        setMusicControllerState('minimized');
-      }
-    }}>
+    <div 
+      className="fixed inset-0 z-50 bg-black flex flex-col"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        height: '100dvh'
+      }}
+      onClick={() => {
+        if (musicControllerState === 'full') {
+          setMusicControllerState('minimized');
+        }
+      }}
+    >
       <img
         src={backgroundImage}
         alt="Room Background"
@@ -1076,8 +1126,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       setIsFollowed(newFollow);
                       if (onFollowToggle) onFollowToggle(roomId, newFollow);
                     }}
-                    className="rounded-full flex items-center justify-center transition-all cursor-pointer"
-                    style={{ width: 'var(--header-follow-btn-size)', height: 'var(--header-follow-btn-size)' }}
+                    className="rounded-full flex items-center justify-center transition-all cursor-pointer bg-blue-500 shadow-md hover:bg-blue-600"
+                    style={{ 
+                      width: 'var(--header-follow-btn-size)', 
+                      height: 'var(--header-follow-btn-size)',
+                      border: 'none',
+                    }}
                     title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                   >
                     {isFollowed ? (
@@ -1087,8 +1141,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                     ) : (
                       <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--header-follow-icon-size)', height: 'var(--header-follow-icon-size)' }}>
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        <line x1="12" y1="5" x2="12" y2="19" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                        <line x1="5" y1="12" x2="19" y2="12" stroke="white" strokeWidth="3" strokeLinecap="round" />
                       </svg>
                     )}
                   </button>
@@ -1138,15 +1190,50 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
+            {/* Announcement Card - Transparent with Glossy Blue Text */}
             <div className="mx-0 mb-2 flex justify-start">
-              <div className="bg-white/5 backdrop-blur-sm border border-white/5 max-w-[80%]" style={{ padding: 'var(--announcement-padding)', borderRadius: 'var(--announcement-radius)' }}>
-                <p className="text-white leading-snug font-medium" style={{ fontSize: 'var(--announcement-text-size)' }}>
+              <div 
+                className="border border-white/5 max-w-[80%]"
+                style={{ 
+                  padding: 'var(--announcement-padding)', 
+                  borderRadius: 'var(--announcement-radius)',
+                  background: 'transparent',
+                  backdropFilter: 'none'
+                }}
+              >
+                <p 
+                  className="leading-snug font-medium"
+                  style={{ 
+                    fontSize: 'var(--announcement-text-size)',
+                    color: '#00BFFF',
+                    textShadow: '0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3), 0 0 40px rgba(0, 191, 255, 0.2)',
+                    fontWeight: '700'
+                  }}
+                >
                   Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
                 </p>
                 {roomAnnouncement && (
                   <div className="flex items-start gap-1.5 mt-1">
-                    <span className="text-white font-semibold whitespace-nowrap shrink-0" style={{ fontSize: 'var(--announcement-label-size)' }}>ANNOUNCEMENT:</span>
-                    <p className="text-white leading-snug font-medium" style={{ fontSize: 'var(--announcement-text-size)' }}>{roomAnnouncement}</p>
+                    <span 
+                      className="font-semibold whitespace-nowrap shrink-0"
+                      style={{ 
+                        fontSize: 'var(--announcement-label-size)',
+                        color: '#00BFFF',
+                        textShadow: '0 0 10px rgba(0, 191, 255, 0.5)'
+                      }}
+                    >
+                      ANNOUNCEMENT:
+                    </span>
+                    <p 
+                      className="leading-snug font-medium"
+                      style={{ 
+                        fontSize: 'var(--announcement-text-size)',
+                        color: '#00BFFF',
+                        textShadow: '0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3)'
+                      }}
+                    >
+                      {roomAnnouncement}
+                    </p>
                   </div>
                 )}
               </div>
@@ -1315,9 +1402,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Active Users Sheet */}
+      {/* Active Users Sheet - Removed Copy Option */}
       {showActiveUsers && (
-        <div className="absolute inset-0 z-40 flex items-end justify-center">
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden flex flex-col" style={{ height: '40vh', maxHeight: '40vh' }} onClick={(e) => e.stopPropagation()}>
             <div className="px-4 pt-4 pb-2 border-b border-gray-200 flex-shrink-0">
@@ -1333,14 +1420,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-xs font-semibold text-gray-800 truncate">{user.name}</h4>
-                        <div className="flex items-center gap-1">
-                          <p className="text-[10px] text-gray-400">ID: {user.accountId}</p>
-                          <button onClick={(e) => handleCopyUserId(user.accountId, e)} className="p-0.5 hover:bg-gray-200 rounded transition-colors cursor-pointer" title="Copy ID">
-                            <svg viewBox="0 0 24 24" className="fill-none stroke-gray-400 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                          </button>
-                        </div>
+                        <p className="text-[10px] text-gray-400">ID: {user.accountId}</p>
                       </div>
                     </div>
                   ))}
@@ -1355,9 +1435,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Room Info Sheet */}
+      {/* Room Info Sheet - Increased DP size only here */}
       {showRoomInfo && (
-        <div className="absolute inset-0 z-40 flex items-end justify-center">
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
             {!isRoomOwner && (
@@ -1378,8 +1458,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {roomInfoTab === 'profile' ? (
                 <div className="space-y-3">
+                  {/* Room DP - Increased size to 80px */}
                   <div className="flex items-center gap-2">
-                    <div className="rounded-xl overflow-hidden border border-gray-200 flex-shrink-0" style={{ width: 'var(--header-room-img-size)', height: 'var(--header-room-img-size)' }}>
+                    <div 
+                      className="rounded-xl overflow-hidden border border-gray-200 flex-shrink-0" 
+                      style={{ width: '80px', height: '80px' }}
+                    >
                       <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
                     </div>
                     <div>
@@ -1522,7 +1606,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       {/* Seat Actions Sheet */}
       {showSeatSheet && selectedSeat !== null && (
-        <div className="absolute inset-0 z-30 flex items-end justify-center">
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
           <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-3 animate-slide-up max-h-[30vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="space-y-1">
@@ -1556,7 +1640,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       {/* Message Sheet */}
       {showMessageSheet && (
-        <div className="absolute inset-0 z-40 flex items-end justify-center">
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '60vh' }} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setShowMessageSheet(false)} className="absolute top-2 left-2 z-20 p-1 bg-white/80 rounded-full shadow hover:bg-white transition-colors">
@@ -1727,26 +1811,27 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Music Controller - Minimized */}
+      {/* Music Controller - Minimized with Drag */}
       {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
         <div
-          className="fixed z-[45]"
+          className="fixed z-[45] touch-none select-none"
           style={{ 
-            bottom: 'var(--music-mini-bottom)', 
-            right: 'var(--music-mini-right)',
+            bottom: `calc(var(--music-mini-bottom) + ${dragOffset.y}px)`, 
+            right: `calc(var(--music-mini-right) + ${dragOffset.x}px)`,
+            cursor: 'grab'
           }}
-          onClick={(e) => e.stopPropagation()}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          onDoubleClick={handleMaximizeMusicController}
         >
-          <button
-            onClick={handleMaximizeMusicController}
-            className="relative rounded-full overflow-hidden shadow-lg cursor-pointer transition-transform hover:scale-105"
+          <div
+            className="relative rounded-full overflow-hidden shadow-lg transition-transform hover:scale-105"
             style={{
               width: 'var(--music-mini-size)',
               height: 'var(--music-mini-size)',
               border: 'var(--music-mini-border) solid black',
               backgroundColor: 'black',
             }}
-            aria-label="Maximize music controller"
           >
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <div className="relative w-full h-full flex items-center justify-center">
@@ -1756,7 +1841,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 <div className="rounded-full bg-red-500 animate-pulse" style={{ width: 'var(--music-mini-dot)', height: 'var(--music-mini-dot)' }} />
               </div>
             </div>
-
             <div className="absolute inset-0 flex items-center justify-center music-minimize-icon z-20">
               <img 
                 src="/IMG_20260815_133309.png" 
@@ -1765,7 +1849,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 style={{ borderRadius: '50%' }}
               />
             </div>
-          </button>
+          </div>
         </div>
       )}
 
@@ -1808,7 +1892,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           
           /* Exit Menu */
           --exit-btn-size: 64px;
-          --exit-icon-size: 24px;
+          --exit-icon-size: 30px;
           --exit-text-size: 14px;
           
           /* Music Controller */
@@ -1822,8 +1906,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-volume-width: 28px;
           
           /* Music Minimized */
-          --music-mini-size: 44px;
-          --music-mini-bottom: 6vh;
+          --music-mini-size: 50px;
+          --music-mini-bottom: 7vh;
           --music-mini-right: 8px;
           --music-mini-border: 2px;
           --music-mini-dot: 8px;
@@ -2132,4 +2216,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-    }
+            }
