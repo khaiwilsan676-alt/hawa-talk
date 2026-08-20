@@ -602,22 +602,19 @@ export default function HomePage({ onLogout }: HomePageProps) {
     const isAndroidDevice = userAgent.includes('android');
     setIsAndroid(isAndroidDevice);
 
-    // Calculate offset based on banner height
+    // ZERO GAP - Cards start immediately after dots
     const calculateOffset = () => {
-      if (bannerContainerRef.current) {
-        const bannerHeight = bannerContainerRef.current.getBoundingClientRect().height;
-        // On Android, we need less negative offset because of viewport rendering differences
-        const calculatedOffset = isAndroidDevice 
-          ? Math.min(-45, -bannerHeight * 0.4) // Android: 40% of banner height
-          : Math.min(-85, -bannerHeight * 0.6); // iOS/Desktop: 60% of banner height
-        
-        console.log('📐 Banner Height:', bannerHeight, 'Offset:', calculatedOffset, 'Android:', isAndroidDevice);
-        setCategoryOffset(calculatedOffset);
-      }
+      let calculatedOffset = 0; // No gap!
+      
+      // If you want slight adjustment (1-2px only)
+      // calculatedOffset = -2;
+      
+      console.log('📐 Gap: 0px (No gap - cards start after dots)');
+      setCategoryOffset(calculatedOffset);
     };
 
-    // Calculate after render and on resize
-    setTimeout(calculateOffset, 100);
+    // Calculate on mount and resize
+    setTimeout(calculateOffset, 50);
     
     const handleResize = () => {
       setTimeout(calculateOffset, 50);
@@ -1728,11 +1725,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // ============ RENDER POPULAR TAB ============
   const renderPopularTab = () => {
+    // ZERO GAP - No margin!
+    const marginBottom = 0;
+    
     return (
       <>
         <div className="px-4" style={{ 
           transform: `translateY(${categoryOffset}px)`,
-          marginBottom: `${categoryOffset}px`,
+          marginBottom: `${marginBottom}px`,
           position: 'relative', 
           zIndex: 10,
           willChange: 'transform'
@@ -1795,7 +1795,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
         
         {allRooms.length > 0 ? (
-          <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
+          <div className="px-4" style={{ 
+            marginTop: '0px', // NO gap at all!
+            paddingTop: '0px'
+          }}>
             <div className="grid grid-cols-2 gap-1.5">
               {allRooms.map((room) => (
                 <div
@@ -2247,7 +2250,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 background: activeTab === 'mine'
                   ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-                paddingBottom: '12px'
+                paddingBottom: '0px' // REMOVE padding!
               }}
             >
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
@@ -2523,4 +2526,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-                                           }
+  }
