@@ -1766,30 +1766,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {/* Custom styles for sliders and responsive variables */}
       <style jsx global>{`
         :root {
-          --seat-size: 60px;
-          --seat-side-offset: -130px;
-          --music-controller-bottom: 10vh;
+          --seat-size: 50px;
+          --seat-side-offset: -80px;
+          --music-controller-bottom: 8vh;
         }
-        @media (max-width: 480px) {
-          :root {
-            --seat-size: 52px;
-            --seat-side-offset: -100px;
-            --music-controller-bottom: 8vh;
-          }
-        }
-        @media (max-width: 360px) {
-          :root {
-            --seat-size: 44px;
-            --seat-side-offset: -70px;
-            --music-controller-bottom: 6vh;
-          }
-        }
-        @media (max-width: 320px) {
-          :root {
-            --seat-size: 40px;
-            --seat-side-offset: -50px;
-            --music-controller-bottom: 5vh;
-          }
         }
 
         .music-volume-slider {
