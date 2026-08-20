@@ -2047,14 +2047,14 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 
   return (
     <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      {/* LEFT side image - positioned relative to seat */}
+      {/* LEFT side image - UPAR KI TARAF */}
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none hidden sm:flex"
           style={{
             left: '-130px',
-            top: '-30px', // moved up from center
-            transform: 'none', // removed translateY
+            top: '-30px', // ← UPAR
+            transform: 'none',
             zIndex: 40,
             display: 'flex',
             alignItems: 'center',
@@ -2064,8 +2064,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           <div 
             className="relative overflow-visible"
             style={{
-              width: '100%',
-              height: '100%',
+              width: 'calc(var(--seat-size) * 0.33)',
+              height: 'calc(var(--seat-size) * 0.33)',
               flexShrink: 0,
             }}
           >
@@ -2098,22 +2098,22 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* RIGHT side image - positioned relative to seat */}
+      {/* RIGHT side image - UPAR KI TARAF */}
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none"
           style={{
             right: '-130px',
-            top: '-30px', // moved up from center
-            transform: 'none', // removed translateY
+            top: '-30px', // ← UPAR
+            transform: 'none',
             zIndex: 40,
           }}
         >
           <div 
             className="relative overflow-visible"
             style={{
-              width: '100%',
-              height: '100%',
+              width: 'calc(var(--seat-size) * 0.83)',
+              height: 'calc(var(--seat-size) * 0.83)',
               backgroundColor: 'transparent',
               border: 'none',
               boxShadow: 'none',
@@ -2137,7 +2137,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Seat circle */}
+      {/* Seat circle - Baaki code same */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2230,4 +2230,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-    }
+                                                                                                   }
