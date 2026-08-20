@@ -1736,14 +1736,14 @@ const renderMineTab = () => (
   const renderPopularTab = () => (
     <>
       <div className="px-4" style={{ 
-        marginTop: '12px', 
+        marginTop: '8px', 
         position: 'relative', 
         zIndex: 10 
       }}>
         {/* Category Cards */}
         <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
           fontFamily: 'Nunito, Inter, sans-serif', 
-          marginBottom: '6px' 
+          marginBottom: '0px' 
         }}>
           {CATEGORY_CARDS.map((card, i) => (
             <div
