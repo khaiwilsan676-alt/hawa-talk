@@ -1736,7 +1736,7 @@ const renderMineTab = () => (
   const renderPopularTab = () => (
     <>
       <div className="px-4" style={{ 
-        marginTop: '0px', 
+        marginTop: '-34px', 
         position: 'relative', 
         zIndex: 10 
       }}>
