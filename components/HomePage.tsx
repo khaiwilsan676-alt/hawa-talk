@@ -22,6 +22,7 @@ import PublicProfile from './PublicProfile'
 import { generateStableId } from '../lib/hash'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import DailyCheckInModal from '../components/DailyCheckInModal'
+import Leaderboard from './Leaderboard' // ✅ ADDED
 
 // ============ INDEXEDDB FUNCTIONS ============
 const DB_NAME = 'HurryAppDB';
@@ -534,6 +535,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [enteredFromKept, setEnteredFromKept] = useState(false)
 
   const [showRoomPasswordCard, setShowRoomPasswordCard] = useState(false)
+  const [showLeaderboard, setShowLeaderboard] = useState(false) // ✅ ADDED
   const [selectedLockedRoom, setSelectedLockedRoom] = useState<UserCard | null>(null)
   const [enteredRoomPassword, setEnteredRoomPassword] = useState('')
 
@@ -554,12 +556,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const [viewportHeight, setViewportHeight] = useState(0)
   const [isAndroid, setIsAndroid] = useState(false)
-  // ✅ CHANGE: Initial offset = 0 (will be dynamically adjusted to achieve 1.5px gap)
-  const [categoryOffset, setCategoryOffset] = useState(0)
+  const [categoryOffset, setCategoryOffset] = useState(0) // Changed initial to 0
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const bannerContainerRef = useRef<HTMLDivElement>(null)
-  // ✅ ADD: New refs for precise gap measurement
+  // ✅ Ref for exact gap measurement
   const bannerDotsRef = useRef<HTMLDivElement>(null)
   const categoryCardsRef = useRef<HTMLDivElement>(null)
 
@@ -601,13 +602,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => unsubscribe();
   }, [userUID]);
 
-  // ============ ✅ REPLACED: Dynamic offset calculation for exact 1.5px gap ============
+  // ============ DYNAMIC GAP CALCULATION (exact 1.5px) ============
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     const isAndroidDevice = userAgent.includes('android');
     setIsAndroid(isAndroidDevice);
 
-    // Function to adjust offset so gap becomes exactly 1.5px
+    let resizeObserver: ResizeObserver | null = null;
+
     const adjustOffset = () => {
       const dotsEl = bannerDotsRef.current;
       const cardsEl = categoryCardsRef.current;
@@ -616,31 +618,39 @@ export default function HomePage({ onLogout }: HomePageProps) {
       const dotsBottom = dotsEl.getBoundingClientRect().bottom;
       const cardsTop = cardsEl.getBoundingClientRect().top;
       const currentGap = cardsTop - dotsBottom;
-      const desiredGap = 1.5; // exact gap in px
+      const desiredGap = 1.5;
 
-      // Delta offset needed: if current gap > desired, need to move up (negative delta)
-      const deltaOffset = desiredGap - currentGap;
+      const offset = -(currentGap - desiredGap);
+      const safeOffset = Math.max(offset, -120);
+      const finalOffset = Math.min(safeOffset, 0);
 
-      // Update offset (state)
-      setCategoryOffset(prev => prev + deltaOffset);
-
-      console.log(`📏 Gap: ${currentGap.toFixed(1)}px → Setting offset delta: ${deltaOffset.toFixed(1)}px`);
+      setCategoryOffset(finalOffset);
+      console.log(`📏 Gap measured: ${currentGap.toFixed(2)}px → Offset applied: ${finalOffset.toFixed(2)}px`);
     };
 
-    // Initial adjustment after layout
     const timeoutId = setTimeout(adjustOffset, 100);
 
-    // Re-adjust on resize / orientation change
+    if (bannerContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        adjustOffset();
+      });
+      resizeObserver.observe(bannerContainerRef.current);
+    }
+
+    if (categoryCardsRef.current) {
+      resizeObserver?.observe(categoryCardsRef.current);
+    }
+
     const handleResize = () => {
       clearTimeout(timeoutId);
       setTimeout(adjustOffset, 50);
     };
-
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
 
     return () => {
       clearTimeout(timeoutId);
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
     };
@@ -1745,14 +1755,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return (
       <>
         <div 
-          ref={categoryCardsRef}   // ✅ Attach ref here
+          ref={categoryCardsRef}
           className="px-4" 
           style={{ 
-            transform: `translateY(${categoryOffset}px)`,
-            marginBottom: `${categoryOffset}px`,
+            marginTop: `${categoryOffset}px`, // ✅ Changed from transform to marginTop for precise gap
             position: 'relative', 
             zIndex: 10,
-            willChange: 'transform'
+            willChange: 'margin-top'
           }}
         >
           <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
@@ -1762,7 +1771,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
             {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
-                className="group flex-1"
+                onClick={() => setShowLeaderboard(true)} // ✅ ADDED onClick
+                className="group flex-1 cursor-pointer active:scale-95 transition-transform" // ✅ ADDED cursor-pointer
                 style={{
                   height: '90px',
                   borderRadius: '16px',
@@ -1891,7 +1901,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
         minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
-        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen) ? '0px' : '96px',
+        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen || showLeaderboard) ? '0px' : '96px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -2150,6 +2160,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
+      {/* ✅ Leaderboard Modal / Overlay */}
+      {showLeaderboard && (
+        <Leaderboard onBack={() => setShowLeaderboard(false)} />
+      )}
+
       <DailyCheckInModal
         isOpen={isSignInModalOpen}
         onClose={handleCloseModal}
@@ -2191,7 +2206,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {keptRoom && currentPage === 'home' && !isSearchOpen && (
+      {keptRoom && currentPage === 'home' && !isSearchOpen && !showLeaderboard && (
         <div
           ref={circleRef}
           className={`fixed z-50 cursor-grab active:cursor-grabbing group ${
@@ -2228,7 +2243,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && !showLeaderboard && (
         <div 
           className="fixed right-4 z-40"
           style={{
@@ -2249,7 +2264,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
 
       <div className="w-full">
-        {currentPage === 'home' && (
+        {currentPage === 'home' && !showLeaderboard && (
           <div
             className="w-full bg-white"
             style={{
@@ -2372,7 +2387,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
 
-                  {/* ✅ Attach ref to dots container */}
                   <div 
                     ref={bannerDotsRef}
                     className="flex justify-center gap-1.5" 
@@ -2455,7 +2469,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
       </div>
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && !showLeaderboard && (
         <div 
           className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom"
           style={{
@@ -2546,4 +2560,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-    }
+                     }
