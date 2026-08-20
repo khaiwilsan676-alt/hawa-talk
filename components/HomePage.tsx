@@ -554,10 +554,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   const [viewportHeight, setViewportHeight] = useState(0)
   const [isAndroid, setIsAndroid] = useState(false)
-  const [categoryOffset, setCategoryOffset] = useState(-85) // Default offset
+  // ✅ CHANGE: Initial offset = 0 (will be dynamically adjusted to achieve 1.5px gap)
+  const [categoryOffset, setCategoryOffset] = useState(0)
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const bannerContainerRef = useRef<HTMLDivElement>(null)
+  // ✅ ADD: New refs for precise gap measurement
+  const bannerDotsRef = useRef<HTMLDivElement>(null)
+  const categoryCardsRef = useRef<HTMLDivElement>(null)
+
   const touchStartX = useRef<number>(0)
   const touchEndX = useRef<number>(0)
   const [isSwiping, setIsSwiping] = useState(false)
@@ -596,34 +601,46 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => unsubscribe();
   }, [userUID]);
 
-  // ============ ANDROID DETECTION & OFFSET CALCULATION ============
+  // ============ ✅ REPLACED: Dynamic offset calculation for exact 1.5px gap ============
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     const isAndroidDevice = userAgent.includes('android');
     setIsAndroid(isAndroidDevice);
 
-    // ZERO GAP - Cards start immediately after dots
-    const calculateOffset = () => {
-      let calculatedOffset = 0; // No gap!
-      
-      // If you want slight adjustment (1-2px only)
-      // calculatedOffset = -2;
-      
-      console.log('📐 Gap: 0px (No gap - cards start after dots)');
-      setCategoryOffset(calculatedOffset);
+    // Function to adjust offset so gap becomes exactly 1.5px
+    const adjustOffset = () => {
+      const dotsEl = bannerDotsRef.current;
+      const cardsEl = categoryCardsRef.current;
+      if (!dotsEl || !cardsEl) return;
+
+      const dotsBottom = dotsEl.getBoundingClientRect().bottom;
+      const cardsTop = cardsEl.getBoundingClientRect().top;
+      const currentGap = cardsTop - dotsBottom;
+      const desiredGap = 1.5; // exact gap in px
+
+      // Delta offset needed: if current gap > desired, need to move up (negative delta)
+      const deltaOffset = desiredGap - currentGap;
+
+      // Update offset (state)
+      setCategoryOffset(prev => prev + deltaOffset);
+
+      console.log(`📏 Gap: ${currentGap.toFixed(1)}px → Setting offset delta: ${deltaOffset.toFixed(1)}px`);
     };
 
-    // Calculate on mount and resize
-    setTimeout(calculateOffset, 50);
-    
+    // Initial adjustment after layout
+    const timeoutId = setTimeout(adjustOffset, 100);
+
+    // Re-adjust on resize / orientation change
     const handleResize = () => {
-      setTimeout(calculateOffset, 50);
+      clearTimeout(timeoutId);
+      setTimeout(adjustOffset, 50);
     };
-    
+
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
-    
+
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
     };
@@ -1725,18 +1742,19 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // ============ RENDER POPULAR TAB ============
   const renderPopularTab = () => {
-    // ZERO GAP - No margin!
-    const marginBottom = 0;
-    
     return (
       <>
-        <div className="px-4" style={{ 
-          transform: `translateY(${categoryOffset}px)`,
-          marginBottom: `${marginBottom}px`,
-          position: 'relative', 
-          zIndex: 10,
-          willChange: 'transform'
-        }}>
+        <div 
+          ref={categoryCardsRef}   // ✅ Attach ref here
+          className="px-4" 
+          style={{ 
+            transform: `translateY(${categoryOffset}px)`,
+            marginBottom: `${categoryOffset}px`,
+            position: 'relative', 
+            zIndex: 10,
+            willChange: 'transform'
+          }}
+        >
           <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
@@ -1795,10 +1813,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
         
         {allRooms.length > 0 ? (
-          <div className="px-4" style={{ 
-            marginTop: '0px', // NO gap at all!
-            paddingTop: '0px'
-          }}>
+          <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
             <div className="grid grid-cols-2 gap-1.5">
               {allRooms.map((room) => (
                 <div
@@ -2250,7 +2265,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 background: activeTab === 'mine'
                   ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-                paddingBottom: '0px' // REMOVE padding!
+                paddingBottom: '12px'
               }}
             >
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
@@ -2357,11 +2372,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-1.5" style={{ 
-                    marginTop: '2px', 
-                    marginBottom: '0px',
-                    minHeight: '6px'
-                  }}>
+                  {/* ✅ Attach ref to dots container */}
+                  <div 
+                    ref={bannerDotsRef}
+                    className="flex justify-center gap-1.5" 
+                    style={{ 
+                      marginTop: '2px', 
+                      marginBottom: '0px',
+                      minHeight: '6px'
+                    }}
+                  >
                     {BANNERS.map((_, index) => (
                       <div
                         key={index}
@@ -2526,4 +2546,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-  }
+    }
