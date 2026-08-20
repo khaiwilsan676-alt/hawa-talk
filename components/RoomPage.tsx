@@ -1905,7 +1905,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --msg-jointime-size: 10px;
           
           /* Exit Menu */
-          --exit-btn-size: 64px;
+          --exit-btn-size: 67px;
           --exit-icon-size: 24px;
           --exit-text-size: 14px;
           
@@ -2053,7 +2053,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none hidden sm:flex"
           style={{
             left: '-130px',
-            top: '-10px', // moved up from center
+            top: '-30px', // moved up from center
             transform: 'none', // removed translateY
             zIndex: 40,
             display: 'flex',
@@ -2064,8 +2064,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           <div 
             className="relative overflow-visible"
             style={{
-              width: 'calc(var(--seat-size) * 0.33)',
-              height: 'calc(var(--seat-size) * 0.33)',
+              width: '100%',
+              height: '100%',
               flexShrink: 0,
             }}
           >
@@ -2104,7 +2104,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none"
           style={{
             right: '-130px',
-            top: '-10px', // moved up from center
+            top: '-30px', // moved up from center
             transform: 'none', // removed translateY
             zIndex: 40,
           }}
@@ -2112,8 +2112,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           <div 
             className="relative overflow-visible"
             style={{
-              width: 'calc(var(--seat-size) * 0.83)',
-              height: 'calc(var(--seat-size) * 0.83)',
+              width: '100%',
+              height: '100%',
               backgroundColor: 'transparent',
               border: 'none',
               boxShadow: 'none',
