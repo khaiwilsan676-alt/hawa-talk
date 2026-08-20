@@ -2218,7 +2218,7 @@ const renderMineTab = () => (
           style={{
           bottom: 'calc(75px + max(env(safe-area-inset-bottom, 0px),16px))'
         }}
-          >
+         
           <img
             src="/IMG_20260719_203213.png"
             alt="Corner decoration"
@@ -2438,7 +2438,7 @@ const renderMineTab = () => (
           style={{
           paddingBottom: 'max(env(safe-area-inset-bottom, 0px),8px)'
         }}
-          >
+          
          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             <button
               onClick={() => setCurrentPage('home')}
