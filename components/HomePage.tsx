@@ -1736,7 +1736,7 @@ const renderMineTab = () => (
   const renderPopularTab = () => (
     <>
       <div className="px-4" style={{ 
-        marginTop: '-85px', 
+        marginTop: '12px', 
         position: 'relative', 
         zIndex: 10 
       }}>
@@ -2214,7 +2214,11 @@ const renderMineTab = () => (
       )}
 
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
-        <div className="fixed bottom-24 right-4 z-40">
+        <div className="fixed right-4 z-40">
+          style={{
+          bottom: 'calc(75px + max(env(safe-area-inset-bottom, 0px),16px))'
+        }}
+          >
           <img
             src="/IMG_20260719_203213.png"
             alt="Corner decoration"
@@ -2244,7 +2248,7 @@ const renderMineTab = () => (
                 background: activeTab === 'mine'
                   ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-                paddingBottom: activeTab === 'mine' ? '12px' : '0px'
+                paddingBottom:'12px'
               }}
             >
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
@@ -2431,7 +2435,11 @@ const renderMineTab = () => (
 
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && (
         <div className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom">
-          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
+          style={{
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px),8px)'
+        }}
+          >
+         <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
             <button
               onClick={() => setCurrentPage('home')}
               className="flex flex-col items-center gap-1 transition-all active:scale-95"
