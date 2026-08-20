@@ -1185,7 +1185,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-6 sm:pt-10">
+          <div className="flex-shrink-0 flex flex-col gap-2 pt-13 sm:pt-10">
             {renderSeats()}
           </div>
 
@@ -1296,40 +1296,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-        {/* Footer Controls */}
-        <div className="flex-shrink-0 pt-2">
-          {showChatInput && (
-            <div ref={inputContainerRef} className="flex items-center gap-0 mb-2 -mx-3 sm:-mx-4 w-screen">
-              <div className="flex-1 bg-white flex items-center px-3 py-2 shadow-lg w-full">
-                <button onMouseDown={(e) => e.preventDefault()} onClick={handleImageClick} className="hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
-                  <svg viewBox="0 0 24 24" className="fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
-                  </svg>
-                </button>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  onFocus={handleInputFocus}
-                  placeholder="Type a message..."
-                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-2 py-1.5 outline-none border-none"
-                  style={{ fontSize: 'var(--footer-input-text)' }}
-                />
-                <button
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={handleSendMessage}
-                  className="hover:bg-blue-50 rounded-full transition-colors cursor-pointer flex-shrink-0"
-                >
-                  <svg viewBox="0 0 24 24" className="fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                    <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
-
+        {/* Footer Controls - hidden when input is open */}
+        <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={openChatInput}
@@ -1383,6 +1351,52 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </div>
           </div>
         </div>
+
+        {/* Input container - fixed at bottom when open */}
+        {showChatInput && (
+          <div 
+            ref={inputContainerRef} 
+            className="flex items-center gap-0 mb-2 -mx-3 sm:-mx-4"
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 30,
+              padding: '8px 12px',
+              background: 'rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <div className="flex-1 bg-white flex items-center px-3 py-2 shadow-lg w-full rounded-xl">
+              <button onMouseDown={(e) => e.preventDefault()} onClick={handleImageClick} className="hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
+                <svg viewBox="0 0 24 24" className="fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                </svg>
+              </button>
+              <input
+                ref={inputRef}
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                onFocus={handleInputFocus}
+                placeholder="Type a message..."
+                className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-2 py-1.5 outline-none border-none"
+                style={{ fontSize: 'var(--footer-input-text)' }}
+              />
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleSendMessage}
+                className="hover:bg-blue-50 rounded-full transition-colors cursor-pointer flex-shrink-0"
+              >
+                <svg viewBox="0 0 24 24" className="fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                  <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Public Msg Off Modal */}
@@ -1881,7 +1895,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           /* Announcement */
           --announcement-padding: 12px;
           --announcement-radius: 8px;
-          --announcement-text-size: 11px;
+          --announcement-text-size: 13px;
           --announcement-label-size: 10px;
           
           /* Messages */
@@ -2039,8 +2053,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none hidden sm:flex"
           style={{
             left: '-130px',
-            top: 'calc(var(--seat-size) / 2)',
-            transform: 'translateY(-50%)',
+            top: '-10px', // moved up from center
+            transform: 'none', // removed translateY
             zIndex: 40,
             display: 'flex',
             alignItems: 'center',
@@ -2090,8 +2104,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none"
           style={{
             right: '-130px',
-            top: 'calc(var(--seat-size) / 2)',
-            transform: 'translateY(-50%)',
+            top: '-10px', // moved up from center
+            transform: 'none', // removed translateY
             zIndex: 40,
           }}
         >
