@@ -6,7 +6,116 @@ interface WildpartyProps {
   onClose: () => void;
 }
 
-// Green screen remover for animal PNGs
+// 1. WebGL Shader: Sirf Loading Page ki Image se White Background hatane ke liye
+function LoadingShaderImage({ src, className }: { src: string; className?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: false, alpha: true });
+    if (!gl) return;
+
+    const vsSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `;
+
+    const fsSource = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_image;
+
+      void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        if (color.a < 0.1) discard;
+
+        // White removal filter
+        if (color.r > 0.88 && color.g > 0.88 && color.b > 0.88) {
+          discard;
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `;
+
+    const createShader = (glCtx: WebGLRenderingContext, type: number, source: string) => {
+      const shader = glCtx.createShader(type);
+      if (!shader) return null;
+      glCtx.shaderSource(shader, source);
+      glCtx.compileShader(shader);
+      return shader;
+    };
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    if (!vertexShader || !fragmentShader) return;
+
+    const program = gl.createProgram();
+    if (!program) return;
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([
+        -1, -1, 0, 1,
+         1, -1, 1, 1,
+        -1,  1, 0, 0,
+        -1,  1, 0, 0,
+         1, -1, 1, 1,
+         1,  1, 1, 0,
+      ]),
+      gl.STATIC_DRAW
+    );
+
+    const aPosition = gl.getAttribLocation(program, 'a_position');
+    const aTexCoord = gl.getAttribLocation(program, 'a_texCoord');
+
+    gl.enableVertexAttribArray(aPosition);
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 16, 0);
+
+    gl.enableVertexAttribArray(aTexCoord);
+    gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 16, 8);
+
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.src = src;
+    image.onload = () => {
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+  }, [src]);
+
+  return <canvas ref={canvasRef} className={`${className || ''} block bg-transparent`} />;
+}
+
+// 2. Green Screen Remover for Animals & Center Wheel
 function GreenScreenImage({ src, className }: { src: string; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -17,6 +126,7 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
     if (!ctx) return;
 
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.src = src;
 
     img.onload = () => {
@@ -34,12 +144,12 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
         const g = data[i + 1];
         const b = data[i + 2];
 
-        // Green Screen Chroma Key
-        const isGreen = g > 75 && g > r * 1.15 && g > b * 1.15;
+        // Green Screen Chroma Key Logic
+        const isGreen = g > 65 && g > r * 1.15 && g > b * 1.15;
         if (isGreen) {
           data[i + 3] = 0;
         } else if (g > Math.max(r, b)) {
-          data[i + 1] = Math.max(r, b); // Despill
+          data[i + 1] = Math.max(r, b); // Clean green edge spill
         }
       }
 
@@ -111,10 +221,10 @@ export default function Wildparty({ onClose }: WildpartyProps) {
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
           {loading ? (
             <>
-              <img
+              {/* WebGL Shader: White removal for loading icon */}
+              <LoadingShaderImage
                 src="/1787338085121.png"
-                alt="Loading icon"
-                className="w-24 h-24 object-contain mb-6 mix-blend-multiply"
+                className="w-24 h-24 object-contain mb-6"
               />
               <div className="w-3/4 max-w-xs bg-white/30 rounded-full h-2 overflow-hidden">
                 <div
@@ -125,12 +235,11 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             </>
           ) : (
             <div className="relative w-80 h-80 flex items-center justify-center">
-              {/* Center Image - White Background Hatane Ke Liye mix-blend-multiply */}
+              {/* Center Green-Screen Wheel Image */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <img
-                  src="/1787337798141~2.jpg"
-                  alt="Center Wheel"
-                  className="w-full h-full object-contain mix-blend-multiply"
+                <GreenScreenImage
+                  src="/1787344138649~2.jpg"
+                  className="w-full h-full object-contain"
                 />
               </div>
 
@@ -176,4 +285,3 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     </div>
   );
 }
-
