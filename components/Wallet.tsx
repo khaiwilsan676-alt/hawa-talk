@@ -170,12 +170,15 @@ export default function Wallet({ onBack }: WalletProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-white overflow-hidden flex flex-col"
+      className="fixed inset-0 overflow-hidden flex flex-col"
       style={{
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
-        WebkitTouchCallout: 'none'
+        WebkitTouchCallout: 'none',
+        background: activeTab === 'wallet' 
+          ? 'linear-gradient(180deg, #FFA500 5%, #FFB347 50%, #FFD699 70%, #FFFFFF 100%)'
+          : 'linear-gradient(180deg, #FF1493 5%, #FF69B4 50%, #FFB6C1 70%, #FFFFFF 100%)',
       }}
     >
       <style>{`
@@ -194,26 +197,20 @@ export default function Wallet({ onBack }: WalletProps) {
         }
       `}</style>
 
-      {/* TOP HEADER - Gradient smoothly mixing into white */}
+      {/* TOP HEADER - Same sheet with gradient */}
       <div
         className="w-full relative overflow-hidden transition-all duration-500 flex items-center justify-between px-4"
         style={{
-          height: '100px',
-          background:
-            activeTab === 'wallet'
-              ? 'linear-gradient(180deg, #FFD700 0%, #FFA500 30%, #FFE4B5 60%, #FFFFFF 100%)'
-              : 'linear-gradient(180deg, #FF69B4 0%, #FF1493 30%, #FFB6C1 60%, #FFFFFF 100%)',
+          height: '56px',
           animation: mounted ? 'slideDown 0.6s ease-out' : 'none',
         }}
       >
-        {/* Back Button - Same color as background */}
+        {/* Back Button - Icon matching background color */}
         <button
           onClick={onBack}
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
             background: activeTab === 'wallet' ? '#FFA500' : '#FF1493',
-            border: 'none',
-            boxShadow: 'none',
           }}
           aria-label="Back"
         >
@@ -243,13 +240,11 @@ export default function Wallet({ onBack }: WalletProps) {
           {activeTab === 'wallet' ? 'Wallet' : 'Diamonds'}
         </h1>
 
-        {/* History Button - Same color as background */}
+        {/* History Button - Icon matching background color */}
         <button
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
             background: activeTab === 'wallet' ? '#FFA500' : '#FF1493',
-            border: 'none',
-            boxShadow: 'none',
           }}
           aria-label="History"
         >
@@ -272,37 +267,37 @@ export default function Wallet({ onBack }: WalletProps) {
         </button>
       </div>
 
-      {/* TAB BUTTONS */}
-      <div className="flex justify-center gap-8 py-1.5 border-b border-gray-100 bg-white">
+      {/* TAB BUTTONS - Same sheet */}
+      <div className="flex justify-center gap-8 py-1.5">
         <button
           onClick={() => setActiveTab('wallet')}
           className={`relative pb-1 text-sm font-bold transition-all ${
-            activeTab === 'wallet' ? 'text-[#D2691E] scale-105' : 'text-gray-400'
+            activeTab === 'wallet' ? 'text-white scale-105' : 'text-white/60'
           }`}
         >
           Wallet
           {activeTab === 'wallet' && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-[#D2691E] rounded-full" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-white rounded-full" />
           )}
         </button>
         <button
           onClick={() => setActiveTab('diamonds')}
           className={`relative pb-1 text-sm font-bold transition-all ${
-            activeTab === 'diamonds' ? 'text-[#C71585] scale-105' : 'text-gray-400'
+            activeTab === 'diamonds' ? 'text-white scale-105' : 'text-white/60'
           }`}
         >
           Diamonds
           {activeTab === 'diamonds' && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-[#C71585] rounded-full" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-white rounded-full" />
           )}
         </button>
       </div>
 
-      {/* BOTTOM SECTION - Content with flex-grow and reduced top spacing */}
+      {/* BOTTOM SECTION - Transparent to show gradient */}
       <div
         className="flex-1 overflow-y-auto px-3 pt-1.5 pb-3 relative"
         style={{
-          background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F8F8 100%)',
+          background: 'transparent',
         }}
       >
         {/* COINS TAB CONTENT */}
@@ -346,7 +341,7 @@ export default function Wallet({ onBack }: WalletProps) {
                     key={index}
                     className="rounded-xl overflow-hidden shadow-sm flex flex-col items-center justify-between p-2"
                     style={{
-                      background: 'linear-gradient(135deg, #FFFFFF 0%, #F8F8F8 100%)',
+                      background: 'rgba(255,255,255,0.9)',
                       border: '1px solid rgba(255, 165, 0, 0.3)',
                       boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
                       aspectRatio: '1 / 1',
@@ -431,7 +426,7 @@ export default function Wallet({ onBack }: WalletProps) {
               <div
                 className="rounded-2xl p-5"
                 style={{
-                  background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 100%)',
+                  background: 'rgba(255,255,255,0.9)',
                   border: '1px solid rgba(255, 182, 193, 0.8)',
                   minHeight: '180px',
                 }}
@@ -490,4 +485,4 @@ export default function Wallet({ onBack }: WalletProps) {
       </div>
     </div>
   )
-              }
+                }
