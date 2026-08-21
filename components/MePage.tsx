@@ -10,7 +10,7 @@ import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
 import Wallet from './Wallet'
-import StorePage from './StorePage' // ✅ StorePage import
+import Storepage from './Storepage' // ✅ StorePage import
 
 // ============ IndexedDB Functions for User Data ============
 const USER_DB_NAME = 'UserDataDB';
