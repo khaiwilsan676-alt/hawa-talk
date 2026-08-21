@@ -1,4 +1,4 @@
-'use client' 
+'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronRight, Copy, ArrowLeft } from 'lucide-react'
@@ -9,7 +9,8 @@ import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
-import Wallet from './Wallet' // ✅ Added Wallet import
+import Wallet from './Wallet'
+import StorePage from './StorePage' // ✅ StorePage import
 
 // ============ IndexedDB Functions for User Data ============
 const USER_DB_NAME = 'UserDataDB';
@@ -27,7 +28,6 @@ const openUserDB = (): Promise<IDBDatabase> => {
       const db = request.result;
       if (!db.objectStoreNames.contains(USER_STORE)) {
         const userStore = db.createObjectStore(USER_STORE, { keyPath: 'uid' });
-        // Indexes for faster queries
         userStore.createIndex('name', 'name', { unique: false });
         userStore.createIndex('updatedAt', 'updatedAt', { unique: false });
       }
@@ -39,19 +39,18 @@ const openUserDB = (): Promise<IDBDatabase> => {
   });
 };
 
-// User data save karo IndexedDB mein (PERMANENT - with image and all data)
 const saveUserToDB = async (userData: any) => {
   try {
     const db = await openUserDB();
     const transaction = db.transaction([USER_STORE], 'readwrite');
     const store = transaction.objectStore(USER_STORE);
-    
+
     const completeUserData = {
       ...userData,
       cachedAt: Date.now(),
       updatedAt: new Date().toISOString(),
     };
-    
+
     await new Promise<void>((resolve, reject) => {
       const request = store.put(completeUserData);
       request.onsuccess = () => resolve();
@@ -70,7 +69,6 @@ const saveUserToDB = async (userData: any) => {
   }
 };
 
-// User data load karo IndexedDB se (PERMANENT - no expiry)
 const loadUserFromDB = async (uid: string): Promise<any> => {
   try {
     const db = await openUserDB();
@@ -84,7 +82,7 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
     });
 
     db.close();
-    
+
     if (userData) {
       console.log('✅ IndexedDB se user data mila:', {
         name: userData.name,
@@ -92,7 +90,7 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
         accountNumber: userData.accountNumber
       });
     }
-    
+
     return userData || null;
   } catch (error) {
     console.error('❌ User load error:', error);
@@ -100,7 +98,6 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
   }
 };
 
-// All users data load karo (for debugging)
 const getAllUsersFromDB = async (): Promise<any[]> => {
   try {
     const db = await openUserDB();
@@ -121,13 +118,12 @@ const getAllUsersFromDB = async (): Promise<any[]> => {
   }
 };
 
-// Delete user from IndexedDB (only when app is deleted)
 const deleteUserFromDB = async (uid: string) => {
   try {
     const db = await openUserDB();
     const transaction = db.transaction([USER_STORE], 'readwrite');
     const store = transaction.objectStore(USER_STORE);
-    
+
     await new Promise<void>((resolve, reject) => {
       const request = store.delete(uid);
       request.onsuccess = () => resolve();
@@ -141,13 +137,13 @@ const deleteUserFromDB = async (uid: string) => {
   }
 };
 
-// Feedback functions (unchanged)
+// Feedback functions
 const saveFeedbackToDB = async (feedbackData: any) => {
   try {
     const db = await openUserDB();
     const transaction = db.transaction([FEEDBACK_STORE], 'readwrite');
     const store = transaction.objectStore(FEEDBACK_STORE);
-    
+
     store.add({
       ...feedbackData,
       cachedAt: Date.now(),
@@ -285,17 +281,17 @@ export const getOrCreateAccountNumber = (uid: string) => {
   }
   const positiveHash = Math.abs(hash)
   const generated = String(10000000 + (positiveHash % 90000000))
-  
+
   return { fullAccNum: generated, displayAccNum: generated }
 }
 
-// WebGL Shader Component (unchanged)
-const WhiteColorRemovalShader = ({ 
-  imageSrc, 
+// WebGL Shader Component
+const WhiteColorRemovalShader = ({
+  imageSrc,
   threshold = 0.9,
   className = "",
   style = {}
-}: { 
+}: {
   imageSrc: string
   threshold?: number
   className?: string
@@ -358,7 +354,7 @@ const WhiteColorRemovalShader = ({
       if (!shader) return null
       gl.shaderSource(shader, source)
       gl.compileShader(shader)
-      
+
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         console.error('Shader compile error:', gl.getShaderInfoLog(shader))
         gl.deleteShader(shader)
@@ -369,13 +365,13 @@ const WhiteColorRemovalShader = ({
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-    
+
     if (!vertexShader || !fragmentShader) return
 
     // Create program
     const program = gl.createProgram()
     if (!program) return
-    
+
     gl.attachShader(program, vertexShader)
     gl.attachShader(program, fragmentShader)
     gl.linkProgram(program)
@@ -424,13 +420,13 @@ const WhiteColorRemovalShader = ({
     // Load and create texture
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
-    
+
     // Set texture parameters
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    
+
     // Enable blending for transparency
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -440,21 +436,21 @@ const WhiteColorRemovalShader = ({
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      
+
       // Set threshold uniform
       const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
       gl.uniform1f(thresholdLocation, threshold)
-      
+
       // Set canvas size to match image
       canvas.width = image.width
       canvas.height = image.height
       gl.viewport(0, 0, canvas.width, canvas.height)
-      
+
       // Draw
       gl.clearColor(0.0, 0.0, 0.0, 0.0)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
-      
+
       setIsLoaded(true)
     }
     image.onerror = () => {
@@ -487,13 +483,15 @@ const WhiteColorRemovalShader = ({
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
-  const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile' | 'customer_service' | 'language'>('me')
+  const [currentView, setCurrentView] = useState<
+    'me' | 'settings' | 'public_profile' | 'customer_service' | 'language' | 'store'
+  >('me')
   const [appLang, setAppLang] = useState<LanguageCode>('en')
-  
+
   // Feedback States
   const [showFeedbackPage, setShowFeedbackPage] = useState(false)
 
-  // ✅ Wallet states
+  // Wallet states
   const [showWallet, setShowWallet] = useState(false)
   const [walletTab, setWalletTab] = useState<'coins' | 'diamond'>('coins')
 
@@ -502,7 +500,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       onPublicProfileChange(currentView !== 'me' || showFeedbackPage || showWallet)
     }
   }, [showFeedbackPage, currentView, showWallet])
-  
+
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
   const [contactInfo, setContactInfo] = useState('')
@@ -537,14 +535,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     photo: "",
   })
 
-  const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
+  const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language' | 'store') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
       onPublicProfileChange(view !== 'me' || showFeedbackPage || showWallet)
     }
   }
 
-  // Handle Feedback Submit (unchanged)
+  // Handle Feedback Submit
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
@@ -577,15 +575,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     try {
       // Firebase mein save karo
       await addDoc(collection(db, "feedbacks"), feedbackData);
-      
+
       // IndexedDB mein bhi save karo (backup)
       await saveFeedbackToDB(feedbackData);
-      
+
       setFeedbackSuccess(true);
       setSelectedType('');
       setProblemDescription('');
       setContactInfo('');
-      
+
       // Auto close after 2 seconds
       setTimeout(() => {
         setShowFeedbackPage(false);
@@ -594,7 +592,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      
+
       // Agar Firebase fail ho jaye to IndexedDB mein save karo (offline mode)
       try {
         await saveFeedbackToDB(feedbackData);
@@ -602,12 +600,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         setSelectedType('');
         setProblemDescription('');
         setContactInfo('');
-        
+
         setTimeout(() => {
           setShowFeedbackPage(false);
           setFeedbackSuccess(false);
         }, 2000);
-        
+
         console.log('Feedback saved offline in IndexedDB');
       } catch (dbError) {
         console.error('Failed to save feedback offline:', dbError);
@@ -624,11 +622,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     const fetchUserData = async () => {
       try {
         // Step 1: Get UID from localStorage
-        const uid = localStorage.getItem("userUID") || 
-                    localStorage.getItem("userPhone") || 
-                    localStorage.getItem("userId") || 
+        const uid = localStorage.getItem("userUID") ||
+                    localStorage.getItem("userPhone") ||
+                    localStorage.getItem("userId") ||
                     "";
-        
+
         console.log('🔍 User data fetch kar rahe hai, UID:', uid);
 
         if (!uid || uid === "N/A") {
@@ -646,7 +644,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
         // Step 2: Check IndexedDB FIRST (PERMANENT STORAGE)
         const cachedUser = await loadUserFromDB(uid);
-        
+
         if (cachedUser) {
           console.log('✅ IndexedDB se data mila (PERMANENT):', {
             name: cachedUser.name,
@@ -659,7 +657,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         // Step 3: Firebase se real-time sync (background mein)
         try {
           const userDocRef = doc(db, "users", uid);
-          
+
           // Real-time listener for Firebase updates
           unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
             if (docSnap.exists()) {
@@ -668,18 +666,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 name: firebaseData.name,
                 hasPhoto: !!firebaseData.photo
               });
-              
+
               // Account number set karo
-              let accountNumber = firebaseData.accountId || 
-                                 cachedUser?.accountNumber || 
-                                 localStorage.getItem("accountNumber") || 
+              let accountNumber = firebaseData.accountId ||
+                                 cachedUser?.accountNumber ||
+                                 localStorage.getItem("accountNumber") ||
                                  "";
-              
+
               if (!accountNumber) {
                 const { fullAccNum } = getOrCreateAccountNumber(uid);
                 accountNumber = fullAccNum;
               }
-              
+
               const updatedUserData = {
                 name: firebaseData.name || cachedUser?.name || "",
                 uid: uid,
@@ -688,22 +686,22 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 phone: firebaseData.phone || cachedUser?.phone || "",
                 photo: firebaseData.photo || cachedUser?.photo || "",
               };
-              
+
               // Check if data changed
               const hasChanged = JSON.stringify(updatedUserData) !== JSON.stringify(cachedUser);
-              
+
               if (hasChanged) {
                 console.log('🔄 Firebase mein naya data hai, IndexedDB update kar rahe hai');
-                
+
                 // IndexedDB mein update karo
                 await saveUserToDB(updatedUserData);
-                
+
                 // localStorage update karo
                 if (updatedUserData.name) localStorage.setItem("userName", updatedUserData.name);
                 if (updatedUserData.accountNumber) localStorage.setItem("accountNumber", updatedUserData.accountNumber);
                 if (updatedUserData.photo) localStorage.setItem("userPhoto", updatedUserData.photo);
                 if (updatedUserData.phone) localStorage.setItem("userPhone", updatedUserData.phone);
-                
+
                 // UI update karo
                 setUser(updatedUserData);
               } else {
@@ -715,7 +713,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           }, (error) => {
             console.error('❌ Firebase listener error:', error);
           });
-          
+
         } catch (firebaseError) {
           console.warn('⚠️ Firebase sync error:', firebaseError);
         }
@@ -725,17 +723,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           try {
             const userDocRef = doc(db, "users", uid);
             const docSnap = await getDoc(userDocRef);
-            
+
             if (docSnap.exists()) {
               const firebaseData = docSnap.data();
               console.log('✅ Firebase se initial data mila:', firebaseData);
-              
+
               let accountNumber = firebaseData.accountId || localStorage.getItem("accountNumber") || "";
               if (!accountNumber) {
                 const { fullAccNum } = getOrCreateAccountNumber(uid);
                 accountNumber = fullAccNum;
               }
-              
+
               const userData = {
                 name: firebaseData.name || localStorage.getItem("userName") || "",
                 uid: uid,
@@ -744,15 +742,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 phone: firebaseData.phone || localStorage.getItem("userPhone") || "",
                 photo: firebaseData.photo || localStorage.getItem("userPhoto") || "",
               };
-              
+
               // IndexedDB mein save karo (PERMANENT)
               await saveUserToDB(userData);
-              
+
               // localStorage update karo
               if (userData.name) localStorage.setItem("userName", userData.name);
               if (userData.accountNumber) localStorage.setItem("accountNumber", userData.accountNumber);
               if (userData.photo) localStorage.setItem("userPhoto", userData.photo);
-              
+
               setUser(userData);
             }
           } catch (error) {
@@ -789,7 +787,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
   }
 
-  // Feedback Page View (unchanged)
+  // Feedback Page View
   if (showFeedbackPage) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -915,6 +913,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     );
   }
 
+  // ✅ Store page view
+  if (currentView === 'store') {
+    return <StorePage onBack={() => switchView('me')} />
+  }
+
   if (currentView === 'language') {
     return <LanguagePage onBack={() => switchView('me')} />
   }
@@ -932,7 +935,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full min-h-screen bg-white" >
+    <div className="w-full min-h-screen bg-white">
       {/* Profile Header */}
       <div
         className="px-4 pb-6 relative safe-top"
@@ -952,19 +955,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
                   alt="Profile"
                   onError={(e) => {
-                    // Agar image load nahi ho to fallback dikhao
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
                 />
               ) : null}
-              
+
               {!user.photo && (
                 <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
                   {user.name ? user.name.charAt(0).toUpperCase() : "?"}
                 </div>
               )}
-              
+
               {/* WebGL Shader Overlay - FULL OVERLAP */}
               <div className="absolute inset-0 pointer-events-none">
                 <WhiteColorRemovalShader
@@ -1055,7 +1057,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
         {/* Banner Images */}
         <div className="flex gap-1 mt-6">
-          <div 
+          <div
             className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
             onClick={() => {
               setWalletTab('coins');
@@ -1068,7 +1070,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               className="w-full h-14 object-cover"
             />
           </div>
-          <div 
+          <div
             className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
             onClick={() => {
               setWalletTab('diamond');
@@ -1089,7 +1091,16 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {menuItems.map((item, index) => (
             <div key={item.id}>
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+              <div
+                className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  // ✅ Store item click → store view open
+                  if (item.id === '5') {
+                    switchView('store')
+                  }
+                  // Baaki items ke liye future actions yahan add karein
+                }}
+              >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
@@ -1168,4 +1179,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-      }
+        }
