@@ -14,6 +14,10 @@ interface StoreItem {
   hasDiscount?: boolean;
 }
 
+interface StorePageProps {
+  onBack: () => void;
+}
+
 const tabs = ["Vehicle", "Avatar Frame", "Theme", "Chat Bubble", "ID"];
 
 const storeItems: StoreItem[] = [
@@ -73,7 +77,7 @@ const storeItems: StoreItem[] = [
   },
 ];
 
-export default function StorePage() {
+export default function StorePage({ onBack }: StorePageProps) {
   const [activeTab, setActiveTab] = useState("Vehicle");
 
   return (
@@ -83,6 +87,7 @@ export default function StorePage() {
         <div className="relative flex items-center justify-center px-4 py-3.5 bg-white border-b border-gray-100">
           <button
             type="button"
+            onClick={onBack}
             className="absolute left-3 p-1 rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
           >
             <ChevronLeft size={24} strokeWidth={2.5} />
@@ -117,7 +122,6 @@ export default function StorePage() {
               key={item.id}
               className="bg-white rounded-2xl p-2.5 flex flex-col justify-between border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] relative"
             >
-              {/* Card Header: Try Pill, Discount Badge & Duration */}
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold text-[#2563eb] border border-[#2563eb] rounded-full px-2 py-0.5 leading-none">
@@ -129,7 +133,6 @@ export default function StorePage() {
                   </div>
                 </div>
 
-                {/* Discount Badge */}
                 {item.hasDiscount && (
                   <div className="mt-1 flex items-center">
                     <div className="relative inline-block bg-gradient-to-r from-[#e3a033] to-[#c78018] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-sm">
@@ -139,7 +142,6 @@ export default function StorePage() {
                 )}
               </div>
 
-              {/* Product Preview Image */}
               <div className="relative w-full h-24 my-1 flex items-center justify-center">
                 <Image
                   src={item.image}
@@ -150,9 +152,7 @@ export default function StorePage() {
                 />
               </div>
 
-              {/* Rating Stars & Price */}
               <div className="text-center mt-1">
-                {/* Stars */}
                 <div className="flex items-center justify-center gap-0.5 mb-1">
                   {Array.from({ length: item.stars }).map((_, i) => (
                     <Star
@@ -163,7 +163,6 @@ export default function StorePage() {
                   ))}
                 </div>
 
-                {/* Price with Custom Coin Icon */}
                 <div className="flex items-center justify-center gap-1.5">
                   <div className="relative w-4 h-4 flex items-center justify-center">
                     <Image
@@ -180,7 +179,6 @@ export default function StorePage() {
                 </div>
               </div>
 
-              {/* Action Buttons: Send & Buy Split Pill */}
               <div className="mt-2.5 flex items-center w-full rounded-full border border-[#2563eb] overflow-hidden text-xs font-semibold">
                 <button
                   type="button"
@@ -202,4 +200,3 @@ export default function StorePage() {
     </div>
   );
 }
-
