@@ -232,7 +232,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               {/* Main Center Image */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <ShaderTransparentImage
-                  src="/1787339290785.png"
+                  src="/IMG_20260822_013920.png"
                   className="w-full h-full object-contain"
                   removeColor="white"
                 />
