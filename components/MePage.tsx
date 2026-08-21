@@ -10,7 +10,7 @@ import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
 import Wallet from './Wallet'
-import Storepage from './Storepage' // ✅ StorePage import
+import StorePage from './StorePage' // ✅ Added StorePage import
 
 // ============ IndexedDB Functions for User Data ============
 const USER_DB_NAME = 'UserDataDB';
@@ -44,13 +44,13 @@ const saveUserToDB = async (userData: any) => {
     const db = await openUserDB();
     const transaction = db.transaction([USER_STORE], 'readwrite');
     const store = transaction.objectStore(USER_STORE);
-
+    
     const completeUserData = {
       ...userData,
       cachedAt: Date.now(),
       updatedAt: new Date().toISOString(),
     };
-
+    
     await new Promise<void>((resolve, reject) => {
       const request = store.put(completeUserData);
       request.onsuccess = () => resolve();
@@ -82,7 +82,7 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
     });
 
     db.close();
-
+    
     if (userData) {
       console.log('✅ IndexedDB se user data mila:', {
         name: userData.name,
@@ -90,7 +90,7 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
         accountNumber: userData.accountNumber
       });
     }
-
+    
     return userData || null;
   } catch (error) {
     console.error('❌ User load error:', error);
@@ -123,7 +123,7 @@ const deleteUserFromDB = async (uid: string) => {
     const db = await openUserDB();
     const transaction = db.transaction([USER_STORE], 'readwrite');
     const store = transaction.objectStore(USER_STORE);
-
+    
     await new Promise<void>((resolve, reject) => {
       const request = store.delete(uid);
       request.onsuccess = () => resolve();
@@ -137,13 +137,12 @@ const deleteUserFromDB = async (uid: string) => {
   }
 };
 
-// Feedback functions
 const saveFeedbackToDB = async (feedbackData: any) => {
   try {
     const db = await openUserDB();
     const transaction = db.transaction([FEEDBACK_STORE], 'readwrite');
     const store = transaction.objectStore(FEEDBACK_STORE);
-
+    
     store.add({
       ...feedbackData,
       cachedAt: Date.now(),
@@ -247,11 +246,9 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
-// Official/Admin IDs list
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-// Feedback Types
 const FEEDBACK_TYPES = [
   { id: 'app_bug', label: 'App Bug', icon: '' },
   { id: 'suggestion', label: 'Suggestion', icon: '' },
@@ -262,18 +259,15 @@ const FEEDBACK_TYPES = [
 export const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return { fullAccNum: 'N/A', displayAccNum: 'N/A' }
 
-  // Check if it's an official or admin ID
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return { fullAccNum: uid, displayAccNum: uid }
   }
 
-  // Check stored account number first
   const savedAcc = localStorage.getItem('accountNumber')
   if (savedAcc) {
     return { fullAccNum: savedAcc, displayAccNum: savedAcc }
   }
 
-  // Consistent 8-digit calculation based on UID
   let hash = 0
   for (let i = 0; i < uid.length; i++) {
     hash = (hash << 5) - hash + uid.charCodeAt(i)
@@ -281,17 +275,16 @@ export const getOrCreateAccountNumber = (uid: string) => {
   }
   const positiveHash = Math.abs(hash)
   const generated = String(10000000 + (positiveHash % 90000000))
-
+  
   return { fullAccNum: generated, displayAccNum: generated }
 }
 
-// WebGL Shader Component
-const WhiteColorRemovalShader = ({
-  imageSrc,
+const WhiteColorRemovalShader = ({ 
+  imageSrc, 
   threshold = 0.9,
   className = "",
   style = {}
-}: {
+}: { 
   imageSrc: string
   threshold?: number
   className?: string
@@ -310,7 +303,6 @@ const WhiteColorRemovalShader = ({
       return
     }
 
-    // Vertex shader
     const vertexShaderSource = `
       attribute vec2 a_position;
       attribute vec2 a_texCoord;
@@ -322,7 +314,6 @@ const WhiteColorRemovalShader = ({
       }
     `
 
-    // Fragment shader with white color removal
     const fragmentShaderSource = `
       precision mediump float;
       
@@ -333,13 +324,11 @@ const WhiteColorRemovalShader = ({
       void main() {
         vec4 color = texture2D(u_texture, v_texCoord);
         
-        // Calculate whiteness
         float maxColor = max(color.r, max(color.g, color.b));
         float minColor = min(color.r, min(color.g, color.b));
         float lightness = (maxColor + minColor) / 2.0;
         float saturation = maxColor - minColor;
         
-        // If pixel is white (high lightness, low saturation), make it transparent
         if (lightness > u_threshold && saturation < 0.3) {
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
@@ -348,13 +337,12 @@ const WhiteColorRemovalShader = ({
       }
     `
 
-    // Compile shaders
     const compileShader = (type: number, source: string) => {
       const shader = gl.createShader(type)
       if (!shader) return null
       gl.shaderSource(shader, source)
       gl.compileShader(shader)
-
+      
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         console.error('Shader compile error:', gl.getShaderInfoLog(shader))
         gl.deleteShader(shader)
@@ -365,13 +353,12 @@ const WhiteColorRemovalShader = ({
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-
+    
     if (!vertexShader || !fragmentShader) return
 
-    // Create program
     const program = gl.createProgram()
     if (!program) return
-
+    
     gl.attachShader(program, vertexShader)
     gl.attachShader(program, fragmentShader)
     gl.linkProgram(program)
@@ -383,7 +370,6 @@ const WhiteColorRemovalShader = ({
 
     gl.useProgram(program)
 
-    // Setup geometry
     const positionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
     const positions = new Float32Array([
@@ -400,16 +386,15 @@ const WhiteColorRemovalShader = ({
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // Setup texture coordinates - FLIP Y axis
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
     const texCoords = new Float32Array([
-      0.0, 1.0,  // Bottom-left
-      1.0, 1.0,  // Bottom-right
-      0.0, 0.0,  // Top-left
-      0.0, 0.0,  // Top-left
-      1.0, 1.0,  // Bottom-right
-      1.0, 0.0,  // Top-right
+      0.0, 1.0,
+      1.0, 1.0,
+      0.0, 0.0,
+      0.0, 0.0,
+      1.0, 1.0,
+      1.0, 0.0,
     ])
     gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
 
@@ -417,17 +402,14 @@ const WhiteColorRemovalShader = ({
     gl.enableVertexAttribArray(texCoordLocation)
     gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // Load and create texture
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
-
-    // Set texture parameters
+    
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-
-    // Enable blending for transparency
+    
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
@@ -436,21 +418,18 @@ const WhiteColorRemovalShader = ({
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-
-      // Set threshold uniform
+      
       const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
       gl.uniform1f(thresholdLocation, threshold)
-
-      // Set canvas size to match image
+      
       canvas.width = image.width
       canvas.height = image.height
       gl.viewport(0, 0, canvas.width, canvas.height)
-
-      // Draw
+      
       gl.clearColor(0.0, 0.0, 0.0, 0.0)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
-
+      
       setIsLoaded(true)
     }
     image.onerror = () => {
@@ -458,7 +437,6 @@ const WhiteColorRemovalShader = ({
     }
     image.src = imageSrc
 
-    // Cleanup
     return () => {
       gl.deleteProgram(program)
       gl.deleteShader(vertexShader)
@@ -483,24 +461,23 @@ const WhiteColorRemovalShader = ({
 }
 
 export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
-  const [currentView, setCurrentView] = useState<
-    'me' | 'settings' | 'public_profile' | 'customer_service' | 'language' | 'store'
-  >('me')
+  const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile' | 'customer_service' | 'language'>('me')
   const [appLang, setAppLang] = useState<LanguageCode>('en')
-
-  // Feedback States
+  
   const [showFeedbackPage, setShowFeedbackPage] = useState(false)
 
-  // Wallet states
   const [showWallet, setShowWallet] = useState(false)
   const [walletTab, setWalletTab] = useState<'coins' | 'diamond'>('coins')
 
+  // ✅ Store state
+  const [showStore, setShowStore] = useState(false)
+
   useEffect(() => {
     if (onPublicProfileChange) {
-      onPublicProfileChange(currentView !== 'me' || showFeedbackPage || showWallet)
+      onPublicProfileChange(currentView !== 'me' || showFeedbackPage || showWallet || showStore)
     }
-  }, [showFeedbackPage, currentView, showWallet])
-
+  }, [showFeedbackPage, currentView, showWallet, showStore])
+  
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
   const [contactInfo, setContactInfo] = useState('')
@@ -535,14 +512,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     photo: "",
   })
 
-  const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language' | 'store') => {
+  const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view !== 'me' || showFeedbackPage || showWallet)
+      onPublicProfileChange(view !== 'me' || showFeedbackPage || showWallet || showStore)
     }
   }
 
-  // Handle Feedback Submit
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
@@ -573,18 +549,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     try {
-      // Firebase mein save karo
       await addDoc(collection(db, "feedbacks"), feedbackData);
-
-      // IndexedDB mein bhi save karo (backup)
       await saveFeedbackToDB(feedbackData);
-
+      
       setFeedbackSuccess(true);
       setSelectedType('');
       setProblemDescription('');
       setContactInfo('');
-
-      // Auto close after 2 seconds
+      
       setTimeout(() => {
         setShowFeedbackPage(false);
         setFeedbackSuccess(false);
@@ -592,20 +564,19 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     } catch (error) {
       console.error("Error submitting feedback:", error);
-
-      // Agar Firebase fail ho jaye to IndexedDB mein save karo (offline mode)
+      
       try {
         await saveFeedbackToDB(feedbackData);
         setFeedbackSuccess(true);
         setSelectedType('');
         setProblemDescription('');
         setContactInfo('');
-
+        
         setTimeout(() => {
           setShowFeedbackPage(false);
           setFeedbackSuccess(false);
         }, 2000);
-
+        
         console.log('Feedback saved offline in IndexedDB');
       } catch (dbError) {
         console.error('Failed to save feedback offline:', dbError);
@@ -621,12 +592,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     const fetchUserData = async () => {
       try {
-        // Step 1: Get UID from localStorage
-        const uid = localStorage.getItem("userUID") ||
-                    localStorage.getItem("userPhone") ||
-                    localStorage.getItem("userId") ||
+        const uid = localStorage.getItem("userUID") || 
+                    localStorage.getItem("userPhone") || 
+                    localStorage.getItem("userId") || 
                     "";
-
+        
         console.log('🔍 User data fetch kar rahe hai, UID:', uid);
 
         if (!uid || uid === "N/A") {
@@ -642,9 +612,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           return;
         }
 
-        // Step 2: Check IndexedDB FIRST (PERMANENT STORAGE)
         const cachedUser = await loadUserFromDB(uid);
-
+        
         if (cachedUser) {
           console.log('✅ IndexedDB se data mila (PERMANENT):', {
             name: cachedUser.name,
@@ -654,11 +623,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           setUser(cachedUser);
         }
 
-        // Step 3: Firebase se real-time sync (background mein)
         try {
           const userDocRef = doc(db, "users", uid);
-
-          // Real-time listener for Firebase updates
+          
           unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
             if (docSnap.exists()) {
               const firebaseData = docSnap.data();
@@ -666,18 +633,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 name: firebaseData.name,
                 hasPhoto: !!firebaseData.photo
               });
-
-              // Account number set karo
-              let accountNumber = firebaseData.accountId ||
-                                 cachedUser?.accountNumber ||
-                                 localStorage.getItem("accountNumber") ||
+              
+              let accountNumber = firebaseData.accountId || 
+                                 cachedUser?.accountNumber || 
+                                 localStorage.getItem("accountNumber") || 
                                  "";
-
+              
               if (!accountNumber) {
                 const { fullAccNum } = getOrCreateAccountNumber(uid);
                 accountNumber = fullAccNum;
               }
-
+              
               const updatedUserData = {
                 name: firebaseData.name || cachedUser?.name || "",
                 uid: uid,
@@ -686,23 +652,19 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 phone: firebaseData.phone || cachedUser?.phone || "",
                 photo: firebaseData.photo || cachedUser?.photo || "",
               };
-
-              // Check if data changed
+              
               const hasChanged = JSON.stringify(updatedUserData) !== JSON.stringify(cachedUser);
-
+              
               if (hasChanged) {
                 console.log('🔄 Firebase mein naya data hai, IndexedDB update kar rahe hai');
-
-                // IndexedDB mein update karo
+                
                 await saveUserToDB(updatedUserData);
-
-                // localStorage update karo
+                
                 if (updatedUserData.name) localStorage.setItem("userName", updatedUserData.name);
                 if (updatedUserData.accountNumber) localStorage.setItem("accountNumber", updatedUserData.accountNumber);
                 if (updatedUserData.photo) localStorage.setItem("userPhoto", updatedUserData.photo);
                 if (updatedUserData.phone) localStorage.setItem("userPhone", updatedUserData.phone);
-
-                // UI update karo
+                
                 setUser(updatedUserData);
               } else {
                 console.log('✅ Firebase aur IndexedDB ka data same hai');
@@ -713,27 +675,26 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           }, (error) => {
             console.error('❌ Firebase listener error:', error);
           });
-
+          
         } catch (firebaseError) {
           console.warn('⚠️ Firebase sync error:', firebaseError);
         }
 
-        // Step 4: Agar IndexedDB mein data nahi tha, to Firebase se fetch karo
         if (!cachedUser) {
           try {
             const userDocRef = doc(db, "users", uid);
             const docSnap = await getDoc(userDocRef);
-
+            
             if (docSnap.exists()) {
               const firebaseData = docSnap.data();
               console.log('✅ Firebase se initial data mila:', firebaseData);
-
+              
               let accountNumber = firebaseData.accountId || localStorage.getItem("accountNumber") || "";
               if (!accountNumber) {
                 const { fullAccNum } = getOrCreateAccountNumber(uid);
                 accountNumber = fullAccNum;
               }
-
+              
               const userData = {
                 name: firebaseData.name || localStorage.getItem("userName") || "",
                 uid: uid,
@@ -742,15 +703,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 phone: firebaseData.phone || localStorage.getItem("userPhone") || "",
                 photo: firebaseData.photo || localStorage.getItem("userPhoto") || "",
               };
-
-              // IndexedDB mein save karo (PERMANENT)
+              
               await saveUserToDB(userData);
-
-              // localStorage update karo
+              
               if (userData.name) localStorage.setItem("userName", userData.name);
               if (userData.accountNumber) localStorage.setItem("accountNumber", userData.accountNumber);
               if (userData.photo) localStorage.setItem("userPhoto", userData.photo);
-
+              
               setUser(userData);
             }
           } catch (error) {
@@ -765,13 +724,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     fetchUserData();
 
-    // Cleanup function
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, []); // Only run once when component mounts
+  }, []);
 
   const handleCopyAccountNumber = () => {
     if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
@@ -782,16 +740,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // ✅ Wallet condition
+  // ✅ Wallet और Store की early returns
   if (showWallet) {
     return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
   }
 
-  // Feedback Page View
+  if (showStore) {
+    return <StorePage onBack={() => setShowStore(false)} />
+  }
+
   if (showFeedbackPage) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Header */}
         <div className="flex items-center p-4 bg-white border-b border-gray-200">
           <button
             onClick={() => {
@@ -809,7 +769,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           <h1 className="text-lg font-semibold text-gray-900 ml-3">{t.helpFeedback}</h1>
         </div>
 
-        {/* Content */}
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="max-w-md mx-auto">
             {feedbackSuccess ? (
@@ -820,7 +779,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               </div>
             ) : (
               <form onSubmit={handleFeedbackSubmit} className="space-y-6">
-                {/* Type of Issue */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Type of Issue</h2>
                   <div className="grid grid-cols-2 gap-3">
@@ -846,7 +804,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 </div>
 
-                {/* Problem Description */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Problem Description</h2>
                   <div className="relative">
@@ -868,7 +825,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 </div>
 
-                {/* Contact Information */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Contact Information</h2>
                   <input
@@ -880,14 +836,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   />
                 </div>
 
-                {/* Error Message */}
                 {feedbackError && (
                   <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
                     {feedbackError}
                   </div>
                 )}
 
-                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={feedbackSubmitting}
@@ -913,11 +867,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     );
   }
 
-  // ✅ Store page view
-  if (currentView === 'store') {
-    return <StorePage onBack={() => switchView('me')} />
-  }
-
   if (currentView === 'language') {
     return <LanguagePage onBack={() => switchView('me')} />
   }
@@ -935,8 +884,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full min-h-screen bg-white">
-      {/* Profile Header */}
+    <div className="w-full min-h-screen bg-white" >
       <div
         className="px-4 pb-6 relative safe-top"
         style={{
@@ -944,10 +892,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           paddingTop: 'max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 55px)'
         }}
       >
-        {/* User Card */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            {/* Avatar with WebGL Shader Overlay */}
             <div className="relative w-20 h-20 ml-1 shrink-0">
               {user.photo ? (
                 <img
@@ -960,14 +906,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   }}
                 />
               ) : null}
-
+              
               {!user.photo && (
                 <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
                   {user.name ? user.name.charAt(0).toUpperCase() : "?"}
                 </div>
               )}
-
-              {/* WebGL Shader Overlay - FULL OVERLAP */}
+              
               <div className="absolute inset-0 pointer-events-none">
                 <WhiteColorRemovalShader
                   imageSrc="/1786867564769.png"
@@ -986,12 +931,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             </div>
 
             <div className="flex flex-col">
-              {/* Name */}
               <h2 className="text-2xl font-bold text-gray-900 mb-0.5">
                 {user.name || "User"}
               </h2>
 
-              {/* Account Number Display */}
               <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
                   <div className="relative inline-block w-22">
@@ -1029,7 +972,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             </div>
           </div>
 
-          {/* Top Right Arrow - View Public Profile */}
           <button
             onClick={() => switchView('public_profile')}
             className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2 cursor-pointer"
@@ -1039,7 +981,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">1</div>
@@ -1055,9 +996,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </div>
         </div>
 
-        {/* Banner Images */}
         <div className="flex gap-1 mt-6">
-          <div
+          <div 
             className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
             onClick={() => {
               setWalletTab('coins');
@@ -1070,7 +1010,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               className="w-full h-14 object-cover"
             />
           </div>
-          <div
+          <div 
             className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
             onClick={() => {
               setWalletTab('diamond');
@@ -1086,19 +1026,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Main Menu Items */}
       <div className="px-4 mt-1">
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {menuItems.map((item, index) => (
             <div key={item.id}>
-              <div
+              <div 
                 className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => {
-                  // ✅ Store item click → store view open
                   if (item.id === '5') {
-                    switchView('store')
+                    setShowStore(true);
                   }
-                  // Baaki items ke liye future actions yahan add karein
+                  // Add other menu actions if needed
                 }}
               >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
@@ -1130,7 +1068,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Bottom Menu Items */}
       <div className="px-4 mt-4 mb-6">
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {bottomMenuItems.map((item, index) => (
@@ -1169,7 +1106,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Recharge Event Floating Card */}
       <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">
         <div className="text-center text-sm">
           <div className="text-2xl mb-1"></div>
@@ -1179,4 +1115,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-        }
+                                              }
