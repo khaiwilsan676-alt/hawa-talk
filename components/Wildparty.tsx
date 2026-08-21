@@ -6,8 +6,16 @@ interface WildpartyProps {
   onClose: () => void;
 }
 
-// Custom WebGL Shader Component jo white background ko instantly remove karta hai
-function ShaderTransparentImage({ src, className }: { src: string; className?: string }) {
+// Custom WebGL Shader Component – Advanced Green & White Removal Shader
+function ShaderTransparentImage({
+  src,
+  className,
+  removeColor = 'white',
+}: {
+  src: string;
+  className?: string;
+  removeColor?: 'white' | 'green';
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -28,21 +36,58 @@ function ShaderTransparentImage({ src, className }: { src: string; className?: s
       }
     `;
 
-    // Fragment Shader: White / Near-White color ko transparent discard karta hai
-    const fsSource = `
-      precision mediump float;
-      varying vec2 v_texCoord;
-      uniform sampler2D u_image;
-      void main() {
-        vec4 color = texture2D(u_image, v_texCoord);
-        // Agar pixel pure white ya near-white ho to alpha zero
-        if (color.r > 0.90 && color.g > 0.90 && color.b > 0.90) {
-          discard;
-        } else {
-          gl_FragColor = color;
-        }
-      }
-    `;
+    // Fragment Shader – Advanced Green Removal Chroma Key Shader
+    const fsSource =
+      removeColor === 'green'
+        ? `
+          precision mediump float;
+          varying vec2 v_texCoord;
+          uniform sampler2D u_image;
+
+          // RGB to HSV conversion for clean chroma extraction
+          vec3 rgb2hsv(vec3 c) {
+            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+            float d = q.x - min(q.w, q.y);
+            float e = 1.0e-10;
+            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+          }
+
+          void main() {
+            vec4 color = texture2D(u_image, v_texCoord);
+            vec3 hsv = rgb2hsv(color.rgb);
+            
+            // Chroma Key green parameters (Hue range around ~0.20 to ~0.45)
+            bool isHueGreen = (hsv.x >= 0.18 && hsv.x <= 0.46);
+            bool isHighGreen = (color.g > 0.35 && color.g > (color.r * 1.1) && color.g > (color.b * 1.1));
+            
+            if ((isHueGreen && hsv.y > 0.25 && hsv.z > 0.15) || isHighGreen) {
+              discard;
+            } else {
+              // Edge spill suppression: Green tint edges ko naturalize karta hai
+              float maxRB = max(color.r, color.b);
+              if (color.g > maxRB) {
+                color.g = maxRB;
+              }
+              gl_FragColor = color;
+            }
+          }
+        `
+        : `
+          precision mediump float;
+          varying vec2 v_texCoord;
+          uniform sampler2D u_image;
+          void main() {
+            vec4 color = texture2D(u_image, v_texCoord);
+            // White removal: near-white pixels become transparent
+            if (color.r > 0.90 && color.g > 0.90 && color.b > 0.90) {
+              discard;
+            } else {
+              gl_FragColor = color;
+            }
+          }
+        `;
 
     const createShader = (glCtx: WebGLRenderingContext, type: number, source: string) => {
       const shader = glCtx.createShader(type);
@@ -110,7 +155,7 @@ function ShaderTransparentImage({ src, className }: { src: string; className?: s
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
-  }, [src]);
+  }, [src, removeColor]);
 
   return <canvas ref={canvasRef} className={className} />;
 }
@@ -118,6 +163,18 @@ function ShaderTransparentImage({ src, className }: { src: string; className?: s
 export default function Wildparty({ onClose }: WildpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+
+  // Animal images with green background (to be removed)
+  const animals = [
+    { src: '/IMG_20260822_011118.png', alt: 'Dog' },
+    { src: '/IMG_20260822_011103.png', alt: 'Zebra' },
+    { src: '/IMG_20260822_011134.png', alt: 'Deer' },
+    { src: '/IMG_20260822_011041.png', alt: 'Fox' },
+    { src: '/IMG_20260822_011151.png', alt: 'Eagle' },
+    { src: '/IMG_20260822_011205.png', alt: 'Bear' },
+    { src: '/IMG_20260822_011218.png', alt: 'Tiger' },
+    { src: '/IMG_20260822_011028.png', alt: 'Lion' },
+  ];
 
   // Simulate loading progress
   useEffect(() => {
@@ -147,10 +204,10 @@ export default function Wildparty({ onClose }: WildpartyProps) {
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
-      {/* Bottom sheet with 50vh height */}
+      {/* Bottom sheet with 70vh height */}
       <div
-        className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl overflow-hidden"
-        style={{ height: '50vh' }}
+        className="relative bg-white w-full max-w-md rounded-t-3xl rounded-b-3xl shadow-2xl overflow-hidden"
+        style={{ height: '70vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Background image covering the sheet */}
@@ -160,14 +217,22 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
+        {/* Bottom decorative image with curved corners */}
+        <img
+          src="/IMG_20260822_011000.png"
+          alt="Bottom decoration"
+          className="absolute bottom-0 left-0 w-full h-auto object-contain rounded-b-3xl z-10"
+        />
+
         {/* Content overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
           {loading ? (
             <>
               {/* WebGL Shader: Center loading logo white removed */}
               <ShaderTransparentImage
                 src="/1787338085121.png"
                 className="w-24 h-24 object-contain mb-6"
+                removeColor="white"
               />
               {/* Yellow loading bar */}
               <div className="w-3/4 max-w-xs bg-white/30 rounded-full h-2 overflow-hidden">
@@ -179,11 +244,41 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             </>
           ) : (
             <>
-              {/* WebGL Shader: After loading center image white removed */}
-              <ShaderTransparentImage
-                src="/1787337798141~2.jpg"
-                className="w-2/3 max-w-sm object-contain"
-              />
+              {/* Center image with animals arranged around it */}
+              <div className="relative w-72 h-72 flex items-center justify-center">
+                {/* Main center image (white background removed) */}
+                <ShaderTransparentImage
+                  src="/1787339290785.png"
+                  className="w-full h-full object-contain"
+                  removeColor="white"
+                />
+
+                {/* Animal circles arranged in a ring around the center image */}
+                {animals.map((animal, index) => {
+                  const angle = index * 45; // 8 animals, 45° apart
+                  return (
+                    <div
+                      key={animal.src}
+                      className="absolute rounded-full overflow-hidden border-2 border-white shadow-lg"
+                      style={{
+                        width: '56px',
+                        height: '56px',
+                        left: '50%',
+                        top: '50%',
+                        marginLeft: '-28px',
+                        marginTop: '-28px',
+                        transform: `rotate(${angle}deg) translate(150px) rotate(-${angle}deg)`,
+                      }}
+                    >
+                      <ShaderTransparentImage
+                        src={animal.src}
+                        className="w-full h-full object-cover"
+                        removeColor="green"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </>
           )}
         </div>
@@ -191,7 +286,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 p-1 bg-white/70 rounded-full hover:bg-white transition-colors"
+          className="absolute top-3 right-3 p-1 bg-white/70 rounded-full hover:bg-white transition-colors z-30"
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-800 stroke-[2.5]">
             <line x1="18" y1="6" x2="6" y2="18" />
