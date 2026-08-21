@@ -198,7 +198,7 @@ export default function Wallet({ onBack }: WalletProps) {
       <div
         className="w-full relative overflow-hidden transition-all duration-500 flex items-center justify-between px-4"
         style={{
-          height: '100px',
+          height: '150px',
           background:
             activeTab === 'wallet'
               ? 'linear-gradient(180deg, #FFD700 0%, #FFA500 30%, #FFE4B5 60%, #FFFFFF 100%)'
@@ -206,14 +206,14 @@ export default function Wallet({ onBack }: WalletProps) {
           animation: mounted ? 'slideDown 0.6s ease-out' : 'none',
         }}
       >
-        {/* Back Button */}
+        {/* Back Button - Same color as background */}
         <button
           onClick={onBack}
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
-            background: 'rgba(255,255,255,0.4)',
-            border: '2px solid rgba(255,255,255,0.7)',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            background: activeTab === 'wallet' ? '#FFA500' : '#FF1493',
+            border: 'none',
+            boxShadow: 'none',
           }}
           aria-label="Back"
         >
@@ -243,13 +243,13 @@ export default function Wallet({ onBack }: WalletProps) {
           {activeTab === 'wallet' ? 'Wallet' : 'Diamonds'}
         </h1>
 
-        {/* History Button */}
+        {/* History Button - Same color as background */}
         <button
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
-            background: 'rgba(255,255,255,0.4)',
-            border: '2px solid rgba(255,255,255,0.7)',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            background: activeTab === 'wallet' ? '#FFA500' : '#FF1493',
+            border: 'none',
+            boxShadow: 'none',
           }}
           aria-label="History"
         >
@@ -427,7 +427,7 @@ export default function Wallet({ onBack }: WalletProps) {
                 </div>
               </div>
 
-              {/* Exchange Section - images at bottom */}
+              {/* Exchange Section - images inside inputs */}
               <div
                 className="rounded-2xl p-5"
                 style={{
@@ -438,8 +438,15 @@ export default function Wallet({ onBack }: WalletProps) {
               >
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Exchange</h3>
 
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3">
                   <div className="flex-1 bg-white rounded-lg border border-pink-200 p-2 flex items-center gap-2">
+                    <div className="w-6 h-6">
+                      <WhiteColorRemovalShader
+                        imageSrc="/1787321690452.png"
+                        className="w-full h-full object-contain"
+                        threshold={0.88}
+                      />
+                    </div>
                     <input
                       type="number"
                       value={diamonds}
@@ -454,25 +461,9 @@ export default function Wallet({ onBack }: WalletProps) {
                       type="number"
                       value={coins}
                       onChange={(e) => handleCoinChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-base"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-base text-right"
                       placeholder="Coins"
                     />
-                  </div>
-                </div>
-
-                {/* Images at the bottom */}
-                <div className="flex items-center justify-center gap-3 mt-2">
-                  <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2 border border-pink-100">
-                    <div className="w-6 h-6">
-                      <WhiteColorRemovalShader
-                        imageSrc="/1787321690452.png"
-                        className="w-full h-full object-contain"
-                        threshold={0.88}
-                      />
-                    </div>
-                    <span className="text-sm font-semibold text-gray-600">= Diamonds</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2 border border-gray-100">
                     <div className="w-6 h-6">
                       <WhiteColorRemovalShader
                         imageSrc="/1786855398290.png"
@@ -480,7 +471,6 @@ export default function Wallet({ onBack }: WalletProps) {
                         threshold={0.88}
                       />
                     </div>
-                    <span className="text-sm font-semibold text-gray-600">= Coins</span>
                   </div>
                 </div>
               </div>
@@ -500,4 +490,4 @@ export default function Wallet({ onBack }: WalletProps) {
       </div>
     </div>
   )
-            }
+              }
