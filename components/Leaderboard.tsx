@@ -22,7 +22,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
   const tabs: { id: LeaderboardTab; label: string }[] = [
     { id: 'honour', label: 'Honour' },
     { id: 'charm', label: 'Charm' },
-    { id: 'room', label: 'Rich' },
+    { id: 'room', label: 'Room' },
   ]
 
   // Image data for each tab
@@ -112,10 +112,6 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.2), 0 8px 25px rgba(0,0,0,0.5); }
           50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.7), 0 0 50px rgba(212, 175, 55, 0.4), 0 8px 35px rgba(0,0,0,0.6); }
         }
-        @keyframes shine {
-          0% { transform: translateX(-100%) rotate(25deg); }
-          100% { transform: translateX(200%) rotate(25deg); }
-        }
         @keyframes float3D {
           0%, 100% { transform: translateY(0px) rotateX(0deg); }
           50% { transform: translateY(-2px) rotateX(2deg); }
@@ -188,14 +184,6 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
                   background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)'
                 }}
               />
-              {/* Shine effect */}
-              <span 
-                className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
-                style={{
-                  background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.4) 50%, transparent 55%)',
-                  animation: 'shine 3s infinite'
-                }}
-              />
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
                 <line x1="19" y1="12" x2="5" y2="12" />
                 <polyline points="12 19 5 12 12 5" />
@@ -227,14 +215,6 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
                   background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)'
                 }}
               />
-              {/* Shine effect */}
-              <span 
-                className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
-                style={{
-                  background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.4) 50%, transparent 55%)',
-                  animation: 'shine 3s infinite 1s'
-                }}
-              />
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -247,8 +227,8 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           <div 
             className="flex items-center justify-center gap-3 px-7 py-5 rounded-full backdrop-blur-md bg-black/50 border border-white/30"
             style={{
-              maxWidth: '90%',
-              margin: '0 auto',
+              maxWidth: 'fit-content',
+              margin: '35px',
               boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1)',
               transform: 'perspective(500px) rotateX(5deg)',
               transformStyle: 'preserve-3d'
@@ -272,30 +252,19 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
                     ` 
                     : 'none',
                   animation: activeTab === tab.id ? 'cardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
-                  transform: activeTab === tab.id ? 'scale(1.08) rotateX(5deg)' : 'scale(1) rotateX(0deg)',
+                  transform: activeTab === tab.id ? 'scale(1.15) rotateX(5deg)' : 'scale(1) rotateX(0deg)',
                   transformStyle: 'preserve-3d',
                   transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   textShadow: activeTab === tab.id ? '0 2px 4px rgba(0,0,0,0.3)' : 'none'
                 }}
               >
                 {activeTab === tab.id && (
-                  <>
-                    {/* Glossy overlay */}
-                    <span 
-                      className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
-                      style={{
-                        background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
-                      }}
-                    />
-                    {/* Shine effect */}
-                    <span 
-                      className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
-                      style={{
-                        background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.4) 50%, transparent 55%)',
-                        animation: 'shine 2s infinite'
-                      }}
-                    />
-                  </>
+                  <span 
+                    className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
+                    style={{
+                      background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
+                    }}
+                  />
                 )}
                 {tab.label}
               </button>
@@ -305,4 +274,4 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       </div>
     </div>
   )
-                  }
+          }
