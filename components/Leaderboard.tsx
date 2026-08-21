@@ -156,12 +156,12 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
         {/* OVERLAY: Header with Back, Tabs, Question Mark - ON TOP OF IMAGES */}
         <div className="absolute top-0 left-0 right-0 z-50 px-5 py-4 safe-top">
-          {/* Top Row: Back and Question Mark */}
-          <div className="flex items-center justify-between mb-5">
+          {/* Top Row: Back, Tabs (Top Middle), Question Mark - All in one line */}
+          <div className="flex items-center justify-between gap-3">
             {/* Back Arrow - Compact Glossy 3D Circle */}
             <button
               onClick={onBack}
-              className="relative w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all"
+              className="relative w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0"
               style={{
                 background: cardColors[activeTab].gradient,
                 border: `2px solid ${goldenColor}`,
@@ -184,15 +184,63 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
                   background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)'
                 }}
               />
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
                 <line x1="19" y1="12" x2="5" y2="12" />
                 <polyline points="12 19 5 12 12 5" />
               </svg>
             </button>
 
-            {/* Question Mark - Glossy 3D Circle */}
+            {/* Pill Card Container - TOP MIDDLE - Between Back and Question Mark */}
+            <div 
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-full backdrop-blur-md bg-black/50 border border-white/30 flex-1"
+              style={{
+                boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1)',
+                transform: 'perspective(500px) rotateX(5deg)',
+                transformStyle: 'preserve-3d',
+                maxWidth: '60%'
+              }}
+            >
+              {tabs.map((tab, index) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="relative px-4 py-2.5 rounded-full font-bold text-sm transition-all duration-300"
+                  style={{
+                    background: activeTab === tab.id ? cardColors[tab.id].gradient : 'transparent',
+                    color: activeTab === tab.id ? goldenColor : 'rgba(255,255,255,0.7)',
+                    border: activeTab === tab.id ? `2px solid ${goldenColor}` : '2px solid transparent',
+                    boxShadow: activeTab === tab.id 
+                      ? `
+                        0 15px 35px ${cardColors[tab.id].shadow},
+                        0 0 25px rgba(212, 175, 55, 0.6),
+                        inset 0 2px 4px rgba(255,255,255,0.3),
+                        inset 0 -2px 4px rgba(0,0,0,0.3)
+                      ` 
+                      : 'none',
+                    animation: activeTab === tab.id ? 'cardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
+                    transform: activeTab === tab.id ? 'scale(1.1) rotateX(5deg)' : 'scale(1) rotateX(0deg)',
+                    transformStyle: 'preserve-3d',
+                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    textShadow: activeTab === tab.id ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {activeTab === tab.id && (
+                    <span 
+                      className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
+                      style={{
+                        background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
+                      }}
+                    />
+                  )}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Question Mark - Glossy 3D Circle with simple ? sign */}
             <button
-              className="relative w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all"
+              className="relative w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0"
               style={{
                 background: cardColors[activeTab].gradient,
                 border: `2px solid ${goldenColor}`,
@@ -215,63 +263,21 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
                   background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)'
                 }}
               />
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Pill Card Container - LARGER SIZE - Top Middle */}
-          <div 
-            className="flex items-center justify-center gap-3 px-7 py-5 rounded-full backdrop-blur-md bg-black/50 border border-white/30"
-            style={{
-              maxWidth: 'fit-content',
-              margin: '35px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1)',
-              transform: 'perspective(500px) rotateX(5deg)',
-              transformStyle: 'preserve-3d'
-            }}
-          >
-            {tabs.map((tab, index) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="relative px-8 py-3.5 rounded-full font-bold text-base transition-all duration-300"
+              <span 
+                className="relative z-10 text-xl font-bold"
                 style={{
-                  background: activeTab === tab.id ? cardColors[tab.id].gradient : 'transparent',
-                  color: activeTab === tab.id ? goldenColor : 'rgba(255,255,255,0.7)',
-                  border: activeTab === tab.id ? `2px solid ${goldenColor}` : '2px solid transparent',
-                  boxShadow: activeTab === tab.id 
-                    ? `
-                      0 15px 35px ${cardColors[tab.id].shadow},
-                      0 0 25px rgba(212, 175, 55, 0.6),
-                      inset 0 2px 4px rgba(255,255,255,0.3),
-                      inset 0 -2px 4px rgba(0,0,0,0.3)
-                    ` 
-                    : 'none',
-                  animation: activeTab === tab.id ? 'cardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
-                  transform: activeTab === tab.id ? 'scale(1.15) rotateX(5deg)' : 'scale(1) rotateX(0deg)',
-                  transformStyle: 'preserve-3d',
-                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  textShadow: activeTab === tab.id ? '0 2px 4px rgba(0,0,0,0.3)' : 'none'
+                  color: goldenColor,
+                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  lineHeight: '1',
+                  fontSize: '24px'
                 }}
               >
-                {activeTab === tab.id && (
-                  <span 
-                    className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
-                    style={{
-                      background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
-                    }}
-                  />
-                )}
-                {tab.label}
-              </button>
-            ))}
+                ?
+              </span>
+            </button>
           </div>
         </div>
       </div>
     </div>
   )
-          }
+        }
