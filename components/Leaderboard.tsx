@@ -41,11 +41,35 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
     }
   }
 
-  // Card colors for each tab
-  const cardColors: Record<LeaderboardTab, string> = {
-    honour: '#DC2626', // Red
-    charm: '#2563EB',  // Blue
-    room: '#16A34A',   // Green
+  // Card colors for each tab with glossy 3D effects
+  const cardColors: Record<LeaderboardTab, {
+    primary: string;
+    secondary: string;
+    highlight: string;
+    shadow: string;
+    gradient: string;
+  }> = {
+    honour: {
+      primary: '#8B5CF6', // Purple
+      secondary: '#6D28D9',
+      highlight: '#A78BFA',
+      shadow: 'rgba(139, 92, 246, 0.6)',
+      gradient: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 50%, #4C1D95 100%)'
+    },
+    charm: {
+      primary: '#3B82F6', // Blue
+      secondary: '#2563EB',
+      highlight: '#60A5FA',
+      shadow: 'rgba(59, 130, 246, 0.6)',
+      gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #1E40AF 100%)'
+    },
+    room: {
+      primary: '#10B981', // Green
+      secondary: '#059669',
+      highlight: '#34D399',
+      shadow: 'rgba(16, 185, 129, 0.6)',
+      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 50%, #065F46 100%)'
+    },
   }
 
   const goldenColor = '#D4AF37'
@@ -80,13 +104,21 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           100% { opacity: 1; transform: scale(1); }
         }
         @keyframes cardPop {
-          0% { transform: scale(0.9); opacity: 0; }
-          60% { transform: scale(1.08); }
-          100% { transform: scale(1); opacity: 1; }
+          0% { transform: scale(0.85) rotateX(-15deg); opacity: 0; }
+          60% { transform: scale(1.1) rotateX(5deg); }
+          100% { transform: scale(1.08) rotateX(0deg); opacity: 1; }
         }
         @keyframes glowPulse {
-          0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.2); }
-          50% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.3); }
+          0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.2), 0 8px 25px rgba(0,0,0,0.5); }
+          50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.7), 0 0 50px rgba(212, 175, 55, 0.4), 0 8px 35px rgba(0,0,0,0.6); }
+        }
+        @keyframes shine {
+          0% { transform: translateX(-100%) rotate(25deg); }
+          100% { transform: translateX(200%) rotate(25deg); }
+        }
+        @keyframes float3D {
+          0%, 100% { transform: translateY(0px) rotateX(0deg); }
+          50% { transform: translateY(-2px) rotateX(2deg); }
         }
       `}</style>
 
@@ -127,53 +159,83 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         </div>
 
         {/* OVERLAY: Header with Back, Tabs, Question Mark - ON TOP OF IMAGES */}
-        <div className="absolute top-0 left-0 right-0 z-50 px-4 py-3 safe-top">
+        <div className="absolute top-0 left-0 right-0 z-50 px-5 py-4 safe-top">
           {/* Top Row: Back and Question Mark */}
-          <div className="flex items-center justify-between mb-4">
-            {/* Back Arrow - Glossy Circle */}
+          <div className="flex items-center justify-between mb-5">
+            {/* Back Arrow - Compact Glossy 3D Circle */}
             <button
               onClick={onBack}
-              className="relative w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all"
               style={{
-                background: `radial-gradient(circle at 30% 30%, ${cardColors[activeTab]}E6 0%, ${cardColors[activeTab]} 40%, #000000 100%)`,
+                background: cardColors[activeTab].gradient,
                 border: `2px solid ${goldenColor}`,
-                boxShadow: `0 4px 15px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2), 0 0 15px rgba(212, 175, 55, 0.3)`,
-                animation: 'glowPulse 2s ease-in-out infinite'
+                boxShadow: `
+                  0 8px 25px ${cardColors[activeTab].shadow},
+                  0 0 20px rgba(212, 175, 55, 0.4),
+                  inset 0 2px 4px rgba(255,255,255,0.3),
+                  inset 0 -2px 4px rgba(0,0,0,0.3)
+                `,
+                animation: 'glowPulse 2s ease-in-out infinite, float3D 3s ease-in-out infinite',
+                transform: 'perspective(500px) rotateX(5deg)',
+                transformStyle: 'preserve-3d'
               }}
               aria-label="Back"
             >
               {/* Glossy overlay */}
               <span 
-                className="absolute inset-0 rounded-full pointer-events-none"
+                className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
                 style={{
-                  background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
+                  background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)'
                 }}
               />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
+              {/* Shine effect */}
+              <span 
+                className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
+                style={{
+                  background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.4) 50%, transparent 55%)',
+                  animation: 'shine 3s infinite'
+                }}
+              />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
                 <line x1="19" y1="12" x2="5" y2="12" />
                 <polyline points="12 19 5 12 12 5" />
               </svg>
             </button>
 
-            {/* Question Mark - Glossy Circle */}
+            {/* Question Mark - Glossy 3D Circle */}
             <button
-              className="relative w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all"
               style={{
-                background: `radial-gradient(circle at 30% 30%, ${cardColors[activeTab]}E6 0%, ${cardColors[activeTab]} 40%, #000000 100%)`,
+                background: cardColors[activeTab].gradient,
                 border: `2px solid ${goldenColor}`,
-                boxShadow: `0 4px 15px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2), 0 0 15px rgba(212, 175, 55, 0.3)`,
-                animation: 'glowPulse 2s ease-in-out infinite'
+                boxShadow: `
+                  0 8px 25px ${cardColors[activeTab].shadow},
+                  0 0 20px rgba(212, 175, 55, 0.4),
+                  inset 0 2px 4px rgba(255,255,255,0.3),
+                  inset 0 -2px 4px rgba(0,0,0,0.3)
+                `,
+                animation: 'glowPulse 2s ease-in-out infinite, float3D 3s ease-in-out infinite 0.5s',
+                transform: 'perspective(500px) rotateX(5deg)',
+                transformStyle: 'preserve-3d'
               }}
               aria-label="Info"
             >
               {/* Glossy overlay */}
               <span 
-                className="absolute inset-0 rounded-full pointer-events-none"
+                className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
                 style={{
-                  background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
+                  background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)'
                 }}
               />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
+              {/* Shine effect */}
+              <span 
+                className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
+                style={{
+                  background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.4) 50%, transparent 55%)',
+                  animation: 'shine 3s infinite 1s'
+                }}
+              />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -181,37 +243,61 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             </button>
           </div>
 
-          {/* Pill Card Container */}
+          {/* Pill Card Container - LARGER SIZE - Top Middle */}
           <div 
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-full backdrop-blur-md bg-black/40 border border-white/20"
+            className="flex items-center justify-center gap-3 px-7 py-5 rounded-full backdrop-blur-md bg-black/50 border border-white/30"
             style={{
-              maxWidth: 'fit-content',
-              margin: '0 auto'
+              maxWidth: '90%',
+              margin: '0 auto',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1)',
+              transform: 'perspective(500px) rotateX(5deg)',
+              transformStyle: 'preserve-3d'
             }}
           >
-            {tabs.map((tab) => (
+            {tabs.map((tab, index) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="relative px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300"
+                className="relative px-8 py-3.5 rounded-full font-bold text-base transition-all duration-300"
                 style={{
-                  background: activeTab === tab.id ? cardColors[tab.id] : 'transparent',
-                  color: activeTab === tab.id ? goldenColor : 'rgba(255,255,255,0.6)',
+                  background: activeTab === tab.id ? cardColors[tab.id].gradient : 'transparent',
+                  color: activeTab === tab.id ? goldenColor : 'rgba(255,255,255,0.7)',
                   border: activeTab === tab.id ? `2px solid ${goldenColor}` : '2px solid transparent',
-                  boxShadow: activeTab === tab.id ? `0 0 20px rgba(212, 175, 55, 0.5), 0 8px 32px rgba(0,0,0,0.3)` : 'none',
-                  animation: activeTab === tab.id ? 'cardPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
-                  transform: activeTab === tab.id ? 'scale(1.05)' : 'scale(1)',
+                  boxShadow: activeTab === tab.id 
+                    ? `
+                      0 15px 35px ${cardColors[tab.id].shadow},
+                      0 0 25px rgba(212, 175, 55, 0.6),
+                      inset 0 2px 4px rgba(255,255,255,0.3),
+                      inset 0 -2px 4px rgba(0,0,0,0.3)
+                    ` 
+                    : 'none',
+                  animation: activeTab === tab.id ? 'cardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
+                  transform: activeTab === tab.id ? 'scale(1.08) rotateX(5deg)' : 'scale(1) rotateX(0deg)',
+                  transformStyle: 'preserve-3d',
+                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  textShadow: activeTab === tab.id ? '0 2px 4px rgba(0,0,0,0.3)' : 'none'
                 }}
               >
-                {tab.label}
                 {activeTab === tab.id && (
-                  <span 
-                    className="absolute inset-0 rounded-full pointer-events-none"
-                    style={{
-                      background: `radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.2) 0%, transparent 70%)`
-                    }}
-                  />
+                  <>
+                    {/* Glossy overlay */}
+                    <span 
+                      className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
+                      style={{
+                        background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
+                      }}
+                    />
+                    {/* Shine effect */}
+                    <span 
+                      className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
+                      style={{
+                        background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.4) 50%, transparent 55%)',
+                        animation: 'shine 2s infinite'
+                      }}
+                    />
+                  </>
                 )}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -219,4 +305,4 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       </div>
     </div>
   )
-}
+                  }
