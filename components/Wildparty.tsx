@@ -36,7 +36,7 @@ function ShaderTransparentImage({
       }
     `;
 
-    // Fragment Shader – Advanced Green Removal Chroma Key Shader
+    // Fragment Shader – Advanced Green & White Removal Shader
     const fsSource =
       removeColor === 'green'
         ? `
@@ -58,14 +58,14 @@ function ShaderTransparentImage({
             vec4 color = texture2D(u_image, v_texCoord);
             vec3 hsv = rgb2hsv(color.rgb);
             
-            // Chroma Key green parameters (Hue range around ~0.20 to ~0.45)
+            // Chroma Key green parameters
             bool isHueGreen = (hsv.x >= 0.18 && hsv.x <= 0.46);
             bool isHighGreen = (color.g > 0.35 && color.g > (color.r * 1.1) && color.g > (color.b * 1.1));
             
             if ((isHueGreen && hsv.y > 0.25 && hsv.z > 0.15) || isHighGreen) {
               discard;
             } else {
-              // Edge spill suppression: Green tint edges ko naturalize karta hai
+              // Edge spill suppression
               float maxRB = max(color.r, color.b);
               if (color.g > maxRB) {
                 color.g = maxRB;
@@ -164,7 +164,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
-  // Animal images with green background (to be removed)
+  // Animal images with green background
   const animals = [
     { src: '/IMG_20260822_011118.png', alt: 'Dog' },
     { src: '/IMG_20260822_011103.png', alt: 'Zebra' },
@@ -217,12 +217,14 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Bottom decorative image with curved corners */}
-        <img
-          src="/IMG_20260822_011000.png"
-          alt="Bottom decoration"
-          className="absolute bottom-0 left-0 w-full h-auto object-contain rounded-b-3xl z-10"
-        />
+        {/* Bottom decorative image - only visible when loading is complete */}
+        {!loading && (
+          <img
+            src="/IMG_20260822_011000.png"
+            alt="Bottom decoration"
+            className="absolute bottom-0 left-0 w-full h-auto object-contain rounded-b-3xl z-10"
+          />
+        )}
 
         {/* Content overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
@@ -259,7 +261,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                   return (
                     <div
                       key={animal.src}
-                      className="absolute rounded-full overflow-hidden border-2 border-white shadow-lg"
+                      className="absolute overflow-hidden"
                       style={{
                         width: '56px',
                         height: '56px',
@@ -297,4 +299,3 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     </div>
   );
 }
-
