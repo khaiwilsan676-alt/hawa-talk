@@ -144,11 +144,29 @@ interface WalletProps {
 export default function Wallet({ onBack }: WalletProps) {
   const [mounted, setMounted] = useState(false)
   const [activeTab, setActiveTab] = useState<'wallet' | 'diamonds'>('wallet')
+  const [diamonds, setDiamonds] = useState('100')
+  const [coins, setCoins] = useState('33')
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
     return () => clearTimeout(id)
   }, [])
+
+  // Handle diamond input change
+  const handleDiamondChange = (value: string) => {
+    setDiamonds(value)
+    const diamondNum = parseFloat(value) || 0
+    const coinValue = (diamondNum * 33 / 100).toFixed(0)
+    setCoins(coinValue)
+  }
+
+  // Handle coin input change
+  const handleCoinChange = (value: string) => {
+    setCoins(value)
+    const coinNum = parseFloat(value) || 0
+    const diamondValue = (coinNum * 100 / 33).toFixed(0)
+    setDiamonds(diamondValue)
+  }
 
   return (
     <div
@@ -176,17 +194,16 @@ export default function Wallet({ onBack }: WalletProps) {
         }
       `}</style>
 
-      {/* TOP HEADER - Extended gradient going further down */}
+      {/* TOP HEADER - Gradient smoothly mixing into white */}
       <div
         className="w-full relative overflow-hidden transition-all duration-500 flex items-center justify-between px-4"
         style={{
-          height: '80px',
+          height: '100px',
           background:
             activeTab === 'wallet'
-              ? 'linear-gradient(180deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)'
-              : 'linear-gradient(180deg, #FF69B4 0%, #FF1493 50%, #C71585 100%)',
+              ? 'linear-gradient(180deg, #FFD700 0%, #FFA500 30%, #FFE4B5 60%, #FFFFFF 100%)'
+              : 'linear-gradient(180deg, #FF69B4 0%, #FF1493 30%, #FFB6C1 60%, #FFFFFF 100%)',
           animation: mounted ? 'slideDown 0.6s ease-out' : 'none',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         }}
       >
         {/* Back Button */}
@@ -194,9 +211,9 @@ export default function Wallet({ onBack }: WalletProps) {
           onClick={onBack}
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
-            background: 'rgba(255,255,255,0.3)',
-            border: '2px solid rgba(255,255,255,0.6)',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+            background: 'rgba(255,255,255,0.4)',
+            border: '2px solid rgba(255,255,255,0.7)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
           }}
           aria-label="Back"
         >
@@ -220,7 +237,7 @@ export default function Wallet({ onBack }: WalletProps) {
           className="text-xl font-extrabold tracking-wide"
           style={{
             color: 'white',
-            textShadow: '0 2px 4px rgba(0,0,0,0.4)',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
           }}
         >
           {activeTab === 'wallet' ? 'Wallet' : 'Diamonds'}
@@ -230,9 +247,9 @@ export default function Wallet({ onBack }: WalletProps) {
         <button
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
-            background: 'rgba(255,255,255,0.3)',
-            border: '2px solid rgba(255,255,255,0.6)',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+            background: 'rgba(255,255,255,0.4)',
+            border: '2px solid rgba(255,255,255,0.7)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
           }}
           aria-label="History"
         >
@@ -260,12 +277,12 @@ export default function Wallet({ onBack }: WalletProps) {
         <button
           onClick={() => setActiveTab('wallet')}
           className={`relative pb-1 text-sm font-bold transition-all ${
-            activeTab === 'wallet' ? 'text-[#FF8C00] scale-105' : 'text-gray-400'
+            activeTab === 'wallet' ? 'text-[#D2691E] scale-105' : 'text-gray-400'
           }`}
         >
           Wallet
           {activeTab === 'wallet' && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-[#FF8C00] rounded-full" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-[#D2691E] rounded-full" />
           )}
         </button>
         <button
@@ -410,60 +427,52 @@ export default function Wallet({ onBack }: WalletProps) {
                 </div>
               </div>
 
-              {/* Exchange Section - increased height */}
+              {/* Exchange Section - images at bottom */}
               <div
                 className="rounded-2xl p-5"
                 style={{
                   background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 100%)',
                   border: '1px solid rgba(255, 182, 193, 0.8)',
                   minHeight: '180px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
                 }}
               >
-                <h3 className="text-lg font-bold text-gray-800 mb-3">Exchange</h3>
-                <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-600 mb-4">
-                  <span className="flex items-center gap-1.5">
-                    <div className="w-5 h-5">
-                      <WhiteColorRemovalShader
-                        imageSrc="/1787321690452.png"
-                        className="w-full h-full object-contain"
-                        threshold={0.88}
-                      />
-                    </div>
-                    100
-                  </span>
-                  <span className="text-gray-400">=</span>
-                  <span className="flex items-center gap-1.5">
-                    <div className="w-5 h-5">
-                      <WhiteColorRemovalShader
-                        imageSrc="/1786855398290.png"
-                        className="w-full h-full object-contain"
-                        threshold={0.88}
-                      />
-                    </div>
-                    33
-                  </span>
-                </div>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Exchange</h3>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="flex-1 bg-white rounded-lg border border-pink-200 p-2 flex items-center gap-2">
-                    <div className="w-6 h-6">
-                      <WhiteColorRemovalShader
-                        imageSrc="/1787321690452.png"
-                        className="w-full h-full object-contain"
-                        threshold={0.88}
-                      />
-                    </div>
                     <input
-                      type="text"
-                      defaultValue="100"
+                      type="number"
+                      value={diamonds}
+                      onChange={(e) => handleDiamondChange(e.target.value)}
                       className="bg-transparent outline-none w-full font-medium text-gray-700 text-base"
+                      placeholder="Diamonds"
                     />
                   </div>
                   <div className="text-gray-400 font-bold text-lg">=</div>
                   <div className="flex-1 bg-white rounded-lg border border-gray-200 p-2 flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={coins}
+                      onChange={(e) => handleCoinChange(e.target.value)}
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-base"
+                      placeholder="Coins"
+                    />
+                  </div>
+                </div>
+
+                {/* Images at the bottom */}
+                <div className="flex items-center justify-center gap-3 mt-2">
+                  <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2 border border-pink-100">
+                    <div className="w-6 h-6">
+                      <WhiteColorRemovalShader
+                        imageSrc="/1787321690452.png"
+                        className="w-full h-full object-contain"
+                        threshold={0.88}
+                      />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-600">= Diamonds</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2 border border-gray-100">
                     <div className="w-6 h-6">
                       <WhiteColorRemovalShader
                         imageSrc="/1786855398290.png"
@@ -471,12 +480,7 @@ export default function Wallet({ onBack }: WalletProps) {
                         threshold={0.88}
                       />
                     </div>
-                    <input
-                      type="text"
-                      readOnly
-                      value="33"
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-base"
-                    />
+                    <span className="text-sm font-semibold text-gray-600">= Coins</span>
                   </div>
                 </div>
               </div>
@@ -496,4 +500,4 @@ export default function Wallet({ onBack }: WalletProps) {
       </div>
     </div>
   )
-        }
+            }
