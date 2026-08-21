@@ -177,8 +177,8 @@ export default function Wallet({ onBack }: WalletProps) {
         userSelect: 'none',
         WebkitTouchCallout: 'none',
         background: activeTab === 'wallet' 
-          ? 'linear-gradient(180deg, #FFA500 0%, #FFB347 10%, #FFD699 10%, #FFFFFF 100%)'
-          : 'linear-gradient(180deg, #FF1493 0%, #FF69B4 10%, #FFB6C1 10%, #FFFFFF 100%)',
+          ? 'linear-gradient(180deg, #FFA500 0%, #FFB347 5%, #FFD699 10%, #FFFFFF 100%)'
+          : 'linear-gradient(180deg, #FF1493 0%, #FF69B4 5%, #FFB6C1 10%, #FFFFFF 100%)',
       }}
     >
       <style>{`
