@@ -26,7 +26,6 @@ function WhiteColorRemovalShader({
       varying vec2 v_texCoord;
       void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
-        // Correct standard UV orientation so image is not flipped/inverted
         v_texCoord = a_texCoord;
       }
     `
@@ -38,11 +37,9 @@ function WhiteColorRemovalShader({
       varying vec2 v_texCoord;
       void main() {
         vec4 color = texture2D(u_image, v_texCoord);
-        // Strictly identify white & light shades and discard/make transparent
         if (color.r > u_threshold && color.g > u_threshold && color.b > u_threshold) {
           discard;
         } else {
-          // Smooth alpha transition near threshold
           float brightness = (color.r + color.g + color.b) / 3.0;
           if (brightness > u_threshold - 0.08) {
             float alphaFactor = (u_threshold - brightness) / 0.08;
@@ -94,7 +91,6 @@ function WhiteColorRemovalShader({
 
     const texBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer)
-    // Upright UV coordinates mapping (0,0 to 1,1)
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array([
@@ -180,123 +176,114 @@ export default function Wallet({ onBack }: WalletProps) {
         }
       `}</style>
 
-      {/* TOP 30vh SECTION - Card theme color smoothly mixing into white */}
+      {/* TOP HEADER - Card matching color mixing with white */}
       <div
-        className="w-full relative overflow-hidden transition-all duration-500 flex flex-col justify-between"
+        className="w-full relative overflow-hidden transition-all duration-500 flex items-center justify-between px-4"
         style={{
-          height: '30vh',
-          minHeight: '180px',
+          height: '56px',
           background:
             activeTab === 'wallet'
-              ? 'linear-gradient(180deg, #FFD700 0%, #FFA500 45%, #FFFFFF 100%)'
-              : 'linear-gradient(180deg, #FF69B4 0%, #FFB6C1 45%, #FFFFFF 100%)',
+              ? 'linear-gradient(180deg, #FFD700 0%, #FFA500 40%, #FFFFFF 100%)'
+              : 'linear-gradient(180deg, #FF69B4 0%, #FFB6C1 40%, #FFFFFF 100%)',
           animation: mounted ? 'slideDown 0.6s ease-out' : 'none',
+          borderBottom: activeTab === 'wallet' ? '1px solid rgba(255, 215, 0, 0.2)' : '1px solid rgba(255, 105, 180, 0.2)',
         }}
       >
-        {/* Navigation Bar inside Header */}
-        <div className="w-full flex items-center justify-between px-4 pt-3">
-          {/* Back Button */}
-          <button
-            onClick={onBack}
-            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
-            style={{
-              background: 'rgba(255,255,255,0.85)',
-              border:
-                activeTab === 'wallet'
-                  ? '2px solid rgba(139, 101, 8, 0.3)'
-                  : '2px solid rgba(219, 39, 119, 0.3)',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08), inset 0 2px 4px rgba(255,255,255,0.5)',
-            }}
-            aria-label="Back"
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
+          style={{
+            background: 'rgba(255,255,255,0.85)',
+            border: activeTab === 'wallet' ? '2px solid rgba(139, 101, 8, 0.3)' : '2px solid rgba(219, 39, 119, 0.3)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.08), inset 0 2px 4px rgba(255,255,255,0.5)',
+          }}
+          aria-label="Back"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={activeTab === 'wallet' ? '#8B6914' : '#BE185D'}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={activeTab === 'wallet' ? '#8B6914' : '#BE185D'}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-          </button>
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+        </button>
 
-          {/* Title */}
-          <h1
-            className="text-xl font-extrabold tracking-wide"
-            style={{
-              color: activeTab === 'wallet' ? '#8B6914' : '#9D174D',
-              textShadow: '0 1px 2px rgba(255,255,255,0.7)',
-            }}
-          >
-            {activeTab === 'wallet' ? 'Wallet' : 'Diamonds'}
-          </h1>
+        {/* Title */}
+        <h1
+          className="text-xl font-extrabold tracking-wide"
+          style={{
+            color: activeTab === 'wallet' ? '#8B6914' : '#9D174D',
+            textShadow: '0 1px 2px rgba(255,255,255,0.6)',
+          }}
+        >
+          {activeTab === 'wallet' ? 'Wallet' : 'Diamonds'}
+        </h1>
 
-          {/* History Button */}
-          <button
-            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
-            style={{
-              background: 'rgba(255,255,255,0.85)',
-              border:
-                activeTab === 'wallet'
-                  ? '2px solid rgba(139, 101, 8, 0.3)'
-                  : '2px solid rgba(219, 39, 119, 0.3)',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08), inset 0 2px 4px rgba(255,255,255,0.5)',
-            }}
-            aria-label="History"
+        {/* History Button */}
+        <button
+          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
+          style={{
+            background: 'rgba(255,255,255,0.85)',
+            border: activeTab === 'wallet' ? '2px solid rgba(139, 101, 8, 0.3)' : '2px solid rgba(219, 39, 119, 0.3)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.08), inset 0 2px 4px rgba(255,255,255,0.5)',
+          }}
+          aria-label="History"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={activeTab === 'wallet' ? '#8B6914' : '#BE185D'}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={activeTab === 'wallet' ? '#8B6914' : '#BE185D'}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <line x1="10" y1="9" x2="8" y2="9" />
-            </svg>
-          </button>
-        </div>
-
-        {/* TAB BUTTONS */}
-        <div className="flex justify-center gap-8 pb-2 border-b border-gray-100/60">
-          <button
-            onClick={() => setActiveTab('wallet')}
-            className={`relative pb-1 text-sm font-bold transition-all ${
-              activeTab === 'wallet' ? 'text-[#8B6914] scale-105' : 'text-gray-500'
-            }`}
-          >
-            Wallet
-            {activeTab === 'wallet' && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-[#8B6914] rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('diamonds')}
-            className={`relative pb-1 text-sm font-bold transition-all ${
-              activeTab === 'diamonds' ? 'text-pink-600 scale-105' : 'text-gray-500'
-            }`}
-          >
-            Diamonds
-            {activeTab === 'diamonds' && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-pink-500 rounded-full" />
-            )}
-          </button>
-        </div>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <line x1="10" y1="9" x2="8" y2="9" />
+          </svg>
+        </button>
       </div>
 
-      {/* BOTTOM SECTION - Content with flex-grow */}
+      {/* TAB BUTTONS */}
+      <div className="flex justify-center gap-8 py-1.5 border-b border-gray-100 bg-white">
+        <button
+          onClick={() => setActiveTab('wallet')}
+          className={`relative pb-1 text-sm font-bold transition-all ${
+            activeTab === 'wallet' ? 'text-[#8B6914] scale-105' : 'text-gray-400'
+          }`}
+        >
+          Wallet
+          {activeTab === 'wallet' && (
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-[#8B6914] rounded-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('diamonds')}
+          className={`relative pb-1 text-sm font-bold transition-all ${
+            activeTab === 'diamonds' ? 'text-pink-500 scale-105' : 'text-gray-400'
+          }`}
+        >
+          Diamonds
+          {activeTab === 'diamonds' && (
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-pink-500 rounded-full" />
+          )}
+        </button>
+      </div>
+
+      {/* BOTTOM SECTION - Content with flex-grow and reduced top spacing */}
       <div
-        className="flex-1 overflow-y-auto p-3 relative"
+        className="flex-1 overflow-y-auto px-3 pt-1.5 pb-3 relative"
         style={{
           background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F8F8 100%)',
         }}
@@ -304,7 +291,7 @@ export default function Wallet({ onBack }: WalletProps) {
         {/* COINS TAB CONTENT */}
         {activeTab === 'wallet' && (
           <div className="flex flex-col h-full" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div className="space-y-3 flex-1">
+            <div className="space-y-2 flex-1">
               {/* CURRENT BALANCE BANNER */}
               <div
                 className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
@@ -340,7 +327,7 @@ export default function Wallet({ onBack }: WalletProps) {
                 ].map((item, index) => (
                   <div
                     key={index}
-                    className="rounded-xl overflow-hidden shadow-sm flex flex-col items-center justify-between p-2.5"
+                    className="rounded-xl overflow-hidden shadow-sm flex flex-col items-center justify-between p-2"
                     style={{
                       background: 'linear-gradient(135deg, #FFFFFF 0%, #F8F8F8 100%)',
                       border: '1px solid rgba(255, 215, 0, 0.3)',
@@ -348,14 +335,14 @@ export default function Wallet({ onBack }: WalletProps) {
                       aspectRatio: '1 / 1',
                     }}
                   >
-                    <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
+                    <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center">
                       <WhiteColorRemovalShader
                         imageSrc="/1786855398290.png"
                         className="w-full h-full object-contain"
                         threshold={0.88}
                       />
                     </div>
-                    <span className="text-gray-700 font-extrabold text-xs tracking-tight">{item.coins}</span>
+                    <span className="text-gray-700 font-extrabold text-[11px] tracking-tight">{item.coins}</span>
                     <button className="w-full py-1 bg-gradient-to-r from-yellow-300 to-yellow-500 font-bold text-[#8B6914] active:scale-95 transition-transform text-[11px] rounded-md shadow-xs">
                       {item.price}
                     </button>
@@ -363,7 +350,7 @@ export default function Wallet({ onBack }: WalletProps) {
                 ))}
               </div>
 
-              <div className="text-center pt-1">
+              <div className="text-center pt-0.5">
                 <a href="#" className="text-xs text-blue-500 font-medium underline">
                   Coins not received? Click here
                 </a>
@@ -371,7 +358,7 @@ export default function Wallet({ onBack }: WalletProps) {
             </div>
 
             {/* Bottom buttons - fixed at bottom */}
-            <div className="space-y-3 pt-3 pb-2">
+            <div className="space-y-3 pt-2 pb-2">
               <div className="relative">
                 <div className="absolute -top-1.5 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">
                   1st Bonus +10% | Then +2%
@@ -396,7 +383,7 @@ export default function Wallet({ onBack }: WalletProps) {
         {/* DIAMONDS TAB CONTENT */}
         {activeTab === 'diamonds' && (
           <div className="flex flex-col h-full" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div className="space-y-3 flex-1">
+            <div className="space-y-2 flex-1">
               {/* CURRENT DIAMONDS BANNER */}
               <div
                 className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
@@ -492,7 +479,7 @@ export default function Wallet({ onBack }: WalletProps) {
             </div>
 
             {/* Bottom button - fixed at bottom */}
-            <div className="pt-3 pb-2">
+            <div className="pt-2 pb-2">
               <button
                 className="w-full py-3 rounded-xl font-bold text-white bg-gray-300 cursor-not-allowed active:scale-95 transition-transform text-sm"
                 disabled
