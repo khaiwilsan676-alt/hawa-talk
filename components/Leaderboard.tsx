@@ -22,7 +22,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
   const tabs: { id: LeaderboardTab; label: string }[] = [
     { id: 'honour', label: 'Honour' },
     { id: 'charm', label: 'Charm' },
-    { id: 'room', label: 'Room' },
+    { id: 'room', label: 'Rich' },
   ]
 
   // Image data for each tab
@@ -40,6 +40,15 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       bottom: '/IMG_20260821_005004.png'
     }
   }
+
+  // Card colors for each tab
+  const cardColors: Record<LeaderboardTab, string> = {
+    honour: '#DC2626', // Red
+    charm: '#2563EB',  // Blue
+    room: '#16A34A',   // Green
+  }
+
+  const goldenColor = '#D4AF37'
 
   return (
     <div
@@ -70,15 +79,24 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           0% { opacity: 0; transform: scale(0.98); }
           100% { opacity: 1; transform: scale(1); }
         }
+        @keyframes cardPop {
+          0% { transform: scale(0.9); opacity: 0; }
+          60% { transform: scale(1.08); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes glowPulse {
+          0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.2); }
+          50% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.3); }
+        }
       `}</style>
 
       {/* Full screen images container */}
       <div className="w-full h-full relative">
-        {/* Top image - 60% */}
+        {/* Top image - 50vh */}
         <div
           className="w-full absolute top-0 left-0 overflow-hidden"
           style={{
-            height: '60%',
+            height: '50vh',
             animation: mounted ? 'imageFadeIn 0.5s ease-out' : 'none',
           }}
         >
@@ -91,11 +109,11 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           />
         </div>
 
-        {/* Bottom image - 40% */}
+        {/* Bottom image - 50vh */}
         <div
           className="w-full absolute bottom-0 left-0 overflow-hidden"
           style={{
-            height: '40%',
+            height: '50vh',
             animation: mounted ? 'imageFadeIn 0.5s ease-out 0.1s' : 'none',
           }}
         >
@@ -109,53 +127,94 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         </div>
 
         {/* OVERLAY: Header with Back, Tabs, Question Mark - ON TOP OF IMAGES */}
-        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 safe-top">
-          {/* Back Arrow */}
-          <button
-            onClick={onBack}
-            className="p-2 -ml-2 rounded-full hover:bg-white/10 active:scale-90 transition-all"
-            aria-label="Back"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-          </button>
+        <div className="absolute top-0 left-0 right-0 z-50 px-4 py-3 safe-top">
+          {/* Top Row: Back and Question Mark */}
+          <div className="flex items-center justify-between mb-4">
+            {/* Back Arrow - Glossy Circle */}
+            <button
+              onClick={onBack}
+              className="relative w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all"
+              style={{
+                background: `radial-gradient(circle at 30% 30%, ${cardColors[activeTab]}E6 0%, ${cardColors[activeTab]} 40%, #000000 100%)`,
+                border: `2px solid ${goldenColor}`,
+                boxShadow: `0 4px 15px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2), 0 0 15px rgba(212, 175, 55, 0.3)`,
+                animation: 'glowPulse 2s ease-in-out infinite'
+              }}
+              aria-label="Back"
+            >
+              {/* Glossy overlay */}
+              <span 
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
+                }}
+              />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
 
-          {/* Tabs */}
-          <div className="flex items-center gap-6">
+            {/* Question Mark - Glossy Circle */}
+            <button
+              className="relative w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all"
+              style={{
+                background: `radial-gradient(circle at 30% 30%, ${cardColors[activeTab]}E6 0%, ${cardColors[activeTab]} 40%, #000000 100%)`,
+                border: `2px solid ${goldenColor}`,
+                boxShadow: `0 4px 15px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2), 0 0 15px rgba(212, 175, 55, 0.3)`,
+                animation: 'glowPulse 2s ease-in-out infinite'
+              }}
+              aria-label="Info"
+            >
+              {/* Glossy overlay */}
+              <span 
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
+                }}
+              />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Pill Card Container */}
+          <div 
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-full backdrop-blur-md bg-black/40 border border-white/20"
+            style={{
+              maxWidth: 'fit-content',
+              margin: '0 auto'
+            }}
+          >
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative pb-1.5 text-sm font-bold transition-colors ${
-                  activeTab === tab.id
-                    ? 'text-white'
-                    : 'text-white/50 hover:text-white/80'
-                }`}
+                className="relative px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300"
+                style={{
+                  background: activeTab === tab.id ? cardColors[tab.id] : 'transparent',
+                  color: activeTab === tab.id ? goldenColor : 'rgba(255,255,255,0.6)',
+                  border: activeTab === tab.id ? `2px solid ${goldenColor}` : '2px solid transparent',
+                  boxShadow: activeTab === tab.id ? `0 0 20px rgba(212, 175, 55, 0.5), 0 8px 32px rgba(0,0,0,0.3)` : 'none',
+                  animation: activeTab === tab.id ? 'cardPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
+                  transform: activeTab === tab.id ? 'scale(1.05)' : 'scale(1)',
+                }}
               >
                 {tab.label}
                 {activeTab === tab.id && (
                   <span 
-                    className="absolute left-0 right-0 -bottom-0 h-0.5 bg-white rounded-full"
-                    style={{ animation: 'tabIndicator 0.3s cubic-bezier(0.22, 1, 0.36, 1)' }}
+                    className="absolute inset-0 rounded-full pointer-events-none"
+                    style={{
+                      background: `radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.2) 0%, transparent 70%)`
+                    }}
                   />
                 )}
               </button>
             ))}
           </div>
-
-          {/* Question Mark */}
-          <button
-            className="p-2 -mr-2 rounded-full hover:bg-white/10 active:scale-90 transition-all"
-            aria-label="Info"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-          </button>
         </div>
       </div>
     </div>
