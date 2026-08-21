@@ -157,11 +157,11 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         {/* OVERLAY: Header with Back, Tabs, Question Mark - ON TOP OF IMAGES */}
         <div className="absolute top-0 left-0 right-0 z-50 px-5 py-4 safe-top">
           {/* Top Row: Back, Tabs (Top Middle), Question Mark - All in one line */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2.8">
             {/* Back Arrow - Compact Glossy 3D Circle */}
             <button
               onClick={onBack}
-              className="relative w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0"
+              className="relative w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0"
               style={{
                 background: cardColors[activeTab].gradient,
                 border: `2px solid ${goldenColor}`,
@@ -197,7 +197,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
                 boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1)',
                 transform: 'perspective(500px) rotateX(5deg)',
                 transformStyle: 'preserve-3d',
-                maxWidth: '60%'
+                maxWidth: '37px'
               }}
             >
               {tabs.map((tab, index) => (
@@ -240,7 +240,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
             {/* Question Mark - Glossy 3D Circle with simple ? sign */}
             <button
-              className="relative w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0"
+              className="relative w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0"
               style={{
                 background: cardColors[activeTab].gradient,
                 border: `2px solid ${goldenColor}`,
