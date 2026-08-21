@@ -9,6 +9,7 @@ import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
+import Wallet from './Wallet' // ✅ Added Wallet import
 
 // ============ IndexedDB Functions for User Data ============
 const USER_DB_NAME = 'UserDataDB';
@@ -492,11 +493,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   // Feedback States
   const [showFeedbackPage, setShowFeedbackPage] = useState(false)
 
+  // ✅ Wallet states
+  const [showWallet, setShowWallet] = useState(false)
+  const [walletTab, setWalletTab] = useState<'coins' | 'diamond'>('coins')
+
   useEffect(() => {
     if (onPublicProfileChange) {
-      onPublicProfileChange(currentView !== 'me' || showFeedbackPage)
+      onPublicProfileChange(currentView !== 'me' || showFeedbackPage || showWallet)
     }
-  }, [showFeedbackPage, currentView])
+  }, [showFeedbackPage, currentView, showWallet])
   
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
@@ -535,7 +540,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view !== 'me' || showFeedbackPage)
+      onPublicProfileChange(view !== 'me' || showFeedbackPage || showWallet)
     }
   }
 
@@ -778,6 +783,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
+
+  // ✅ Wallet condition
+  if (showWallet) {
+    return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
+  }
 
   // Feedback Page View (unchanged)
   if (showFeedbackPage) {
@@ -1045,14 +1055,26 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
         {/* Banner Images */}
         <div className="flex gap-1 mt-6">
-          <div className="flex-1 rounded-lg overflow-hidden">
+          <div 
+            className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
+            onClick={() => {
+              setWalletTab('coins');
+              setShowWallet(true);
+            }}
+          >
             <img
               src="/1784480382765~2.jpg"
               alt="Feature 1"
               className="w-full h-14 object-cover"
             />
           </div>
-          <div className="flex-1 rounded-lg overflow-hidden">
+          <div 
+            className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
+            onClick={() => {
+              setWalletTab('diamond');
+              setShowWallet(true);
+            }}
+          >
             <img
               src="/1784480368941~2.jpg"
               alt="Feature 2"
@@ -1146,4 +1168,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-}
+      }
