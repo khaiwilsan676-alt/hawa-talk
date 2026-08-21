@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { ChevronLeft, Clock, Star } from 'lucide-react';
+import React, { useState } from "react";
+import Image from "next/image";
+import { ChevronLeft, Clock, Star } from "lucide-react";
 
 interface StoreItem {
   id: string;
@@ -14,71 +14,67 @@ interface StoreItem {
   hasDiscount?: boolean;
 }
 
-interface StorePageProps {
-  onBack?: () => void;
-}
-
-const tabs = ['Vehicle', 'Avatar Frame', 'Theme', 'Chat Bubble', 'ID'];
+const tabs = ["Vehicle", "Avatar Frame", "Theme", "Chat Bubble", "ID"];
 
 const storeItems: StoreItem[] = [
   {
-    id: '1',
-    name: 'Love Car',
-    image: '/1784533036732~2.jpg',
+    id: "1",
+    name: "Love Car",
+    image: "/1784533036732~2.jpg",
     stars: 4,
-    price: '4,000,000',
-    duration: '3D',
+    price: "4,000,000",
+    duration: "3D",
     hasDiscount: true,
   },
   {
-    id: '2',
-    name: 'Golden Chariot',
-    image: '/1784533036732~2.jpg',
+    id: "2",
+    name: "Golden Chariot",
+    image: "/1784533036732~2.jpg",
     stars: 5,
-    price: '800,000,000',
-    duration: '1D',
+    price: "800,000,000",
+    duration: "1D",
     hasDiscount: true,
   },
   {
-    id: '3',
-    name: 'Flame Tiger',
-    image: '/1784533036732~2.jpg',
+    id: "3",
+    name: "Flame Tiger",
+    image: "/1784533036732~2.jpg",
     stars: 5,
-    price: '24,000,000,000',
-    duration: '3D',
+    price: "24,000,000,000",
+    duration: "3D",
     hasDiscount: true,
   },
   {
-    id: '4',
-    name: 'Pegasus Carriage',
-    image: '/1784533036732~2.jpg',
+    id: "4",
+    name: "Pegasus Carriage",
+    image: "/1784533036732~2.jpg",
     stars: 4,
-    price: '400,000,000',
-    duration: '1D',
+    price: "400,000,000",
+    duration: "1D",
     hasDiscount: true,
   },
   {
-    id: '5',
-    name: 'Royal Carriage',
-    image: '/1784533036732~2.jpg',
+    id: "5",
+    name: "Royal Carriage",
+    image: "/1784533036732~2.jpg",
     stars: 3,
-    price: '240,000,000',
-    duration: '1D',
+    price: "240,000,000",
+    duration: "1D",
     hasDiscount: true,
   },
   {
-    id: '6',
-    name: 'Neon Bike',
-    image: '/1784533036732~2.jpg',
+    id: "6",
+    name: "Neon Bike",
+    image: "/1784533036732~2.jpg",
     stars: 2,
-    price: '2,400,000',
-    duration: '3D',
+    price: "2,400,000",
+    duration: "3D",
     hasDiscount: true,
   },
 ];
 
-export default function StorePage({ onBack }: StorePageProps) {
-  const [activeTab, setActiveTab] = useState('Vehicle');
+export default function StorePage() {
+  const [activeTab, setActiveTab] = useState("Vehicle");
 
   return (
     <div className="min-h-screen bg-[#f4f7f9] text-gray-800 pb-10 select-none">
@@ -87,9 +83,7 @@ export default function StorePage({ onBack }: StorePageProps) {
         <div className="relative flex items-center justify-center px-4 py-3.5 bg-white border-b border-gray-100">
           <button
             type="button"
-            onClick={onBack}
             className="absolute left-3 p-1 rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
-            aria-label="Back"
           >
             <ChevronLeft size={24} strokeWidth={2.5} />
           </button>
@@ -106,8 +100,8 @@ export default function StorePage({ onBack }: StorePageProps) {
                 onClick={() => setActiveTab(tab)}
                 className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-[#2563eb] text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? "bg-[#2563eb] text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 {tab}
@@ -208,3 +202,4 @@ export default function StorePage({ onBack }: StorePageProps) {
     </div>
   );
 }
+
