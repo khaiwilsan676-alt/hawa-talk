@@ -1,9 +1,203 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface WalletProps {
   onBack: () => void
+}
+
+// WebGL Shader Component for White Background Removal
+const WebShaderImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const gl = canvas.getContext('webgl', { 
+      premultipliedAlpha: true,
+      alpha: true 
+    })
+    
+    if (!gl) {
+      console.error('WebGL not supported')
+      return
+    }
+
+    // WebGL Shader Programs
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `
+
+    const fragmentShaderSource = `
+      precision mediump float;
+      
+      uniform sampler2D u_image;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        
+        // White background removal shader
+        float whiteness = (color.r + color.g + color.b) / 3.0;
+        
+        // If pixel is white (close to white), make it transparent
+        if (color.r > 0.95 && color.g > 0.95 && color.b > 0.95) {
+          color.a = 0.0;
+        }
+        // Edge softening for anti-aliasing
+        else if (whiteness > 0.85) {
+          color.a = (1.0 - whiteness) * 5.0;
+        }
+        // Enhance non-white colors
+        else {
+          color.rgb = color.rgb * 1.1;
+          color.a = 1.0;
+        }
+        
+        gl_FragColor = color;
+      }
+    `
+
+    const createShader = (type: number, source: string) => {
+      const shader = gl.createShader(type)!
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+      
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
+        gl.deleteShader(shader)
+        return null
+      }
+      return shader
+    }
+
+    const createProgram = (vertexSrc: string, fragmentSrc: string) => {
+      const vertexShader = createShader(gl.VERTEX_SHADER, vertexSrc)
+      const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentSrc)
+      
+      if (!vertexShader || !fragmentShader) return null
+      
+      const program = gl.createProgram()!
+      gl.attachShader(program, vertexShader)
+      gl.attachShader(program, fragmentShader)
+      gl.linkProgram(program)
+      
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error('Program link error:', gl.getProgramInfoLog(program))
+        return null
+      }
+      
+      return program
+    }
+
+    // Create shader program
+    const program = createProgram(vertexShaderSource, fragmentShaderSource)
+    if (!program) return
+
+    // Set up geometry
+    const positionBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,
+       1, -1,
+      -1,  1,
+      -1,  1,
+       1, -1,
+       1,  1,
+    ]), gl.STATIC_DRAW)
+
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      0, 0,
+      1, 0,
+      0, 1,
+      0, 1,
+      1, 0,
+      1, 1,
+    ]), gl.STATIC_DRAW)
+
+    // Load and process image
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    
+    image.onload = () => {
+      canvas.width = image.width
+      canvas.height = image.height
+      
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      gl.clearColor(0, 0, 0, 0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      
+      // Create texture
+      const texture = gl.createTexture()
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+      
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+      
+      // Use shader program
+      gl.useProgram(program)
+      
+      // Set up attributes
+      const positionLocation = gl.getAttribLocation(program, 'a_position')
+      const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
+      const textureLocation = gl.getUniformLocation(program, 'u_image')
+      
+      // Position attribute
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+      gl.enableVertexAttribArray(positionLocation)
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+      
+      // Texture coordinate attribute
+      gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+      gl.enableVertexAttribArray(texCoordLocation)
+      gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
+      
+      // Set texture uniform
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.uniform1i(textureLocation, 0)
+      
+      // Draw
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      
+      setLoaded(true)
+    }
+    
+    image.src = src
+    
+    return () => {
+      gl.deleteProgram(program)
+      gl.deleteBuffer(positionBuffer)
+      gl.deleteBuffer(texCoordBuffer)
+    }
+  }, [src])
+
+  return (
+    <canvas 
+      ref={canvasRef}
+      className={className}
+      style={{ 
+        opacity: loaded ? 1 : 0,
+        transition: 'opacity 0.3s ease'
+      }}
+      aria-label={alt}
+    />
+  )
 }
 
 export default function Wallet({ onBack }: WalletProps) {
@@ -17,7 +211,7 @@ export default function Wallet({ onBack }: WalletProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-white overflow-hidden"
+      className="fixed inset-0 bg-white overflow-hidden flex flex-col"
       style={{
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
@@ -39,119 +233,16 @@ export default function Wallet({ onBack }: WalletProps) {
           0% { transform: translateY(20px); opacity: 0; }
           100% { transform: translateY(0); opacity: 1; }
         }
-        
-        /* REAL WEBSHADER - SVG Filter for removing white background */
-        .image-shader {
-          filter: url(#removeWhite);
-          -webkit-filter: url(#removeWhite);
-        }
-        
-        .image-shader-diamond {
-          filter: url(#removeWhiteDiamond);
-          -webkit-filter: url(#removeWhiteDiamond);
-        }
-        
-        img {
-          transform: scaleY(1) !important;
-          -webkit-transform: scaleY(1) !important;
-        }
       `}</style>
 
-      {/* SVG FILTERS - Real WebShader */}
-      <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
-        <filter id="removeWhite">
-          <feColorMatrix
-            type="matrix"
-            values="
-              0 0 0 0 0
-              0 0 0 0 0
-              0 0 0 0 0
-              0 0 0 1 0
-            "
-            in="SourceGraphic"
-            result="black"
-          />
-          <feColorMatrix
-            type="matrix"
-            values="
-              1 0 0 0 0
-              0 1 0 0 0
-              0 0 1 0 0
-              0 0 0 1 0
-            "
-            in="SourceGraphic"
-            result="color"
-          />
-          <feComposite operator="in" in="color" in2="black" result="extract" />
-          <feColorMatrix
-            type="matrix"
-            values="
-              1 0 0 0 0
-              0 1 0 0 0
-              0 0 1 0 0
-              0 0 0 0.8 0
-            "
-            in="extract"
-            result="final"
-          />
-          <feComponentTransfer in="final" result="enhanced">
-            <feFuncA type="linear" slope="1.2" />
-          </feComponentTransfer>
-        </filter>
-
-        <filter id="removeWhiteDiamond">
-          <feColorMatrix
-            type="matrix"
-            values="
-              0 0 0 0 0
-              0 0 0 0 0
-              0 0 0 0 0
-              0 0 0 1 0
-            "
-            in="SourceGraphic"
-            result="black"
-          />
-          <feColorMatrix
-            type="matrix"
-            values="
-              1 0 0 0 0
-              0 1 0 0 0
-              0 0 1 0 0
-              0 0 0 1 0
-            "
-            in="SourceGraphic"
-            result="color"
-          />
-          <feComposite operator="in" in="color" in2="black" result="extract" />
-          <feColorMatrix
-            type="matrix"
-            values="
-              1 0 0 0 0
-              0 1 0 0 0
-              0 0 1 0 0
-              0 0 0 0.9 0
-            "
-            in="extract"
-            result="final"
-          />
-          <feComponentTransfer in="final" result="enhanced">
-            <feFuncA type="linear" slope="1.3" />
-            <feFuncR type="linear" slope="1.1" />
-            <feFuncG type="linear" slope="1.1" />
-            <feFuncB type="linear" slope="1.1" />
-          </feComponentTransfer>
-        </filter>
-      </svg>
-
-      {/* TOP SECTION - Compact with gradient color only */}
+      {/* TOP SECTION - White background with subtle gold tint */}
       <div
         className="w-full relative overflow-hidden transition-colors duration-500 flex items-center justify-between px-4"
         style={{
           height: '56px',
-          background: activeTab === 'wallet' 
-            ? 'linear-gradient(160deg, #FFD700 0%, #FFF8DC 50%, #FFD700 100%)'
-            : 'linear-gradient(160deg, #FFB6C1 0%, #FFF0F5 50%, #FFB6C1 100%)',
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF9E6 100%)',
           animation: mounted ? 'slideDown 0.6s ease-out' : 'none',
+          borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
         }}
       >
         {/* Back Button */}
@@ -159,10 +250,9 @@ export default function Wallet({ onBack }: WalletProps) {
           onClick={onBack}
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
-            background: 'rgba(255,255,255,0.3)',
-            border: '2px solid rgba(139, 101, 8, 0.4)',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.3)',
-            backdropFilter: 'blur(10px)',
+            background: 'rgba(255,255,255,0.8)',
+            border: '2px solid rgba(139, 101, 8, 0.3)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.08), inset 0 2px 4px rgba(255,255,255,0.5)',
           }}
           aria-label="Back"
         >
@@ -177,7 +267,7 @@ export default function Wallet({ onBack }: WalletProps) {
           className="text-xl font-extrabold tracking-wide"
           style={{
             color: '#8B6914',
-            textShadow: '0 2px 4px rgba(255,255,255,0.5), 0 0 20px rgba(255,215,0,0.5)',
+            textShadow: '0 1px 2px rgba(255,255,255,0.5)',
           }}
         >
           Wallet
@@ -187,10 +277,9 @@ export default function Wallet({ onBack }: WalletProps) {
         <button
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
-            background: 'rgba(255,255,255,0.3)',
-            border: '2px solid rgba(139, 101, 8, 0.4)',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.3)',
-            backdropFilter: 'blur(10px)',
+            background: 'rgba(255,255,255,0.8)',
+            border: '2px solid rgba(139, 101, 8, 0.3)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.08), inset 0 2px 4px rgba(255,255,255,0.5)',
           }}
           aria-label="History"
         >
@@ -205,7 +294,7 @@ export default function Wallet({ onBack }: WalletProps) {
       </div>
 
       {/* TAB BUTTONS */}
-      <div className="flex justify-center gap-8 py-2 border-b border-gray-100">
+      <div className="flex justify-center gap-8 py-2 border-b border-gray-100 bg-white">
         <button 
           onClick={() => setActiveTab('wallet')}
           className={`relative pb-1 text-sm font-bold transition-all ${activeTab === 'wallet' ? 'text-[#8B6914] scale-105' : 'text-gray-400'}`}
@@ -222,176 +311,186 @@ export default function Wallet({ onBack }: WalletProps) {
         </button>
       </div>
 
-      {/* BOTTOM SECTION - Content */}
+      {/* BOTTOM SECTION - Content with flex-grow */}
       <div 
-        className="w-full h-[calc(100%-110px)] overflow-y-auto p-3"
+        className="flex-1 overflow-y-auto p-3 relative"
         style={{
-          background: 'linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%)',
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F8F8 100%)',
         }}
       >
         {/* COINS TAB CONTENT */}
         {activeTab === 'wallet' && (
-          <div className="space-y-3" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div 
-              className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
-              style={{
-                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
-                boxShadow: '0 8px 32px rgba(255, 215, 0, 0.3), inset 0 2px 4px rgba(255,255,255,0.3)',
-                border: '2px solid rgba(255, 215, 0, 0.8)',
-              }}
-            >
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)' }} />
-              <div className="relative z-10">
-                <h2 className="text-sm font-bold text-[#8B6914] mb-0.5">Current balance</h2>
-                <p className="text-4xl font-black text-[#8B6914]">2,293</p>
+          <div className="flex flex-col h-full" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
+            <div className="space-y-3 flex-1">
+              <div 
+                className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
+                style={{
+                  background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
+                  boxShadow: '0 8px 32px rgba(255, 215, 0, 0.3), inset 0 2px 4px rgba(255,255,255,0.3)',
+                  border: '2px solid rgba(255, 215, 0, 0.8)',
+                }}
+              >
+                <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)' }} />
+                <div className="relative z-10">
+                  <h2 className="text-sm font-bold text-[#8B6914] mb-0.5">Current balance</h2>
+                  <p className="text-4xl font-black text-[#8B6914]">2,293</p>
+                </div>
+                <div className="relative w-20 h-20 flex-shrink-0">
+                  <WebShaderImage 
+                    src="/1786855398290.png" 
+                    alt="Coin" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               </div>
-              <div className="relative w-20 h-20 flex-shrink-0 image-shader">
-                <img 
-                  src="/1786855398290.png" 
-                  alt="Coin" 
-                  className="w-full h-full object-contain" 
-                  style={{ transform: 'scaleY(1)', WebkitTransform: 'scaleY(1)' }}
-                />
-              </div>
-            </div>
 
-            {/* SMALL CARD - 1 row, 1 column, compact */}
-            <div 
-              className="rounded-xl overflow-hidden shadow-sm"
-              style={{
-                background: 'linear-gradient(135deg, #FFFFFF 0%, #F8F8F8 100%)',
-                border: '1px solid rgba(255, 215, 0, 0.3)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-              }}
-            >
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 flex-shrink-0 image-shader">
-                    <img 
+              {/* SQUARE CARD - Changed to square layout */}
+              <div 
+                className="rounded-xl overflow-hidden shadow-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #FFFFFF 0%, #F8F8F8 100%)',
+                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                  aspectRatio: '1 / 1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div className="flex flex-col items-center gap-3 p-4">
+                  <div className="w-16 h-16 flex-shrink-0">
+                    <WebShaderImage 
                       src="/1786855398290.png" 
                       alt="Coin" 
                       className="w-full h-full object-contain"
-                      style={{ transform: 'scaleY(1)', WebkitTransform: 'scaleY(1)' }}
                     />
                   </div>
-                  <span className="text-gray-600 font-bold text-base">1,000,000</span>
+                  <span className="text-gray-600 font-bold text-xl">1,000,000</span>
+                  <button className="px-6 py-2 bg-gradient-to-r from-yellow-300 to-yellow-500 font-bold text-[#8B6914] active:scale-95 transition-transform text-sm rounded-lg">
+                    $ 1.0
+                  </button>
                 </div>
-                <button className="px-4 py-1.5 bg-gradient-to-r from-yellow-300 to-yellow-500 font-bold text-[#8B6914] active:scale-95 transition-transform text-sm rounded-lg">
-                  $ 1.0
-                </button>
+              </div>
+
+              <div className="text-center">
+                <a href="#" className="text-xs text-blue-500 font-medium underline">Coins not received? Click here</a>
               </div>
             </div>
 
-            <div className="text-center">
-              <a href="#" className="text-xs text-blue-500 font-medium underline">Coins not received? Click here</a>
-            </div>
+            {/* Bottom buttons - fixed at bottom */}
+            <div className="space-y-3 pt-3 pb-2">
+              <div className="relative">
+                <div className="absolute -top-1.5 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">1st Bonus +10% | Then +2%</div>
+                <button className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-yellow-600 to-yellow-500 shadow-md active:scale-95 transition-transform text-sm">
+                  Local payment methods
+                </button>
+              </div>
 
-            <div className="relative">
-              <div className="absolute -top-1.5 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">1st Bonus +10% | Then +2%</div>
-              <button className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-yellow-600 to-yellow-500 shadow-md active:scale-95 transition-transform text-sm">Local payment methods</button>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -top-1.5 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">Biggest Discount 4%-13%</div>
-              <button className="w-full py-3 rounded-xl font-bold text-cyan-600 bg-white border-2 border-cyan-400 shadow-sm active:scale-95 transition-transform text-sm">Coin Seller</button>
+              <div className="relative">
+                <div className="absolute -top-1.5 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">Biggest Discount 4%-13%</div>
+                <button className="w-full py-3 rounded-xl font-bold text-cyan-600 bg-white border-2 border-cyan-400 shadow-sm active:scale-95 transition-transform text-sm">
+                  Coin Seller
+                </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* DIAMONDS TAB CONTENT */}
         {activeTab === 'diamonds' && (
-          <div className="space-y-3" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div 
-              className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
-              style={{
-                background: 'linear-gradient(135deg, #FF69B4 0%, #FFB6C1 50%, #FF69B4 100%)',
-                boxShadow: '0 8px 32px rgba(255, 105, 180, 0.3), inset 0 2px 4px rgba(255,255,255,0.3)',
-                border: '2px solid rgba(255, 105, 180, 0.8)',
-              }}
-            >
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)' }} />
-              <div className="relative z-10">
-                <h2 className="text-sm font-bold text-pink-700 mb-0.5">Diamonds balance</h2>
-                <p className="text-4xl font-black text-pink-700">4,719</p>
-              </div>
-              <div className="relative w-20 h-20 flex-shrink-0 image-shader-diamond">
-                <img 
-                  src="/1787321690452.png" 
-                  alt="Diamond" 
-                  className="w-full h-full object-contain" 
-                  style={{ transform: 'scaleY(1)', WebkitTransform: 'scaleY(1)' }}
-                />
-              </div>
-            </div>
-
-            {/* Exchange Section */}
-            <div 
-              className="rounded-2xl p-4"
-              style={{
-                background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 100%)',
-                border: '1px solid rgba(255, 182, 193, 0.8)',
-              }}
-            >
-              <h3 className="text-base font-bold text-gray-800 mb-2">Exchange</h3>
-              <div className="flex items-center justify-center gap-2 text-xs font-semibold text-gray-600 mb-3">
-                <span className="flex items-center gap-1">
-                  <div className="w-4 h-4 image-shader-diamond">
-                    <img 
-                      src="/1787321690452.png" 
-                      alt="Diamond" 
-                      className="w-full h-full object-contain"
-                      style={{ transform: 'scaleY(1)', WebkitTransform: 'scaleY(1)' }}
-                    />
-                  </div>
-                  100
-                </span>
-                <span className="text-gray-400">=</span>
-                <span className="flex items-center gap-1">
-                  <div className="w-4 h-4 image-shader">
-                    <img 
-                      src="/1786855398290.png" 
-                      alt="Coin" 
-                      className="w-full h-full object-contain"
-                      style={{ transform: 'scaleY(1)', WebkitTransform: 'scaleY(1)' }}
-                    />
-                  </div>
-                  33
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-white rounded-lg border border-pink-200 p-1.5 flex items-center gap-1.5">
-                  <div className="w-5 h-5 image-shader-diamond">
-                    <img 
-                      src="/1787321690452.png" 
-                      alt="Diamond" 
-                      className="w-full h-full object-contain"
-                      style={{ transform: 'scaleY(1)', WebkitTransform: 'scaleY(1)' }}
-                    />
-                  </div>
-                  <input type="text" defaultValue="100" className="bg-transparent outline-none w-full font-medium text-gray-700 text-sm" />
+          <div className="flex flex-col h-full" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
+            <div className="space-y-3 flex-1">
+              <div 
+                className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
+                style={{
+                  background: 'linear-gradient(135deg, #FF69B4 0%, #FFB6C1 50%, #FF69B4 100%)',
+                  boxShadow: '0 8px 32px rgba(255, 105, 180, 0.3), inset 0 2px 4px rgba(255,255,255,0.3)',
+                  border: '2px solid rgba(255, 105, 180, 0.8)',
+                }}
+              >
+                <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)' }} />
+                <div className="relative z-10">
+                  <h2 className="text-sm font-bold text-pink-700 mb-0.5">Diamonds balance</h2>
+                  <p className="text-4xl font-black text-pink-700">4,719</p>
                 </div>
-                <div className="text-gray-400 font-bold text-sm">=</div>
-                <div className="flex-1 bg-white rounded-lg border border-gray-200 p-1.5 flex items-center gap-1.5">
-                  <div className="w-5 h-5 image-shader">
-                    <img 
-                      src="/1786855398290.png" 
-                      alt="Coin" 
-                      className="w-full h-full object-contain"
-                      style={{ transform: 'scaleY(1)', WebkitTransform: 'scaleY(1)' }}
-                    />
+                <div className="relative w-20 h-20 flex-shrink-0">
+                  <WebShaderImage 
+                    src="/1787321690452.png" 
+                    alt="Diamond" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+
+              {/* Exchange Section */}
+              <div 
+                className="rounded-2xl p-4"
+                style={{
+                  background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 100%)',
+                  border: '1px solid rgba(255, 182, 193, 0.8)',
+                }}
+              >
+                <h3 className="text-base font-bold text-gray-800 mb-2">Exchange</h3>
+                <div className="flex items-center justify-center gap-2 text-xs font-semibold text-gray-600 mb-3">
+                  <span className="flex items-center gap-1">
+                    <div className="w-4 h-4">
+                      <WebShaderImage 
+                        src="/1787321690452.png" 
+                        alt="Diamond" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    100
+                  </span>
+                  <span className="text-gray-400">=</span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-4 h-4">
+                      <WebShaderImage 
+                        src="/1786855398290.png" 
+                        alt="Coin" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    33
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-white rounded-lg border border-pink-200 p-1.5 flex items-center gap-1.5">
+                    <div className="w-5 h-5">
+                      <WebShaderImage 
+                        src="/1787321690452.png" 
+                        alt="Diamond" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <input type="text" defaultValue="100" className="bg-transparent outline-none w-full font-medium text-gray-700 text-sm" />
                   </div>
-                  <input type="text" readOnly value="33" className="bg-transparent outline-none w-full font-medium text-gray-700 text-sm" />
+                  <div className="text-gray-400 font-bold text-sm">=</div>
+                  <div className="flex-1 bg-white rounded-lg border border-gray-200 p-1.5 flex items-center gap-1.5">
+                    <div className="w-5 h-5">
+                      <WebShaderImage 
+                        src="/1786855398290.png" 
+                        alt="Coin" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <input type="text" readOnly value="33" className="bg-transparent outline-none w-full font-medium text-gray-700 text-sm" />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <button className="w-full py-3 rounded-xl font-bold text-white bg-gray-300 cursor-not-allowed active:scale-95 transition-transform text-sm" disabled>
-              Exchange
-            </button>
+            {/* Bottom button - fixed at bottom */}
+            <div className="pt-3 pb-2">
+              <button className="w-full py-3 rounded-xl font-bold text-white bg-gray-300 cursor-not-allowed active:scale-95 transition-transform text-sm" disabled>
+                Exchange
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
   )
-}
+        }
