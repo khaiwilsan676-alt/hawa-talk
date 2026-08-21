@@ -157,7 +157,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         {/* OVERLAY: Header with Back, Tabs, Question Mark - ON TOP OF IMAGES */}
         <div className="absolute top-0 left-0 right-0 z-50 px-5 py-4 safe-top">
           {/* Top Row: Back, Tabs (Top Middle), Question Mark - All in one line */}
-          <div className="flex items-center justify-between gap-2.8">
+          <div className="flex items-center justify-between gap-2">
             {/* Back Arrow - Compact Glossy 3D Circle */}
             <button
               onClick={onBack}
@@ -190,21 +190,13 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
               </svg>
             </button>
 
-            {/* Pill Card Container - TOP MIDDLE - Between Back and Question Mark */}
-            <div 
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-full backdrop-blur-md bg-black/50 border border-white/30 flex-1"
-              style={{
-                boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1)',
-                transform: 'perspective(500px) rotateX(5deg)',
-                transformStyle: 'preserve-3d',
-                maxWidth: '37px'
-              }}
-            >
-              {tabs.map((tab, index) => (
+            {/* Tab Buttons - Directly without container */}
+            <div className="flex items-center justify-center gap-2 flex-1">
+              {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className="relative px-4 py-2.5 rounded-full font-bold text-sm transition-all duration-300"
+                  className="relative px-6 py-3.5 rounded-full font-bold text-sm transition-all duration-300"
                   style={{
                     background: activeTab === tab.id ? cardColors[tab.id].gradient : 'transparent',
                     color: activeTab === tab.id ? goldenColor : 'rgba(255,255,255,0.7)',
@@ -221,7 +213,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
                     transform: activeTab === tab.id ? 'scale(1.1) rotateX(5deg)' : 'scale(1) rotateX(0deg)',
                     transformStyle: 'preserve-3d',
                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    textShadow: activeTab === tab.id ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
+                    textShadow: activeTab === tab.id ? '0 2px 4px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.5)',
                     whiteSpace: 'nowrap'
                   }}
                 >
@@ -280,4 +272,4 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       </div>
     </div>
   )
-        }
+          }
