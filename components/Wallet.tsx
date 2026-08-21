@@ -198,7 +198,7 @@ export default function Wallet({ onBack }: WalletProps) {
       <div
         className="w-full relative overflow-hidden transition-all duration-500 flex items-center justify-between px-4"
         style={{
-          height: '150px',
+          height: '100px',
           background:
             activeTab === 'wallet'
               ? 'linear-gradient(180deg, #FFD700 0%, #FFA500 30%, #FFE4B5 60%, #FFFFFF 100%)'
