@@ -41,6 +41,7 @@ function ShaderTransparentImage({
           precision mediump float;
           varying vec2 v_texCoord;
           uniform sampler2D u_image;
+
           vec3 rgb2hsv(vec3 c) {
             vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
             vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
@@ -49,14 +50,15 @@ function ShaderTransparentImage({
             float e = 1.0e-10;
             return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
           }
+
           void main() {
             vec4 color = texture2D(u_image, v_texCoord);
-            if (color.a < 0.1) {
-              discard;
-            }
+            if (color.a < 0.1) discard;
+
             vec3 hsv = rgb2hsv(color.rgb);
             bool isHueGreen = (hsv.x >= 0.18 && hsv.x <= 0.46);
             bool isHighGreen = (color.g > 0.35 && color.g > (color.r * 1.1) && color.g > (color.b * 1.1));
+
             if ((isHueGreen && hsv.y > 0.25 && hsv.z > 0.15) || isHighGreen) {
               discard;
             } else {
@@ -70,13 +72,13 @@ function ShaderTransparentImage({
           precision mediump float;
           varying vec2 v_texCoord;
           uniform sampler2D u_image;
+
           void main() {
             vec4 color = texture2D(u_image, v_texCoord);
-            if (color.a < 0.1) {
-              discard;
-            }
-            // Strict white removal (only pure/near white pixels discarded)
-            if (color.r > 0.88 && color.g > 0.88 && color.b > 0.88) {
+            if (color.a < 0.1) discard;
+
+            // White & Off-White removal logic
+            if (color.r > 0.75 && color.g > 0.75 && color.b > 0.75) {
               discard;
             } else {
               gl_FragColor = color;
@@ -189,13 +191,13 @@ export default function Wildparty({ onClose }: WildpartyProps) {
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
-      {/* Bottom sheet */}
+      {/* Bottom Sheet */}
       <div
         className="relative bg-transparent w-full max-w-md rounded-t-3xl rounded-b-3xl shadow-2xl overflow-hidden"
         style={{ height: '70vh' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Background image covering the sheet */}
+        {/* Background image */}
         <img
           src="/1787337855180~2.jpg"
           alt="Background"
@@ -229,16 +231,16 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             </>
           ) : (
             <div className="relative w-72 h-72 flex items-center justify-center">
-              {/* Main Center Image */}
+              {/* Center Image Updated to /1787337798141~2.jpg */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <ShaderTransparentImage
-                  src="/IMG_20260822_013920.png"
+                  src="/1787337798141~2.jpg"
                   className="w-full h-full object-contain"
                   removeColor="white"
                 />
               </div>
 
-              {/* Animal circles in ring */}
+              {/* Animal circles arranged around center */}
               {animals.map((animal, index) => {
                 const angle = index * 45;
                 return (
