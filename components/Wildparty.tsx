@@ -143,11 +143,12 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
         const g = data[i + 1];
         const b = data[i + 2];
 
+        // Green Screen Chroma Key Logic
         const isGreen = g > 65 && g > r * 1.15 && g > b * 1.15;
         if (isGreen) {
           data[i + 3] = 0;
         } else if (g > Math.max(r, b)) {
-          data[i + 1] = Math.max(r, b);
+          data[i + 1] = Math.max(r, b); // Clean green edge spill
         }
       }
 
@@ -163,15 +164,19 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(30);
 
+  // Exact Clock Positions:
+  // Deer (Top: 270°), Dog (Top-Right / Zebra ke Ouper: 315°), Zebra (Middle-Right: 0°),
+  // Fox (Bottom-Right: 45°), Eagle (Bottom-Center: 90°), Bear (Bottom-Left: 135°),
+  // Tiger (Middle-Left: 180°), Lion (Top-Left: 225°)
   const animals = [
-    { src: '/IMG_20260822_011134.png', alt: 'Deer' },
-    { src: '/IMG_20260822_011118.png', alt: 'Dog' },
-    { src: '/IMG_20260822_011103.png', alt: 'Zebra' },
-    { src: '/IMG_20260822_011041.png', alt: 'Fox' },
-    { src: '/IMG_20260822_011151.png', alt: 'Eagle' },
-    { src: '/IMG_20260822_011205.png', alt: 'Bear' },
-    { src: '/IMG_20260822_011218.png', alt: 'Tiger' },
-    { src: '/IMG_20260822_011028.png', alt: 'Lion' },
+    { src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270 },
+    { src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315 },
+    { src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0 },
+    { src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45 },
+    { src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90 },
+    { src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135 },
+    { src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180 },
+    { src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225 },
   ];
 
   // Loading Progress Timer
@@ -190,7 +195,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     return () => clearInterval(timer);
   }, [loading]);
 
-  // 30s Countdown Timer
+  // 30s Countdown Timer (Starts once loading finishes)
   useEffect(() => {
     if (loading) return;
     const timer = setInterval(() => {
@@ -223,7 +228,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Bottom decorative image (Only after loading) */}
+        {/* Bottom decorative image (Hidden during loading) */}
         {!loading && (
           <img
             src="/IMG_20260822_011000.png"
@@ -316,10 +321,11 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           </>
         )}
 
-        {/* Content overlay */}
+        {/* Content Overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
           {loading ? (
             <>
+              {/* WebGL Shader: White removal for loading icon */}
               <LoadingShaderImage
                 src="/1787338085121.png"
                 className="w-24 h-24 object-contain mb-6"
@@ -341,40 +347,40 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 />
               </div>
 
-              {/* Center Info: Select your animals (Brown) & 30s Countdown */}
+              {/* Center Info: Select your / Animal (2 lines) & 30s Countdown */}
               <div className="absolute z-30 flex flex-col items-center justify-center text-center pointer-events-none px-4">
                 <span className="text-[#5c2e0b] font-black text-sm sm:text-base leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
-                  Select your animals
+                  Select your
+                </span>
+                <span className="text-[#5c2e0b] font-black text-sm sm:text-base leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
+                  Animal
                 </span>
                 <span className="text-[#78350f] font-black text-2xl mt-0.5 tracking-wider drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
                   {countdown}s
                 </span>
               </div>
 
-              {/* Animal circles arranged around center */}
-              {animals.map((animal, index) => {
-                const angle = -90 + index * 45;
-                return (
-                  <div
-                    key={animal.src}
-                    className="absolute overflow-hidden pointer-events-none"
-                    style={{
-                      width: '64px',
-                      height: '64px',
-                      left: '50%',
-                      top: '50%',
-                      marginLeft: '-32px',
-                      marginTop: '-32px',
-                      transform: `rotate(${angle}deg) translate(130px) rotate(-${angle}deg)`,
-                    }}
-                  >
-                    <GreenScreenImage
-                      src={animal.src}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                );
-              })}
+              {/* Animal Circles Positioned Exact Circular Degrees */}
+              {animals.map((animal) => (
+                <div
+                  key={animal.src}
+                  className="absolute overflow-hidden pointer-events-none"
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    left: '50%',
+                    top: '50%',
+                    marginLeft: '-32px',
+                    marginTop: '-32px',
+                    transform: `rotate(${animal.angle}deg) translate(130px) rotate(-${animal.angle}deg)`,
+                  }}
+                >
+                  <GreenScreenImage
+                    src={animal.src}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>
