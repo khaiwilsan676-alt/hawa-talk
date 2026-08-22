@@ -169,9 +169,9 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   // y: negative = up, positive = down
   const animals = [
     { src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -15 },
-    { src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -15, y: -10 },
-    { src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -17, y: -10 },
-    { src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -12, y: -15 },
+    { src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -15, y: -5 },
+    { src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -17, y: -5 },
+    { src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -12, y: -10 },
     { src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -15 },
     { src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 5, y: -10 },
     { src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180, distance: 130, x: 7, y: -5 },
@@ -365,8 +365,8 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                   key={animal.src}
                   className="absolute overflow-hidden pointer-events-none"
                   style={{
-                    width: '64px',
-                    height: '64px',
+                    width: '56px',
+                    height: '56px',
                     left: '50%',
                     top: '50%',
                     marginLeft: `${-32 + (animal.x || 0)}px`,
