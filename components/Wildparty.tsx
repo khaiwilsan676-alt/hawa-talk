@@ -167,15 +167,16 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   // Exact Clock Positions with x,y offset for fine-tuning:
   // x: negative = left, positive = right
   // y: negative = up, positive = down
+  // size: individual animal size (default 64px)
   const animals = [
-    { src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -15 },
-    { src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -15, y: -5 },
-    { src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -17, y: -5 },
-    { src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -12, y: -10 },
-    { src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -15 },
-    { src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 5, y: -10 },
-    { src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180, distance: 130, x: 7, y: -5 },
-    { src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225, distance: 130, x: 5, y: -5 },
+    { src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -15, size: 72 },
+    { src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -15, y: -5, size: 55 },
+    { src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -17, y: -5, size: 70 },
+    { src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -12, y: -10, size: 52 },
+    { src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -15, size: 62 },
+    { src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 5, y: -10, size: 73 },
+    { src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180, distance: 130, x: 7, y: -5, size: 68 },
+    { src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225, distance: 130, x: 5, y: -5, size: 68 },
   ];
 
   // Loading Progress Timer
@@ -359,31 +360,36 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 </span>
               </div>
 
-              {/* Animal Circles Positioned with x,y offset for fine-tuning */}
-              {animals.map((animal) => (
-                <div
-                  key={animal.src}
-                  className="absolute overflow-hidden pointer-events-none"
-                  style={{
-                    width: '56px',
-                    height: '56px',
-                    left: '50%',
-                    top: '50%',
-                    marginLeft: `${-32 + (animal.x || 0)}px`,
-                    marginTop: `${-32 + (animal.y || 0)}px`,
-                    transform: `rotate(${animal.angle}deg) translate(${animal.distance}px) rotate(-${animal.angle}deg)`,
-                  }}
-                >
-                  <GreenScreenImage
-                    src={animal.src}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
+              {/* Animal Circles Positioned with x,y offset & individual size */}
+              {animals.map((animal) => {
+                const animalSize = animal.size || 64; // Default size if not specified
+                const halfSize = animalSize / 2;
+                
+                return (
+                  <div
+                    key={animal.src}
+                    className="absolute overflow-hidden pointer-events-none"
+                    style={{
+                      width: `${animalSize}px`,
+                      height: `${animalSize}px`,
+                      left: '50%',
+                      top: '50%',
+                      marginLeft: `${-halfSize + (animal.x || 0)}px`,
+                      marginTop: `${-halfSize + (animal.y || 0)}px`,
+                      transform: `rotate(${animal.angle}deg) translate(${animal.distance}px) rotate(-${animal.angle}deg)`,
+                    }}
+                  >
+                    <GreenScreenImage
+                      src={animal.src}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
     </div>
   );
-    }
+        }
