@@ -6,7 +6,7 @@ interface WildpartyProps {
   onClose: () => void;
 }
 
-// 1. WebGL Shader: Sirf Loading Page ki Image se White Background hatane ke liye
+// 1. WebGL Shader: Loading Page ki Image se White Background hatane ke liye
 function LoadingShaderImage({ src, className }: { src: string; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -36,7 +36,6 @@ function LoadingShaderImage({ src, className }: { src: string; className?: strin
         vec4 color = texture2D(u_image, v_texCoord);
         if (color.a < 0.1) discard;
 
-        // White removal filter
         if (color.r > 0.88 && color.g > 0.88 && color.b > 0.88) {
           discard;
         } else {
@@ -144,12 +143,11 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
         const g = data[i + 1];
         const b = data[i + 2];
 
-        // Green Screen Chroma Key Logic
         const isGreen = g > 65 && g > r * 1.15 && g > b * 1.15;
         if (isGreen) {
           data[i + 3] = 0;
         } else if (g > Math.max(r, b)) {
-          data[i + 1] = Math.max(r, b); // Clean green edge spill
+          data[i + 1] = Math.max(r, b);
         }
       }
 
@@ -163,11 +161,12 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
 export default function Wildparty({ onClose }: WildpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [countdown, setCountdown] = useState(30);
 
   const animals = [
+    { src: '/IMG_20260822_011134.png', alt: 'Deer' },
     { src: '/IMG_20260822_011118.png', alt: 'Dog' },
     { src: '/IMG_20260822_011103.png', alt: 'Zebra' },
-    { src: '/IMG_20260822_011134.png', alt: 'Deer' },
     { src: '/IMG_20260822_011041.png', alt: 'Fox' },
     { src: '/IMG_20260822_011151.png', alt: 'Eagle' },
     { src: '/IMG_20260822_011205.png', alt: 'Bear' },
@@ -175,6 +174,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     { src: '/IMG_20260822_011028.png', alt: 'Lion' },
   ];
 
+  // Loading Progress Timer
   useEffect(() => {
     if (!loading) return;
     const timer = setInterval(() => {
@@ -187,6 +187,21 @@ export default function Wildparty({ onClose }: WildpartyProps) {
         return prev + 2;
       });
     }, 50);
+    return () => clearInterval(timer);
+  }, [loading]);
+
+  // 30s Countdown Timer
+  useEffect(() => {
+    if (loading) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => clearInterval(timer);
   }, [loading]);
 
@@ -208,7 +223,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Bottom decorative image */}
+        {/* Bottom decorative image (Only after loading) */}
         {!loading && (
           <img
             src="/IMG_20260822_011000.png"
@@ -217,95 +232,94 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           />
         )}
 
-        {/* Top Left Icons (Sound & Help) */}
-        <div className="absolute top-3.5 left-3.5 z-30 flex items-center gap-2">
-          {/* Sound / Speaker Button */}
-          <button
-            aria-label="Sound"
-            className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-              fill="currentColor"
-            >
-              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-            </svg>
-          </button>
+        {/* Top Header Bar & Icons (Hidden during Loading) */}
+        {!loading && (
+          <>
+            {/* Top Left Icons (Sound & Help) */}
+            <div className="absolute top-3.5 left-3.5 z-30 flex items-center gap-2">
+              <button
+                aria-label="Sound"
+                className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                  fill="currentColor"
+                >
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                </svg>
+              </button>
 
-          {/* Help / Question Button */}
-          <button
-            aria-label="Help"
-            className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
-          >
-            <span className="text-white font-extrabold text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-              ?
-            </span>
-          </button>
-        </div>
-
-        {/* Top Middle Heading (Wild Party - Italic) */}
-        <div className="absolute top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-          <span className="italic font-black text-lg tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] select-none">
-            Wild Party
-          </span>
-        </div>
-
-        {/* Top Right Action Buttons Bar */}
-        <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
-          {/* Menu / List Button */}
-          <button
-            aria-label="Menu"
-            className="w-8 h-8 rounded-xl flex flex-col items-center justify-center gap-[3px] bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
-          >
-            <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
-            <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
-            <div className="flex items-center gap-1 w-4">
-              <span className="w-2.5 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
-              <span className="w-[3px] h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+              <button
+                aria-label="Help"
+                className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+              >
+                <span className="text-white font-extrabold text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                  ?
+                </span>
+              </button>
             </div>
-          </button>
 
-          {/* Down Arrow Button */}
-          <button
-            aria-label="Minimize / Options"
-            className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-              fill="currentColor"
-            >
-              <path d="M6.34 8.5h11.32c.79 0 1.25.9 0.77 1.54l-5.66 7.55c-.38.51-1.16.51-1.54 0L5.57 10.04c-.48-.64-.02-1.54.77-1.54z" />
-            </svg>
-          </button>
+            {/* Top Middle Heading */}
+            <div className="absolute top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+              <span className="italic font-black text-lg tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] select-none">
+                Wild Party
+              </span>
+            </div>
 
-          {/* Close (Cross) Button */}
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
+            {/* Top Right Action Buttons Bar */}
+            <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
+              <button
+                aria-label="Menu"
+                className="w-8 h-8 rounded-xl flex flex-col items-center justify-center gap-[3px] bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+              >
+                <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+                <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+                <div className="flex items-center gap-1 w-4">
+                  <span className="w-2.5 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+                  <span className="w-[3px] h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+                </div>
+              </button>
+
+              <button
+                aria-label="Minimize / Options"
+                className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                  fill="currentColor"
+                >
+                  <path d="M6.34 8.5h11.32c.79 0 1.25.9 0.77 1.54l-5.66 7.55c-.38.51-1.16.51-1.54 0L5.57 10.04c-.48-.64-.02-1.54.77-1.54z" />
+                </svg>
+              </button>
+
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </>
+        )}
 
         {/* Content overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
           {loading ? (
             <>
-              {/* WebGL Shader: White removal for loading icon */}
               <LoadingShaderImage
                 src="/1787338085121.png"
                 className="w-24 h-24 object-contain mb-6"
@@ -327,9 +341,19 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 />
               </div>
 
+              {/* Center Info: Select your animals (Brown) & 30s Countdown */}
+              <div className="absolute z-30 flex flex-col items-center justify-center text-center pointer-events-none px-4">
+                <span className="text-[#5c2e0b] font-black text-sm sm:text-base leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
+                  Select your animals
+                </span>
+                <span className="text-[#78350f] font-black text-2xl mt-0.5 tracking-wider drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
+                  {countdown}s
+                </span>
+              </div>
+
               {/* Animal circles arranged around center */}
               {animals.map((animal, index) => {
-                const angle = index * 45;
+                const angle = -90 + index * 45;
                 return (
                   <div
                     key={animal.src}
