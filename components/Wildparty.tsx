@@ -15,6 +15,13 @@ interface AnimalItem {
   x: number;
   y: number;
   size: number;
+  multiplier: number;
+}
+
+interface ChipItem {
+  label: string;
+  value: number;
+  src: string;
 }
 
 // 1. WebGL Shader: White Background remover (Loading icon & Bottom-left asset)
@@ -175,35 +182,92 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(30);
 
+  // IndexedDB Balance state
+  const [balance, setBalance] = useState<number>(5000000);
+
   // Game Phases: 'betting' (30s) -> 'spinning' (15s) -> 'result' (3s)
   const [gamePhase, setGamePhase] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [activeHighlightIndex, setActiveHighlightIndex] = useState<number | null>(null);
   const [winnerAnimal, setWinnerAnimal] = useState<AnimalItem | null>(null);
   const [winnerHistory, setWinnerHistory] = useState<AnimalItem[]>([]);
 
-  // Selected Betting Chip
-  const [selectedChip, setSelectedChip] = useState<string>('10K');
+  // Betting States
+  const [bets, setBets] = useState<{ [key: string]: number }>({});
+  const [lastBets, setLastBets] = useState<{ [key: string]: number }>({});
+  const [selectedChip, setSelectedChip] = useState<ChipItem>({
+    label: '10K',
+    value: 10000,
+    src: '/IMG_20260822_143032.png',
+  });
 
   // Betting Chips Data
-  const chips = [
-    { label: '1K', src: '/1787389350745~2.jpg' },
-    { label: '10K', src: '/IMG_20260822_143032.png' },
-    { label: '50k', src: '/IMG_20260822_143348.png' },
-    { label: '500k', src: '/IMG_20260822_143408.png' },
-    { label: '5M', src: '/IMG_20260822_143422~2.jpg' },
+  const chips: ChipItem[] = [
+    { label: '1K', value: 1000, src: '/1787389350745~2.jpg' },
+    { label: '10K', value: 10000, src: '/IMG_20260822_143032.png' },
+    { label: '50k', value: 50000, src: '/IMG_20260822_143348.png' },
+    { label: '500k', value: 500000, src: '/IMG_20260822_143408.png' },
+    { label: '5M', value: 5000000, src: '/IMG_20260822_143422~2.jpg' },
   ];
 
-  // Exact Clock Positions with exact x, y offset & individual size
+  // Animals with specific coordinates and custom multipliers
   const animals: AnimalItem[] = [
-    { id: 0, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -17, size: 72 },
-    { id: 1, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -4, y: -10, size: 55 },
-    { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -6, y: -19, size: 68 },
-    { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -5, y: -18, size: 52 },
-    { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61 },
-    { id: 5, src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 5, y: -15, size: 60 },
-    { id: 6, src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180, distance: 130, x: 7, y: -8, size: 63 },
-    { id: 7, src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225, distance: 130, x: 5, y: -5, size: 65 },
+    { id: 0, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -17, size: 72, multiplier: 5 },
+    { id: 1, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -4, y: -10, size: 55, multiplier: 5 },
+    { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -6, y: -22, size: 60, multiplier: 5 },
+    { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -5, y: -18, size: 52, multiplier: 5 },
+    { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
+    { id: 5, src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 5, y: -15, size: 60, multiplier: 15 },
+    { id: 6, src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180, distance: 130, x: 7, y: -8, size: 63, multiplier: 25 },
+    { id: 7, src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225, distance: 130, x: 5, y: -5, size: 65, multiplier: 45 },
   ];
+
+  // 1. IndexedDB Helper Functions
+  const initIndexedDB = (): Promise<IDBDatabase> => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('WildPartyGameDB', 1);
+      request.onupgradeneeded = (e: any) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('userState')) {
+          db.createObjectStore('userState', { keyPath: 'id' });
+        }
+      };
+      request.onsuccess = (e: any) => resolve(e.target.result);
+      request.onerror = (e) => reject(e);
+    });
+  };
+
+  const saveBalanceToDB = async (val: number) => {
+    try {
+      const db = await initIndexedDB();
+      const tx = db.transaction('userState', 'readwrite');
+      const store = tx.objectStore('userState');
+      store.put({ id: 'current_balance', value: val });
+    } catch (err) {
+      console.error('IndexedDB Save Error:', err);
+    }
+  };
+
+  const loadBalanceFromDB = async () => {
+    try {
+      const db = await initIndexedDB();
+      const tx = db.transaction('userState', 'readonly');
+      const store = tx.objectStore('userState');
+      const req = store.get('current_balance');
+      req.onsuccess = () => {
+        if (req.result && typeof req.result.value === 'number') {
+          setBalance(req.result.value);
+        } else {
+          saveBalanceToDB(5000000);
+        }
+      };
+    } catch (err) {
+      console.error('IndexedDB Load Error:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadBalanceFromDB();
+  }, []);
 
   // Loading Progress Timer
   useEffect(() => {
@@ -236,6 +300,9 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             return 3;
           } else if (gamePhase === 'result') {
             setGamePhase('betting');
+            // Save current bets as lastBets for repeat button, then clear
+            setLastBets((prevBets) => ({ ...prevBets, ...bets }));
+            setBets({});
             return 30;
           }
         }
@@ -244,7 +311,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [loading, gamePhase]);
+  }, [loading, gamePhase, bets]);
 
   // Medium Speed Spinning Highlight Loop
   useEffect(() => {
@@ -264,7 +331,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     return () => clearInterval(spinInterval);
   }, [gamePhase, animals.length]);
 
-  // Result & History Handler
+  // Result & History Handler & Payout Calculation
   useEffect(() => {
     if (gamePhase === 'result') {
       const winningIndex = activeHighlightIndex !== null ? activeHighlightIndex : Math.floor(Math.random() * animals.length);
@@ -272,10 +339,65 @@ export default function Wildparty({ onClose }: WildpartyProps) {
       const winner = animals[winningIndex];
       setWinnerAnimal(winner);
       setWinnerHistory((prev) => [...prev.slice(-9), winner]);
+
+      // Calculate Winnings
+      const userBetOnWinner = bets[winner.alt] || 0;
+      if (userBetOnWinner > 0) {
+        const winnings = userBetOnWinner * winner.multiplier;
+        setBalance((prevBal) => {
+          const newBal = prevBal + winnings;
+          saveBalanceToDB(newBal);
+          return newBal;
+        });
+      }
     } else if (gamePhase === 'betting') {
       setWinnerAnimal(null);
     }
   }, [gamePhase]);
+
+  // Handle Animal Bet Click
+  const handleAnimalBet = (animalAlt: string) => {
+    if (gamePhase !== 'betting') return;
+
+    if (balance < selectedChip.value) {
+      return;
+    }
+
+    const newBalance = balance - selectedChip.value;
+    setBalance(newBalance);
+    saveBalanceToDB(newBalance);
+
+    setBets((prev) => ({
+      ...prev,
+      [animalAlt]: (prev[animalAlt] || 0) + selectedChip.value,
+    }));
+  };
+
+  // Handle Repeat Bet Button
+  const handleRepeatBet = () => {
+    if (gamePhase !== 'betting') return;
+    const totalRepeatCost = Object.values(lastBets).reduce((acc, curr) => acc + curr, 0);
+    if (totalRepeatCost === 0 || balance < totalRepeatCost) return;
+
+    const newBalance = balance - totalRepeatCost;
+    setBalance(newBalance);
+    saveBalanceToDB(newBalance);
+
+    setBets((prev) => {
+      const updated = { ...prev };
+      Object.entries(lastBets).forEach(([alt, val]) => {
+        updated[alt] = (updated[alt] || 0) + val;
+      });
+      return updated;
+    });
+  };
+
+  // Format chip numbers for the skin badge
+  const formatBetAmount = (amt: number) => {
+    if (amt >= 1000000) return `${(amt / 1000000).toFixed(1).replace('.0', '')}M`;
+    if (amt >= 1000) return `${(amt / 1000).toFixed(0)}K`;
+    return amt.toString();
+  };
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
@@ -295,12 +417,12 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Bottom decorative image (Hidden during loading) */}
+        {/* Bottom decorative image (Height slightly increased) */}
         {!loading && (
           <img
             src="/IMG_20260822_011000.png"
             alt="Bottom decoration"
-            className="absolute bottom-0 left-0 w-full h-auto object-contain rounded-b-3xl z-10 pointer-events-none"
+            className="absolute bottom-0 left-0 w-full h-24 object-contain rounded-b-3xl z-10 pointer-events-none"
           />
         )}
 
@@ -463,30 +585,37 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                       Winner!
                     </span>
                     <span className="text-yellow-600 font-black text-lg mt-0.5 tracking-wide drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
-                      {winnerAnimal?.alt}
+                      {winnerAnimal?.alt} ({winnerAnimal?.multiplier}x)
                     </span>
                   </>
                 )}
               </div>
 
-              {/* Animal Circles: Grayscale on spin, active animal gets full color */}
+              {/* Animal Circles with Click to Bet + Golden Shine on Spin + Skin Betting Badge */}
               {animals.map((animal, index) => {
                 const animalSize = animal.size || 64;
                 const halfSize = animalSize / 2;
 
                 const isSpinning = gamePhase === 'spinning';
                 const isCurrentHighlighted = activeHighlightIndex === index;
+                const isWinner = gamePhase === 'result' && winnerAnimal?.alt === animal.alt;
+
+                // Colorless on spin unless active/winning
                 const isColorless = isSpinning ? !isCurrentHighlighted : false;
+                const isGoldenShining = (isSpinning && isCurrentHighlighted) || isWinner;
+
+                const currentBet = bets[animal.alt] || 0;
 
                 return (
                   <div
                     key={animal.src}
-                    className={`absolute overflow-hidden pointer-events-none transition-[filter] duration-100 ${
-                      isColorless ? 'grayscale' : 'grayscale-0'
+                    onClick={() => handleAnimalBet(animal.alt)}
+                    className={`absolute flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-100 ${
+                      gamePhase === 'betting' ? 'active:scale-95' : ''
                     }`}
                     style={{
                       width: `${animalSize}px`,
-                      height: `${animalSize}px`,
+                      height: `${animalSize + 16}px`,
                       left: '50%',
                       top: '50%',
                       marginLeft: `${-halfSize + (animal.x || 0)}px`,
@@ -494,10 +623,27 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                       transform: `rotate(${animal.angle}deg) translate(${animal.distance}px) rotate(-${animal.angle}deg)`,
                     }}
                   >
-                    <GreenScreenImage
-                      src={animal.src}
-                      className="w-full h-full object-cover"
-                    />
+                    {/* Animal Image */}
+                    <div
+                      style={{ width: `${animalSize}px`, height: `${animalSize}px` }}
+                      className={`relative overflow-hidden transition-[filter] duration-100 ${
+                        isColorless ? 'grayscale' : 'grayscale-0'
+                      } ${isGoldenShining ? 'drop-shadow-[0_0_14px_rgba(255,215,0,0.95)] scale-105' : ''}`}
+                    >
+                      <GreenScreenImage
+                        src={animal.src}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    {/* Skin Color Thin Betting Amount Bar */}
+                    {currentBet > 0 && (
+                      <div className="absolute -bottom-1 z-30 px-1.5 py-[1px] rounded-full bg-[#f6d7b0] border border-[#d49c6b] shadow-[0_2px_4px_rgba(0,0,0,0.5)] flex items-center justify-center">
+                        <span className="text-[#65330e] font-black text-[9px] leading-none tracking-tight">
+                          {formatBetAmount(currentBet)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -505,45 +651,41 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           )}
         </div>
 
-        {/* Bottom Left Corner Image (Only after loading completes) */}
+        {/* Bottom Left: W-7 H-7 Icon (White removed) + Live Golden Balance (5,000,000) */}
         {!loading && (
-          <div className="absolute bottom-2.5 left-2.5 z-30 flex items-center justify-center pointer-events-auto">
+          <div className="absolute bottom-2.5 left-2.5 z-30 flex items-center gap-1.5 pointer-events-auto select-none">
             <LoadingShaderImage
               src="/1786855398290.png"
-              className="w-11 h-11 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+              className="w-7 h-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
             />
+            <span className="text-yellow-400 font-black text-xs sm:text-sm tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              {balance.toLocaleString()}
+            </span>
           </div>
         )}
 
-        {/* Bottom Right Corner: Repeat Button + Betting Chips (Only after loading completes) */}
+        {/* Bottom Right: Repeat Text Button + Betting Chips */}
         {!loading && (
           <div className="absolute bottom-2.5 right-2.5 z-30 flex items-center gap-1.5 pointer-events-auto">
-            {/* Repeat Button */}
+            {/* Repeat Button with text only */}
             <button
+              onClick={handleRepeatBet}
               aria-label="Repeat Bet"
-              className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+              className="h-7 px-2.5 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
             >
-              <svg
-                viewBox="0 0 24 24"
-                className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19" />
-              </svg>
+              <span className="text-white font-extrabold text-[11px] tracking-wider uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                Repeat
+              </span>
             </button>
 
             {/* Chips Container */}
             <div className="flex items-center gap-1">
               {chips.map((chip) => {
-                const isSelected = selectedChip === chip.label;
+                const isSelected = selectedChip.label === chip.label;
                 return (
                   <button
                     key={chip.label}
-                    onClick={() => setSelectedChip(chip.label)}
+                    onClick={() => setSelectedChip(chip)}
                     className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 outline-none ${
                       isSelected
                         ? '-translate-y-2 rotate-6 scale-105 ring-2 ring-yellow-400 drop-shadow-[0_4px_8px_rgba(250,204,21,0.8)]'
@@ -564,3 +706,4 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     </div>
   );
 }
+
