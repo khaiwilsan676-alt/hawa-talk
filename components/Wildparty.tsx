@@ -217,6 +217,90 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           />
         )}
 
+        {/* Top Left Icons (Sound & Help) */}
+        <div className="absolute top-3.5 left-3.5 z-30 flex items-center gap-2">
+          {/* Sound / Speaker Button */}
+          <button
+            aria-label="Sound"
+            className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+              fill="currentColor"
+            >
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+            </svg>
+          </button>
+
+          {/* Help / Question Button */}
+          <button
+            aria-label="Help"
+            className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+          >
+            <span className="text-white font-extrabold text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+              ?
+            </span>
+          </button>
+        </div>
+
+        {/* Top Middle Heading (Wild Party - Italic) */}
+        <div className="absolute top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <span className="italic font-black text-lg tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] select-none">
+            Wild Party
+          </span>
+        </div>
+
+        {/* Top Right Action Buttons Bar */}
+        <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
+          {/* Menu / List Button */}
+          <button
+            aria-label="Menu"
+            className="w-8 h-8 rounded-xl flex flex-col items-center justify-center gap-[3px] bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+          >
+            <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+            <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+            <div className="flex items-center gap-1 w-4">
+              <span className="w-2.5 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+              <span className="w-[3px] h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+            </div>
+          </button>
+
+          {/* Down Arrow Button */}
+          <button
+            aria-label="Minimize / Options"
+            className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+              fill="currentColor"
+            >
+              <path d="M6.34 8.5h11.32c.79 0 1.25.9 0.77 1.54l-5.66 7.55c-.38.51-1.16.51-1.54 0L5.57 10.04c-.48-.64-.02-1.54.77-1.54z" />
+            </svg>
+          </button>
+
+          {/* Close (Cross) Button */}
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
         {/* Content overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
           {loading ? (
@@ -270,18 +354,8 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             </div>
           )}
         </div>
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 p-1 bg-white/70 rounded-full hover:bg-white transition-colors z-30"
-        >
-          <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-gray-800 stroke-[2.5]">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
       </div>
     </div>
   );
 }
+
