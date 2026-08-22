@@ -164,19 +164,18 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(30);
 
-  // Exact Clock Positions:
-  // Deer (Top: 270°), Dog (Top-Right / Zebra ke Ouper: 315°), Zebra (Middle-Right: 0°),
-  // Fox (Bottom-Right: 45°), Eagle (Bottom-Center: 90°), Bear (Bottom-Left: 135°),
-  // Tiger (Middle-Left: 180°), Lion (Top-Left: 225°)
+  // Exact Clock Positions with x,y offset for fine-tuning:
+  // x: negative = left, positive = right
+  // y: negative = up, positive = down
   const animals = [
-    { src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270 },
-    { src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315 },
-    { src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0 },
-    { src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45 },
-    { src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90 },
-    { src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135 },
-    { src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180 },
-    { src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225 },
+    { src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -15 },
+    { src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: 0, y: 0 },
+    { src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: 0, y: 0 },
+    { src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: 0, y: 0 },
+    { src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: 0 },
+    { src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 0, y: 0 },
+    { src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180, distance: 130, x: 0, y: 0 },
+    { src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225, distance: 130, x: 0, y: 0 },
   ];
 
   // Loading Progress Timer
@@ -244,7 +243,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             <div className="absolute top-3.5 left-3.5 z-30 flex items-center gap-2">
               <button
                 aria-label="Sound"
-                className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+                className="w-6 h-6 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -257,7 +256,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
               <button
                 aria-label="Help"
-                className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+                className="w-6 h-6 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
                 <span className="text-white font-extrabold text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
                   ?
@@ -276,7 +275,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
               <button
                 aria-label="Menu"
-                className="w-8 h-8 rounded-xl flex flex-col items-center justify-center gap-[3px] bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+                className="w-6 h-6 rounded-xl flex flex-col items-center justify-center gap-[3px] bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
                 <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
                 <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
@@ -288,7 +287,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
               <button
                 aria-label="Minimize / Options"
-                className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+                className="w-6 h-6 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -302,7 +301,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               <button
                 onClick={onClose}
                 aria-label="Close"
-                className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+                className="w-6 h-6 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -360,7 +359,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 </span>
               </div>
 
-              {/* Animal Circles Positioned Exact Circular Degrees */}
+              {/* Animal Circles Positioned with x,y offset for fine-tuning */}
               {animals.map((animal) => (
                 <div
                   key={animal.src}
@@ -370,9 +369,9 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                     height: '64px',
                     left: '50%',
                     top: '50%',
-                    marginLeft: '-32px',
-                    marginTop: '-32px',
-                    transform: `rotate(${animal.angle}deg) translate(130px) rotate(-${animal.angle}deg)`,
+                    marginLeft: `${-32 + (animal.x || 0)}px`,
+                    marginTop: `${-32 + (animal.y || 0)}px`,
+                    transform: `rotate(${animal.angle}deg) translate(${animal.distance}px) rotate(-${animal.angle}deg)`,
                   }}
                 >
                   <GreenScreenImage
@@ -387,5 +386,4 @@ export default function Wildparty({ onClose }: WildpartyProps) {
       </div>
     </div>
   );
-}
-
+    }
