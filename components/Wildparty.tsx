@@ -182,7 +182,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(30);
 
-  // IndexedDB Balance state
+  // Live Balance
   const [balance, setBalance] = useState<number>(5000000);
 
   // Game Phases: 'betting' (30s) -> 'spinning' (15s) -> 'result' (3s)
@@ -209,11 +209,11 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     { label: '5M', value: 5000000, src: '/IMG_20260822_143422~2.jpg' },
   ];
 
-  // Animals with specific coordinates and custom multipliers
+  // Exact Clock Positions with exact x, y offset, individual sizes & multipliers
   const animals: AnimalItem[] = [
     { id: 0, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -17, size: 72, multiplier: 5 },
     { id: 1, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -4, y: -10, size: 55, multiplier: 5 },
-    { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -6, y: -22, size: 60, multiplier: 5 },
+    { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -6, y: -19, size: 68, multiplier: 5 },
     { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -5, y: -18, size: 52, multiplier: 5 },
     { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
     { id: 5, src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 5, y: -15, size: 60, multiplier: 15 },
@@ -221,7 +221,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     { id: 7, src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225, distance: 130, x: 5, y: -5, size: 65, multiplier: 45 },
   ];
 
-  // 1. IndexedDB Helper Functions
+  // IndexedDB Balance Storage
   const initIndexedDB = (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('WildPartyGameDB', 1);
@@ -300,7 +300,6 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             return 3;
           } else if (gamePhase === 'result') {
             setGamePhase('betting');
-            // Save current bets as lastBets for repeat button, then clear
             setLastBets((prevBets) => ({ ...prevBets, ...bets }));
             setBets({});
             return 30;
@@ -313,7 +312,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     return () => clearInterval(timer);
   }, [loading, gamePhase, bets]);
 
-  // Medium Speed Spinning Highlight Loop
+  // Spinning Highlight Loop
   useEffect(() => {
     if (gamePhase !== 'spinning') {
       if (gamePhase === 'betting') {
@@ -331,7 +330,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     return () => clearInterval(spinInterval);
   }, [gamePhase, animals.length]);
 
-  // Result & History Handler & Payout Calculation
+  // Winner calculation and payout
   useEffect(() => {
     if (gamePhase === 'result') {
       const winningIndex = activeHighlightIndex !== null ? activeHighlightIndex : Math.floor(Math.random() * animals.length);
@@ -340,7 +339,6 @@ export default function Wildparty({ onClose }: WildpartyProps) {
       setWinnerAnimal(winner);
       setWinnerHistory((prev) => [...prev.slice(-9), winner]);
 
-      // Calculate Winnings
       const userBetOnWinner = bets[winner.alt] || 0;
       if (userBetOnWinner > 0) {
         const winnings = userBetOnWinner * winner.multiplier;
@@ -355,13 +353,10 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     }
   }, [gamePhase]);
 
-  // Handle Animal Bet Click
+  // Bet on Animal
   const handleAnimalBet = (animalAlt: string) => {
     if (gamePhase !== 'betting') return;
-
-    if (balance < selectedChip.value) {
-      return;
-    }
+    if (balance < selectedChip.value) return;
 
     const newBalance = balance - selectedChip.value;
     setBalance(newBalance);
@@ -373,7 +368,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     }));
   };
 
-  // Handle Repeat Bet Button
+  // Repeat Previous Bet
   const handleRepeatBet = () => {
     if (gamePhase !== 'betting') return;
     const totalRepeatCost = Object.values(lastBets).reduce((acc, curr) => acc + curr, 0);
@@ -392,7 +387,6 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     });
   };
 
-  // Format chip numbers for the skin badge
   const formatBetAmount = (amt: number) => {
     if (amt >= 1000000) return `${(amt / 1000000).toFixed(1).replace('.0', '')}M`;
     if (amt >= 1000) return `${(amt / 1000).toFixed(0)}K`;
@@ -417,12 +411,12 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Bottom decorative image (Height slightly increased) */}
+        {/* Bottom decorative image */}
         {!loading && (
           <img
             src="/IMG_20260822_011000.png"
             alt="Bottom decoration"
-            className="absolute bottom-0 left-0 w-full h-24 object-contain rounded-b-3xl z-10 pointer-events-none"
+            className="absolute bottom-0 left-0 w-full h-auto object-contain rounded-b-3xl z-10 pointer-events-none"
           />
         )}
 
@@ -552,14 +546,14 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 />
               </div>
 
-              {/* Center Info: Select your / Animal & Timers */}
+              {/* Center Info: Select your / Animal (Chota Text) & Timers */}
               <div className="absolute z-30 flex flex-col items-center justify-center text-center pointer-events-none px-4">
                 {gamePhase === 'betting' && (
                   <>
-                    <span className="text-[#5c2e0b] font-black text-xs sm:text-sm leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
+                    <span className="text-[#5c2e0b] font-black text-[10px] leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
                       Select your
                     </span>
-                    <span className="text-[#5c2e0b] font-black text-xs sm:text-sm leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
+                    <span className="text-[#5c2e0b] font-black text-[10px] leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
                       Animal
                     </span>
                     <span className="text-[#78350f] font-black text-2xl mt-0.5 tracking-wider drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
@@ -570,7 +564,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
                 {gamePhase === 'spinning' && (
                   <>
-                    <span className="text-[#5c2e0b] font-black text-xs sm:text-sm leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none animate-pulse">
+                    <span className="text-[#5c2e0b] font-black text-xs leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none animate-pulse">
                       Spinning...
                     </span>
                     <span className="text-[#78350f] font-black text-2xl mt-0.5 tracking-wider drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
@@ -581,7 +575,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
                 {gamePhase === 'result' && (
                   <>
-                    <span className="text-[#5c2e0b] font-black text-xs sm:text-sm leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
+                    <span className="text-[#5c2e0b] font-black text-xs leading-tight tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] select-none">
                       Winner!
                     </span>
                     <span className="text-yellow-600 font-black text-lg mt-0.5 tracking-wide drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
@@ -591,7 +585,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 )}
               </div>
 
-              {/* Animal Circles with Click to Bet + Golden Shine on Spin + Skin Betting Badge */}
+              {/* Fixed Animal Position Circles with Betting Click & Golden Shine */}
               {animals.map((animal, index) => {
                 const animalSize = animal.size || 64;
                 const halfSize = animalSize / 2;
@@ -600,7 +594,6 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 const isCurrentHighlighted = activeHighlightIndex === index;
                 const isWinner = gamePhase === 'result' && winnerAnimal?.alt === animal.alt;
 
-                // Colorless on spin unless active/winning
                 const isColorless = isSpinning ? !isCurrentHighlighted : false;
                 const isGoldenShining = (isSpinning && isCurrentHighlighted) || isWinner;
 
@@ -610,12 +603,10 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                   <div
                     key={animal.src}
                     onClick={() => handleAnimalBet(animal.alt)}
-                    className={`absolute flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-100 ${
-                      gamePhase === 'betting' ? 'active:scale-95' : ''
-                    }`}
+                    className="absolute cursor-pointer select-none"
                     style={{
                       width: `${animalSize}px`,
-                      height: `${animalSize + 16}px`,
+                      height: `${animalSize}px`,
                       left: '50%',
                       top: '50%',
                       marginLeft: `${-halfSize + (animal.x || 0)}px`,
@@ -625,10 +616,9 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                   >
                     {/* Animal Image */}
                     <div
-                      style={{ width: `${animalSize}px`, height: `${animalSize}px` }}
-                      className={`relative overflow-hidden transition-[filter] duration-100 ${
+                      className={`w-full h-full overflow-hidden transition-[filter] duration-100 ${
                         isColorless ? 'grayscale' : 'grayscale-0'
-                      } ${isGoldenShining ? 'drop-shadow-[0_0_14px_rgba(255,215,0,0.95)] scale-105' : ''}`}
+                      } ${isGoldenShining ? 'drop-shadow-[0_0_15px_rgba(255,215,0,0.95)]' : ''}`}
                     >
                       <GreenScreenImage
                         src={animal.src}
@@ -638,7 +628,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
                     {/* Skin Color Thin Betting Amount Bar */}
                     {currentBet > 0 && (
-                      <div className="absolute -bottom-1 z-30 px-1.5 py-[1px] rounded-full bg-[#f6d7b0] border border-[#d49c6b] shadow-[0_2px_4px_rgba(0,0,0,0.5)] flex items-center justify-center">
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-30 px-1.5 py-[0.5px] rounded-full bg-[#f6d7b0] border border-[#d49c6b] shadow-[0_2px_4px_rgba(0,0,0,0.5)] flex items-center justify-center pointer-events-none min-w-[28px]">
                         <span className="text-[#65330e] font-black text-[9px] leading-none tracking-tight">
                           {formatBetAmount(currentBet)}
                         </span>
@@ -651,7 +641,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           )}
         </div>
 
-        {/* Bottom Left: W-7 H-7 Icon (White removed) + Live Golden Balance (5,000,000) */}
+        {/* Bottom Left: W-7 H-7 Icon + Live Golden Balance (5,000,000) */}
         {!loading && (
           <div className="absolute bottom-2.5 left-2.5 z-30 flex items-center gap-1.5 pointer-events-auto select-none">
             <LoadingShaderImage
@@ -667,7 +657,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
         {/* Bottom Right: Repeat Text Button + Betting Chips */}
         {!loading && (
           <div className="absolute bottom-2.5 right-2.5 z-30 flex items-center gap-1.5 pointer-events-auto">
-            {/* Repeat Button with text only */}
+            {/* Repeat Button */}
             <button
               onClick={handleRepeatBet}
               aria-label="Repeat Bet"
