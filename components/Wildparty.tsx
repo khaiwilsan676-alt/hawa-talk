@@ -6,7 +6,18 @@ interface WildpartyProps {
   onClose: () => void;
 }
 
-// 1. WebGL Shader: Loading Page ki Image se White Background hatane ke liye
+interface AnimalItem {
+  id: number;
+  src: string;
+  alt: string;
+  angle: number;
+  distance: number;
+  x: number;
+  y: number;
+  size: number;
+}
+
+// 1. WebGL Shader: White Background remover (Loading icon & Bottom-left asset)
 function LoadingShaderImage({ src, className }: { src: string; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -114,7 +125,7 @@ function LoadingShaderImage({ src, className }: { src: string; className?: strin
   return <canvas ref={canvasRef} className={`${className || ''} block bg-transparent`} />;
 }
 
-// 2. Green Screen Remover for Animals & Center Wheel
+// 2. Green Screen Remover (Animals, Center Wheel, Chips)
 function GreenScreenImage({ src, className }: { src: string; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -148,7 +159,7 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
         if (isGreen) {
           data[i + 3] = 0;
         } else if (g > Math.max(r, b)) {
-          data[i + 1] = Math.max(r, b); // Clean green edge spill
+          data[i + 1] = Math.max(r, b);
         }
       }
 
@@ -164,13 +175,26 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(30);
 
-  // Game Phase Logic: 'betting' | 'spinning' | 'result'
+  // Game Phases: 'betting' (30s) -> 'spinning' (15s) -> 'result' (3s)
   const [gamePhase, setGamePhase] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [activeHighlightIndex, setActiveHighlightIndex] = useState<number | null>(null);
-  const [winnerAnimal, setWinnerAnimal] = useState<{ src: string; alt: string } | null>(null);
+  const [winnerAnimal, setWinnerAnimal] = useState<AnimalItem | null>(null);
+  const [winnerHistory, setWinnerHistory] = useState<AnimalItem[]>([]);
 
-  // Exact Clock Positions with x,y offset for fine-tuning:
-  const animals = [
+  // Selected Betting Chip
+  const [selectedChip, setSelectedChip] = useState<string>('10K');
+
+  // Betting Chips Data
+  const chips = [
+    { label: '1K', src: '/1787389350745~2.jpg' },
+    { label: '10K', src: '/IMG_20260822_143032.png' },
+    { label: '50k', src: '/IMG_20260822_143348.png' },
+    { label: '500k', src: '/IMG_20260822_143408.png' },
+    { label: '5M', src: '/IMG_20260822_143422~2.jpg' },
+  ];
+
+  // Exact Clock Positions with exact x, y offset & individual size
+  const animals: AnimalItem[] = [
     { id: 0, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -17, size: 72 },
     { id: 1, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -4, y: -10, size: 55 },
     { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -6, y: -19, size: 68 },
@@ -197,7 +221,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     return () => clearInterval(timer);
   }, [loading]);
 
-  // Main Game Loop: Betting (30s) -> Spinning (15s) -> Result -> Repeat
+  // Main Game Loop: 30s Betting -> 15s Spinning -> 3s Result -> Repeat
   useEffect(() => {
     if (loading) return;
 
@@ -206,13 +230,13 @@ export default function Wildparty({ onClose }: WildpartyProps) {
         if (prev <= 1) {
           if (gamePhase === 'betting') {
             setGamePhase('spinning');
-            return 15; // 15s spinning countdown
+            return 15;
           } else if (gamePhase === 'spinning') {
             setGamePhase('result');
-            return 3; // 3s result display
+            return 3;
           } else if (gamePhase === 'result') {
             setGamePhase('betting');
-            return 30; // Reset to 30s selection round
+            return 30;
           }
         }
         return prev - 1;
@@ -222,7 +246,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
     return () => clearInterval(timer);
   }, [loading, gamePhase]);
 
-  // Medium Speed Wheel Highlight Loop during Spinning Phase
+  // Medium Speed Spinning Highlight Loop
   useEffect(() => {
     if (gamePhase !== 'spinning') {
       if (gamePhase === 'betting') {
@@ -233,20 +257,23 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
     const spinInterval = setInterval(() => {
       setActiveHighlightIndex((prev) => {
-        const next = prev === null ? 0 : (prev + 1) % animals.length;
-        return next;
+        return prev === null ? 0 : (prev + 1) % animals.length;
       });
     }, 120);
 
     return () => clearInterval(spinInterval);
   }, [gamePhase, animals.length]);
 
-  // Finalize Winner when spinning ends
+  // Result & History Handler
   useEffect(() => {
     if (gamePhase === 'result') {
       const winningIndex = activeHighlightIndex !== null ? activeHighlightIndex : Math.floor(Math.random() * animals.length);
       setActiveHighlightIndex(winningIndex);
-      setWinnerAnimal(animals[winningIndex]);
+      const winner = animals[winningIndex];
+      setWinnerAnimal(winner);
+      setWinnerHistory((prev) => [...prev.slice(-9), winner]);
+    } else if (gamePhase === 'betting') {
+      setWinnerAnimal(null);
     }
   }, [gamePhase]);
 
@@ -359,21 +386,20 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               </button>
             </div>
 
-            {/* Top Transparent Patti with All Animals & Winner Highlight */}
-            <div className="absolute top-12 left-2 right-2 z-30 flex items-center justify-between px-2 py-1 bg-black/25 backdrop-blur-sm rounded-full border border-white/20 shadow-sm pointer-events-none">
-              {animals.map((animal) => {
-                const isWinner = winnerAnimal?.alt === animal.alt;
-                return (
+            {/* Top Transparent Patti: Win History */}
+            <div className="absolute top-12 left-2 right-2 z-30 flex items-center gap-1.5 px-2.5 py-1 bg-black/25 backdrop-blur-sm rounded-full border border-white/20 shadow-sm overflow-x-auto no-scrollbar pointer-events-none min-h-[30px]">
+              {winnerHistory.length === 0 ? (
+                <span className="text-[10px] text-white/50 italic px-1 select-none">History</span>
+              ) : (
+                winnerHistory.map((winner, idx) => (
                   <div
-                    key={animal.src}
-                    className={`relative w-6 h-6 rounded-full flex items-center justify-center overflow-hidden transition-all duration-300 ${
-                      isWinner ? 'bg-yellow-400/40 ring-2 ring-yellow-400 scale-110' : 'opacity-85'
-                    }`}
+                    key={`${winner.alt}-${idx}`}
+                    className="w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden bg-white/10"
                   >
-                    <GreenScreenImage src={animal.src} className="w-full h-full object-contain" />
+                    <GreenScreenImage src={winner.src} className="w-full h-full object-contain" />
                   </div>
-                );
-              })}
+                ))
+              )}
             </div>
           </>
         )}
@@ -404,7 +430,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 />
               </div>
 
-              {/* Center Info: Select your / Animal (Chota text) & Phase Countdown */}
+              {/* Center Info: Select your / Animal & Timers */}
               <div className="absolute z-30 flex flex-col items-center justify-center text-center pointer-events-none px-4">
                 {gamePhase === 'betting' && (
                   <>
@@ -443,24 +469,21 @@ export default function Wildparty({ onClose }: WildpartyProps) {
                 )}
               </div>
 
-              {/* Animal Circles Positioned with Grayscale/Color Highlight logic */}
+              {/* Animal Circles: Grayscale on spin, active animal gets full color */}
               {animals.map((animal, index) => {
                 const animalSize = animal.size || 64;
                 const halfSize = animalSize / 2;
 
                 const isSpinning = gamePhase === 'spinning';
                 const isCurrentHighlighted = activeHighlightIndex === index;
-                const isWinner = gamePhase === 'result' && winnerAnimal?.alt === animal.alt;
-
-                // Color vs Grayscale logic
-                const shouldBeColorless = isSpinning && !isCurrentHighlighted;
+                const isColorless = isSpinning ? !isCurrentHighlighted : false;
 
                 return (
                   <div
                     key={animal.src}
-                    className={`absolute overflow-hidden pointer-events-none transition-all duration-100 ${
-                      shouldBeColorless ? 'grayscale opacity-40 brightness-75' : 'grayscale-0 opacity-100 brightness-100'
-                    } ${isCurrentHighlighted || isWinner ? 'scale-110 drop-shadow-[0_0_8px_rgba(250,204,21,0.9)]' : ''}`}
+                    className={`absolute overflow-hidden pointer-events-none transition-[filter] duration-100 ${
+                      isColorless ? 'grayscale' : 'grayscale-0'
+                    }`}
                     style={{
                       width: `${animalSize}px`,
                       height: `${animalSize}px`,
@@ -481,8 +504,63 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             </div>
           )}
         </div>
+
+        {/* Bottom Left Corner Image (Only after loading completes) */}
+        {!loading && (
+          <div className="absolute bottom-2.5 left-2.5 z-30 flex items-center justify-center pointer-events-auto">
+            <LoadingShaderImage
+              src="/1786855398290.png"
+              className="w-11 h-11 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+            />
+          </div>
+        )}
+
+        {/* Bottom Right Corner: Repeat Button + Betting Chips (Only after loading completes) */}
+        {!loading && (
+          <div className="absolute bottom-2.5 right-2.5 z-30 flex items-center gap-1.5 pointer-events-auto">
+            {/* Repeat Button */}
+            <button
+              aria-label="Repeat Bet"
+              className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19" />
+              </svg>
+            </button>
+
+            {/* Chips Container */}
+            <div className="flex items-center gap-1">
+              {chips.map((chip) => {
+                const isSelected = selectedChip === chip.label;
+                return (
+                  <button
+                    key={chip.label}
+                    onClick={() => setSelectedChip(chip.label)}
+                    className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 outline-none ${
+                      isSelected
+                        ? '-translate-y-2 rotate-6 scale-105 ring-2 ring-yellow-400 drop-shadow-[0_4px_8px_rgba(250,204,21,0.8)]'
+                        : 'hover:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]'
+                    }`}
+                  >
+                    <GreenScreenImage
+                      src={chip.src}
+                      className="w-full h-full object-contain rounded-full"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
