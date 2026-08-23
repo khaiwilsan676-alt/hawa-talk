@@ -25,6 +25,7 @@ import {
   RemoteTrackPublication
 } from "livekit-client";
 
+// ============ TYPES ============
 interface RoomPageProps {
   roomOwner: {
     id?: string;
@@ -83,180 +84,179 @@ const THEME_BACKGROUNDS: { [key: string]: string } = {
   'mood-light': '/1784533036732~2.jpg',
 };
 
-// ============ INDEXEDDB HELPER FUNCTIONS ============
+// ============ SAFE INDEXEDDB (CRASH-PROOF) ============
 const DB_NAME = 'HurryAppDB';
 const DB_VERSION = 1;
 
-// Music Store
 const MUSIC_STORE = 'music';
-// Room Settings Store
 const ROOM_SETTINGS_STORE = 'roomSettings';
-// User Preferences Store
 const USER_PREFS_STORE = 'userPrefs';
-// Chat History Store
 const CHAT_HISTORY_STORE = 'chatHistory';
-// Emoji Store
 const EMOJI_STORE = 'emojiHistory';
-// Gift Store
 const GIFT_STORE = 'giftHistory';
-// Seat State Store
 const SEAT_STATE_STORE = 'seatState';
-// Follow List Store
 const FOLLOW_STORE = 'followList';
-// Room Cache Store
 const ROOM_CACHE_STORE = 'roomCache';
 
-// Initialize IndexedDB
-const initDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+// Browser check - SSR safe
+const isBrowser = typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
 
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
+// Safe IndexedDB initialization
+const initDB = (): Promise<IDBDatabase | null> => {
+  if (!isBrowser) {
+    console.warn('IndexedDB not available (SSR or unsupported browser)');
+    return Promise.resolve(null);
+  }
+  
+  return new Promise((resolve) => {
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
+      request.onerror = () => {
+        console.error('IndexedDB open error:', request.error);
+        resolve(null);
+      };
+      
+      request.onsuccess = () => resolve(request.result);
 
-      // Create all object stores
-      if (!db.objectStoreNames.contains(MUSIC_STORE)) {
-        db.createObjectStore(MUSIC_STORE, { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains(ROOM_SETTINGS_STORE)) {
-        db.createObjectStore(ROOM_SETTINGS_STORE, { keyPath: 'roomId' });
-      }
-      if (!db.objectStoreNames.contains(USER_PREFS_STORE)) {
-        db.createObjectStore(USER_PREFS_STORE, { keyPath: 'userId' });
-      }
-      if (!db.objectStoreNames.contains(CHAT_HISTORY_STORE)) {
-        const chatStore = db.createObjectStore(CHAT_HISTORY_STORE, { keyPath: 'id', autoIncrement: true });
-        chatStore.createIndex('roomId', 'roomId', { unique: false });
-        chatStore.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(EMOJI_STORE)) {
-        const emojiStore = db.createObjectStore(EMOJI_STORE, { keyPath: 'id', autoIncrement: true });
-        emojiStore.createIndex('userId', 'userId', { unique: false });
-        emojiStore.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(GIFT_STORE)) {
-        const giftStore = db.createObjectStore(GIFT_STORE, { keyPath: 'id', autoIncrement: true });
-        giftStore.createIndex('userId', 'userId', { unique: false });
-        giftStore.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(SEAT_STATE_STORE)) {
-        db.createObjectStore(SEAT_STATE_STORE, { keyPath: 'roomId' });
-      }
-      if (!db.objectStoreNames.contains(FOLLOW_STORE)) {
-        const followStore = db.createObjectStore(FOLLOW_STORE, { keyPath: 'id', autoIncrement: true });
-        followStore.createIndex('userId', 'userId', { unique: false });
-        followStore.createIndex('roomId', 'roomId', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(ROOM_CACHE_STORE)) {
-        db.createObjectStore(ROOM_CACHE_STORE, { keyPath: 'roomId' });
-      }
-    };
+      request.onupgradeneeded = (event) => {
+        try {
+          const db = (event.target as IDBOpenDBRequest).result;
+
+          if (!db.objectStoreNames.contains(MUSIC_STORE)) {
+            db.createObjectStore(MUSIC_STORE, { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(ROOM_SETTINGS_STORE)) {
+            db.createObjectStore(ROOM_SETTINGS_STORE, { keyPath: 'roomId' });
+          }
+          if (!db.objectStoreNames.contains(USER_PREFS_STORE)) {
+            db.createObjectStore(USER_PREFS_STORE, { keyPath: 'userId' });
+          }
+          if (!db.objectStoreNames.contains(CHAT_HISTORY_STORE)) {
+            const chatStore = db.createObjectStore(CHAT_HISTORY_STORE, { keyPath: 'id', autoIncrement: true });
+            chatStore.createIndex('roomId', 'roomId', { unique: false });
+            chatStore.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+          if (!db.objectStoreNames.contains(EMOJI_STORE)) {
+            const emojiStore = db.createObjectStore(EMOJI_STORE, { keyPath: 'id', autoIncrement: true });
+            emojiStore.createIndex('userId', 'userId', { unique: false });
+            emojiStore.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+          if (!db.objectStoreNames.contains(GIFT_STORE)) {
+            const giftStore = db.createObjectStore(GIFT_STORE, { keyPath: 'id', autoIncrement: true });
+            giftStore.createIndex('userId', 'userId', { unique: false });
+            giftStore.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+          if (!db.objectStoreNames.contains(SEAT_STATE_STORE)) {
+            db.createObjectStore(SEAT_STATE_STORE, { keyPath: 'roomId' });
+          }
+          if (!db.objectStoreNames.contains(FOLLOW_STORE)) {
+            const followStore = db.createObjectStore(FOLLOW_STORE, { keyPath: 'id', autoIncrement: true });
+            followStore.createIndex('userId', 'userId', { unique: false });
+            followStore.createIndex('roomId', 'roomId', { unique: false });
+          }
+          if (!db.objectStoreNames.contains(ROOM_CACHE_STORE)) {
+            db.createObjectStore(ROOM_CACHE_STORE, { keyPath: 'roomId' });
+          }
+        } catch (error) {
+          console.error('Error creating stores:', error);
+        }
+      };
+    } catch (error) {
+      console.error('IndexedDB init error:', error);
+      resolve(null);
+    }
   });
 };
 
-// Generic save function
+// Safe save function
 const saveToStore = async (storeName: string, data: any): Promise<void> => {
   try {
     const db = await initDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      store.put(data);
-      transaction.oncomplete = () => {
+    if (!db) return;
+
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        store.put(data);
+        
+        transaction.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        transaction.onerror = () => {
+          console.warn(`Transaction error for ${storeName}`);
+          db.close();
+          resolve();
+        };
+      } catch (error) {
+        console.warn(`Transaction exception for ${storeName}:`, error);
         db.close();
         resolve();
-      };
-      transaction.onerror = () => {
-        db.close();
-        reject(transaction.error);
-      };
+      }
     });
   } catch (error) {
-    console.error(`Error saving to ${storeName}:`, error);
+    console.warn(`Save error for ${storeName}:`, error);
   }
 };
 
-// Generic get function
+// Safe get function
 const getFromStore = async (storeName: string, key?: string): Promise<any> => {
   try {
     const db = await initDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readonly');
-      const store = transaction.objectStore(storeName);
-      
-      let request;
-      if (key) {
-        request = store.get(key);
-      } else {
-        request = store.getAll();
-      }
+    if (!db) return null;
 
-      request.onsuccess = () => {
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
+        
+        let request;
+        if (key) {
+          request = store.get(key);
+        } else {
+          request = store.getAll();
+        }
+
+        request.onsuccess = () => {
+          db.close();
+          resolve(request.result);
+        };
+        request.onerror = () => {
+          console.warn(`Get error for ${storeName}`);
+          db.close();
+          resolve(null);
+        };
+      } catch (error) {
+        console.warn(`Get exception for ${storeName}:`, error);
         db.close();
-        resolve(request.result);
-      };
-      request.onerror = () => {
-        db.close();
-        reject(request.error);
-      };
+        resolve(null);
+      }
     });
   } catch (error) {
-    console.error(`Error getting from ${storeName}:`, error);
+    console.warn(`Get error for ${storeName}:`, error);
     return null;
   }
 };
 
-// Generic delete function
-const deleteFromStore = async (storeName: string, key: string): Promise<void> => {
-  try {
-    const db = await initDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      store.delete(key);
-      transaction.oncomplete = () => {
-        db.close();
-        resolve();
-      };
-      transaction.onerror = () => {
-        db.close();
-        reject(transaction.error);
-      };
-    });
-  } catch (error) {
-    console.error(`Error deleting from ${storeName}:`, error);
-  }
-};
-
 // Music specific functions
-const saveMusicTrack = async (track: MusicTrack & { blob?: Blob }): Promise<void> => {
-  await saveToStore(MUSIC_STORE, track);
-};
-
 const getAllMusicTracks = async (): Promise<MusicTrack[]> => {
   const tracks = await getFromStore(MUSIC_STORE);
   return tracks || [];
 };
 
-// Room settings specific functions
+const saveMusicTrack = async (track: MusicTrack & { blob?: Blob }): Promise<void> => {
+  await saveToStore(MUSIC_STORE, track);
+};
+
+// Room settings functions
 const saveRoomSettings = async (roomId: string, settings: any): Promise<void> => {
   await saveToStore(ROOM_SETTINGS_STORE, { roomId, ...settings });
 };
 
 const getRoomSettings = async (roomId: string): Promise<any> => {
   return await getFromStore(ROOM_SETTINGS_STORE, roomId);
-};
-
-// User preferences functions
-const saveUserPrefs = async (userId: string, prefs: any): Promise<void> => {
-  await saveToStore(USER_PREFS_STORE, { userId, ...prefs });
-};
-
-const getUserPrefs = async (userId: string): Promise<any> => {
-  return await getFromStore(USER_PREFS_STORE, userId);
 };
 
 // Chat history functions
@@ -266,19 +266,27 @@ const saveChatMessage = async (roomId: string, message: any): Promise<void> => {
 
 const getChatHistory = async (roomId: string): Promise<any[]> => {
   const db = await initDB();
+  if (!db) return [];
+  
   return new Promise((resolve) => {
-    const transaction = db.transaction(CHAT_HISTORY_STORE, 'readonly');
-    const store = transaction.objectStore(CHAT_HISTORY_STORE);
-    const index = store.index('roomId');
-    const request = index.getAll(roomId);
-    request.onsuccess = () => {
-      db.close();
-      resolve(request.result || []);
-    };
-    request.onerror = () => {
+    try {
+      const transaction = db.transaction(CHAT_HISTORY_STORE, 'readonly');
+      const store = transaction.objectStore(CHAT_HISTORY_STORE);
+      const index = store.index('roomId');
+      const request = index.getAll(roomId);
+      
+      request.onsuccess = () => {
+        db.close();
+        resolve(request.result || []);
+      };
+      request.onerror = () => {
+        db.close();
+        resolve([]);
+      };
+    } catch (error) {
       db.close();
       resolve([]);
-    };
+    }
   });
 };
 
@@ -287,70 +295,47 @@ const saveEmojiUsage = async (userId: string, emoji: string): Promise<void> => {
   await saveToStore(EMOJI_STORE, { userId, emoji, timestamp: Date.now() });
 };
 
-const getEmojiHistory = async (userId: string): Promise<any[]> => {
-  const db = await initDB();
-  return new Promise((resolve) => {
-    const transaction = db.transaction(EMOJI_STORE, 'readonly');
-    const store = transaction.objectStore(EMOJI_STORE);
-    const index = store.index('userId');
-    const request = index.getAll(userId);
-    request.onsuccess = () => {
-      db.close();
-      resolve(request.result || []);
-    };
-    request.onerror = () => {
-      db.close();
-      resolve([]);
-    };
-  });
-};
-
 // Follow list functions
 const saveFollow = async (userId: string, roomId: string, follow: boolean): Promise<void> => {
-  if (follow) {
-    await saveToStore(FOLLOW_STORE, { userId, roomId, timestamp: Date.now() });
-  } else {
-    const db = await initDB();
-    return new Promise((resolve) => {
-      const transaction = db.transaction(FOLLOW_STORE, 'readwrite');
-      const store = transaction.objectStore(FOLLOW_STORE);
-      const index = store.index('userId');
-      const request = index.getAll(userId);
-      request.onsuccess = () => {
-        const items = request.result || [];
-        const itemToDelete = items.find((item: any) => item.roomId === roomId);
-        if (itemToDelete) {
-          store.delete(itemToDelete.id);
+  try {
+    if (follow) {
+      await saveToStore(FOLLOW_STORE, { userId, roomId, timestamp: Date.now() });
+    } else {
+      const db = await initDB();
+      if (!db) return;
+      
+      return new Promise((resolve) => {
+        try {
+          const transaction = db.transaction(FOLLOW_STORE, 'readwrite');
+          const store = transaction.objectStore(FOLLOW_STORE);
+          const index = store.index('userId');
+          const request = index.getAll(userId);
+          
+          request.onsuccess = () => {
+            const items = request.result || [];
+            const itemToDelete = items.find((item: any) => item.roomId === roomId);
+            if (itemToDelete && itemToDelete.id) {
+              store.delete(itemToDelete.id);
+            }
+            db.close();
+            resolve();
+          };
+          request.onerror = () => {
+            db.close();
+            resolve();
+          };
+        } catch (error) {
+          db.close();
+          resolve();
         }
-        db.close();
-        resolve();
-      };
-      request.onerror = () => {
-        db.close();
-        resolve();
-      };
-    });
+      });
+    }
+  } catch (error) {
+    console.warn('Follow save error:', error);
   }
 };
 
-const getFollowList = async (userId: string): Promise<any[]> => {
-  const db = await initDB();
-  return new Promise((resolve) => {
-    const transaction = db.transaction(FOLLOW_STORE, 'readonly');
-    const store = transaction.objectStore(FOLLOW_STORE);
-    const index = store.index('userId');
-    const request = index.getAll(userId);
-    request.onsuccess = () => {
-      db.close();
-      resolve(request.result || []);
-    };
-    request.onerror = () => {
-      db.close();
-      resolve([]);
-    };
-  });
-};
-
+// ============ MAIN COMPONENT ============
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   const [livekitToken, setLivekitToken] = useState<string>("");
   const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
@@ -405,6 +390,7 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   );
 }
 
+// ============ ROOM CONTENT ============
 function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   // UI state
   const [showExitMenu, setShowExitMenu] = useState(false);
@@ -420,7 +406,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [copied, setCopied] = useState(false);
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
   
-  // NEW: Emoji display state
+  // Emoji display state
   const [activeEmoji, setActiveEmoji] = useState<{ emoji: string; userId: string; timestamp: number } | null>(null);
   const [emojiAnimations, setEmojiAnimations] = useState<Array<{ id: string; emoji: string; userId: string; timestamp: number }>>([]);
 
@@ -439,13 +425,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Drag for minimized music
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [miniMusicPosition, setMiniMusicPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  
-  // FIX: Minimized music boundary constraints
-  const [miniMusicPosition, setMiniMusicPosition] = useState({ x: 0, y: 0 });
-  const miniMusicRef = useRef<HTMLDivElement>(null);
 
   // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
@@ -701,7 +683,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         });
       setMessages(msgs);
       
-      // Save messages to IndexedDB cache
+      // Save last message to IndexedDB
       if (msgs.length > 0) {
         const lastMsg = msgs[msgs.length - 1];
         saveChatMessage(roomId, lastMsg);
@@ -747,7 +729,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       });
       setSeats(mergedSeats);
       
-      // Save seat state to IndexedDB
+      // Save to IndexedDB
       saveToStore(SEAT_STATE_STORE, { roomId, seats: mergedSeats, timestamp: Date.now() });
     }, (error) => {
       console.error("Seats listener error:", error);
@@ -873,13 +855,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const handleCopyId = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(roomOwner.accountId || '');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleCopyUserId = (accountId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(accountId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -1417,7 +1392,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     const dx = clientX - dragRef.current.x;
     const dy = clientY - dragRef.current.y;
     
-    // FIX: Apply boundary constraints
+    // Apply boundary constraints
     setMiniMusicPosition(prev => {
       const newX = Math.max(-window.innerWidth + 60, Math.min(0, prev.x + dx));
       const newY = Math.max(-window.innerHeight + 60, Math.min(0, prev.y + dy));
@@ -1522,7 +1497,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       e.stopPropagation();
                       const newFollow = !isFollowed;
                       setIsFollowed(newFollow);
-                      // Save to IndexedDB
                       saveFollow(userAccountId, roomId, newFollow);
                       if (onFollowToggle) onFollowToggle(roomId, newFollow);
                     }}
@@ -1590,7 +1564,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
-            {/* Announcement Card - Transparent with Glossy Blue Text */}
+            {/* Announcement Card */}
             <div className="mx-0 mb-2 flex justify-start">
               <div 
                 className="border border-white/5 max-w-[80%]"
@@ -1696,7 +1670,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-        {/* Footer Controls - hidden when input is open */}
+        {/* Footer Controls */}
         <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-2">
             <button
@@ -1752,7 +1726,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-        {/* Input container - fixed at bottom when open */}
+        {/* Input container */}
         {showChatInput && (
           <div 
             ref={inputContainerRef} 
@@ -1832,7 +1806,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Active Users Sheet - Removed Copy Option */}
+      {/* Active Users Sheet */}
       {showActiveUsers && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
@@ -1865,7 +1839,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Room Info Sheet - Increased DP size only here */}
+      {/* Room Info Sheet */}
       {showRoomInfo && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
@@ -1888,7 +1862,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {roomInfoTab === 'profile' ? (
                 <div className="space-y-3">
-                  {/* Room DP - Increased size to 80px */}
                   <div className="flex items-center gap-2">
                     <div 
                       className="rounded-xl overflow-hidden border border-gray-200 flex-shrink-0" 
@@ -2098,7 +2071,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           speaker={isSpeakerOn}
           onToggleSpeaker={() => setIsSpeakerOn(prev => !prev)}
           onMusicPlay={(track) => {
-            // Load all tracks from IndexedDB
             getAllMusicTracks().then(allTracks => {
               const tracksWithUrls = allTracks.map((item: any) => ({
                 id: item.id,
@@ -2237,10 +2209,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* FIX: Music Controller - Minimized with Boundary Constraints */}
+      {/* Music Controller - Minimized with Boundary Constraints */}
       {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
         <div
-          ref={miniMusicRef}
           className="fixed z-[45] touch-none select-none"
           style={{ 
             bottom: `calc(var(--music-mini-bottom) + ${miniMusicPosition.y}px)`, 
@@ -2332,7 +2303,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-play-size: 24px;
           --music-volume-width: 28px;
           
-          /* FIX: Music Minimized - Smaller size */
+          /* Music Minimized - Smaller size */
           --music-mini-size: 38px;
           --music-mini-bottom: 6vh;
           --music-mini-right: 8px;
@@ -2434,7 +2405,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// SeatItem Component - Updated with Emoji support
+// ============ SEAT ITEM COMPONENT ============
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId, activeEmoji }: {
   seatNumber: number;
   seatData?: Seat;
@@ -2466,7 +2437,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 
   const activeSpeaking = isSpeaking || isUserSpeaking;
   
-  // FIX: Check if emoji should show on this seat
   const showEmojiOnThisSeat = activeEmoji && user && user.accountId === activeEmoji.userId;
 
   return (
@@ -2623,7 +2593,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   />
                 </div>
                 
-                {/* FIX: Emoji display on avatar */}
+                {/* Emoji display on avatar */}
                 {showEmojiOnThisSeat && (
                   <div 
                     className="absolute pointer-events-none"
@@ -2670,4 +2640,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-         }
+                              }
