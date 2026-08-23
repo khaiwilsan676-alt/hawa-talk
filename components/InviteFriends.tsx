@@ -1,8 +1,7 @@
-
 'use client'
 
 import React, { useState } from 'react'
-import { ArrowLeft, Copy, Share2, Users, Gift, MessageCircle, Facebook, Twitter, Mail } from 'lucide-react'
+import { ArrowLeft, Copy, Share2, Users, Gift, MessageCircle, Mail, Link2 } from 'lucide-react'
 
 interface InviteFriendsProps {
   onBack: () => void
@@ -10,6 +9,7 @@ interface InviteFriendsProps {
 
 export default function InviteFriends({ onBack }: InviteFriendsProps) {
   const [copied, setCopied] = useState(false)
+  const [copiedType, setCopiedType] = useState<'code' | 'link' | null>(null)
   
   // Get user info from localStorage
   const userId = localStorage.getItem('userUID') || localStorage.getItem('accountNumber') || 'N/A'
@@ -19,22 +19,53 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
   const inviteLink = `https://yourapp.com/invite/${inviteCode}`
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(inviteCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    navigator.clipboard.writeText(inviteCode).then(() => {
+      setCopied(true)
+      setCopiedType('code')
+      setTimeout(() => {
+        setCopied(false)
+        setCopiedType(null)
+      }, 2000)
+    })
   }
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(inviteLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setCopied(true)
+      setCopiedType('link')
+      setTimeout(() => {
+        setCopied(false)
+        setCopiedType(null)
+      }, 2000)
+    })
+  }
+
+  const handleShare = (platform: string) => {
+    const shareText = `Join me on this amazing app! Use my invite code: ${inviteCode} or click here: ${inviteLink}`
+    
+    switch(platform) {
+      case 'whatsapp':
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank')
+        break
+      case 'telegram':
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`, '_blank')
+        break
+      case 'email':
+        window.location.href = `mailto:?subject=Join me on this app!&body=${encodeURIComponent(shareText)}`
+        break
+      case 'copy':
+        handleCopyLink()
+        break
+      default:
+        break
+    }
   }
 
   const shareOptions = [
     { id: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle size={24} />, color: 'bg-green-500' },
-    { id: 'facebook', label: 'Facebook', icon: <Facebook size={24} />, color: 'bg-blue-600' },
-    { id: 'twitter', label: 'Twitter', icon: <Twitter size={24} />, color: 'bg-sky-500' },
+    { id: 'telegram', label: 'Telegram', icon: <Share2 size={24} />, color: 'bg-blue-500' },
     { id: 'email', label: 'Email', icon: <Mail size={24} />, color: 'bg-red-500' },
+    { id: 'copy', label: 'Copy Link', icon: <Link2 size={24} />, color: 'bg-gray-600' },
   ]
 
   const rewards = [
@@ -78,6 +109,9 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
                   <Copy size={18} />
                 </button>
               </div>
+              {copied && copiedType === 'code' && (
+                <div className="text-xs mt-2 text-green-200">✓ Code copied!</div>
+              )}
             </div>
 
             {/* Invite Link */}
@@ -96,13 +130,10 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
                   Copy
                 </button>
               </div>
+              {copied && copiedType === 'link' && (
+                <div className="text-xs mt-2 text-green-200">✓ Link copied!</div>
+              )}
             </div>
-
-            {copied && (
-              <div className="text-xs bg-green-500/50 rounded-lg px-3 py-1.5">
-                ✓ Copied to clipboard!
-              </div>
-            )}
           </div>
 
           {/* Share Options */}
@@ -112,6 +143,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
               {shareOptions.map((option) => (
                 <button
                   key={option.id}
+                  onClick={() => handleShare(option.id)}
                   className="flex flex-col items-center gap-2 cursor-pointer group"
                 >
                   <div className={`${option.color} w-14 h-14 rounded-full flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg`}>
