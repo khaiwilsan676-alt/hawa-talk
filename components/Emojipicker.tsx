@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Smile, X } from "lucide-react";
 
 interface EmojiPickerProps {
@@ -8,9 +8,70 @@ interface EmojiPickerProps {
   onSelectEmoji?: (emoji: { id: string; name: string; src: string }) => void;
 }
 
-export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps) {
-  const [selectedGif, setSelectedGif] = useState<string>("");
+// Sub-component to keep GIF paused on first frame until hovered/touched
+function PausedGifItem({
+  src,
+  name,
+  onClick,
+}: {
+  src: string;
+  name: string;
+  onClick: () => void;
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [frameDataUrl, setFrameDataUrl] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = encodeURI(src);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth || 64;
+      canvas.height = img.naturalHeight || 64;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        try {
+          setFrameDataUrl(canvas.toDataURL());
+        } catch {
+          // Fallback if crossOrigin restricts
+          setFrameDataUrl(encodeURI(src));
+        }
+      }
+    };
+  }, [src]);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setIsPlaying(true)}
+      onMouseLeave={() => setIsPlaying(false)}
+      onTouchStart={() => setIsPlaying(true)}
+      onTouchEnd={() => setIsPlaying(false)}
+      className="w-full flex flex-col items-center justify-center gap-1.5 p-1 transition-transform active:scale-90 bg-transparent border-0 outline-none"
+    >
+      <div className="w-12 h-12 flex items-center justify-center">
+        <img
+          src={isPlaying || !frameDataUrl ? encodeURI(src) : frameDataUrl}
+          alt={name}
+          loading="lazy"
+          className="w-full h-full object-contain pointer-events-none select-none"
+          onError={(e) => {
+            (e.target as HTMLElement).style.display = "none";
+          }}
+        />
+      </div>
+      <span className="text-[11px] font-medium text-gray-300 text-center tracking-tight truncate w-full">
+        {name}
+      </span>
+    </button>
+  );
+}
+
+export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps) {
   const gifStickers = [
     { id: "laugh", name: "Laugh", src: "/512.gif" },
     { id: "sad", name: "Sad", src: "/512 (6).gif" },
@@ -28,7 +89,6 @@ export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps
   ];
 
   const handleGifClick = (gif: { id: string; name: string; src: string }) => {
-    setSelectedGif(gif.name);
     if (onSelectEmoji) {
       onSelectEmoji(gif);
     }
@@ -39,7 +99,7 @@ export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-transparent pointer-events-none">
-      {/* Tap outside area to close (No blur, No black tint) */}
+      {/* Outside click closer */}
       <div 
         className="flex-1 w-full pointer-events-auto" 
         onClick={onClose} 
@@ -47,13 +107,13 @@ export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps
       />
 
       {/* Bottom Sheet Modal */}
-      <div className="h-[42vh] w-full bg-[#121212] text-white flex flex-col justify-between rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3.5 pb-4 pointer-events-auto">
+      <div className="h-[42vh] w-full bg-[#121212] text-white flex flex-col justify-between rounded-t-2xl border-t border-white/10 shadow-2xl px-4 pt-3.5 pb-4 pointer-events-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Smile className="w-5 h-5 text-yellow-400" />
-            <h2 className="text-sm font-semibold tracking-wide text-white">Stickers & Reactions</h2>
+            <h2 className="text-sm font-semibold tracking-wide text-white">Emojis</h2>
           </div>
           {onClose && (
             <button
@@ -66,30 +126,16 @@ export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps
           )}
         </div>
 
-        {/* Sticker Grid */}
-        <div className="flex-1 overflow-y-auto py-3 pr-0.5 scrollbar-none">
-          <div className="grid grid-cols-4 gap-2.5 place-items-center">
+        {/* Sticker Grid (Without Card Containers) */}
+        <div className="flex-1 overflow-y-auto py-3 scrollbar-none">
+          <div className="grid grid-cols-4 gap-y-4 gap-x-2 place-items-center">
             {gifStickers.map((gif) => (
-              <button
+              <PausedGifItem
                 key={gif.id}
-                type="button"
+                src={gif.src}
+                name={gif.name}
                 onClick={() => handleGifClick(gif)}
-                className={`w-full aspect-square rounded-2xl p-2.5 transition-all duration-150 active:scale-90 flex items-center justify-center border ${
-                  selectedGif === gif.name
-                    ? "bg-blue-600/25 border-blue-500 scale-105"
-                    : "bg-white/[0.04] hover:bg-white/[0.08] border-white/5"
-                }`}
-              >
-                <img
-                  src={encodeURI(gif.src)}
-                  alt={gif.name}
-                  loading="lazy"
-                  className="w-full h-full object-contain pointer-events-none select-none"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = "none";
-                  }}
-                />
-              </button>
+              />
             ))}
           </div>
         </div>
@@ -98,4 +144,3 @@ export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps
     </div>
   );
 }
-
