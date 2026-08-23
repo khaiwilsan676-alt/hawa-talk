@@ -83,274 +83,6 @@ const THEME_BACKGROUNDS: { [key: string]: string } = {
   'mood-light': '/1784533036732~2.jpg',
 };
 
-// ============ INDEXEDDB HELPER FUNCTIONS ============
-const DB_NAME = 'HurryAppDB';
-const DB_VERSION = 1;
-
-// Music Store
-const MUSIC_STORE = 'music';
-// Room Settings Store
-const ROOM_SETTINGS_STORE = 'roomSettings';
-// User Preferences Store
-const USER_PREFS_STORE = 'userPrefs';
-// Chat History Store
-const CHAT_HISTORY_STORE = 'chatHistory';
-// Emoji Store
-const EMOJI_STORE = 'emojiHistory';
-// Gift Store
-const GIFT_STORE = 'giftHistory';
-// Seat State Store
-const SEAT_STATE_STORE = 'seatState';
-// Follow List Store
-const FOLLOW_STORE = 'followList';
-// Room Cache Store
-const ROOM_CACHE_STORE = 'roomCache';
-
-// Initialize IndexedDB
-const initDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-
-      // Create all object stores
-      if (!db.objectStoreNames.contains(MUSIC_STORE)) {
-        db.createObjectStore(MUSIC_STORE, { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains(ROOM_SETTINGS_STORE)) {
-        db.createObjectStore(ROOM_SETTINGS_STORE, { keyPath: 'roomId' });
-      }
-      if (!db.objectStoreNames.contains(USER_PREFS_STORE)) {
-        db.createObjectStore(USER_PREFS_STORE, { keyPath: 'userId' });
-      }
-      if (!db.objectStoreNames.contains(CHAT_HISTORY_STORE)) {
-        const chatStore = db.createObjectStore(CHAT_HISTORY_STORE, { keyPath: 'id', autoIncrement: true });
-        chatStore.createIndex('roomId', 'roomId', { unique: false });
-        chatStore.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(EMOJI_STORE)) {
-        const emojiStore = db.createObjectStore(EMOJI_STORE, { keyPath: 'id', autoIncrement: true });
-        emojiStore.createIndex('userId', 'userId', { unique: false });
-        emojiStore.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(GIFT_STORE)) {
-        const giftStore = db.createObjectStore(GIFT_STORE, { keyPath: 'id', autoIncrement: true });
-        giftStore.createIndex('userId', 'userId', { unique: false });
-        giftStore.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(SEAT_STATE_STORE)) {
-        db.createObjectStore(SEAT_STATE_STORE, { keyPath: 'roomId' });
-      }
-      if (!db.objectStoreNames.contains(FOLLOW_STORE)) {
-        const followStore = db.createObjectStore(FOLLOW_STORE, { keyPath: 'id', autoIncrement: true });
-        followStore.createIndex('userId', 'userId', { unique: false });
-        followStore.createIndex('roomId', 'roomId', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(ROOM_CACHE_STORE)) {
-        db.createObjectStore(ROOM_CACHE_STORE, { keyPath: 'roomId' });
-      }
-    };
-  });
-};
-
-// Generic save function
-const saveToStore = async (storeName: string, data: any): Promise<void> => {
-  try {
-    const db = await initDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      store.put(data);
-      transaction.oncomplete = () => {
-        db.close();
-        resolve();
-      };
-      transaction.onerror = () => {
-        db.close();
-        reject(transaction.error);
-      };
-    });
-  } catch (error) {
-    console.error(`Error saving to ${storeName}:`, error);
-  }
-};
-
-// Generic get function
-const getFromStore = async (storeName: string, key?: string): Promise<any> => {
-  try {
-    const db = await initDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readonly');
-      const store = transaction.objectStore(storeName);
-      
-      let request;
-      if (key) {
-        request = store.get(key);
-      } else {
-        request = store.getAll();
-      }
-
-      request.onsuccess = () => {
-        db.close();
-        resolve(request.result);
-      };
-      request.onerror = () => {
-        db.close();
-        reject(request.error);
-      };
-    });
-  } catch (error) {
-    console.error(`Error getting from ${storeName}:`, error);
-    return null;
-  }
-};
-
-// Generic delete function
-const deleteFromStore = async (storeName: string, key: string): Promise<void> => {
-  try {
-    const db = await initDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      store.delete(key);
-      transaction.oncomplete = () => {
-        db.close();
-        resolve();
-      };
-      transaction.onerror = () => {
-        db.close();
-        reject(transaction.error);
-      };
-    });
-  } catch (error) {
-    console.error(`Error deleting from ${storeName}:`, error);
-  }
-};
-
-// Music specific functions
-const saveMusicTrack = async (track: MusicTrack & { blob?: Blob }): Promise<void> => {
-  await saveToStore(MUSIC_STORE, track);
-};
-
-const getAllMusicTracks = async (): Promise<MusicTrack[]> => {
-  const tracks = await getFromStore(MUSIC_STORE);
-  return tracks || [];
-};
-
-// Room settings specific functions
-const saveRoomSettings = async (roomId: string, settings: any): Promise<void> => {
-  await saveToStore(ROOM_SETTINGS_STORE, { roomId, ...settings });
-};
-
-const getRoomSettings = async (roomId: string): Promise<any> => {
-  return await getFromStore(ROOM_SETTINGS_STORE, roomId);
-};
-
-// User preferences functions
-const saveUserPrefs = async (userId: string, prefs: any): Promise<void> => {
-  await saveToStore(USER_PREFS_STORE, { userId, ...prefs });
-};
-
-const getUserPrefs = async (userId: string): Promise<any> => {
-  return await getFromStore(USER_PREFS_STORE, userId);
-};
-
-// Chat history functions
-const saveChatMessage = async (roomId: string, message: any): Promise<void> => {
-  await saveToStore(CHAT_HISTORY_STORE, { roomId, ...message, timestamp: Date.now() });
-};
-
-const getChatHistory = async (roomId: string): Promise<any[]> => {
-  const db = await initDB();
-  return new Promise((resolve) => {
-    const transaction = db.transaction(CHAT_HISTORY_STORE, 'readonly');
-    const store = transaction.objectStore(CHAT_HISTORY_STORE);
-    const index = store.index('roomId');
-    const request = index.getAll(roomId);
-    request.onsuccess = () => {
-      db.close();
-      resolve(request.result || []);
-    };
-    request.onerror = () => {
-      db.close();
-      resolve([]);
-    };
-  });
-};
-
-// Emoji history functions
-const saveEmojiUsage = async (userId: string, emoji: string): Promise<void> => {
-  await saveToStore(EMOJI_STORE, { userId, emoji, timestamp: Date.now() });
-};
-
-const getEmojiHistory = async (userId: string): Promise<any[]> => {
-  const db = await initDB();
-  return new Promise((resolve) => {
-    const transaction = db.transaction(EMOJI_STORE, 'readonly');
-    const store = transaction.objectStore(EMOJI_STORE);
-    const index = store.index('userId');
-    const request = index.getAll(userId);
-    request.onsuccess = () => {
-      db.close();
-      resolve(request.result || []);
-    };
-    request.onerror = () => {
-      db.close();
-      resolve([]);
-    };
-  });
-};
-
-// Follow list functions
-const saveFollow = async (userId: string, roomId: string, follow: boolean): Promise<void> => {
-  if (follow) {
-    await saveToStore(FOLLOW_STORE, { userId, roomId, timestamp: Date.now() });
-  } else {
-    const db = await initDB();
-    return new Promise((resolve) => {
-      const transaction = db.transaction(FOLLOW_STORE, 'readwrite');
-      const store = transaction.objectStore(FOLLOW_STORE);
-      const index = store.index('userId');
-      const request = index.getAll(userId);
-      request.onsuccess = () => {
-        const items = request.result || [];
-        const itemToDelete = items.find((item: any) => item.roomId === roomId);
-        if (itemToDelete) {
-          store.delete(itemToDelete.id);
-        }
-        db.close();
-        resolve();
-      };
-      request.onerror = () => {
-        db.close();
-        resolve();
-      };
-    });
-  }
-};
-
-const getFollowList = async (userId: string): Promise<any[]> => {
-  const db = await initDB();
-  return new Promise((resolve) => {
-    const transaction = db.transaction(FOLLOW_STORE, 'readonly');
-    const store = transaction.objectStore(FOLLOW_STORE);
-    const index = store.index('userId');
-    const request = index.getAll(userId);
-    request.onsuccess = () => {
-      db.close();
-      resolve(request.result || []);
-    };
-    request.onerror = () => {
-      db.close();
-      resolve([]);
-    };
-  });
-};
-
 export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
   const [livekitToken, setLivekitToken] = useState<string>("");
   const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
@@ -419,10 +151,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [isFollowed, setIsFollowed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
-  
-  // NEW: Emoji display state
-  const [activeEmoji, setActiveEmoji] = useState<{ emoji: string; userId: string; timestamp: number } | null>(null);
-  const [emojiAnimations, setEmojiAnimations] = useState<Array<{ id: string; emoji: string; userId: string; timestamp: number }>>([]);
 
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
@@ -442,10 +170,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  
-  // FIX: Minimized music boundary constraints
-  const [miniMusicPosition, setMiniMusicPosition] = useState({ x: 0, y: 0 });
-  const miniMusicRef = useRef<HTMLDivElement>(null);
 
   // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
@@ -519,8 +243,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
     : 'Room';
 
-  // FIX: Open profile in single click
-  const openProfile = useCallback((user: { name: string; image: string; accountId: string }) => {
+  const openProfile = (user: { name: string; image: string; accountId: string }) => {
     const userInSeat = seats.some(s => s.isOccupied && s.user?.accountId === user.accountId);
     setProfileUser({
       name: user.name,
@@ -529,7 +252,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       isInSeat: userInSeat
     });
     setShowUserProfile(true);
-  }, [seats]);
+  };
 
   // Sync LiveKit Microphone state with Seat Mute & Occupied Status
   const desiredAudioStateRef = useRef<boolean | null>(null);
@@ -583,24 +306,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     updateSeatsWithRemoteParticipants();
   }, [remoteParticipants, seats]);
 
-  // Fetch room data from Firestore AND IndexedDB cache
+  // Fetch room data from Firestore
   useEffect(() => {
     const fetchRoomData = async () => {
-      // First try IndexedDB cache
-      const cachedRoomData = await getRoomSettings(roomId);
-      if (cachedRoomData) {
-        setRoomName(cachedRoomData.name || "");
-        setRoomAnnouncement(cachedRoomData.announcement || "");
-        setRoomImage(cachedRoomData.image || roomOwner.image);
-        if (cachedRoomData.micMode) {
-          setMicMode(cachedRoomData.micMode);
-        }
-        if (cachedRoomData.theme && THEME_BACKGROUNDS[cachedRoomData.theme]) {
-          setBackgroundImage(THEME_BACKGROUNDS[cachedRoomData.theme]);
-        }
-      }
-
-      // Then fetch from Firestore
       if (roomId && db) {
         try {
           const snap = await getDoc(doc(db, "globalRooms", roomId));
@@ -624,17 +332,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               image: ''
             }));
             setRoomFollowers(followersList);
-            
-            // Cache to IndexedDB
-            await saveRoomSettings(roomId, {
-              name: data.name,
-              announcement: data.announcement,
-              image: data.image,
-              micMode: data.micMode,
-              theme: data.theme,
-              isLocked: data.isLocked,
-              roomPassword: data.roomPassword,
-            });
           }
         } catch (err) {
           console.error("Error loading room data:", err);
@@ -700,21 +397,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           return true;
         });
       setMessages(msgs);
-      
-      // Save messages to IndexedDB cache
-      if (msgs.length > 0) {
-        const lastMsg = msgs[msgs.length - 1];
-        saveChatMessage(roomId, lastMsg);
-      }
     }, (error) => {
       console.error("Messages listener error:", error);
-      
-      // Fallback: Load from IndexedDB cache
-      getChatHistory(roomId).then(cachedMsgs => {
-        if (cachedMsgs && cachedMsgs.length > 0) {
-          setMessages(cachedMsgs);
-        }
-      });
     });
 
     return () => {
@@ -746,18 +430,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         return syncedSeat ? { ...seat, ...syncedSeat } : seat;
       });
       setSeats(mergedSeats);
-      
-      // Save seat state to IndexedDB
-      saveToStore(SEAT_STATE_STORE, { roomId, seats: mergedSeats, timestamp: Date.now() });
     }, (error) => {
       console.error("Seats listener error:", error);
-      
-      // Fallback: Load from IndexedDB
-      getFromStore(SEAT_STATE_STORE, roomId).then(cachedSeats => {
-        if (cachedSeats && cachedSeats.seats) {
-          setSeats(cachedSeats.seats);
-        }
-      });
     });
 
     return () => unsubSeats();
@@ -803,24 +477,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       });
     } catch (err) {
       console.error("Error sending message:", err);
-      
-      // Fallback: Save to IndexedDB
-      const localMessage = {
-        text,
-        sender: currentUser.name,
-        senderImage: currentUser.image,
-        senderAccountId: userAccountId,
-        timestamp: Date.now(),
-        type,
-        imageUrl: imageUrl || null
-      };
-      await saveChatMessage(roomId, localMessage);
-      
-      // Add to messages state
-      setMessages(prev => [...prev, {
-        id: `local-${Date.now()}`,
-        ...localMessage
-      }]);
     }
   };
 
@@ -977,33 +633,26 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     }
   };
 
-  // FIX: Seat leave single click
   const handleLeaveSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    
-    // Find current user's seat
-    const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
-    if (!userSeat) return;
+    if (selectedSeat === null) return;
     
     try {
       const updatedSeats = seats.map(s => {
-        if (s.number === userSeat.number) {
+        if (s.number === selectedSeat && s.user?.accountId === userAccountId) {
           return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
         }
         return s;
       });
       
-      // Update state immediately
       setSeats(updatedSeats);
       
-      // Update Firestore
       const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
       await Promise.all(updatePromises);
 
-      // Close sheets
       setShowSeatSheet(false);
       setSelectedSeat(null);
     } catch (err) {
@@ -1153,17 +802,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         isLocked: data.isLocked,
         roomPassword: data.roomPassword,
       }, { merge: true });
-      
-      // Also save to IndexedDB
-      await saveRoomSettings(roomId, {
-        name: data.roomName,
-        image: data.roomImage,
-        announcement: data.announcement,
-        micMode: data.micMode,
-        theme: data.theme,
-        isLocked: data.isLocked,
-        roomPassword: data.roomPassword,
-      });
     }
   };
 
@@ -1186,35 +824,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (onBack) onBack();
   };
 
-  // FIX: Emoji selection - display on avatar
-  const handleEmojiSelect = (emoji: string) => {
-    console.log("Selected Emoji:", emoji);
-    
-    // Create emoji animation
-    const newEmoji = {
-      id: `emoji-${Date.now()}-${Math.random()}`,
-      emoji,
-      userId: userAccountId,
-      timestamp: Date.now()
-    };
-    
-    // Add to animations
-    setEmojiAnimations(prev => [...prev, newEmoji]);
-    
-    // Set active emoji for current user's avatar
-    setActiveEmoji({ emoji, userId: userAccountId, timestamp: Date.now() });
-    
-    // Save to IndexedDB
-    saveEmojiUsage(userAccountId, emoji);
-    
-    // Remove after animation
-    setTimeout(() => {
-      setEmojiAnimations(prev => prev.filter(e => e.id !== newEmoji.id));
-      if (activeEmoji?.timestamp === newEmoji.timestamp) {
-        setActiveEmoji(null);
-      }
-    }, 3000);
-  };
+  const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji);
 
   const handleClearChat = () => {
     clearedAtRef.current = Date.now();
@@ -1239,7 +849,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             onAvatarClick={handleSeatAvatarClick(seat!)}
             accountId={userAccountId}
             roomOwnerId={roomOwnerId}
-            activeEmoji={activeEmoji}
           />
         );
       });
@@ -1402,7 +1011,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     setMusicControllerState('full');
   };
 
-  // FIX: Drag handlers with boundary constraints
+  // Drag handlers for minimized music
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDragging(true);
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -1416,14 +1025,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
     const dx = clientX - dragRef.current.x;
     const dy = clientY - dragRef.current.y;
-    
-    // FIX: Apply boundary constraints
-    setMiniMusicPosition(prev => {
-      const newX = Math.max(-window.innerWidth + 60, Math.min(0, prev.x + dx));
-      const newY = Math.max(-window.innerHeight + 60, Math.min(0, prev.y + dy));
-      return { x: newX, y: newY };
-    });
-    
+    setDragOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
     dragRef.current = { x: clientX, y: clientY };
   }, [isDragging]);
 
@@ -1522,8 +1124,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       e.stopPropagation();
                       const newFollow = !isFollowed;
                       setIsFollowed(newFollow);
-                      // Save to IndexedDB
-                      saveFollow(userAccountId, roomId, newFollow);
                       if (onFollowToggle) onFollowToggle(roomId, newFollow);
                     }}
                     className="rounded-full flex items-center justify-center transition-all cursor-pointer bg-blue-500 shadow-md hover:bg-blue-600"
@@ -1799,22 +1399,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         )}
       </div>
 
-      {/* Emoji Animations Overlay */}
-      {emojiAnimations.map((emojiAnim) => (
-        <div
-          key={emojiAnim.id}
-          className="fixed z-[100] pointer-events-none"
-          style={{
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            animation: 'emojiFloat 3s ease-out forwards',
-          }}
-        >
-          <span style={{ fontSize: '48px' }}>{emojiAnim.emoji}</span>
-        </div>
-      ))}
-
       {/* Public Msg Off Modal */}
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
@@ -1963,10 +1547,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           isCurrentUser={profileUser.accountId === userAccountId}
           isRoomOwner={isRoomOwner}
           onClose={() => setShowUserProfile(false)}
-          onFollow={() => {
-            console.log('Follow clicked for', profileUser.accountId);
-            saveFollow(userAccountId, profileUser.accountId, true);
-          }}
+          onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
           onMessage={() => {
             setShowUserProfile(false);
             setShowChatInput(true);
@@ -2098,15 +1679,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           speaker={isSpeakerOn}
           onToggleSpeaker={() => setIsSpeakerOn(prev => !prev)}
           onMusicPlay={(track) => {
-            // Load all tracks from IndexedDB
-            getAllMusicTracks().then(allTracks => {
-              const tracksWithUrls = allTracks.map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                url: item.url || (item.blob ? URL.createObjectURL(item.blob) : '')
-              }));
-              handlePlayMusic(track, tracksWithUrls);
-            });
+            const db = indexedDB.open('HurryMusicDB', 1);
+            db.onsuccess = () => {
+              const request = db.result
+                .transaction('music', 'readonly')
+                .objectStore('music')
+                .getAll();
+              
+              request.onsuccess = () => {
+                const allTracks = request.result.map((item: any) => ({
+                  id: item.id,
+                  name: item.name,
+                  url: URL.createObjectURL(item.blob)
+                }));
+                handlePlayMusic(track, allTracks);
+              };
+            };
           }}
         />
       )}
@@ -2237,14 +1825,13 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* FIX: Music Controller - Minimized with Boundary Constraints */}
+      {/* Music Controller - Minimized with Drag */}
       {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
         <div
-          ref={miniMusicRef}
           className="fixed z-[45] touch-none select-none"
           style={{ 
-            bottom: `calc(var(--music-mini-bottom) + ${miniMusicPosition.y}px)`, 
-            right: `calc(var(--music-mini-right) + ${miniMusicPosition.x}px)`,
+            bottom: `calc(var(--music-mini-bottom) + ${dragOffset.y}px)`, 
+            right: `calc(var(--music-mini-right) + ${dragOffset.x}px)`,
             cursor: 'grab'
           }}
           onMouseDown={handleDragStart}
@@ -2332,12 +1919,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-play-size: 24px;
           --music-volume-width: 28px;
           
-          /* FIX: Music Minimized - Smaller size */
-          --music-mini-size: 38px;
+          /* Music Minimized */
+          --music-mini-size: 44px;
           --music-mini-bottom: 6vh;
           --music-mini-right: 8px;
           --music-mini-border: 2px;
-          --music-mini-dot: 6px;
+          --music-mini-dot: 8px;
         }
 
         .music-volume-slider {
@@ -2408,13 +1995,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           animation: rotate-slow 4s linear infinite;
         }
 
-        @keyframes emojiFloat {
-          0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-          20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-          40% { transform: translate(-50%, -60%) scale(1); opacity: 1; }
-          100% { transform: translate(-50%, -200%) scale(0.5); opacity: 0; }
-        }
-
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes waveBehind { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.4; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
@@ -2434,15 +2014,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// SeatItem Component - Updated with Emoji support
-function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId, activeEmoji }: {
+// SeatItem Component - Uses CSS variables for responsive sizing
+function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
   onClick: (e: React.MouseEvent) => void;
   onAvatarClick?: (e: React.MouseEvent) => void;
   accountId: string;
   roomOwnerId: string;
-  activeEmoji?: { emoji: string; userId: string; timestamp: number } | null;
 }) {
   const isLocked = seatData?.isLocked ?? false;
   const isOccupied = seatData?.isOccupied ?? false;
@@ -2465,9 +2044,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
   }, [isOccupied, isMuted, user?.accountId, accountId, localParticipant, remoteParticipants]);
 
   const activeSpeaking = isSpeaking || isUserSpeaking;
-  
-  // FIX: Check if emoji should show on this seat
-  const showEmojiOnThisSeat = activeEmoji && user && user.accountId === activeEmoji.userId;
 
   return (
     <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
@@ -2477,7 +2053,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none hidden sm:flex"
           style={{
             left: '-130px',
-            top: '-30px',
+            top: '-30px', // ← UPAR
             transform: 'none',
             zIndex: 40,
             display: 'flex',
@@ -2528,7 +2104,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none"
           style={{
             right: '-130px',
-            top: '-30px',
+            top: '-30px', // ← UPAR
             transform: 'none',
             zIndex: 40,
           }}
@@ -2561,7 +2137,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Seat circle */}
+      {/* Seat circle - Baaki code same */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2622,22 +2198,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                     }}
                   />
                 </div>
-                
-                {/* FIX: Emoji display on avatar */}
-                {showEmojiOnThisSeat && (
-                  <div 
-                    className="absolute pointer-events-none"
-                    style={{
-                      top: '-50%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      zIndex: 10,
-                      animation: 'emojiFloat 3s ease-out forwards',
-                    }}
-                  >
-                    <span style={{ fontSize: 'calc(var(--seat-size) * 0.8)' }}>{activeEmoji?.emoji}</span>
-                  </div>
-                )}
               </div>
               {isMuted && (
                 <div className="absolute -right-1 -bottom-1 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 bg-red-500" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
