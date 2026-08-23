@@ -80,7 +80,7 @@ export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps
   const gifStickers = [
     { id: "laugh", name: "Laugh", src: "/512.gif" },
     { id: "sad", name: "Sad", src: "/512 (6).gif" },
-    { id: "love", name: "Love", src: "/512 (3).gif" },
+    { id: "love", name: "Sleep", src: "/512 (3).gif" },
     { id: "thinking", name: "Thinking", src: "/512 (2).gif" },
     { id: "party", name: "Party", src: "/512 (16).gif" },
     { id: "loving", name: "Loving", src: "/512 (15).gif" },
