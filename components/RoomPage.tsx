@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import EmojiPicker from './Emojipicker';
 import GiftPicker from './GiftPicker';
 import RoomSettingPage, { RoomSettingsData } from './RoomSettingPage';
@@ -153,7 +153,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
 
-  const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full'>('hidden');
+  // Music Controller State (hidden | full | minimized)
+  const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full' | 'minimized'>('hidden');
   const [currentTrack, setCurrentTrack] = useState<MusicTrack | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicVolume, setMusicVolume] = useState(1);
@@ -162,6 +163,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
   const [musicDuration, setMusicDuration] = useState(0);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Minimized Widget Drag & Drop Positions
+  const [minimizedPos, setMinimizedPos] = useState<{ x: number; y: number }>({ x: 16, y: 120 });
+  const isDraggingRef = useRef(false);
+  const dragStartPos = useRef<{ startX: number; startY: number; initialX: number; initialY: number }>({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
+  const hasMovedRef = useRef(false);
 
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
@@ -1080,6 +1087,63 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // --- BOUNDARY-PROTECTED DRAG & DROP FOR MINIMIZED MUSIC CONTROLLER ---
+  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    isDraggingRef.current = true;
+    hasMovedRef.current = false;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+
+    dragStartPos.current = {
+      startX: clientX,
+      startY: clientY,
+      initialX: minimizedPos.x,
+      initialY: minimizedPos.y,
+    };
+  };
+
+  const handleTouchMove = useCallback((e: TouchEvent | MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+
+    const deltaX = clientX - dragStartPos.current.startX;
+    const deltaY = clientY - dragStartPos.current.startY;
+
+    if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+      hasMovedRef.current = true;
+    }
+
+    const widgetWidth = 140; 
+    const widgetHeight = 44; 
+    const maxX = window.innerWidth - widgetWidth - 8;
+    const maxY = window.innerHeight - widgetHeight - 65;
+
+    // Strict Boundary Lock (Screen ke bahar nahi jayega)
+    const newX = Math.min(Math.max(8, dragStartPos.current.initialX + deltaX), maxX);
+    const newY = Math.min(Math.max(60, dragStartPos.current.initialY + deltaY), maxY);
+
+    setMinimizedPos({ x: newX, y: newY });
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    isDraggingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleTouchMove);
+    window.addEventListener('mouseup', handleTouchEnd);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleTouchMove);
+      window.removeEventListener('mouseup', handleTouchEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [handleTouchMove, handleTouchEnd]);
+
   if (showSettingPage) {
     return (
       <RoomSettingPage
@@ -1685,7 +1749,58 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         />
       )}
 
-      {/* Music Controller */}
+      {/* Music Controller - MINIMIZED STATE (Clamped Drag & Drop Floating Widget) */}
+      {musicControllerState === 'minimized' && currentTrack && (
+        <div
+          className="fixed z-[45] cursor-grab active:cursor-grabbing flex items-center gap-2 bg-black/85 backdrop-blur-md border border-white/20 rounded-full pl-2 pr-3 py-1.5 shadow-2xl transition-transform active:scale-95 select-none touch-none"
+          style={{ 
+            left: `${minimizedPos.x}px`, 
+            top: `${minimizedPos.y}px` 
+          }}
+          onMouseDown={handleTouchStart}
+          onTouchStart={handleTouchStart}
+          onClick={() => {
+            // Sirf click karne par maximize hoga, drag karne par nahi
+            if (!hasMovedRef.current) {
+              setMusicControllerState('full');
+            }
+          }}
+        >
+          {/* Rotating Music Disc */}
+          <div className={`w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 ${isMusicPlaying ? 'music-minimize-icon' : ''}`}>
+            <svg viewBox="0 0 24 24" className="fill-white" style={{ width: '14px', height: '14px' }}>
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          </div>
+
+          <div className="flex flex-col min-w-0 max-w-[80px]">
+            <p className="text-white text-[10px] font-medium truncate leading-tight">{currentTrack.name}</p>
+            <p className="text-blue-400 text-[8px] leading-tight mt-0.5">{isMusicPlaying ? 'Playing' : 'Paused'}</p>
+          </div>
+
+          {/* Quick Play/Pause in Minimized view */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleMusicPlay();
+            }}
+            className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors shrink-0"
+          >
+            {isMusicPlaying ? (
+              <svg viewBox="0 0 24 24" className="fill-white" style={{ width: '11px', height: '11px' }}>
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="fill-white" style={{ width: '11px', height: '11px' }}>
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Music Controller - FULL SIZE (With Minimize & Close Buttons) */}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
         <div 
           className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm px-3"
@@ -1701,19 +1816,32 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}
           >
+            {/* Minimize Button (Top-Left) */}
+            <button
+              onClick={() => setMusicControllerState('minimized')}
+              className="absolute top-1.5 left-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+              aria-label="Minimize music controller"
+              title="Minimize"
+            >
+              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--music-icon-size)', height: 'var(--music-icon-size)' }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {/* Close Button (Top-Right) */}
             <button
               onClick={handleCloseMusicController}
-              className="absolute top-1.5 left-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
+              className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
               aria-label="Close music controller"
+              title="Close"
             >
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--music-icon-size)', height: 'var(--music-icon-size)' }}>
-                <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
-                <line x1="12" y1="2" x2="12" y2="12" />
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
             <div className="text-center mb-1.5 mt-4">
-              <p className="text-white font-semibold truncate px-6" style={{ fontSize: 'var(--music-title-size)' }}>
+              <p className="text-white font-semibold truncate px-8" style={{ fontSize: 'var(--music-title-size)' }}>
                 {currentTrack.name}
               </p>
             </div>
@@ -1849,6 +1977,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         .music-progress-slider::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; }
         .music-progress-slider::-moz-range-track { height: 6px; border-radius: 3px; }
 
+        @keyframes rotate-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .music-minimize-icon {
+          animation: rotate-slow 4s linear infinite;
+        }
+
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes waveBehind { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.4; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
@@ -1867,7 +2003,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// SeatItem Component - 100% Unclipped Avatar Frame + Large Uncut Overlay GIF
+// SeatItem Component - Fully Unclipped (160% Frame + 125% Overlap GIF without clipping)
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1991,7 +2127,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Main Seat Circle - Fully Overflow Visible */}
+      {/* Main Seat Circle - Overflow Visible */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2020,7 +2156,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   style={{ zIndex: 1 }}
                 />
 
-                {/* 2. LARGE OVERLAPPING GIF (Uncut, Extends Beyond Avatar If Needed) */}
+                {/* 2. LARGE OVERLAPPING GIF (Uncut, 125% size) */}
                 {gif && (
                   <div 
                     className="absolute pointer-events-none overflow-visible flex items-center justify-center"
@@ -2046,7 +2182,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   </div>
                 )}
 
-                {/* 3. 160% Avatar Frame (Uncut, Overflow Visible) */}
+                {/* 3. 160% Avatar Frame (Uncut, overflow-visible) */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
@@ -2111,4 +2247,3 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
     </div>
   );
 }
-
