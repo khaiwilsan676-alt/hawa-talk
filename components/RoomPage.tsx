@@ -55,8 +55,8 @@ interface Seat {
   isSpeaking?: boolean;
   gif?: {
     src: string;
-    removeColor: "white" | "black" | "both";
     timestamp: number;
+    duration?: number;
   };
 }
 
@@ -347,7 +347,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       return newSeats.map(newSeat => {
         const oldSeat = prev.find(s => s.number === newSeat.number);
         if (oldSeat && oldSeat.isOccupied) {
-          return { ...newSeat, isOccupied: oldSeat.isOccupied, user: oldSeat.user, isMuted: oldSeat.isMuted, isSpeaking: oldSeat.isSpeaking, isLocked: oldSeat.isLocked };
+          return { ...newSeat, isOccupied: oldSeat.isOccupied, user: oldSeat.user, isMuted: oldSeat.isMuted, isSpeaking: oldSeat.isSpeaking, isLocked: oldSeat.isLocked, gif: oldSeat.gif };
         }
         return newSeat;
       });
@@ -412,8 +412,20 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
     const unsubSeats = onSnapshot(collection(db, seatsCollection), (snapshot) => {
       const seatMap = new Map<number, Seat>();
+      const now = Date.now();
+
       snapshot.docs.forEach(doc => {
         const data = doc.data() as Seat;
+        let validGif = data.gif;
+
+        // Auto expire GIF agar time over ho gaya ho
+        if (validGif) {
+          const gifDuration = (validGif.duration || 4) * 1000;
+          if (now - validGif.timestamp > gifDuration) {
+            validGif = undefined;
+          }
+        }
+
         seatMap.set(data.number, {
           number: data.number,
           isOccupied: data.isOccupied || false,
@@ -421,7 +433,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           isMuted: data.isMuted || false,
           isSpeaking: data.isSpeaking || false,
           user: data.user || undefined,
-          gif: data.gif || undefined
+          gif: validGif
         });
       });
 
@@ -534,13 +546,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCopyUserId = (accountId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(accountId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const handleImageClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (fileInputRef.current) fileInputRef.current.click();
@@ -608,7 +613,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       const updatedSeats = seats.map(s => {
         if (s.isOccupied && s.user?.accountId === userAccountId && s.number !== selectedSeat) {
-          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
+          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false, gif: undefined };
         }
         if (s.number === selectedSeat) {
           return {
@@ -661,7 +666,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     }
   };
 
-  // New function to leave seat directly by accountId (used from RoomProfile)
   const handleLeaveUserSeat = async (accountId: string) => {
     const updatedSeats = seats.map(seat =>
       seat.isOccupied && seat.user?.accountId === accountId
@@ -836,14 +840,15 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (onBack) onBack();
   };
 
-  // Handle GIF emoji selection from EmojiPicker
+  // Handle GIF emoji selection - Direct GIF & Auto Disappear after duration
   const handleSeatEmoji = async (emojiData: any) => {
     if (!hasSeat || !currentUserSeat) return;
     
+    const displayDuration = emojiData.duration || 4; // 4 seconds standard duration
     const gifData = {
       src: emojiData.src,
-      removeColor: emojiData.removeColor || "both",
       timestamp: Date.now(),
+      duration: displayDuration
     };
     
     const updatedSeats = seats.map(seat =>
@@ -854,18 +859,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     setSeats(updatedSeats);
     await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
 
-    // Agar duration diya hai toh utne time baad clear karo
-    if (emojiData.duration && typeof emojiData.duration === 'number' && emojiData.duration > 0) {
-      setTimeout(() => {
+    // Timer to clear the GIF from seat automatically
+    setTimeout(async () => {
+      const currentSnapshot = seats.find(s => s.number === currentUserSeat.number);
+      if (currentSnapshot && currentSnapshot.gif?.timestamp === gifData.timestamp) {
         const clearedSeats = seats.map(seat =>
           seat.number === currentUserSeat.number
             ? { ...seat, gif: undefined }
             : seat
         );
         setSeats(clearedSeats);
-        clearedSeats.forEach(seat => updateSeatInFirestore(seat));
-      }, emojiData.duration * 1000);
-    }
+        const targetSeat = clearedSeats.find(s => s.number === currentUserSeat.number);
+        if (targetSeat) {
+          await updateSeatInFirestore(targetSeat);
+        }
+      }
+    }, displayDuration * 1000);
   };
 
   const handleEmojiSelect = (emojiData: any) => {
@@ -1952,7 +1961,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// SeatItem Component - Uses CSS variables for responsive sizing
+// SeatItem Component - Clean Avatar + Direct GIF Overlay (No Shader / No white-remove)
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1991,7 +2000,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none hidden sm:flex"
           style={{
             left: '-130px',
-            top: '-30px', // ← UPAR
+            top: '-30px',
             transform: 'none',
             zIndex: 40,
             display: 'flex',
@@ -2042,7 +2051,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           className="absolute pointer-events-none"
           style={{
             right: '-130px',
-            top: '-30px', // ← UPAR
+            top: '-30px',
             transform: 'none',
             zIndex: 40,
           }}
@@ -2075,7 +2084,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Seat circle - Baaki code same */}
+      {/* Seat circle */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2107,24 +2116,26 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                     zIndex: 1
                   }}
                 />
-                {/* GIF Overlay above avatar */}
+
+                {/* Animated GIF Overlay Above / On Avatar - Pure Direct GIF without any Shader/Removal */}
                 {seatData?.gif && (
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-                    <WhiteColorRemovalShader
-                      imageSrc={seatData.gif.src}
-                      threshold={0.88}
-                      removeColor={seatData.gif.removeColor}
-                      className="w-10 h-10"
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center justify-center animate-bounce">
+                    <img
+                      src={encodeURI(seatData.gif.src)}
+                      alt="Reaction GIF"
+                      className="w-12 h-12 object-contain select-none"
                       style={{
-                        width: '40px',
-                        height: '40px',
-                        objectFit: 'contain',
                         maxWidth: 'none',
                         maxHeight: 'none',
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
                       }}
                     />
                   </div>
                 )}
+
+                {/* Avatar Ring Frame */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
@@ -2186,4 +2197,5 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-      }
+}
+
