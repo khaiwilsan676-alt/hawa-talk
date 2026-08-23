@@ -152,7 +152,6 @@ export default function Wallet({ onBack }: WalletProps) {
     return () => clearTimeout(id)
   }, [])
 
-  // Handle diamond input change
   const handleDiamondChange = (value: string) => {
     setDiamonds(value)
     const diamondNum = parseFloat(value) || 0
@@ -160,7 +159,6 @@ export default function Wallet({ onBack }: WalletProps) {
     setCoins(coinValue)
   }
 
-  // Handle coin input change
   const handleCoinChange = (value: string) => {
     setCoins(value)
     const coinNum = parseFloat(value) || 0
@@ -170,15 +168,15 @@ export default function Wallet({ onBack }: WalletProps) {
 
   return (
     <div
-      className="fixed inset-0 overflow-hidden flex flex-col"
+      className="fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col pt-[env(safe-area-inset-top,12px)] pb-[env(safe-area-inset-bottom,12px)] bg-white transition-all duration-500"
       style={{
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
         WebkitTouchCallout: 'none',
         background: activeTab === 'wallet' 
-          ? 'linear-gradient(180deg, #FFA500 0%, #FFB347 5%, #FFD699 10%, #FFFFFF 100%)'
-          : 'linear-gradient(180deg, #FF1493 0%, #FF69B4 5%, #FFB6C1 10%, #FFFFFF 100%)',
+          ? 'linear-gradient(180deg, #FFA500 0%, #FFB84D 12%, #FFE4B5 22%, #FFFFFF 30%, #FFFFFF 100%)'
+          : 'linear-gradient(180deg, #FF1493 0%, #FF69B4 12%, #FFD1DC 22%, #FFFFFF 30%, #FFFFFF 100%)',
       }}
     >
       <style>{`
@@ -197,15 +195,14 @@ export default function Wallet({ onBack }: WalletProps) {
         }
       `}</style>
 
-      {/* TOP HEADER - Same sheet with gradient */}
+      {/* TOP HEADER */}
       <div
-        className="w-full relative overflow-hidden transition-all duration-500 flex items-center justify-between px-4"
+        className="w-full relative flex-shrink-0 flex items-center justify-between px-4 z-20"
         style={{
           height: '56px',
-          animation: mounted ? 'slideDown 0.6s ease-out' : 'none',
+          animation: mounted ? 'slideDown 0.4s ease-out' : 'none',
         }}
       >
-        {/* Back Button - Icon matching background color */}
         <button
           onClick={onBack}
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
@@ -229,7 +226,6 @@ export default function Wallet({ onBack }: WalletProps) {
           </svg>
         </button>
 
-        {/* Title */}
         <h1
           className="text-xl font-extrabold tracking-wide"
           style={{
@@ -240,7 +236,6 @@ export default function Wallet({ onBack }: WalletProps) {
           {activeTab === 'wallet' ? 'Wallet' : 'Diamonds'}
         </h1>
 
-        {/* History Button - Icon matching background color */}
         <button
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
           style={{
@@ -267,12 +262,12 @@ export default function Wallet({ onBack }: WalletProps) {
         </button>
       </div>
 
-      {/* TAB BUTTONS - Same sheet */}
-      <div className="flex justify-center gap-8 py-1.5">
+      {/* TAB BUTTONS */}
+      <div className="flex justify-center gap-8 py-1.5 flex-shrink-0 z-20">
         <button
           onClick={() => setActiveTab('wallet')}
           className={`relative pb-1 text-sm font-bold transition-all ${
-            activeTab === 'wallet' ? 'text-white scale-105' : 'text-white/60'
+            activeTab === 'wallet' ? 'text-white scale-105' : 'text-white/70'
           }`}
         >
           Wallet
@@ -283,7 +278,7 @@ export default function Wallet({ onBack }: WalletProps) {
         <button
           onClick={() => setActiveTab('diamonds')}
           className={`relative pb-1 text-sm font-bold transition-all ${
-            activeTab === 'diamonds' ? 'text-white scale-105' : 'text-white/60'
+            activeTab === 'diamonds' ? 'text-white scale-105' : 'text-white/70'
           }`}
         >
           Diamonds
@@ -293,17 +288,18 @@ export default function Wallet({ onBack }: WalletProps) {
         </button>
       </div>
 
-      {/* BOTTOM SECTION - Transparent to show gradient */}
+      {/* SCROLLABLE BODY */}
       <div
-        className="flex-1 overflow-y-auto px-3 pt-1.5 pb-3 relative"
+        className="flex-1 overflow-y-auto px-3 pt-1.5 pb-4 relative"
         style={{
           background: 'transparent',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {/* COINS TAB CONTENT */}
         {activeTab === 'wallet' && (
-          <div className="flex flex-col h-full" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div className="space-y-2 flex-1">
+          <div className="flex flex-col min-h-full justify-between" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
+            <div className="space-y-3">
               {/* CURRENT BALANCE BANNER */}
               <div
                 className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
@@ -330,7 +326,7 @@ export default function Wallet({ onBack }: WalletProps) {
                 </div>
               </div>
 
-              {/* 3 SMALL SQUARE CARDS IN 1 ROW */}
+              {/* 3 SMALL SQUARE CARDS */}
               <div className="grid grid-cols-3 gap-2.5">
                 {[
                   { coins: '1,000,000', price: '$ 1.0' },
@@ -341,7 +337,7 @@ export default function Wallet({ onBack }: WalletProps) {
                     key={index}
                     className="rounded-xl overflow-hidden shadow-sm flex flex-col items-center justify-between p-2"
                     style={{
-                      background: 'rgba(255,255,255,0.9)',
+                      background: 'rgba(255,255,255,0.95)',
                       border: '1px solid rgba(255, 165, 0, 0.3)',
                       boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
                       aspectRatio: '1 / 1',
@@ -369,10 +365,10 @@ export default function Wallet({ onBack }: WalletProps) {
               </div>
             </div>
 
-            {/* Bottom buttons - fixed at bottom with reduced width */}
-            <div className="space-y-3 pt-2 pb-2 px-6">
+            {/* Bottom buttons */}
+            <div className="space-y-3 pt-6 pb-2 px-4">
               <div className="relative">
-                <div className="absolute -top-1.5 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">
+                <div className="absolute -top-2 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">
                   1st Bonus +10% | Then +2%
                 </div>
                 <button className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-orange-600 to-orange-500 shadow-md active:scale-95 transition-transform text-sm">
@@ -381,7 +377,7 @@ export default function Wallet({ onBack }: WalletProps) {
               </div>
 
               <div className="relative">
-                <div className="absolute -top-1.5 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">
+                <div className="absolute -top-2 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">
                   Biggest Discount 4%-13%
                 </div>
                 <button className="w-full py-3 rounded-xl font-bold text-orange-600 bg-white border-2 border-orange-400 shadow-sm active:scale-95 transition-transform text-sm">
@@ -394,8 +390,8 @@ export default function Wallet({ onBack }: WalletProps) {
 
         {/* DIAMONDS TAB CONTENT */}
         {activeTab === 'diamonds' && (
-          <div className="flex flex-col h-full" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div className="space-y-2 flex-1">
+          <div className="flex flex-col min-h-full justify-between" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
+            <div className="space-y-3">
               {/* CURRENT DIAMONDS BANNER */}
               <div
                 className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
@@ -422,20 +418,20 @@ export default function Wallet({ onBack }: WalletProps) {
                 </div>
               </div>
 
-              {/* Exchange Section - images inside inputs */}
+              {/* Exchange Section */}
               <div
-                className="rounded-2xl p-5"
+                className="rounded-2xl p-4"
                 style={{
-                  background: 'rgba(255,255,255,0.9)',
+                  background: 'rgba(255,255,255,0.95)',
                   border: '1px solid rgba(255, 182, 193, 0.8)',
-                  minHeight: '180px',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
                 }}
               >
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Exchange</h3>
+                <h3 className="text-base font-bold text-gray-800 mb-3">Exchange</h3>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div className="flex-1 bg-white rounded-lg border border-pink-200 p-2 flex items-center gap-2">
-                    <div className="w-6 h-6">
+                    <div className="w-5 h-5 flex-shrink-0">
                       <WhiteColorRemovalShader
                         imageSrc="/1787321690452.png"
                         className="w-full h-full object-contain"
@@ -446,20 +442,20 @@ export default function Wallet({ onBack }: WalletProps) {
                       type="number"
                       value={diamonds}
                       onChange={(e) => handleDiamondChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-base"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-sm"
                       placeholder="Diamonds"
                     />
                   </div>
-                  <div className="text-gray-400 font-bold text-lg">=</div>
+                  <div className="text-gray-400 font-bold text-base">=</div>
                   <div className="flex-1 bg-white rounded-lg border border-gray-200 p-2 flex items-center gap-2">
                     <input
                       type="number"
                       value={coins}
                       onChange={(e) => handleCoinChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-base text-right"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-sm text-right"
                       placeholder="Coins"
                     />
-                    <div className="w-6 h-6">
+                    <div className="w-5 h-5 flex-shrink-0">
                       <WhiteColorRemovalShader
                         imageSrc="/1786855398290.png"
                         className="w-full h-full object-contain"
@@ -471,8 +467,8 @@ export default function Wallet({ onBack }: WalletProps) {
               </div>
             </div>
 
-            {/* Bottom button - fixed at bottom with reduced width */}
-            <div className="pt-2 pb-2 px-6">
+            {/* Bottom button */}
+            <div className="pt-6 pb-2 px-4">
               <button
                 className="w-full py-3 rounded-xl font-bold text-white bg-gray-300 cursor-not-allowed active:scale-95 transition-transform text-sm"
                 disabled
@@ -485,4 +481,5 @@ export default function Wallet({ onBack }: WalletProps) {
       </div>
     </div>
   )
-                }
+}
+
