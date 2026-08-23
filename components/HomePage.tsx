@@ -1,2388 +1,2546 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import EmojiPicker from './Emojipicker';
-import GiftPicker from './GiftPicker';
-import RoomSettingPage, { RoomSettingsData } from './RoomSettingPage';
-import MessagePage from './MessagePage';
-import RoomProfile from './RoomProfile';
-import Fourgride from './Fourgride';
-import WhiteColorRemovalShader from './WhiteColorRemovalShader';
-import { db } from "../src/lib/firebase";
-import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
-import { 
-  LiveKitRoom, 
-  RoomAudioRenderer, 
-  useLocalParticipant, 
-  useRemoteParticipants 
-} from "@livekit/components-react";
-import "@livekit/components-styles";
-import { 
-  Room, 
-  RoomEvent, 
-  Track as LKTrack, 
-  RemoteParticipant, 
-  RemoteTrackPublication
-} from "livekit-client";
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { db } from "../src/lib/firebase"
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  getDocs,
+  getDoc
+} from "firebase/firestore"
 
-// ---------- IndexedDB helpers for music state ----------
-const MUSIC_DB_NAME = 'HurryMusicStateDB';
-const MUSIC_STORE = 'musicState';
+import MessagePage from './MessagePage'
+import MePage from './MePage';
+import { getOrCreateAccountNumber } from './MePage'
+import RoomPage from './RoomPage'
+import PublicProfile from './PublicProfile'
+import Leaderboard from './Leaderboard' // ✅ ADDED
+import { generateStableId } from '../lib/hash'
+import { translations, getTranslation, LanguageCode } from '../lib/translations'
+import DailyCheckInModal from '../components/DailyCheckInModal'
 
-function openMusicStateDB(): Promise<IDBDatabase> {
+// ============ INDEXEDDB FUNCTIONS ============
+const DB_NAME = 'HurryAppDB';
+const DB_VERSION = 3;
+const ROOM_STORE = 'rooms';
+const USER_STORE = 'users';
+const RECENT_STORE = 'recentRooms';
+const FOLLOWING_STORE = 'followingRooms';
+const GLOBAL_ROOMS_STORE = 'globalRooms';
+
+const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(MUSIC_DB_NAME, 1);
-    request.onupgradeneeded = (ev) => {
-      const db = (ev.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(MUSIC_STORE)) {
-        db.createObjectStore(MUSIC_STORE, { keyPath: 'id' });
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = request.result;
+      const oldVersion = event.oldVersion;
+      
+      if (!db.objectStoreNames.contains(ROOM_STORE)) {
+        db.createObjectStore(ROOM_STORE, { keyPath: 'accountId' });
+      }
+      if (!db.objectStoreNames.contains(USER_STORE)) {
+        db.createObjectStore(USER_STORE, { keyPath: 'uid' });
+      }
+      if (!db.objectStoreNames.contains(RECENT_STORE)) {
+        const recentStore = db.createObjectStore(RECENT_STORE, { keyPath: 'accountId' });
+        recentStore.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+      if (!db.objectStoreNames.contains(FOLLOWING_STORE)) {
+        db.createObjectStore(FOLLOWING_STORE, { keyPath: 'accountId' });
+      }
+      if (!db.objectStoreNames.contains(GLOBAL_ROOMS_STORE)) {
+        const globalRoomsStore = db.createObjectStore(GLOBAL_ROOMS_STORE, { keyPath: 'accountId' });
+        globalRoomsStore.createIndex('createdAt', 'createdAt', { unique: false });
       }
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
   });
-}
-
-async function saveMusicState(state: any) {
-  try {
-    const db = await openMusicStateDB();
-    const tx = db.transaction(MUSIC_STORE, 'readwrite');
-    const store = tx.objectStore(MUSIC_STORE);
-    store.put({ id: 'currentState', ...state });
-    await new Promise((resolve, reject) => {
-      tx.oncomplete = resolve;
-      tx.onerror = reject;
-    });
-  } catch (e) { console.warn('Save music state failed', e); }
-}
-
-async function loadMusicState(): Promise<any> {
-  try {
-    const db = await openMusicStateDB();
-    const tx = db.transaction(MUSIC_STORE, 'readonly');
-    const store = tx.objectStore(MUSIC_STORE);
-    const request = store.get('currentState');
-    return new Promise((resolve) => {
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => resolve(null);
-    });
-  } catch (e) { return null; }
-}
-
-// ---------- Interfaces ----------
-interface RoomPageProps {
-  roomOwner: {
-    id?: string;
-    uid?: string;
-    accountId?: string;
-    name: string;
-    image: string;
-  };
-  currentUser: {
-    id?: string;
-    uid?: string;
-    accountId: string;
-    name: string;
-    image: string;
-  };
-  onClose?: () => void;
-  onBack?: () => void;
-  onKeepRoom?: (roomData: { name: string; image: string; accountId: string }) => void;
-  onFollowToggle?: (roomId: string, follow: boolean) => void;
-}
-
-interface Seat {
-  number: number;
-  isOccupied: boolean;
-  isLocked?: boolean;
-  user?: { name: string; image: string; accountId: string };
-  isMuted?: boolean;
-  isSpeaking?: boolean;
-}
-
-interface Message {
-  id: string;
-  text: string;
-  sender: string;
-  senderImage: string;
-  senderAccountId?: string;
-  timestamp: number;
-  type?: 'message' | 'join' | 'leave';
-  imageUrl?: string;
-}
-
-interface RoomUser {
-  accountId: string;
-  name: string;
-  image: string;
-}
-
-interface MusicTrack {
-  id: string;
-  name: string;
-  url: string;
-}
-
-const THEME_BACKGROUNDS: { [key: string]: string } = {
-  'forest-night': '/1784875884052~2.jpg',
-  'mood-light': '/1784533036732~2.jpg',
 };
 
-// ---------- Main Component ----------
-export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
-  const [livekitToken, setLivekitToken] = useState<string>("");
-  const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
+const saveRoomToDB = async (roomData: any) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([ROOM_STORE], 'readwrite');
+    const store = transaction.objectStore(ROOM_STORE);
+    
+    await new Promise<void>((resolve, reject) => {
+      const request = store.put({
+        ...roomData,
+        cachedAt: Date.now(),
+      });
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
 
-  const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
-  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
-  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
-  const isRoomOwner = userAccountId === roomOwnerId;
+    db.close();
+    console.log('✅ Room saved to IndexedDB:', roomData.name);
+  } catch (error) {
+    console.error('❌ Room save error:', error);
+  }
+};
 
-  useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        const res = await fetch(`/api/livekit?room=${roomId}&username=${encodeURIComponent(currentUser.name)}&identity=${userAccountId}`);
-        const data = await res.json();
-        if (data.token) {
-          setLivekitToken(data.token);
-        }
-      } catch (err) {
-        console.error("Error fetching LiveKit token:", err);
-      }
-    };
-    if (roomId && currentUser.name && userAccountId !== "guest") {
-      fetchToken();
+const loadRoomFromDB = async (accountId: string): Promise<any | null> => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([ROOM_STORE], 'readonly');
+    const store = transaction.objectStore(ROOM_STORE);
+
+    const room = await new Promise<any | null>((resolve, reject) => {
+      const request = store.get(accountId);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return room;
+  } catch (error) {
+    console.error('❌ Load room error:', error);
+    return null;
+  }
+};
+
+const saveGlobalRoomsToDB = async (rooms: any[]) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([GLOBAL_ROOMS_STORE], 'readwrite');
+    const store = transaction.objectStore(GLOBAL_ROOMS_STORE);
+    
+    for (const room of rooms) {
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put({
+          ...room,
+          cachedAt: Date.now(),
+        });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
     }
-  }, [roomId, currentUser.name, userAccountId]);
+
+    db.close();
+    console.log('✅ Global rooms saved to IndexedDB:', rooms.length);
+  } catch (error) {
+    console.error('❌ Global rooms save error:', error);
+  }
+};
+
+const loadGlobalRoomsFromDB = async (): Promise<any[]> => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([GLOBAL_ROOMS_STORE], 'readonly');
+    const store = transaction.objectStore(GLOBAL_ROOMS_STORE);
+
+    const rooms = await new Promise<any[]>((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return rooms;
+  } catch (error) {
+    console.error('❌ Load global rooms error:', error);
+    return [];
+  }
+};
+
+const deleteGlobalRoomFromDB = async (accountId: string) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([GLOBAL_ROOMS_STORE], 'readwrite');
+    const store = transaction.objectStore(GLOBAL_ROOMS_STORE);
+    
+    await new Promise<void>((resolve, reject) => {
+      const request = store.delete(accountId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    console.log('✅ Room deleted from IndexedDB:', accountId);
+  } catch (error) {
+    console.error('❌ Delete room error:', error);
+  }
+};
+
+const saveRecentToDB = async (recentRooms: any[]) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([RECENT_STORE], 'readwrite');
+    const store = transaction.objectStore(RECENT_STORE);
+    
+    await new Promise<void>((resolve, reject) => {
+      const clearRequest = store.clear();
+      clearRequest.onsuccess = () => resolve();
+      clearRequest.onerror = () => reject(clearRequest.error);
+    });
+    
+    for (const room of recentRooms) {
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put(room);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    db.close();
+    console.log('✅ Recent rooms saved to IndexedDB:', recentRooms.length);
+  } catch (error) {
+    console.error('❌ Recent save error:', error);
+  }
+};
+
+const loadRecentFromDB = async (): Promise<any[]> => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([RECENT_STORE], 'readonly');
+    const store = transaction.objectStore(RECENT_STORE);
+    const index = store.index('timestamp');
+
+    const recentRooms = await new Promise<any[]>((resolve, reject) => {
+      const request = index.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    
+    recentRooms.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
+    const now = Date.now();
+    const fiveMinutesAgo = now - (5 * 60 * 1000);
+    const validRooms = recentRooms.filter(room => room.timestamp >= fiveMinutesAgo);
+    
+    console.log('✅ Recent rooms loaded from IndexedDB:', validRooms.length);
+    return validRooms;
+  } catch (error) {
+    console.error('❌ Recent load error:', error);
+    return [];
+  }
+};
+
+const saveFollowingToDB = async (followingRooms: any[]) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([FOLLOWING_STORE], 'readwrite');
+    const store = transaction.objectStore(FOLLOWING_STORE);
+    
+    await new Promise<void>((resolve, reject) => {
+      const clearRequest = store.clear();
+      clearRequest.onsuccess = () => resolve();
+      clearRequest.onerror = () => reject(clearRequest.error);
+    });
+    
+    for (const room of followingRooms) {
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put(room);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    db.close();
+    console.log('✅ Following rooms saved to IndexedDB:', followingRooms.length);
+  } catch (error) {
+    console.error('❌ Following save error:', error);
+  }
+};
+
+const loadFollowingFromDB = async (): Promise<any[]> => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([FOLLOWING_STORE], 'readonly');
+    const store = transaction.objectStore(FOLLOWING_STORE);
+
+    const followingRooms = await new Promise<any[]>((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    console.log('✅ Following rooms loaded from IndexedDB:', followingRooms.length);
+    return followingRooms;
+  } catch (error) {
+    console.error('❌ Following load error:', error);
+    return [];
+  }
+};
+
+// ============ PASSWORD INPUT COMPONENT ============
+function PasswordInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  const handleInput = (index: number, inputValue: string) => {
+    const numberValue = inputValue.replace(/[^0-9]/g, '')
+
+    if (numberValue) {
+      const newDigits = value.split('')
+      newDigits[index] = numberValue.slice(-1)
+      const newPassword = newDigits.join('').slice(0, 4)
+      onChange(newPassword)
+
+      if (index < 3 && numberValue) {
+        inputRefs.current[index + 1]?.focus()
+      }
+    }
+  }
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !value[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus()
+    }
+  }
 
   return (
-    <LiveKitRoom
-      audio={false}
-      video={false}
-      token={livekitToken}
-      serverUrl={livekitUrl}
-      connect={Boolean(livekitToken)}
-      className="fixed inset-0 z-50 bg-black flex flex-col"
-      options={{
-        adaptiveStream: true,
-        dynacast: true,
-        publishDefaults: {
-          simulcast: false,
-        },
-      }}
-    >
-      <RoomContent
-        roomOwner={roomOwner}
-        currentUser={currentUser}
-        onClose={onClose}
-        onBack={onBack}
-        onKeepRoom={onKeepRoom}
-        onFollowToggle={onFollowToggle}
-      />
-    </LiveKitRoom>
-  );
+    <div className="flex gap-3 justify-center">
+      {[0, 1, 2, 3].map((index) => (
+        <input
+          key={index}
+          ref={(el) => { inputRefs.current[index] = el }}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={1}
+          value={value[index] || ''}
+          onChange={(e) => handleInput(index, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(index, e)}
+          className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-black"
+        />
+      ))}
+    </div>
+  )
 }
 
-// ---------- RoomContent ----------
-function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
-  // UI state
-  const [showExitMenu, setShowExitMenu] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showGiftPicker, setShowGiftPicker] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
-  const [showMessageSheet, setShowMessageSheet] = useState(false);
-  const [showSettingPage, setShowSettingPage] = useState(false);
-  const [showRoomInfo, setShowRoomInfo] = useState(false);
-  const [showActiveUsers, setShowActiveUsers] = useState(false);
-  const [showFourGride, setShowFourGride] = useState(false);
-  const [isFollowed, setIsFollowed] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
+// ============ INTERFACES ============
+interface HomePageProps {
+  onLogout?: () => void;
+}
 
-  const { localParticipant } = useLocalParticipant();
-  const remoteParticipants = useRemoteParticipants();
+interface UserCard {
+  id: string
+  accountId?: string
+  name: string
+  country: string
+  image: string
+  isLocked?: boolean
+  roomPassword?: string
+}
 
-  // Music controller state
-  const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full' | 'minimized'>('hidden');
-  const [currentTrack, setCurrentTrack] = useState<MusicTrack | null>(null);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [musicVolume, setMusicVolume] = useState(1);
-  const [musicPlaylist, setMusicPlaylist] = useState<MusicTrack[]>([]);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [musicCurrentTime, setMusicCurrentTime] = useState(0);
-  const [musicDuration, setMusicDuration] = useState(0);
-  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+interface KeptRoomData {
+  name: string
+  country?: string
+  image: string
+  accountId: string
+  isLocked?: boolean
+  roomPassword?: string
+}
 
-  // Drag for minimized music – with bounds
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const minimizedRef = useRef<HTMLDivElement>(null);
+interface RecentRoom extends KeptRoomData {
+  timestamp: number
+}
 
-  // Message restriction state
-  const [publicMsgOff, setPublicMsgOff] = useState(false);
-  const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
+interface GlobalRoom {
+  id: string
+  name: string
+  country: string
+  image: string
+  accountId: string
+  createdAt: number
+  isLocked?: boolean
+  roomPassword?: string
+  isExplicitlyCreated?: boolean
+}
 
-  // Emoji reaction state: { accountId: { emoji, timestamp } }
-  const [emojiReactions, setEmojiReactions] = useState<Record<string, { emoji: string; timestamp: number }>>({});
+// ============ CONSTANTS ============
+const BANNERS = [
+  { image: '/IMG-20260818-WA0000.jpg' },
+  { image: '/IMG-20260818-WA0001.jpg' }
+]
+
+type Tab = 'mine' | 'popular'
+type MineTab = 'following' | 'recent'
+type Page = 'home' | 'message' | 'me' | 'room' | 'public_profile' | 'leaderboard' // ✅ ADDED 'leaderboard'
+type SearchTab = 'user' | 'room'
+
+const CATEGORY_CARDS = [
+  {
+    label: 'Honour',
+    icon: '',
+    outerFrom: '#FFED99',
+    outerTo: '#FFE27A',
+    textColor: '#7A4E1B',
+    innerBg: '#FFF6CC',
+    innerBorder: 'rgba(122,78,27,0.08)',
+  },
+  {
+    label: 'Charm',
+    icon: '',
+    outerFrom: '#A2D8FF',
+    outerTo: '#8ECBFF',
+    textColor: '#184E6E',
+    innerBg: '#C8E8FF',
+    innerBorder: 'rgba(24,78,110,0.08)',
+  },
+  {
+    label: 'Room',
+    icon: '',
+    outerFrom: '#D1B1FF',
+    outerTo: '#C39BFF',
+    textColor: '#4E2A7A',
+    innerBg: '#DFC8FF',
+    innerBorder: 'rgba(78,42,122,0.08)',
+  },
+];
+
+// ============ SEARCH FUNCTION ============
+async function fetchSearchResults(queryRaw: string, globalRooms: GlobalRoom[]): Promise<GlobalRoom[]> {
+  const queryLower = queryRaw.toLowerCase()
+  const foundList: GlobalRoom[] = []
+  const addedIds = new Set<string>()
+
+  const addResult = (docId: string, uData: any, isGlobalRoom: boolean = false) => {
+    const accId = String(uData.accountId || uData.id || docId)
+    if (!addedIds.has(docId) && !addedIds.has(accId)) {
+      addedIds.add(docId)
+      addedIds.add(accId)
+      foundList.push({
+        id: docId,
+        name: uData.name || 'User',
+        country: uData.country || '🇮🇳',
+        image: uData.image || uData.photo || '/default-avatar.png',
+        accountId: accId,
+        createdAt: uData.createdAt || Date.now(),
+        isLocked: uData.isLocked
+      })
+    }
+  }
+
+  globalRooms.forEach((r) => {
+    const accId = String(r.accountId || r.id || '')
+    const rName = String(r.name || '')
+    if (
+      accId.toLowerCase().includes(queryLower) ||
+      rName.toLowerCase().includes(queryLower)
+    ) {
+      if (!addedIds.has(accId)) {
+        addedIds.add(accId)
+        foundList.push(r)
+      }
+    }
+  })
+
+  try {
+    const userDocRef = doc(db, "users", queryRaw)
+    const userDocSnap = await getDoc(userDocRef)
+    if (userDocSnap.exists()) {
+      addResult(userDocSnap.id, userDocSnap.data())
+    }
+  } catch (e) {
+    console.warn("Direct doc search skipped:", e)
+  }
+
+  try {
+    const usersRef = collection(db, "users")
+    const qRange = query(
+      usersRef,
+      where("accountId", ">=", queryRaw),
+      where("accountId", "<=", queryRaw + '\uf8ff')
+    )
+    const snapRange = await getDocs(qRange)
+    snapRange.docs.forEach((d) => addResult(d.id, d.data()))
+  } catch (err) {
+    console.warn("Users query error:", err)
+  }
+
+  try {
+    const roomsRef = collection(db, "globalRooms")
+    const qRooms = query(
+      roomsRef,
+      where("accountId", ">=", queryRaw),
+      where("accountId", "<=", queryRaw + '\uf8ff')
+    )
+    const snapRooms = await getDocs(qRooms)
+    snapRooms.docs.forEach((d) => addResult(d.id, d.data()))
+  } catch (err) {
+    console.warn("globalRooms query error:", err)
+  }
+
+  foundList.sort((a, b) => {
+    const aExact = String(a.accountId).toLowerCase() === queryLower || a.id.toLowerCase() === queryLower
+    const bExact = String(b.accountId).toLowerCase() === queryLower || b.id.toLowerCase() === queryLower
+    if (aExact && !bExact) return -1
+    if (!aExact && bExact) return 1
+    return (b.createdAt || 0) - (a.createdAt || 0)
+  })
+
+  return foundList.slice(0, 20)
+}
+
+// ============ MAIN COMPONENT ============
+export default function HomePage({ onLogout }: HomePageProps) {
+  const [activeTab, setActiveTab] = useState<Tab>('popular')
+  const [appLang, setAppLang] = useState<LanguageCode>('en')
 
   useEffect(() => {
-    const name = localStorage.getItem('userName') || 'User';
-    const image = localStorage.getItem('userPhoto') || '/default-avatar.png';
-    const storedAccNum = localStorage.getItem('accountNumber') || localStorage.getItem('userUID') || '10000000';
-    setLocalUser({ name, image, accountId: storedAccNum });
+    const savedLang = localStorage.getItem('appLanguage') as LanguageCode
+    if (savedLang) {
+      setAppLang(savedLang)
+    }
+
+    const handleLangChange = (e: CustomEvent) => {
+      if (e.detail && e.detail.lang) {
+        setAppLang(e.detail.lang)
+      }
+    }
+
+    window.addEventListener('languageChange', handleLangChange as EventListener)
+    return () => window.removeEventListener('languageChange', handleLangChange as EventListener)
+  }, [])
+
+  const t = getTranslation(appLang)
+  const [activeMineTab, setActiveMineTab] = useState<MineTab>('following')
+  const [currentPage, setCurrentPage] = useState<Page>('home')
+  const [mounted, setMounted] = useState(false)
+  const [currentBanner, setCurrentBanner] = useState(0)
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null)
+
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeSearchTab, setActiveSearchTab] = useState<SearchTab>('user')
+  const [searchResults, setSearchResults] = useState<GlobalRoom[]>([])
+  const [hasSearched, setHasSearched] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+
+  const [isPublicProfileActive, setIsPublicProfileActive] = useState(false)
+
+  const [isRoomCreated, setIsRoomCreated] = useState(false)
+  const [myRoom, setMyRoom] = useState<UserCard | null>(null)
+  const [userName, setUserName] = useState('')
+  const [userPhoto, setUserPhoto] = useState('')
+  const [userUID, setUserUID] = useState('')
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0)
+
+  const [globalRooms, setGlobalRooms] = useState<GlobalRoom[]>([])
+
+  const [keptRoom, setKeptRoom] = useState<KeptRoomData | null>(null)
+  const [enteredFromKept, setEnteredFromKept] = useState(false)
+
+  const [showRoomPasswordCard, setShowRoomPasswordCard] = useState(false)
+  const [selectedLockedRoom, setSelectedLockedRoom] = useState<UserCard | null>(null)
+  const [enteredRoomPassword, setEnteredRoomPassword] = useState('')
+
+  const [recentRooms, setRecentRooms] = useState<RecentRoom[]>([])
+  const [followingRooms, setFollowingRooms] = useState<KeptRoomData[]>([])
+
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
+  const [currentSignInDay, setCurrentSignInDay] = useState(1)
+
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 })
+  const [showDeleteZone, setShowDeleteZone] = useState(false)
+  const [isOverDeleteZone, setIsOverDeleteZone] = useState(false)
+  const dragStartPos = useRef({ x: 0, y: 0 })
+  const circleStartPos = useRef({ x: 16, y: typeof window !== 'undefined' ? window.innerHeight * 0.4 : 300 })
+  const deleteZoneRef = useRef<HTMLDivElement>(null)
+  const circleRef = useRef<HTMLDivElement>(null)
+
+  const [viewportHeight, setViewportHeight] = useState(0)
+  const [isAndroid, setIsAndroid] = useState(false)
+  const [categoryOffset, setCategoryOffset] = useState(0)
+
+  const bannerRef = useRef<HTMLDivElement>(null)
+  const bannerContainerRef = useRef<HTMLDivElement>(null)
+  const bannerDotsRef = useRef<HTMLDivElement>(null)
+  const categoryCardsRef = useRef<HTMLDivElement>(null)
+
+  const touchStartX = useRef<number>(0)
+  const touchEndX = useRef<number>(0)
+  const [isSwiping, setIsSwiping] = useState(false)
+  const [swipeOffset, setSwipeOffset] = useState(0)
+
+  const jitsiContainerRef = useRef<HTMLDivElement>(null)
+  const jitsiApiRef = useRef<any>(null)
+  const [jitsiLoaded, setJitsiLoaded] = useState(false)
+  const jitsiJoinedRef = useRef(false)
+  const [isJitsiJoined, setIsJitsiJoined] = useState(false)
+
+  // ============ UNREAD COUNT ============
+  useEffect(() => {
+    if (!userUID || userUID === 'N/A') return;
+
+    const conversationsRef = collection(db, 'conversations');
+    const q = query(
+      conversationsRef,
+      where('participants', 'array-contains', userUID)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let count = 0;
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const clearedAt = data.clearedAtRef?.[userUID] || 0;
+        const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" ? data.lastTimestamp.toMillis() : (data.lastTimestamp || 0);
+        if (lastTimestamp >= clearedAt) {
+          const unread = data.unreadCounts?.[userUID] || 0;
+          count += unread;
+        }
+      });
+      setTotalUnreadCount(count);
+    });
+
+    return () => unsubscribe();
+  }, [userUID]);
+
+  // ============ DYNAMIC OFFSET CALCULATION ============
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isAndroidDevice = userAgent.includes('android');
+    setIsAndroid(isAndroidDevice);
+
+    const adjustOffset = () => {
+      const dotsEl = bannerDotsRef.current;
+      const cardsEl = categoryCardsRef.current;
+      if (!dotsEl || !cardsEl) return;
+
+      const dotsBottom = dotsEl.getBoundingClientRect().bottom;
+      const cardsTop = cardsEl.getBoundingClientRect().top;
+      const currentGap = cardsTop - dotsBottom;
+      const desiredGap = 1.5;
+
+      const deltaOffset = desiredGap - currentGap;
+      setCategoryOffset(prev => prev + deltaOffset);
+
+      console.log(`📏 Gap: ${currentGap.toFixed(1)}px → Setting offset delta: ${deltaOffset.toFixed(1)}px`);
+    };
+
+    const timeoutId = setTimeout(adjustOffset, 100);
+
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      setTimeout(adjustOffset, 50);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, []);
 
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [profileUser, setProfileUser] = useState<{
-    name: string;
-    image: string;
-    accountId: string;
-    isInSeat?: boolean;
-  } | null>(null);
+  // ============ MOUNTED ============
+  useEffect(() => {
+    const id = setTimeout(() => setMounted(true), 30)
+    return () => clearTimeout(id)
+  }, [])
 
-  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
-  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
-  const isRoomOwner = userAccountId === roomOwnerId;
-
-  // Message state
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [fullImageModal, setFullImageModal] = useState<string | null>(null);
-
-  // Room data state
-  const [roomName, setRoomName] = useState<string>("");
-  const [roomAnnouncement, setRoomAnnouncement] = useState<string>("");
-  const [isLocked, setIsLocked] = useState<boolean>(false);
-  const [roomPassword, setRoomPassword] = useState<string>("");
-  const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
-  const [micMode, setMicMode] = useState<number>(9);
-  const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
-  const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg");
-
-  // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const inputContainerRef = useRef<HTMLDivElement>(null);
-
-  // Presence and users
-  const [showChatInput, setShowChatInput] = useState(false);
-  const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
-  const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([]);
-
-  // Seat helpers
-  const getInitialSeats = (mode: number): Seat[] => {
-    const seats: Seat[] = [];
-    for (let i = 1; i <= mode; i++) {
-      seats.push({ number: i, isOccupied: false, isLocked: false, isMuted: false, isSpeaking: false });
+  // ============ VIEWPORT HEIGHT ============
+  useEffect(() => {
+    const setHeight = () => {
+      const vh = window.innerHeight * 0.01
+      document.documentElement.style.setProperty('--vh', `${vh}px`)
+      setViewportHeight(window.innerHeight)
     }
-    return seats;
-  };
-
-  const [seats, setSeats] = useState<Seat[]>([]);
-  const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
-  const [showSeatSheet, setShowSeatSheet] = useState(false);
-
-  const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId);
-  const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
-
-  const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
-
-  const displayRoomName = roomName
-    ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
-    : 'Room';
-
-  // ----- Profile open (fixed: avatar click) -----
-  const openProfile = (user: { name: string; image: string; accountId: string }) => {
-    const userInSeat = seats.some(s => s.isOccupied && s.user?.accountId === user.accountId);
-    setProfileUser({
-      name: user.name,
-      image: user.image,
-      accountId: user.accountId,
-      isInSeat: userInSeat
-    });
-    setShowUserProfile(true);
-  };
-
-  // Sync LiveKit Microphone
-  const desiredAudioStateRef = useRef<boolean | null>(null);
-  useEffect(() => {
-    if (localParticipant) {
-      const isMuted = currentUserSeat?.isMuted ?? true;
-      const isInSeat = hasSeat;
-      const desiredState = isInSeat && !isMuted;
-
-      if (desiredAudioStateRef.current !== desiredState) {
-        desiredAudioStateRef.current = desiredState;
-        localParticipant.setMicrophoneEnabled(desiredState).catch(console.error);
-      }
+    setHeight()
+    window.addEventListener('resize', setHeight)
+    window.addEventListener('orientationchange', setHeight)
+    
+    const isAndroidDevice = navigator.userAgent.toLowerCase().includes('android');
+    if (isAndroidDevice) {
+      setTimeout(setHeight, 100);
+      setTimeout(setHeight, 300);
     }
-  }, [currentUserSeat?.isMuted, hasSeat, localParticipant]);
-
-  // Monitor remote participants for seat sync
-  useEffect(() => {
-    if (!remoteParticipants || remoteParticipants.length === 0) return;
-    const updateSeatsWithRemoteParticipants = async () => {
-      const updatedSeats = [...seats];
-      let hasChanges = false;
-      for (const participant of remoteParticipants) {
-        const seatIndex = updatedSeats.findIndex(s => 
-          s.isOccupied && s.user?.accountId === participant.identity
-        );
-        if (seatIndex !== -1) {
-          const audioPublication = participant.getTrackPublication(LKTrack.Source.Microphone);
-          const isMuted = audioPublication ? audioPublication.isMuted : true;
-          if (updatedSeats[seatIndex].isMuted !== isMuted) {
-            updatedSeats[seatIndex] = { ...updatedSeats[seatIndex], isMuted };
-            hasChanges = true;
-          }
-        }
-      }
-      if (hasChanges) setSeats(updatedSeats);
-    };
-    updateSeatsWithRemoteParticipants();
-  }, [remoteParticipants, seats]);
-
-  // Fetch room data from Firestore
-  useEffect(() => {
-    const fetchRoomData = async () => {
-      if (roomId && db) {
-        try {
-          const snap = await getDoc(doc(db, "globalRooms", roomId));
-          if (snap.exists()) {
-            const data = snap.data();
-            setRoomName(data.name || "");
-            setRoomAnnouncement(data.announcement || "");
-            setRoomImage(data.image || roomOwner.image);
-            if (data.micMode && data.micMode !== micMode) setMicMode(data.micMode);
-            if (data.theme && THEME_BACKGROUNDS[data.theme]) {
-              setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
-            } else {
-              setBackgroundImage('/1784533036732~2.jpg');
-            }
-            const followerIds: string[] = data.followers || [];
-            const followersList: RoomUser[] = followerIds.map((id: string) => ({
-              accountId: id,
-              name: `User ${id.slice(0, 5)}`,
-              image: ''
-            }));
-            setRoomFollowers(followersList);
-          }
-        } catch (err) {
-          console.error("Error loading room data:", err);
-        }
-      }
-    };
-    fetchRoomData();
-  }, [roomId, roomOwner.image]);
-
-  useEffect(() => {
-    setSeats(prev => {
-      const newSeats = getInitialSeats(micMode);
-      return newSeats.map(newSeat => {
-        const oldSeat = prev.find(s => s.number === newSeat.number);
-        if (oldSeat && oldSeat.isOccupied) {
-          return { ...newSeat, isOccupied: oldSeat.isOccupied, user: oldSeat.user, isMuted: oldSeat.isMuted, isSpeaking: oldSeat.isSpeaking, isLocked: oldSeat.isLocked };
-        }
-        return newSeat;
-      });
-    });
-  }, [micMode]);
-
-  const presenceCollection = `roomPresence/${roomId}/users`;
-  const messagesCollection = `roomMessages/${roomId}/messages`;
-  const seatsCollection = `roomSeats/${roomId}/seats`;
-
-  useEffect(() => {
-    setMessages([]);
-    joinMessageSentRef.current = false;
-    joinedAtRef.current = Date.now();
-    clearedAtRef.current = null;
-  }, [roomId]);
-
-  useEffect(() => {
-    if (!db) return;
-
-    const unsubPresence = onSnapshot(collection(db, presenceCollection), (snapshot) => {
-      const users = snapshot.docs.map(d => d.data() as RoomUser);
-      setRoomUsers(users);
-    }, (error) => {
-      console.error("Presence listener error:", error);
-    });
-
-    const messagesQuery = query(collection(db, messagesCollection), orderBy('timestamp', 'asc'));
-    const unsubMessages = onSnapshot(messagesQuery, (snapshot) => {
-      const msgs = snapshot.docs
-        .map(d => {
-          const data = d.data();
-          return {
-            id: d.id,
-            text: data.text || '',
-            sender: data.sender || 'Unknown',
-            senderImage: data.senderImage || '/default-avatar.png',
-            senderAccountId: data.senderAccountId || '',
-            timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : data.timestamp || Date.now(),
-            type: data.type || 'message',
-            imageUrl: data.imageUrl || undefined
-          } as Message;
-        })
-        .filter(msg => {
-          if (clearedAtRef.current && msg.timestamp <= clearedAtRef.current) return false;
-          if (msg.timestamp < joinedAtRef.current) return false;
-          return true;
-        });
-      setMessages(msgs);
-    }, (error) => {
-      console.error("Messages listener error:", error);
-    });
-
+    
     return () => {
-      unsubPresence();
-      unsubMessages();
-    };
-  }, [roomId]);
+      window.removeEventListener('resize', setHeight)
+      window.removeEventListener('orientationchange', setHeight)
+    }
+  }, [])
+
+  // ============ JITSI LOAD ============
+  useEffect(() => {
+    if (!document.getElementById('jitsi-script')) {
+      const script = document.createElement('script')
+      script.id = 'jitsi-script'
+      script.src = 'https://meet.jit.si/external_api.js'
+      script.async = true
+      script.onload = () => { setJitsiLoaded(true) }
+      document.body.appendChild(script)
+    } else {
+      setJitsiLoaded(true)
+    }
+  }, [])
+
+  const initializeJitsiForListening = useCallback(() => {
+    if (!jitsiLoaded || !jitsiContainerRef.current || jitsiApiRef.current) return
+
+    const domain = 'meet.jit.si'
+    const options = {
+      roomName: 'hurry-global-lobby',
+      width: '100%',
+      height: '100%',
+      parentNode: jitsiContainerRef.current,
+      userInfo: { 
+        displayName: userName || 'Guest', 
+        email: (userUID || 'guest') + '@hurry.app' 
+      },
+      configOverrides: {
+        startWithAudioMuted: true,
+        startWithVideoMuted: true,
+        startAudioOnly: true,
+        disableDeepLinking: true,
+        prejoinPageEnabled: false,
+        toolbarButtons: [],
+        disableInviteFunctions: true,
+        disablePolls: true,
+        hideConferenceSubject: true,
+        hideConferenceTimer: true,
+        doNotStoreRoom: true,
+        resolution: 180,
+        constraints: { video: { height: { ideal: 180, max: 180, min: 180 } } },
+      },
+      interfaceConfigOverrides: {
+        filmStripOnly: false,
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        SHOW_BRAND_WATERMARK: false,
+        SHOW_POWERED_BY: false,
+        SHOW_PROMOTIONAL_CLOSE_PAGE: false,
+        TOOLBAR_ALWAYS_VISIBLE: false,
+        DISABLE_VIDEO_BACKGROUND: true,
+        HIDE_INVITE_MORE_HEADER: true,
+        MOBILE_APP_PROMO: false,
+        APP_NAME: 'Hurry',
+        NATIVE_APP_NAME: 'Hurry',
+        PROVIDER_NAME: 'Hurry'
+      }
+    }
+
+    try {
+      const JitsiMeetExternalAPI = (window as any).JitsiMeetExternalAPI; 
+      const api = new JitsiMeetExternalAPI(domain, options)
+      jitsiApiRef.current = api
+      jitsiJoinedRef.current = false
+
+      api.addListener('videoConferenceJoined', () => {
+        jitsiJoinedRef.current = true
+        setIsJitsiJoined(true)
+      })
+
+      api.addListener('participantLeft', () => {})
+    } catch (error) {
+      console.error('Error initializing Jitsi:', error)
+    }
+  }, [jitsiLoaded, userName, userUID])
 
   useEffect(() => {
-    if (!db) return;
+    if (jitsiLoaded && !jitsiApiRef.current && userName !== 'Guest') {
+      initializeJitsiForListening()
+    }
+  }, [jitsiLoaded, userName, initializeJitsiForListening])
 
-    const unsubSeats = onSnapshot(collection(db, seatsCollection), (snapshot) => {
-      const seatMap = new Map<number, Seat>();
-      snapshot.docs.forEach(doc => {
-        const data = doc.data() as Seat;
-        seatMap.set(data.number, {
-          number: data.number,
-          isOccupied: data.isOccupied || false,
+  useEffect(() => {
+    return () => {
+      if (jitsiApiRef.current) {
+        jitsiApiRef.current.dispose()
+        jitsiApiRef.current = null
+      }
+      jitsiJoinedRef.current = false
+      setIsJitsiJoined(false)
+    }
+  }, [])
+
+  // ============ GLOBAL ROOMS SYNC ============
+  useEffect(() => {
+    loadGlobalRoomsFromDB().then(cachedRooms => {
+      if (cachedRooms.length > 0) {
+        console.log('✅ IndexedDB se global rooms loaded:', cachedRooms.length);
+        const validRooms = cachedRooms.filter(room => 
+          room && 
+          room.name &&
+          room.accountId !== 'undefined' &&
+          room.accountId !== 'null' &&
+          room.accountId !== '' &&
+          room.accountId !== null &&
+          room.name !== 'User'
+        );
+        setGlobalRooms(validRooms);
+      }
+    });
+
+    const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
+      const rooms = snapshot.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name || 'User',
+          country: data.country || '🇮🇳',
+          image: data.image || '/default-avatar.png',
+          accountId: data.accountId || d.id,
+          createdAt: data.createdAt || Date.now(),
           isLocked: data.isLocked || false,
-          isMuted: data.isMuted || false,
-          isSpeaking: data.isSpeaking || false,
-          user: data.user || undefined
-        });
-      });
-
-      const initialSeats = getInitialSeats(micMode);
-      const mergedSeats = initialSeats.map(seat => {
-        const syncedSeat = seatMap.get(seat.number);
-        return syncedSeat ? { ...seat, ...syncedSeat } : seat;
-      });
-      setSeats(mergedSeats);
-    }, (error) => {
-      console.error("Seats listener error:", error);
-    });
-
-    return () => unsubSeats();
-  }, [roomId, micMode]);
-
-  useEffect(() => {
-    if (!db) return;
-    const initialSeats = getInitialSeats(micMode);
-    initialSeats.forEach(seat => {
-      setDoc(doc(db, seatsCollection, String(seat.number)), seat, { merge: true });
-    });
-  }, [micMode, roomId]);
-
-  useEffect(() => {
-    if (!db || userAccountId === "guest") return;
-
-    const presenceDocRef = doc(db, presenceCollection, userAccountId);
-    const userData: RoomUser = {
-      accountId: userAccountId,
-      name: currentUser.name,
-      image: currentUser.image
-    };
-
-    setDoc(presenceDocRef, userData, { merge: true })
-      .catch(err => console.error("Error adding presence:", err));
-
-    return () => {
-      deleteDoc(presenceDocRef).catch(err => console.error("Error removing presence:", err));
-    };
-  }, [userAccountId, currentUser.name, currentUser.image, roomId]);
-
-  const sendMessageToFirestore = async (text: string, imageUrl?: string, type: 'message' | 'join' | 'leave' = 'message') => {
-    if (!db) return;
-    try {
-      await addDoc(collection(db, messagesCollection), {
-        text,
-        sender: currentUser.name,
-        senderImage: currentUser.image,
-        senderAccountId: userAccountId,
-        timestamp: serverTimestamp(),
-        type,
-        imageUrl: imageUrl || null
-      });
-    } catch (err) {
-      console.error("Error sending message:", err);
-    }
-  };
-
-  const joinMessageSentRef = useRef(false);
-  const joinedAtRef = useRef(Date.now());
-  const clearedAtRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (joinMessageSentRef.current || userAccountId === "guest" || !currentUser.name) return;
-    joinMessageSentRef.current = true;
-    sendMessageToFirestore('Enter the Room', undefined, 'join');
-  }, [userAccountId, currentUser.name, roomId]);
-
-  useEffect(() => {
-    if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  useEffect(() => {
-    if (showChatInput && inputRef.current) {
-      const timer = setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [showChatInput]);
-
-  useEffect(() => {
-    if (!showChatInput) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
-        setShowChatInput(false);
-        setMessage("");
-      }
-    };
-    const handleTouchOutside = (e: TouchEvent) => {
-      if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
-        setShowChatInput(false);
-        setMessage("");
-      }
-    };
-    const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleTouchOutside);
-    }, 300);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleTouchOutside);
-    };
-  }, [showChatInput]);
-
-  const handleCopyId = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(roomOwner.accountId || '');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleCopyUserId = (accountId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(accountId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleImageClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (fileInputRef.current) fileInputRef.current.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('Image size should be less than 5MB'); return; }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
-      sendMessageToFirestore('', imageUrl);
-    };
-    reader.readAsDataURL(file);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  // ---------- Seat actions (fixed leave) ----------
-  const handleSeatClick = (seatNumber: number) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedSeat(seatNumber);
-    setShowSeatSheet(true);
-  };
-
-  const handleSeatAvatarClick = (seat: Seat) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();   // <-- FIX: prevents seat click
-    if (seat.isOccupied && seat.user) {
-      openProfile({
-        name: seat.user.name,
-        image: seat.user.image,
-        accountId: seat.user.accountId
-      });
-    }
-  };
-
-  const updateSeatInFirestore = async (seat: Seat) => {
-    if (!db) return;
-    try {
-      await setDoc(doc(db, seatsCollection, String(seat.number)), seat, { merge: true });
-    } catch (err) {
-      console.error("Error updating seat:", err);
-    }
-  };
-
-  const handleTakeSeat = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (selectedSeat === null) return;
-    
-    try {
-      const targetSeat = seats.find(s => s.number === selectedSeat);
-      if (targetSeat?.isLocked && !targetSeat.isOccupied) { 
-        alert("This seat is locked!"); 
-        return; 
-      }
-      if (targetSeat?.isOccupied && targetSeat.user?.accountId !== userAccountId) { 
-        alert("This seat is already taken!"); 
-        return; 
-      }
-
-      const updatedSeats = seats.map(s => {
-        if (s.isOccupied && s.user?.accountId === userAccountId && s.number !== selectedSeat) {
-          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
-        }
-        if (s.number === selectedSeat) {
-          return {
-            ...s,
-            isOccupied: true,
-            user: { name: currentUser.name, image: currentUser.image, accountId: userAccountId },
-            isMuted: false,
-            isSpeaking: false
-          };
-        }
-        return s;
-      });
-
-      setSeats(updatedSeats);
-
-      const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
-      await Promise.all(updatePromises);
-
-      setShowSeatSheet(false);
-      setSelectedSeat(null);
-    } catch (err) {
-      console.error("Error taking seat:", err);
-    }
-  };
-
-  const handleLeaveSeat = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (selectedSeat === null) return;
-    
-    try {
-      const updatedSeats = seats.map(s => {
-        if (s.number === selectedSeat && s.user?.accountId === userAccountId) {
-          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
-        }
-        return s;
+          roomPassword: data.roomPassword || null,
+          isExplicitlyCreated: data.isExplicitlyCreated || false
+        } as GlobalRoom;
       });
       
-      setSeats(updatedSeats);
+      console.log('🔥 Firebase rooms synced:', rooms.length);
       
-      const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
-      await Promise.all(updatePromises);
-
-      setShowSeatSheet(false);
-      setSelectedSeat(null);
-    } catch (err) {
-      console.error("Error leaving seat:", err);
-    }
-  };
-
-  const handleBottomMicToggle = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!currentUserSeat) return;
-
-    const newMuteState = !currentUserSeat.isMuted;
-    const updatedSeats = seats.map(seat => 
-      seat.number === currentUserSeat.number 
-        ? { ...seat, isMuted: newMuteState } 
-        : seat
-    );
+      const validRooms = rooms.filter(room => 
+        room.accountId !== 'undefined' &&
+        room.accountId !== 'null' &&
+        room.accountId !== '' &&
+        room.accountId !== null &&
+        room.name &&
+        room.name !== 'User'
+      );
+      
+      setGlobalRooms(validRooms);
+      saveGlobalRoomsToDB(validRooms);
+    });
     
-    setSeats(updatedSeats);
-    await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
-  };
+    return () => unsub();
+  }, []);
 
-  const handleToggleMute = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (selectedSeat === null) return;
-    
-    const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) {
-        const newMuteState = !s.isMuted;
-        return { ...s, isMuted: newMuteState };
+  // ============ DRAG CIRCLE INITIAL POSITION ============
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      circleStartPos.current = {
+        x: window.innerWidth - 16 - 48,
+        y: window.innerHeight * 0.6
       }
-      return s;
-    });
-    
-    setSeats(updatedSeats);
-    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
-
-    setShowSeatSheet(false);
-    setSelectedSeat(null);
-  };
-
-  const handleToggleLock = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
+      setDragPosition(circleStartPos.current)
     }
-    if (selectedSeat === null) return;
-    const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked };
-      return s;
-    });
-    setSeats(updatedSeats);
-    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
-    setShowSeatSheet(false);
-    setSelectedSeat(null);
-  };
+  }, [])
 
-  const handleInvite = (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (selectedSeat === null) return;
-    alert(`Invite sent to join seat ${selectedSeat}!`);
-    setShowSeatSheet(false);
-    setSelectedSeat(null);
-  };
+  const checkOverlap = useCallback((circleX: number, circleY: number) => {
+    if (!deleteZoneRef.current) return false
+    const deleteRect = deleteZoneRef.current.getBoundingClientRect()
+    const circleSize = 48
+    const circleCenter = { x: circleX + circleSize / 2, y: circleY + circleSize / 2 }
+    const deleteCenter = { x: deleteRect.left + deleteRect.width / 2, y: deleteRect.top + deleteRect.height / 2 }
+    const distance = Math.sqrt(
+      Math.pow(circleCenter.x - deleteCenter.x, 2) +
+      Math.pow(circleCenter.y - deleteCenter.y, 2)
+    )
+    return distance < 60
+  }, [])
 
-  const isCurrentUsersSeat = (seat?: Seat) => Boolean(seat && seat.isOccupied && seat.user?.accountId === userAccountId);
+  // ============ LOAD PROFILE ============
+  useEffect(() => {
+    const loadProfile = async () => {
+      const name = localStorage.getItem('userName') || ''
+      const photo = localStorage.getItem('userPhoto') || ''
+      const uid = localStorage.getItem('userUID') || localStorage.getItem('userPhone') || ''
+      const storedAccNum = localStorage.getItem('accountNumber') || ''
 
-  const showPublicMsgOffAlert = () => {
-    setShowPublicMsgModal(true);
-  };
+      setUserName(name)
+      setUserPhoto(photo)
+      setUserUID(uid)
 
-  const handleSendMessage = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (publicMsgOff && !isRoomOwner) {
-      showPublicMsgOffAlert();
-      return;
-    }
-    if (!message.trim()) return;
-    sendMessageToFirestore(message.trim());
-    setMessage("");
-    if (inputRef.current) inputRef.current.focus();
-  };
+      const roomCreated = localStorage.getItem('isRoomCreated')
+      const roomData = localStorage.getItem('myRoom')
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); handleSendMessage(); }
-  };
-
-  const handleInputFocus = () => setShowChatInput(true);
-
-  const openChatInput = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (publicMsgOff && !isRoomOwner) {
-      showPublicMsgOffAlert();
-      return;
-    }
-    setShowChatInput(true);
-    setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 100);
-  };
-
-  const closeBottomSheet = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setShowSeatSheet(false);
-    setSelectedSeat(null);
-  };
-
-  const closeExitMenu = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setShowExitMenu(false);
-  };
-
-  const openExitMenu = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setShowExitMenu(true);
-  };
-
-  const openSettings = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setShowSettingPage(true);
-  };
-
-  const closeSettings = () => setShowSettingPage(false);
-
-  const handleSaveSettings = async (data: Partial<RoomSettingsData>) => {
-    if (data.roomName) setRoomName(data.roomName);
-    if (data.announcement !== undefined) setRoomAnnouncement(data.announcement);
-    if (data.roomImage) setRoomImage(data.roomImage);
-    if (data.micMode) setMicMode(data.micMode);
-    if (data.theme && THEME_BACKGROUNDS[data.theme]) {
-      setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
-    }
-    if (data.isLocked !== undefined) setIsLocked(data.isLocked);
-    if (data.roomPassword !== undefined) setRoomPassword(data.roomPassword);
-
-    if (roomId && db) {
-      await setDoc(doc(db, "globalRooms", roomId), {
-        name: data.roomName,
-        image: data.roomImage,
-        announcement: data.announcement,
-        micMode: data.micMode,
-        theme: data.theme,
-        isLocked: data.isLocked,
-        roomPassword: data.roomPassword,
-      }, { merge: true });
-    }
-  };
-
-  const handleExit = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setShowExitMenu(false);
-    localStorage.removeItem('keptRoom');
-    setMessages([]);
-    if (onBack) onBack();
-    if (onClose) onClose();
-  };
-
-  const handleKeep = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' };
-    localStorage.setItem('keptRoom', JSON.stringify(roomData));
-    setShowExitMenu(false);
-    if (onKeepRoom) onKeepRoom(roomData);
-    if (onBack) onBack();
-  };
-
-  // ---------- Emoji reaction ----------
-  const handleEmojiSelect = (emoji: string) => {
-    console.log("Selected Emoji:", emoji);
-    // Show reaction on own seat if seated
-    if (currentUserSeat && currentUserSeat.user) {
-      const accountId = currentUserSeat.user.accountId;
-      setEmojiReactions(prev => ({
-        ...prev,
-        [accountId]: { emoji, timestamp: Date.now() }
-      }));
-      // Clear after 2 seconds
-      setTimeout(() => {
-        setEmojiReactions(prev => {
-          const newReactions = { ...prev };
-          if (newReactions[accountId]?.timestamp === Date.now()) {
-            delete newReactions[accountId];
+      if (roomCreated === 'true' && roomData) {
+        setIsRoomCreated(true)
+        try {
+          const parsed = JSON.parse(roomData)
+          let finalAccNum = storedAccNum || parsed.accountId;
+          if (!finalAccNum && uid) {
+            const accObj = getOrCreateAccountNumber(uid);
+            finalAccNum = accObj.fullAccNum;
           }
-          return newReactions;
-        });
-      }, 2000);
+          const updatedRoom = {
+            ...parsed,
+            id: uid,
+            accountId: finalAccNum
+          };
+          setMyRoom(updatedRoom);
+          await saveRoomToDB(updatedRoom);
+        } catch (e) {
+          setIsRoomCreated(false)
+          setMyRoom(null)
+        }
+      } else {
+        setIsRoomCreated(false)
+        setMyRoom(null)
+        
+        if (storedAccNum) {
+          const indexedRoom = await loadRoomFromDB(storedAccNum);
+          if (indexedRoom) {
+            setIsRoomCreated(true);
+            setMyRoom(indexedRoom);
+            localStorage.setItem('isRoomCreated', 'true');
+            localStorage.setItem('myRoom', JSON.stringify(indexedRoom));
+          }
+        }
+      }
+
+      const keptRoomData = localStorage.getItem('keptRoom')
+      if (keptRoomData) {
+        try {
+          setKeptRoom(JSON.parse(keptRoomData))
+        } catch (e) {
+          setKeptRoom(null)
+        }
+      }
+
+      const storedRecent = localStorage.getItem('recentRooms')
+      if (storedRecent) {
+        try {
+          const parsed = JSON.parse(storedRecent);
+          const now = Date.now();
+          const fiveMinutesAgo = now - (5 * 60 * 1000);
+          
+          const validRecent = parsed.filter((room: RecentRoom) => {
+            return room.timestamp >= fiveMinutesAgo;
+          });
+          
+          setRecentRooms(validRecent);
+          
+          if (validRecent.length !== parsed.length) {
+            localStorage.setItem('recentRooms', JSON.stringify(validRecent));
+          }
+          
+          saveRecentToDB(validRecent);
+        } catch {
+          const indexedRecent = await loadRecentFromDB();
+          setRecentRooms(indexedRecent);
+        }
+      } else {
+        const indexedRecent = await loadRecentFromDB();
+        setRecentRooms(indexedRecent);
+      }
+
+      const storedFollowing = localStorage.getItem('followingRooms')
+      if (storedFollowing) {
+        try { 
+          const parsed = JSON.parse(storedFollowing);
+          setFollowingRooms(parsed);
+          saveFollowingToDB(parsed);
+        } catch {
+          const indexedFollowing = await loadFollowingFromDB();
+          setFollowingRooms(indexedFollowing);
+        }
+      } else {
+        const indexedFollowing = await loadFollowingFromDB();
+        setFollowingRooms(indexedFollowing);
+      }
     }
-  };
 
-  const handleClearChat = () => {
-    clearedAtRef.current = Date.now();
-    setMessages([]);
-  };
+    loadProfile()
+    window.addEventListener('storage', loadProfile)
+    return () => window.removeEventListener('storage', loadProfile)
+  }, [])
 
-  const liveUserCount = roomUsers.length;
-  const selectedSeatData = selectedSeat !== null ? seats.find(s => s.number === selectedSeat) : null;
-  const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false;
-  const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false;
+  // ============ SAVE RECENT ROOMS ============
+  useEffect(() => {
+    localStorage.setItem('recentRooms', JSON.stringify(recentRooms))
+    saveRecentToDB(recentRooms);
+  }, [recentRooms])
 
-  const renderSeats = () => {
-    const renderSeatItems = (seatNumbers: number[]) => {
-      return seatNumbers.map(num => {
-        const seat = seats.find(s => s.number === num);
-        const reaction = seat?.user?.accountId ? emojiReactions[seat.user.accountId] : null;
-        return (
-          <SeatItem
-            key={num}
-            seatNumber={num}
-            seatData={seat}
-            onClick={handleSeatClick(num)}
-            onAvatarClick={handleSeatAvatarClick(seat!)}
-            accountId={userAccountId}
-            roomOwnerId={roomOwnerId}
-            emojiReaction={reaction}
-          />
-        );
+  // ============ SAVE FOLLOWING ROOMS ============
+  useEffect(() => {
+    localStorage.setItem('followingRooms', JSON.stringify(followingRooms))
+    saveFollowingToDB(followingRooms);
+  }, [followingRooms])
+
+  // ============ RECENT ROOMS 5 MIN AUTO REMOVE ============
+  useEffect(() => {
+    const checkRecentRoomsExpiry = () => {
+      const now = Date.now();
+      const fiveMinutesAgo = now - (5 * 60 * 1000);
+      
+      setRecentRooms(prev => {
+        const filtered = prev.filter(room => {
+          return room.timestamp >= fiveMinutesAgo;
+        });
+        
+        if (filtered.length !== prev.length) {
+          console.log('🕐 Expired recent rooms removed:', prev.length - filtered.length);
+        }
+        
+        return filtered;
       });
     };
 
-    if (micMode === 5) {
-      return (
-        <>
-          <div className="flex justify-center">{renderSeatItems([1])}</div>
-          <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
-        </>
-      );
+    const interval = setInterval(checkRecentRoomsExpiry, 30000);
+    checkRecentRoomsExpiry();
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // ============ KEPT ROOM STORAGE CHANGE ============
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'keptRoom') {
+        if (!e.newValue) {
+          setKeptRoom(null)
+          setEnteredFromKept(false)
+        } else {
+          try {
+            setKeptRoom(JSON.parse(e.newValue))
+          } catch {
+            setKeptRoom(null)
+          }
+        }
+      }
     }
-    if (micMode === 10) {
-      return (
-        <>
-          <div className="flex justify-center gap-2 sm:gap-4">{renderSeatItems([1,2])}</div>
-          <div className="flex justify-around items-center px-0">{renderSeatItems([3,4,5,6])}</div>
-          <div className="flex justify-around items-center px-0">{renderSeatItems([7,8,9,10])}</div>
-        </>
-      );
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
+  // ============ BANNER AUTO ROTATE ============
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // ============ SIGN IN DAY ============
+  useEffect(() => {
+    const savedDay = localStorage.getItem('signInDay')
+    if (savedDay) {
+      setCurrentSignInDay(parseInt(savedDay))
     }
-    if (micMode === 13) {
-      return (
-        <>
-          <div className="flex justify-center">{renderSeatItems([1])}</div>
-          <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
-          <div className="flex justify-around items-center px-0">{renderSeatItems([6,7,8,9])}</div>
-          <div className="flex justify-around items-center px-0">{renderSeatItems([10,11,12,13])}</div>
-        </>
-      );
+  }, [])
+
+  // ============ ADD TO RECENT ============
+  const addToRecent = (room: KeptRoomData) => {
+    setRecentRooms(prev => {
+      const filtered = prev.filter(r => r.accountId !== room.accountId)
+      const updated = [{ ...room, timestamp: Date.now() }, ...filtered].slice(0, 20);
+      saveRecentToDB(updated);
+      return updated;
+    })
+  }
+
+  // ============ FOLLOW ROOM ============
+  const handleFollowRoom = (room: KeptRoomData) => {
+    setFollowingRooms(prev => {
+      if (prev.some(r => r.accountId === room.accountId)) return prev
+      const updated = [...prev, room];
+      saveFollowingToDB(updated);
+      return updated;
+    })
+  }
+
+  // ============ UNFOLLOW ROOM ============
+  const handleUnfollowRoom = (roomId: string) => {
+    setFollowingRooms(prev => {
+      const updated = prev.filter(r => r.accountId !== roomId);
+      saveFollowingToDB(updated);
+      return updated;
+    })
+  }
+
+  // ============ DRAG HANDLERS ============
+  const handleCircleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+    setShowDeleteZone(true)
+    dragStartPos.current = { x: e.clientX, y: e.clientY }
+    circleStartPos.current = { x: dragPosition.x, y: dragPosition.y }
+  }
+
+  const handleCircleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation()
+    const touch = e.touches[0]
+    setIsDragging(true)
+    setShowDeleteZone(true)
+    dragStartPos.current = { x: touch.clientX, y: touch.clientY }
+    circleStartPos.current = { x: dragPosition.x, y: dragPosition.y }
+  }
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return
+      const deltaX = e.clientX - dragStartPos.current.x
+      const deltaY = e.clientY - dragStartPos.current.y
+      const newX = circleStartPos.current.x + deltaX
+      const newY = circleStartPos.current.y + deltaY
+      setDragPosition({ x: newX, y: newY })
+      const isOverlap = checkOverlap(newX, newY)
+      setIsOverDeleteZone(isOverlap)
     }
+
+    const handleMouseUp = () => {
+      if (!isDragging) return
+      const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
+      if (isOverlap) {
+        localStorage.removeItem('keptRoom')
+        setKeptRoom(null)
+        setEnteredFromKept(false)
+      } else {
+        setDragPosition(circleStartPos.current)
+      }
+      setIsDragging(false)
+      setShowDeleteZone(false)
+      setIsOverDeleteZone(false)
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging) return
+      const touch = e.touches[0]
+      const deltaX = touch.clientX - dragStartPos.current.x
+      const deltaY = touch.clientY - dragStartPos.current.y
+      const newX = circleStartPos.current.x + deltaX
+      const newY = circleStartPos.current.y + deltaY
+      setDragPosition({ x: newX, y: newY })
+      const isOverlap = checkOverlap(newX, newY)
+      setIsOverDeleteZone(isOverlap)
+    }
+
+    const handleTouchEnd = () => {
+      if (!isDragging) return
+      const isOverlap = checkOverlap(dragPosition.x, dragPosition.y)
+      if (isOverlap) {
+        localStorage.removeItem('keptRoom')
+        setKeptRoom(null)
+        setEnteredFromKept(false)
+      } else {
+        setDragPosition(circleStartPos.current)
+      }
+      setIsDragging(false)
+      setShowDeleteZone(false)
+      setIsOverDeleteZone(false)
+    }
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+      window.addEventListener('touchmove', handleTouchMove, { passive: true })
+      window.addEventListener('touchend', handleTouchEnd)
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isDragging, dragPosition, checkOverlap])
+
+  // ============ BANNER SWIPE ============
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchEndX.current = e.touches[0].clientX
+    setIsSwiping(true)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSwiping) return
+    touchEndX.current = e.touches[0].clientX
+    const diff = touchEndX.current - touchStartX.current
+    setSwipeOffset(diff)
+    if (Math.abs(diff) > 10) {
+      if (e.cancelable) e.preventDefault()
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (!isSwiping) return
+    const diff = touchEndX.current - touchStartX.current
+    const threshold = 50
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
+      } else {
+        setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
+      }
+    }
+    setIsSwiping(false)
+    setSwipeOffset(0)
+    touchStartX.current = 0
+    touchEndX.current = 0
+  }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    touchStartX.current = e.clientX
+    touchEndX.current = e.clientX
+    setIsSwiping(true)
+    e.preventDefault()
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isSwiping) return
+    touchEndX.current = e.clientX
+    const diff = touchEndX.current - touchStartX.current
+    setSwipeOffset(diff)
+  }
+
+  const handleMouseUp = () => {
+    if (!isSwiping) return
+    const diff = touchEndX.current - touchStartX.current
+    const threshold = 50
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length)
+      } else {
+        setCurrentBanner((prev) => (prev + 1) % BANNERS.length)
+      }
+    }
+    setIsSwiping(false)
+    setSwipeOffset(0)
+    touchStartX.current = 0
+    touchEndX.current = 0
+  }
+
+  const handleMouseLeave = () => {
+    if (isSwiping) {
+      handleMouseUp()
+    }
+  }
+
+  // ============ KEEP ROOM ============
+  const handleKeepRoom = (roomData: KeptRoomData) => {
+    setKeptRoom(roomData)
+    setEnteredFromKept(false)
+    localStorage.setItem('keptRoom', JSON.stringify(roomData))
+    if (typeof window !== 'undefined') {
+      circleStartPos.current = {
+        x: window.innerWidth - 16 - 48,
+        y: window.innerHeight * 0.6
+      }
+      setDragPosition(circleStartPos.current)
+    }
+  }
+
+  // ============ KEPT ROOM CLICK ============
+  const handleKeptRoomClick = () => {
+    if (isDragging) return
+    if (keptRoom) {
+      addToRecent(keptRoom)
+      setEnteredFromKept(true)
+      const roomUser: UserCard = {
+        id: keptRoom.accountId,
+        accountId: keptRoom.accountId,
+        name: keptRoom.name,
+        country: keptRoom.country || '🇮🇳',
+        image: keptRoom.image
+      }
+      setSelectedUser(roomUser)
+      setCurrentPage('room')
+    }
+  }
+
+  // ============ CREATE ROOM ============
+  const handleCardClick = async () => {
+    setEnteredFromKept(false);
+
+    const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+    const storedAccNum = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
+
+    if (isRoomCreated && myRoom) {
+      addToRecent({ 
+        name: myRoom.name, 
+        image: myRoom.image, 
+        accountId: myRoom.accountId || storedAccNum 
+      })
+      setSelectedUser(myRoom)
+      setCurrentPage('room')
+      return;
+    }
+
+    const defaultRoomName = "My Room"
+
+    const createdRoomCard: UserCard = {
+      id: userUID,
+      accountId: storedAccNum,
+      name: defaultRoomName,
+      country: localStorage.getItem('userCountry') || '🇮🇳',
+      image: userPhoto || '/default-avatar.png'
+    }
+
+    localStorage.setItem('isRoomCreated', 'true')
+    localStorage.setItem('myRoom', JSON.stringify(createdRoomCard))
+    setIsRoomCreated(true)
+    setMyRoom(createdRoomCard)
+
+    await saveRoomToDB({
+      ...createdRoomCard,
+      isExplicitlyCreated: true,
+      createdAt: Date.now()
+    });
+
+    const roomData = {
+      id: userUID,
+      name: defaultRoomName,
+      country: localStorage.getItem("userCountry") || "🇮🇳",
+      countryCode: localStorage.getItem("userCountryCode") || "IN",
+      image: userPhoto || '/default-avatar.png',
+      accountId: storedAccNum,
+      createdAt: Date.now(),
+      isLocked: false,
+      roomPassword: null,
+      isExplicitlyCreated: true,
+      createdFromMineTab: true
+    };
+
+    await setDoc(doc(db, "globalRooms", userUID), roomData, { merge: true });
+
+    await setDoc(doc(db, "users", userUID), {
+      id: userUID,
+      name: userName || defaultRoomName,
+      country: localStorage.getItem("userCountry") || "🇮🇳",
+      countryCode: localStorage.getItem("userCountryCode") || "IN",
+      image: userPhoto || '/default-avatar.png',
+      accountId: storedAccNum,
+      createdAt: Date.now(),
+      isExplicitlyCreated: true
+    }, { merge: true });
+
+    setGlobalRooms(prev => {
+      const filtered = prev.filter(r => r.accountId !== storedAccNum);
+      const updated = [...filtered, roomData as unknown as GlobalRoom];
+      saveGlobalRoomsToDB(updated);
+      return updated;
+    });
+
+    addToRecent({ 
+      name: createdRoomCard.name, 
+      image: createdRoomCard.image, 
+      accountId: storedAccNum 
+    })
+    setSelectedUser(createdRoomCard)
+    setCurrentPage('room')
+  }
+
+  const handleHouseClick = () => {
+    handleCardClick()
+  }
+
+  // ============ USER CARD CLICK ============
+  const handleUserCardClick = async (user: UserCard) => {
+    const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+    const currentAccountId = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
+
+    try {
+      const docRef = doc(db, "globalRooms", user.accountId || user.id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.isLocked && data.accountId !== currentAccountId) {
+          setSelectedLockedRoom(user)
+          setShowRoomPasswordCard(true)
+          setEnteredRoomPassword('')
+          return
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch lock status:", e);
+    }
+
+    setEnteredFromKept(false)
+    addToRecent({ name: user.name, image: user.image, accountId: user.accountId || user.id, isLocked: user.isLocked })
+    setSelectedUser(user)
+    setCurrentPage('room')
+    if (isSearchOpen) {
+      setIsSearchOpen(false)
+    }
+  }
+
+  // ============ ROOM PASSWORD SUBMIT ============
+  const handleRoomPasswordSubmit = async () => {
+    if (!selectedLockedRoom) return;
+    try {
+      const docRef = doc(db, "globalRooms", selectedLockedRoom.id || selectedLockedRoom.accountId || '');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.isLocked && data.roomPassword === enteredRoomPassword) {
+          setShowRoomPasswordCard(false)
+          setEnteredFromKept(false)
+          addToRecent({ name: selectedLockedRoom.name, image: selectedLockedRoom.image, accountId: selectedLockedRoom.accountId || selectedLockedRoom.id, isLocked: true })
+          setSelectedUser(selectedLockedRoom)
+          setCurrentPage('room')
+          if (isSearchOpen) {
+            setIsSearchOpen(false)
+          }
+        } else {
+          alert('Incorrect Password')
+        }
+      } else {
+        alert('Room not found')
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error verifying password')
+    }
+  }
+
+  // ============ USER PROFILE CLICK ============
+  const handleUserProfileClick = (user: UserCard) => {
+    setSelectedUser(user)
+    setIsPublicProfileActive(true)
+    setCurrentPage('public_profile')
+    if (isSearchOpen) {
+      setIsSearchOpen(false)
+    }
+  }
+
+  // ============ BACK FROM ROOM ============
+  const handleBackFromRoom = async () => {
+    if (enteredFromKept) {
+      localStorage.removeItem('keptRoom')
+      setKeptRoom(null)
+      setEnteredFromKept(false)
+    }
+    setCurrentPage('home')
+    setSelectedUser(null)
+  }
+
+  // ============ BACK FROM PUBLIC PROFILE ============
+  const handleBackFromPublicProfile = () => {
+    setIsPublicProfileActive(false)
+    setCurrentPage('home')
+    setSelectedUser(null)
+  }
+
+  // ============ JOIN ROOM FROM CHAT ============
+  const handleJoinRoomFromChat = async (roomId: string) => {
+    try {
+      const roomDoc = await getDoc(doc(db, 'globalRooms', roomId));
+      if (roomDoc.exists()) {
+        const roomData = roomDoc.data();
+        handleUserCardClick({
+          id: roomData.id || roomId,
+          accountId: roomData.accountId || roomId,
+          name: roomData.name,
+          country: roomData.country || '🇮🇳',
+          image: roomData.image || '/default-avatar.png'
+        });
+      } else {
+        console.error('Room not found');
+      }
+    } catch (error) {
+      console.error('Error fetching room data:', error);
+    }
+  };
+
+  // ============ SEARCH ============
+  const handlePerformSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([])
+      setHasSearched(false)
+      return
+    }
+
+    setIsSearching(true)
+    const queryRaw = searchQuery.trim()
+
+    try {
+      const results = await fetchSearchResults(queryRaw, globalRooms)
+      setSearchResults(results)
+      setHasSearched(true)
+    } catch (err) {
+      console.error("Search error:", err)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  // ============ SIGN IN MODAL ============
+  const handleImageClick = () => {
+    setIsSignInModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsSignInModalOpen(false)
+  }
+
+  const handleSignIn = () => {
+    const nextDay = currentSignInDay < 7 ? currentSignInDay + 1 : 1
+    setCurrentSignInDay(nextDay)
+    localStorage.setItem('signInDay', nextDay.toString())
+    setIsSignInModalOpen(false)
+    alert(`Day ${currentSignInDay} reward claimed! 🎉`)
+  }
+
+  // ============ VIEWPORT META ============
+  useEffect(() => {
+    const existingMeta = document.querySelector('meta[name="viewport"]')
+    if (existingMeta) {
+      existingMeta.remove()
+    }
+    const meta = document.createElement('meta')
+    meta.name = 'viewport'
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+    document.head.appendChild(meta)
+    return () => {
+      const metaTag = document.querySelector('meta[name="viewport"]')
+      if (metaTag && metaTag.getAttribute('content') === 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover') {
+        metaTag.remove()
+      }
+    }
+  }, [])
+
+  // ============ PAGE EFFECTS ============
+  useEffect(() => {
+    if (currentPage !== 'message') {
+      setIsChatOpen(false)
+    }
+  }, [currentPage])
+
+  useEffect(() => {
+    if (currentPage !== 'me' && currentPage !== 'public_profile') {
+      setIsPublicProfileActive(false)
+    }
+  }, [currentPage])
+
+  // ============ ALL ROOMS FILTER ============
+  const allRooms = globalRooms.filter(room => 
+    room && 
+    room.name && 
+    room.image && 
+    !/jiys/i.test(room.name) && 
+    room.name !== 'User' &&
+    room.accountId !== 'undefined' &&
+    room.accountId !== 'null' &&
+    room.accountId !== ''
+  )
+
+  // ============ RENDER MINE TAB ============
+  const renderMineTab = () => (
+    <div className="px-4 mt-6">
+      <div
+        onClick={handleCardClick}
+        className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
+        style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
+        }}
+      >
+        {!isRoomCreated ? (
+          <>
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <path
+                  d="M16 8V24M8 16H24"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+              <h3 className="text-white font-bold text-xl leading-tight">
+                Embark Your Hurry Journey!
+              </h3>
+              <p className="text-white/80 text-sm mt-1 font-medium">
+                Tap to create your room
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/50">
+              {myRoom?.image ? (
+                <img
+                  src={myRoom.image}
+                  alt="Room Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white font-bold text-xl">
+                  {myRoom?.name?.charAt(0).toUpperCase() || 'H'}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <h3 className="text-white font-bold text-xl leading-tight">
+                {myRoom?.name || "My Room"}
+              </h3>
+              <p className="text-white/80 text-sm mt-1 font-medium">
+                Tap to enter your room
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="flex gap-4 mb-4">
+        <button
+          type="button"
+          onClick={() => setActiveMineTab('following')}
+          className={`relative pb-1.5 text-xs font-medium transition-colors ${
+            activeMineTab === 'following'
+              ? 'text-gray-900'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          Following
+          {activeMineTab === 'following' && (
+            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMineTab('recent')}
+          className={`relative pb-1.5 text-sm font-medium transition-colors ${
+            activeMineTab === 'recent'
+              ? 'text-gray-900'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          Recent
+          {activeMineTab === 'recent' && (
+            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
+          )}
+        </button>
+      </div>
+
+      {activeMineTab === 'following' && (
+        followingRooms.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2.5">
+            {followingRooms.map(room => {
+              const user: UserCard = {
+                id: room.accountId,
+                accountId: room.accountId,
+                name: room.name,
+                country: room.country || '🇮🇳',
+                image: room.image,
+                isLocked: room.isLocked
+              }
+              return (
+                <div
+                  key={room.accountId}
+                  onClick={() => handleUserCardClick(user)}
+                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                  style={{ height: '180px' }}
+                >
+                  <img
+                    src={room.image}
+                    alt={room.name}
+                    className="w-full h-full object-cover"
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                  />
+                  {room.isLocked && (
+                    <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">🇮🇳</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-semibold text-xs truncate">
+                          {room.name}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
+              <path
+                d="M32 8C45.2 8 56 18.8 56 32C56 45.2 45.2 56 32 56C18.8 56 8 45.2 8 32C8 18.8 18.8 8 32 8Z"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+              <path
+                d="M24 32H40M32 24V40"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            <p className="text-sm">No followed rooms yet</p>
+          </div>
+        )
+      )}
+
+      {activeMineTab === 'recent' && (
+        recentRooms.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2.5">
+            {recentRooms.map(room => {
+              const user: UserCard = {
+                id: room.accountId,
+                accountId: room.accountId,
+                name: room.name,
+                country: room.country || '🇮🇳',
+                image: room.image,
+                isLocked: room.isLocked
+              }
+              return (
+                <div
+                  key={room.accountId}
+                  onClick={() => handleUserCardClick(user)}
+                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                  style={{ height: '180px' }}
+                >
+                  <img
+                    src={room.image}
+                    alt={room.name}
+                    className="w-full h-full object-cover"
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                  />
+                  {room.isLocked && (
+                    <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">🇮🇳</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-semibold text-xs truncate">
+                          {room.name}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
+              <path
+                d="M16 20H48M16 32H48M16 44H32"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            <p className="text-sm">No recent activity</p>
+          </div>
+        )
+      )}
+    </div>
+  );
+
+  // ============ RENDER POPULAR TAB ============
+  const renderPopularTab = () => {
     return (
       <>
-        <div className="flex justify-center">{renderSeatItems([1])}</div>
-        <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
-        <div className="flex justify-around items-center px-0">{renderSeatItems([6,7,8,9])}</div>
+        <div 
+          ref={categoryCardsRef}
+          className="px-4" 
+          style={{ 
+            transform: `translateY(${categoryOffset}px)`,
+            marginBottom: `${categoryOffset}px`,
+            position: 'relative', 
+            zIndex: 10,
+            willChange: 'transform'
+          }}
+        >
+          <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
+            fontFamily: 'Nunito, Inter, sans-serif', 
+            marginBottom: '0px' 
+          }}>
+            {CATEGORY_CARDS.map((card, i) => (
+              <div
+                key={card.label}
+                onClick={() => setCurrentPage('leaderboard')} // ✅ ADDED: click opens leaderboard
+                className="group flex-1 cursor-pointer"
+                style={{
+                  height: '90px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '8px 6px 6px 6px',
+                  border: '1.5px solid rgba(0,0,0,0.06)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
+                  opacity: mounted ? 1 : 0,
+                  transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
+                  transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
+                  animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
+                  animationDelay: `${i * 100}ms`,
+                }}
+              >
+                <div
+                  style={{
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: card.textColor,
+                    marginBottom: '4px',
+                    textShadow: '0 1px 0 rgba(255,255,255,0.7)',
+                  }}
+                >
+                  {card.label}
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    borderRadius: '10px',
+                    backgroundColor: card.innerBg,
+                    border: `1.5px solid ${card.innerBorder}`,
+                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <span className="text-xl relative z-10">{card.icon}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {allRooms.length > 0 ? (
+          <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
+            <div className="grid grid-cols-2 gap-1.5">
+              {allRooms.map((room) => (
+                <div
+                  key={room.accountId}
+                  onClick={() => handleUserCardClick({
+                    id: room.id || room.accountId,
+                    accountId: room.accountId,
+                    name: room.name,
+                    country: room.country,
+                    image: room.image,
+                    isLocked: room.isLocked
+                  })}
+                  className="cursor-pointer group"
+                >
+                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                    style={{ height: '170px' }}
+                  >
+                    <img
+                      src={room.image}
+                      alt={room.name}
+                      className="w-full h-full object-cover"
+                      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                      draggable="false"
+                    />
+                    
+                    {room.isLocked && (
+                      <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                          <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-2 px-1">
+                    <div className="flex items-center gap-0.5">
+                      <span className="text-sm">{room.country}</span>
+                      <span className="font-semibold text-gray-900 text-sm truncate">
+                        {room.name}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="px-4 mt-8">
+            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
+                <path
+                  d="M32 8C45.2 8 56 18.8 56 32C56 45.2 45.2 56 32 56C18.8 56 8 45.2 8 32C8 18.8 18.8 8 32 8Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M32 20V32L38 38"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <p className="text-sm">No rooms yet</p>
+              <p className="text-xs text-gray-400 mt-1">Create your room in Mine tab</p>
+            </div>
+          </div>
+        )}
       </>
     );
   };
 
-  // ---------- Music controller (with IndexedDB persistence) ----------
-  const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
-    if (playlist && playlist.length > 0) {
-      setMusicPlaylist(playlist);
-      const index = playlist.findIndex(t => t.id === track.id);
-      setCurrentTrackIndex(index >= 0 ? index : 0);
-    } else {
-      setMusicPlaylist([track]);
-      setCurrentTrackIndex(0);
-    }
-
-    if (musicAudioRef.current) {
-      musicAudioRef.current.pause();
-      musicAudioRef.current.src = track.url;
-      musicAudioRef.current.volume = musicVolume;
-      musicAudioRef.current.play();
-    } else {
-      const audio = new Audio(track.url);
-      audio.volume = musicVolume;
-      musicAudioRef.current = audio;
-      audio.play();
-      
-      audio.addEventListener('timeupdate', () => {
-        setMusicCurrentTime(audio.currentTime);
-      });
-      audio.addEventListener('loadedmetadata', () => {
-        setMusicDuration(audio.duration);
-      });
-      audio.addEventListener('ended', () => {
-        handleNextTrack();
-      });
-    }
-    
-    setCurrentTrack(track);
-    setIsMusicPlaying(true);
-    setMusicControllerState('full');
-    setMusicCurrentTime(0);
-    setMusicDuration(0);
-
-    // Save state to IndexedDB
-    saveMusicState({
-      currentTrack: track,
-      playlist: playlist || [track],
-      currentTrackIndex: playlist ? playlist.findIndex(t => t.id === track.id) : 0,
-      volume: musicVolume,
-      isPlaying: true,
-      currentTime: 0
-    });
-  };
-
-  const handleToggleMusicPlay = () => {
-    if (!musicAudioRef.current || !currentTrack) return;
-    if (isMusicPlaying) {
-      musicAudioRef.current.pause();
-      setIsMusicPlaying(false);
-    } else {
-      musicAudioRef.current.play();
-      setIsMusicPlaying(true);
-    }
-    // Save state
-    saveMusicState({
-      currentTrack,
-      playlist: musicPlaylist,
-      currentTrackIndex,
-      volume: musicVolume,
-      isPlaying: !isMusicPlaying,
-      currentTime: musicAudioRef.current?.currentTime || 0
-    });
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    setMusicVolume(newVolume);
-    if (musicAudioRef.current) {
-      musicAudioRef.current.volume = newVolume;
-    }
-    saveMusicState({
-      currentTrack,
-      playlist: musicPlaylist,
-      currentTrackIndex,
-      volume: newVolume,
-      isPlaying,
-      currentTime: musicAudioRef.current?.currentTime || 0
-    });
-  };
-
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = parseFloat(e.target.value);
-    setMusicCurrentTime(newTime);
-    if (musicAudioRef.current) {
-      musicAudioRef.current.currentTime = newTime;
-    }
-  };
-
-  const handleNextTrack = () => {
-    if (musicPlaylist.length === 0) return;
-    const nextIndex = (currentTrackIndex + 1) % musicPlaylist.length;
-    const nextTrack = musicPlaylist[nextIndex];
-    
-    if (musicAudioRef.current) {
-      musicAudioRef.current.src = nextTrack.url;
-      musicAudioRef.current.volume = musicVolume;
-      musicAudioRef.current.play();
-    }
-    
-    setCurrentTrackIndex(nextIndex);
-    setCurrentTrack(nextTrack);
-    setIsMusicPlaying(true);
-    setMusicCurrentTime(0);
-    setMusicDuration(0);
-    saveMusicState({
-      currentTrack: nextTrack,
-      playlist: musicPlaylist,
-      currentTrackIndex: nextIndex,
-      volume: musicVolume,
-      isPlaying: true,
-      currentTime: 0
-    });
-  };
-
-  const handlePrevTrack = () => {
-    if (musicPlaylist.length === 0) return;
-    const prevIndex = (currentTrackIndex - 1 + musicPlaylist.length) % musicPlaylist.length;
-    const prevTrack = musicPlaylist[prevIndex];
-    
-    if (musicAudioRef.current) {
-      musicAudioRef.current.src = prevTrack.url;
-      musicAudioRef.current.volume = musicVolume;
-      musicAudioRef.current.play();
-    }
-    
-    setCurrentTrackIndex(prevIndex);
-    setCurrentTrack(prevTrack);
-    setIsMusicPlaying(true);
-    setMusicCurrentTime(0);
-    setMusicDuration(0);
-    saveMusicState({
-      currentTrack: prevTrack,
-      playlist: musicPlaylist,
-      currentTrackIndex: prevIndex,
-      volume: musicVolume,
-      isPlaying: true,
-      currentTime: 0
-    });
-  };
-
-  const handleCloseMusicController = () => {
-    if (musicAudioRef.current) {
-      musicAudioRef.current.pause();
-      musicAudioRef.current = null;
-    }
-    setMusicControllerState('hidden');
-    setCurrentTrack(null);
-    setIsMusicPlaying(false);
-    // Clear saved state
-    saveMusicState({});
-  };
-
-  const handleMinimizeMusicController = () => {
-    setMusicControllerState('minimized');
-  };
-
-  const handleMaximizeMusicController = () => {
-    setMusicControllerState('full');
-  };
-
-  // Restore music state from IndexedDB on mount
-  useEffect(() => {
-    loadMusicState().then(state => {
-      if (state && state.currentTrack) {
-        setCurrentTrack(state.currentTrack);
-        setMusicPlaylist(state.playlist || [state.currentTrack]);
-        setCurrentTrackIndex(state.currentTrackIndex || 0);
-        setMusicVolume(state.volume || 1);
-        setIsMusicPlaying(state.isPlaying || false);
-        setMusicCurrentTime(state.currentTime || 0);
-        setMusicControllerState('full');
-        // Create audio element and seek
-        const audio = new Audio(state.currentTrack.url);
-        audio.volume = state.volume || 1;
-        audio.currentTime = state.currentTime || 0;
-        if (state.isPlaying) {
-          audio.play();
-        }
-        musicAudioRef.current = audio;
-        audio.addEventListener('timeupdate', () => {
-          setMusicCurrentTime(audio.currentTime);
-        });
-        audio.addEventListener('loadedmetadata', () => {
-          setMusicDuration(audio.duration);
-        });
-        audio.addEventListener('ended', () => {
-          handleNextTrack();
-        });
-      }
-    });
-  }, []);
-
-  // Drag handlers with bounds
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    setIsDragging(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    dragRef.current = { x: clientX, y: clientY };
-  };
-
-  const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isDragging) return;
-    const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
-    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
-    const dx = clientX - dragRef.current.x;
-    const dy = clientY - dragRef.current.y;
-    // Calculate new offset with bounds
-    const miniSize = 44; // same as CSS var
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const bottom = 6 * vh / 100; // music-mini-bottom
-    const right = 8; // music-mini-right
-    const maxX = vw - miniSize - right;
-    const maxY = vh - miniSize - bottom;
-    const newX = Math.min(Math.max(0, dragOffset.x + dx), maxX);
-    const newY = Math.min(Math.max(0, dragOffset.y + dy), maxY);
-    setDragOffset({ x: newX, y: newY });
-    dragRef.current = { x: clientX, y: clientY };
-  }, [isDragging, dragOffset]);
-
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleDragMove);
-      document.addEventListener('mouseup', handleDragEnd);
-      document.addEventListener('touchmove', handleDragMove);
-      document.addEventListener('touchend', handleDragEnd);
-      return () => {
-        document.removeEventListener('mousemove', handleDragMove);
-        document.removeEventListener('mouseup', handleDragEnd);
-        document.removeEventListener('touchmove', handleDragMove);
-        document.removeEventListener('touchend', handleDragEnd);
-      };
-    }
-  }, [isDragging, handleDragMove, handleDragEnd]);
-
-  useEffect(() => {
-    return () => {
-      if (musicAudioRef.current) {
-        musicAudioRef.current.pause();
-        musicAudioRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (musicAudioRef.current) {
-      musicAudioRef.current.volume = musicVolume;
-    }
-  }, [musicVolume]);
-
-  const formatTime = (seconds: number) => {
-    if (isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  if (showSettingPage) {
-    return (
-      <RoomSettingPage
-        onBack={closeSettings}
-        roomOwnerId={roomId}
-        roomData={{ roomName, roomImage, announcement: roomAnnouncement, micMode, isLocked, roomPassword, theme: Object.keys(THEME_BACKGROUNDS).find(key => THEME_BACKGROUNDS[key] === backgroundImage) || 'mood-light' }}
-        onSave={handleSaveSettings}
-      />
-    );
-  }
-
+  // ============ MAIN RETURN ============
   return (
-    <div 
-      className="fixed inset-0 z-50 bg-black flex flex-col"
+    <div
+      className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        height: '100dvh'
-      }}
-      onClick={() => {
-        if (musicControllerState === 'full') {
-          setMusicControllerState('minimized');
-        }
+        minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
+        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen || currentPage === 'leaderboard') ? '0px' : '96px', // ✅ ADDED leaderboard
+        touchAction: 'manipulation',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        WebkitTouchCallout: 'none'
       }}
     >
-      <img
-        src={backgroundImage}
-        alt="Room Background"
-        className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
-        draggable={false}
+      <div 
+        ref={jitsiContainerRef} 
+        className="absolute inset-0 z-0 opacity-0 pointer-events-none" 
+        style={{ width: '1px', height: '1px' }} 
       />
 
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
-
-      <div className="relative z-10 flex flex-col h-full px-3 sm:px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }} onClick={(e) => e.stopPropagation()}>
-
-        {/* Top Header */}
-        <div className="flex justify-between items-center text-white flex-shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
-              className="rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer hover:border-white/50 transition-colors"
-              style={{ width: 'var(--header-room-img-size)', height: 'var(--header-room-img-size)' }}
-            >
-              <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" draggable={false} />
-            </button>
-            <div className="text-left">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <h2 className="font-bold" style={{ fontSize: 'var(--header-room-name-size)' }}>{displayRoomName}</h2>
-                {!isRoomOwner && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const newFollow = !isFollowed;
-                      setIsFollowed(newFollow);
-                      if (onFollowToggle) onFollowToggle(roomId, newFollow);
-                    }}
-                    className="rounded-full flex items-center justify-center transition-all cursor-pointer bg-blue-500 shadow-md hover:bg-blue-600"
-                    style={{ 
-                      width: 'var(--header-follow-btn-size)', 
-                      height: 'var(--header-follow-btn-size)',
-                      border: 'none',
-                    }}
-                    title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
-                  >
-                    {isFollowed ? (
-                      <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--header-follow-icon-size)', height: 'var(--header-follow-icon-size)' }}>
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--header-follow-icon-size)', height: 'var(--header-follow-icon-size)' }}>
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                    )}
-                  </button>
-                )}
-              </div>
-              <p className="text-gray-300" style={{ fontSize: 'var(--header-id-size)' }}>ID: {roomOwner.accountId || roomOwner.id || ''}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 cursor-pointer hover:bg-black/60 transition-colors" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                <circle cx="9" cy="7" r="4" />
-                <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
-                <line x1="18" y1="8" x2="21" y2="8" /><line x1="18" y1="12" x2="21" y2="12" /><line x1="18" y1="16" x2="20" y2="16" />
-              </svg>
-              <span className="text-white font-semibold leading-none" style={{ fontSize: 'var(--header-count-size)' }}>{liveUserCount}</span>
-            </button>
-
-            {isRoomOwner && (
-              <button onClick={openSettings} aria-label="Settings" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer flex items-center justify-center" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
-                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                  <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
-                  <circle cx="12" cy="12" r="2.8" />
-                </svg>
-              </button>
-            )}
-
-            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer flex items-center justify-center" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
-              </svg>
-            </button>
-
-            <button onClick={openExitMenu} aria-label="Power" className="bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                <path d="M12 4v8" /><path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Middle Section */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-13 sm:pt-10">
-            {renderSeats()}
-          </div>
-
-          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
-            {/* Announcement Card */}
-            <div className="mx-0 mb-2 flex justify-start">
-              <div 
-                className="border border-white/5 max-w-[80%]"
-                style={{ 
-                  padding: 'var(--announcement-padding)', 
-                  borderRadius: 'var(--announcement-radius)',
-                  background: 'transparent',
-                  backdropFilter: 'none'
-                }}
-              >
-                <p 
-                  className="leading-snug font-medium"
-                  style={{ 
-                    fontSize: 'var(--announcement-text-size)',
-                    color: '#00BFFF',
-                    textShadow: '0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3), 0 0 40px rgba(0, 191, 255, 0.2)',
-                    fontWeight: '700'
-                  }}
-                >
-                  Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
-                </p>
-                {roomAnnouncement && (
-                  <div className="flex items-start gap-1.5 mt-1">
-                    <span 
-                      className="font-semibold whitespace-nowrap shrink-0"
-                      style={{ 
-                        fontSize: 'var(--announcement-label-size)',
-                        color: '#00BFFF',
-                        textShadow: '0 0 10px rgba(0, 191, 255, 0.5)'
-                      }}
-                    >
-                      ANNOUNCEMENT:
-                    </span>
-                    <p 
-                      className="leading-snug font-medium"
-                      style={{ 
-                        fontSize: 'var(--announcement-text-size)',
-                        color: '#00BFFF',
-                        textShadow: '0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3)'
-                      }}
-                    >
-                      {roomAnnouncement}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-0.5">
-              {messages.map((msg) => (
-                <div key={msg.id} className="leading-[1.8rem]">
-                  {msg.type === 'join' ? (
-                    <div className="flex items-start gap-1.5 px-1">
-                      <div
-                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        style={{ width: 'var(--msg-avatar-size)', height: 'var(--msg-avatar-size)' }}
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || '' })}
-                      >
-                        <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex flex-col bg-white/8 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/5">
-                        <span className="font-semibold text-white/80 leading-tight" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
-                        <span className="text-white/50 leading-tight mt-0.5" style={{ fontSize: 'var(--msg-jointime-size)' }}>Enter the Room</span>
-                      </div>
-                    </div>
-                  ) : msg.imageUrl ? (
-                    <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.8rem)' }}>
-                      <div
-                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        style={{ width: 'var(--msg-avatar-size)', height: 'var(--msg-avatar-size)' }}
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
-                      >
-                        <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-white/70 leading-tight" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
-                        <div onClick={() => setFullImageModal(msg.imageUrl || null)} className="rounded-lg overflow-hidden border border-white/20 cursor-pointer hover:opacity-90 transition-opacity bg-black/40 flex items-center justify-center mt-0.5" style={{ height: 'calc(3.5 * 1.8rem)', width: 'calc(3.5 * 1.8rem)' }}>
-                          <img src={msg.imageUrl} alt="Shared image" className="w-full h-full object-cover" draggable={false} />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-2">
-                      <div
-                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
-                        style={{ width: 'var(--msg-avatar-size)', height: 'var(--msg-avatar-size)' }}
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
-                      >
-                        <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-white/70 leading-tight" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
-                        <div className="px-2 py-1 rounded-lg bg-white/15 text-white rounded-bl-none mt-0.5">
-                          <p className="break-words leading-tight" style={{ fontSize: 'var(--msg-text-size)' }}>{msg.text}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Controls */}
-        <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
-          <div className="flex items-center justify-between gap-2">
-            <button
-              onClick={openChatInput}
-              className="bg-black/40 backdrop-blur-md border border-white/10 text-white font-semibold rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
-              style={{ fontSize: 'var(--footer-sayhi-text)', padding: 'var(--footer-sayhi-padding)' }}
-            >
-              Say Hi
-            </button>
-            <div className="flex items-center gap-2">
-              {hasSeat && (
-                <button onClick={handleBottomMicToggle} className="bg-black/30 backdrop-blur-md rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                  {currentUserSeat?.isMuted ? (
-                    <svg viewBox="0 0 24 24" className="fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                      <line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
-                    </svg>
-                  )}
-                </button>
-              )}
-              <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 backdrop-blur-md rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover" draggable={false} />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
-                aria-label="Message Box Menu"
-                className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
-                style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
-              >
-                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                  <rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" />
-                </svg>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
-                aria-label="Apps Menu"
-                className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
-                style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
-              >
-                <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                  <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Input container */}
-        {showChatInput && (
-          <div 
-            ref={inputContainerRef} 
-            className="flex items-center gap-0 mb-2 -mx-3 sm:-mx-4"
-            style={{
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              zIndex: 30,
-              padding: '8px 12px',
-              background: 'rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <div className="flex-1 bg-white flex items-center px-3 py-2 shadow-lg w-full rounded-xl">
-              <button onMouseDown={(e) => e.preventDefault()} onClick={handleImageClick} className="hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
-                <svg viewBox="0 0 24 24" className="fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
-                </svg>
-              </button>
-              <input
-                ref={inputRef}
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                onFocus={handleInputFocus}
-                placeholder="Type a message..."
-                className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-2 py-1.5 outline-none border-none"
-                style={{ fontSize: 'var(--footer-input-text)' }}
-              />
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={handleSendMessage}
-                className="hover:bg-blue-50 rounded-full transition-colors cursor-pointer flex-shrink-0"
-              >
-                <svg viewBox="0 0 24 24" className="fill-none stroke-blue-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                  <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Public Msg Off Modal */}
-      {showPublicMsgModal && (
-        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
-          <div className="bg-white rounded-2xl px-5 py-4 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="text-3xl mb-2"></div>
-            <h3 className="text-base font-bold text-gray-800 mb-1">Public msg are off</h3>
-            <p className="text-xs text-gray-500 mb-3">Only the room owner can send messages right now.</p>
-            <button
-              onClick={() => setShowPublicMsgModal(false)}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1.5 px-5 rounded-full transition-colors cursor-pointer"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Active Users Sheet */}
-      {showActiveUsers && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden flex flex-col" style={{ height: '40vh', maxHeight: '40vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 pt-4 pb-2 border-b border-gray-200 flex-shrink-0">
-              <h2 className="text-base font-bold text-gray-800 text-center">Active Users</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
-              {roomUsers.length > 0 ? (
-                <div className="space-y-2 pb-4">
-                  {roomUsers.map((user) => (
-                    <div key={user.accountId} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-2">
-                      <div className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }} onClick={() => openProfile({ name: user.name, image: user.image, accountId: user.accountId })}>
-                        <img src={user.image || "/default-avatar.png"} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-semibold text-gray-800 truncate">{user.name}</h4>
-                        <p className="text-[10px] text-gray-400">ID: {user.accountId}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-400 text-xs">No active users</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Room Info Sheet */}
-      {showRoomInfo && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            {!isRoomOwner && (
-              <svg viewBox="0 0 24 24" className="absolute top-2 left-2 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-            )}
-
-            <div className="px-4 pt-5 pb-2 flex items-center justify-center">
-              <h2 className="text-base font-bold text-gray-800">Room Information</h2>
-            </div>
-            <div className="flex border-b border-gray-200 px-4">
-              <button onClick={() => setRoomInfoTab('profile')} className={`flex-1 py-2 text-xs font-semibold transition-all cursor-pointer ${roomInfoTab === 'profile' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Profile</button>
-              <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-2 text-xs font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-              {roomInfoTab === 'profile' ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="rounded-xl overflow-hidden border border-gray-200 flex-shrink-0" 
-                      style={{ width: '80px', height: '80px' }}
-                    >
-                      <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800 text-sm">{roomName || 'Room'}</h3>
-                      <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                        <span>ID: {roomOwner.accountId}</span>
-                        <button onClick={handleCopyId} className="p-0.5 hover:bg-gray-100 rounded transition-colors cursor-pointer" title="Copy ID">
-                          <svg viewBox="0 0 24 24" className="fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                        </button>
-                        {copied && <span className="text-green-500 text-xs">Copied!</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 font-medium">Host</span>
-                    <p className="text-xs font-medium text-gray-800 mt-1">{roomOwner.name || "Unknown"}</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 font-medium">Announcement:</span>
-                    <p className="text-xs text-gray-700 mt-1 leading-relaxed">{roomAnnouncement || '—'}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-2">
-                    <div className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }} onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}>
-                      <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                    </div>
-                    <div className="flex-1 min-w-0 flex items-center gap-1">
-                      <h4 className="text-xs font-medium text-gray-800 truncate">{roomOwner.name}</h4>
-                      <span className="rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0" style={{ width: 'var(--header-follow-btn-size)', height: 'var(--header-follow-btn-size)' }}>
-                        <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--header-follow-icon-size)', height: 'var(--header-follow-icon-size)' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
-                      </span>
-                    </div>
-                  </div>
-                  {roomFollowers.map(follower => (
-                    <div key={follower.accountId} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-2">
-                      <div className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }} onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}>
-                        <img src={follower.image || "/default-avatar.png"} alt={follower.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-medium text-gray-800 truncate">{follower.name}</h4>
-                      </div>
-                    </div>
-                  ))}
-                  {roomFollowers.length === 0 && <p className="text-center text-gray-400 text-xs py-6">No followers yet</p>}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* RoomProfile Bottom Sheet */}
-      {showUserProfile && profileUser && (
-        <RoomProfile
-          user={{ 
-            name: profileUser.name, 
-            image: profileUser.image, 
-            accountId: profileUser.accountId,
-            isInSeat: profileUser.isInSeat,
-            isMuted: seats.find(s => s.user?.accountId === profileUser.accountId)?.isMuted || false,
-            isLocked: seats.find(s => s.user?.accountId === profileUser.accountId)?.isLocked || false
-          }}
-          isCurrentUser={profileUser.accountId === userAccountId}
-          isRoomOwner={isRoomOwner}
-          onClose={() => setShowUserProfile(false)}
-          onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
-          onMessage={() => {
-            setShowUserProfile(false);
-            setShowChatInput(true);
-            setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
-          }}
-          onCopyId={() => console.log('Copy ID clicked')}
-          onMention={(username?: string) => {
-            setShowUserProfile(false);
-            setShowChatInput(true);
-            setMessage(`@${username} `);
-            setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
-          }}
-          onLeaveSeat={() => {
-            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-            if (userSeat) {
-              setSelectedSeat(userSeat.number);
-              setTimeout(() => handleLeaveSeat(), 100);
-            }
-            setShowUserProfile(false);
-          }}
-          onMute={() => {
-            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-            if (userSeat) {
-              setSelectedSeat(userSeat.number);
-              setTimeout(() => handleToggleMute(), 100);
-            }
-            setShowUserProfile(false);
-          }}
-          onLock={() => {
-            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-            if (userSeat) {
-              setSelectedSeat(userSeat.number);
-              setTimeout(() => handleToggleLock(), 100);
-            }
-            setShowUserProfile(false);
-          }}
-          onKickOut={() => {
-            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-            if (userSeat) {
-              setSelectedSeat(userSeat.number);
-              setTimeout(() => handleLeaveSeat(), 100);
-            }
-            setShowUserProfile(false);
-          }}
-        />
-      )}
-
-      {/* Exit Menu */}
-      {showExitMenu && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40" onClick={closeExitMenu}>
-          <div className="flex flex-col items-center gap-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col items-center gap-2">
-              <button onClick={handleKeep} className="rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer" style={{ width: 'var(--exit-btn-size)', height: 'var(--exit-btn-size)' }}>
-                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--exit-icon-size)', height: 'var(--exit-icon-size)' }}><line x1="5" y1="12" x2="19" y2="12" /></svg>
-              </button>
-              <span className="text-white font-semibold" style={{ fontSize: 'var(--exit-text-size)' }}>Keep</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <button onClick={handleExit} className="rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer" style={{ width: 'var(--exit-btn-size)', height: 'var(--exit-btn-size)' }}>
-                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--exit-icon-size)', height: 'var(--exit-icon-size)' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-              </button>
-              <span className="text-white/70 font-medium" style={{ fontSize: 'var(--exit-text-size)' }}>Exit</span>
-            </div>
-          </div>
-          <button onClick={closeExitMenu} className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200 cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
-            <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
-        </div>
-      )}
-
-      {/* Seat Actions Sheet */}
-      {showSeatSheet && selectedSeat !== null && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
-          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-3 animate-slide-up max-h-[30vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="space-y-1">
-              {!isSelectedSeatTakenByOther && !isSelectedSeatMySeat && (
-                <button onClick={handleTakeSeat} disabled={selectedSeatData?.isLocked && !selectedSeatData?.isOccupied} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Take Mic</button>
-              )}
-              {isSelectedSeatMySeat && <button onClick={handleLeaveSeat} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Leave Seat</button>}
-              {isSelectedSeatMySeat && (
-                <button onClick={handleToggleMute} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
-                  {selectedSeatData?.isMuted ? 'Unmute' : 'Mute'}
-                </button>
-              )}
-              <button onClick={handleToggleLock} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">{selectedSeatData?.isLocked ? 'Unlock Mic' : 'Lock Mic'}</button>
-              <button onClick={handleInvite} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Invite</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Full Image Modal */}
-      {fullImageModal && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
-          <div className="relative max-w-full max-h-full">
-            <img src={fullImageModal} alt="Full preview" className="max-w-full max-h-[85vh] object-contain rounded-lg" />
-            <button onClick={() => setFullImageModal(null)} className="absolute -top-8 right-0 text-white bg-white/20 rounded-full p-1.5 hover:bg-white/40">
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5]" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Message Sheet */}
-      {showMessageSheet && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '60vh' }} onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowMessageSheet(false)} className="absolute top-2 left-2 z-20 p-1 bg-white/80 rounded-full shadow hover:bg-white transition-colors">
-              <svg viewBox="0 0 24 24" className="fill-none stroke-gray-700 stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-            <div className="h-full overflow-y-auto">
-              <MessagePage sharedRoomData={{ roomId: roomId, roomName: roomOwner.name, roomImage: roomOwner.image }} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Four Grid Tools Sheet */}
-      {showFourGride && (
-        <Fourgride
-          onClose={() => setShowFourGride(false)}
-          onClearChat={handleClearChat}
-          publicMsgOff={publicMsgOff}
-          onTogglePublicMsg={() => setPublicMsgOff(prev => !prev)}
-          speaker={isSpeakerOn}
-          onToggleSpeaker={() => setIsSpeakerOn(prev => !prev)}
-          onMusicPlay={(track) => {
-            const db = indexedDB.open('HurryMusicDB', 1);
-            db.onsuccess = () => {
-              const request = db.result
-                .transaction('music', 'readonly')
-                .objectStore('music')
-                .getAll();
-              
-              request.onsuccess = () => {
-                const allTracks = request.result.map((item: any) => ({
-                  id: item.id,
-                  name: item.name,
-                  url: URL.createObjectURL(item.blob)
-                }));
-                handlePlayMusic(track, allTracks);
-              };
-            };
-          }}
-        />
-      )}
-
-      {/* Music Controller - Full Size */}
-      {musicControllerState === 'full' && currentTrack && !showFourGride && (
-        <div 
-          className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm px-3"
-          style={{ 
-            bottom: 'var(--music-controller-bottom)',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div 
-            className="relative rounded-2xl overflow-hidden bg-black/90 backdrop-blur-md border border-white/10"
-            style={{
-              padding: 'var(--music-padding)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            }}
-          >
-            <button
-              onClick={handleCloseMusicController}
-              className="absolute top-1.5 left-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-              aria-label="Close music controller"
-            >
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--music-icon-size)', height: 'var(--music-icon-size)' }}>
-                <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
-                <line x1="12" y1="2" x2="12" y2="12" />
-              </svg>
-            </button>
-
-            <button
-              onClick={handleMinimizeMusicController}
-              className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-              aria-label="Minimize music controller"
-            >
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--music-icon-size)', height: 'var(--music-icon-size)' }}>
-                <line x1="7" y1="17" x2="17" y2="7" />
-                <polyline points="7 7 17 7 17 17" />
-              </svg>
-            </button>
-
-            <div className="text-center mb-1.5 mt-4">
-              <p className="text-white font-semibold truncate px-6" style={{ fontSize: 'var(--music-title-size)' }}>
-                {currentTrack.name}
-              </p>
-            </div>
-
-            <div className="px-1 mb-1.5">
-              <input
-                type="range"
-                min="0"
-                max={musicDuration || 0}
-                step="0.1"
-                value={musicCurrentTime}
-                onChange={handleProgressChange}
-                className="w-full h-1 rounded-lg appearance-none cursor-pointer music-progress-slider"
-                style={{
-                  background: `linear-gradient(to right, #3b82f6 ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%, rgba(255,255,255,0.3) ${musicDuration ? (musicCurrentTime / musicDuration) * 100 : 0}%)`,
-                }}
-              />
-              <div className="flex justify-between text-white/60 mt-0.5" style={{ fontSize: 'var(--music-time-size)' }}>
-                <span>{formatTime(musicCurrentTime)}</span>
-                <span>{formatTime(musicDuration)}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-4 mb-1.5">
-              <button
-                onClick={handlePrevTrack}
-                className="p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Previous track"
-              >
-                <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--music-control-size)', height: 'var(--music-control-size)' }}>
-                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-                </svg>
-              </button>
-
-              <button
-                onClick={handleToggleMusicPlay}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
-                aria-label={isMusicPlaying ? 'Pause' : 'Play'}
-              >
-                {isMusicPlaying ? (
-                  <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--music-play-size)', height: 'var(--music-play-size)' }}>
-                    <rect x="6" y="4" width="4" height="16" rx="1" />
-                    <rect x="14" y="4" width="4" height="16" rx="1" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--music-play-size)', height: 'var(--music-play-size)' }}>
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
-                )}
-              </button>
-
-              <button
-                onClick={handleNextTrack}
-                className="p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Next track"
-              >
-                <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--music-control-size)', height: 'var(--music-control-size)' }}>
-                  <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-1">
-              <svg viewBox="0 0 24 24" className="fill-white shrink-0" style={{ width: 'var(--music-icon-size)', height: 'var(--music-icon-size)' }}>
-                <path d="M3 9v6h4l5 5V4L7 9H3z" />
-              </svg>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={musicVolume}
-                onChange={handleVolumeChange}
-                className="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer music-volume-slider"
-                style={{
-                  background: `linear-gradient(to right, #3b82f6 ${musicVolume * 100}%, rgba(255,255,255,0.3) ${musicVolume * 100}%)`,
-                }}
-              />
-              <span className="text-white font-semibold text-right" style={{ fontSize: 'var(--music-time-size)', width: 'var(--music-volume-width)' }}>
-                {Math.round(musicVolume * 100)}%
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Music Controller - Minimized with Drag (fixed bounds) */}
-      {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
-        <div
-          ref={minimizedRef}
-          className="fixed z-[45] touch-none select-none"
-          style={{ 
-            bottom: `calc(var(--music-mini-bottom) + ${dragOffset.y}px)`, 
-            right: `calc(var(--music-mini-right) + ${dragOffset.x}px)`,
-            cursor: 'grab'
-          }}
-          onMouseDown={handleDragStart}
-          onTouchStart={handleDragStart}
-          onDoubleClick={handleMaximizeMusicController}
-        >
-          <div
-            className="relative rounded-full overflow-hidden shadow-lg transition-transform hover:scale-105"
-            style={{
-              width: 'var(--music-mini-size)',
-              height: 'var(--music-mini-size)',
-              border: 'var(--music-mini-border) solid black',
-              backgroundColor: 'black',
-            }}
-          >
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <div className="relative w-full h-full flex items-center justify-center">
-                <div className="absolute w-18 h-18 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
-                <div className="absolute w-18 h-18 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
-                <div className="absolute w-18 h-18 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
-                <div className="rounded-full bg-red-500 animate-pulse" style={{ width: 'var(--music-mini-dot)', height: 'var(--music-mini-dot)' }} />
-              </div>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center music-minimize-icon z-20">
-              <img 
-                src="/IMG_20260815_133309.png" 
-                alt="Music" 
-                className="w-full h-full object-cover rounded-full" 
-                style={{ borderRadius: '50%' }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Custom styles */}
-      <style jsx global>{`
-        :root {
-          --seat-size: 56px;
-          --seat-side-offset: -90px;
-          --header-btn-size: 32px;
-          --header-btn-padding: 4px 8px;
-          --header-icon-size: 20px;
-          --header-room-img-size: 36px;
-          --header-room-name-size: 16px;
-          --header-id-size: 10px;
-          --header-follow-btn-size: 20px;
-          --header-follow-icon-size: 12px;
-          --header-count-size: 10px;
-          --footer-btn-size: 40px;
-          --footer-icon-size: 25px;
-          --footer-sayhi-text: 12px;
-          --footer-sayhi-padding: 8px 16px;
-          --footer-input-text: 14px;
-          --announcement-padding: 12px;
-          --announcement-radius: 8px;
-          --announcement-text-size: 13px;
-          --announcement-label-size: 10px;
-          --msg-avatar-size: 24px;
-          --msg-name-size: 12px;
-          --msg-text-size: 12px;
-          --msg-jointime-size: 10px;
-          --exit-btn-size: 67px;
-          --exit-icon-size: 24px;
-          --exit-text-size: 14px;
-          --music-controller-bottom: 8vh;
-          --music-padding: 10px;
-          --music-icon-size: 16px;
-          --music-title-size: 13px;
-          --music-time-size: 9px;
-          --music-control-size: 20px;
-          --music-play-size: 24px;
-          --music-volume-width: 28px;
-          --music-mini-size: 44px;
-          --music-mini-bottom: 6vh;
-          --music-mini-right: 8px;
-          --music-mini-border: 2px;
-          --music-mini-dot: 8px;
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap');
+        * {
+          -webkit-text-size-adjust: 100%;
+          -ms-text-size-adjust: 100%;
+          touch-action: manipulation;
         }
-
-        .music-volume-slider {
-          -webkit-appearance: none;
-          appearance: none;
+        button, a, div, span {
+          touch-action: manipulation;
         }
-        .music-volume-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 0px;
-          height: 0px;
-          background: transparent;
+        @keyframes cardIn {
+          0% { opacity: 0; transform: translateY(14px) scale(0.96); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .music-volume-slider::-moz-range-thumb {
-          width: 0px;
-          height: 0px;
-          background: transparent;
-          border: none;
+        @keyframes fadeInBanner {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
         }
-        .music-volume-slider::-webkit-slider-runnable-track {
-          height: 8px;
-          border-radius: 4px;
+        @keyframes pulseGlow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
         }
-        .music-volume-slider::-moz-range-track {
-          height: 8px;
-          border-radius: 4px;
+        @keyframes deletePulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
         }
-
-        .music-progress-slider {
-          -webkit-appearance: none;
-          appearance: none;
+        @keyframes modalFadeIn {
+          0% { opacity: 0; transform: scale(0.9); }
+          100% { opacity: 1; transform: scale(1); }
         }
-        .music-progress-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 0px;
-          height: 0px;
-          background: transparent;
+        @keyframes modalOverlayIn {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
         }
-        .music-progress-slider::-moz-range-thumb {
-          width: 0px;
-          height: 0px;
-          background: transparent;
-          border: none;
+        @keyframes slideUpSheet {
+          0% { transform: translateY(100%); }
+          100% { transform: translateY(0); }
         }
-        .music-progress-slider::-webkit-slider-runnable-track {
-          height: 6px;
-          border-radius: 3px;
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
-        .music-progress-slider::-moz-range-track {
-          height: 6px;
-          border-radius: 3px;
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
         }
-
-        @keyframes ping-slow {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(1.5); opacity: 0; }
+        .truncate {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
-        .animate-ping-slow {
-          animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-
-        @keyframes rotate-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .music-minimize-icon {
-          animation: rotate-slow 4s linear infinite;
-        }
-
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .animate-slide-up { animation: slideUp 0.3s ease-out; }
-        @keyframes waveBehind { 0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.4; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
-        @keyframes voicePulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.08); } }
-        .wave-ripple { animation: waveBehind 1.2s ease-out infinite; }
-        .wave-ripple-delayed { animation: waveBehind 1.2s ease-out 0.4s infinite; }
-        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-        .scrollbar-none::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* Emoji & Gift Pickers */}
-      {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
-      {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
-
-      {isSpeakerOn && <RoomAudioRenderer />}
-    </div>
-  );
-}
-
-// ---------- SeatItem Component (with emoji reaction) ----------
-function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId, emojiReaction }: {
-  seatNumber: number;
-  seatData?: Seat;
-  onClick: (e: React.MouseEvent) => void;
-  onAvatarClick?: (e: React.MouseEvent) => void;
-  accountId: string;
-  roomOwnerId: string;
-  emojiReaction?: { emoji: string; timestamp: number } | null;
-}) {
-  const isLocked = seatData?.isLocked ?? false;
-  const isOccupied = seatData?.isOccupied ?? false;
-  const isSpeaking = seatData?.isSpeaking ?? false;
-  const isMuted = seatData?.isMuted ?? false;
-  const user = seatData?.user;
-  const isRoomOwnerSeat = isOccupied && user?.accountId === roomOwnerId;
-
-  const remoteParticipants = useRemoteParticipants();
-  const { localParticipant } = useLocalParticipant();
-
-  const isUserSpeaking = React.useMemo(() => {
-    if (!isOccupied || isMuted) return false;
-    if (user?.accountId === accountId) {
-      return localParticipant?.isSpeaking ?? false;
-    } else {
-      const p = remoteParticipants.find(rp => rp.identity === user?.accountId);
-      return p?.isSpeaking ?? false;
-    }
-  }, [isOccupied, isMuted, user?.accountId, accountId, localParticipant, remoteParticipants]);
-
-  const activeSpeaking = isSpeaking || isUserSpeaking;
-
-  return (
-    <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      {/* LEFT side image */}
-      {seatNumber === 1 && (
-        <div 
-          className="absolute pointer-events-none hidden sm:flex"
-          style={{
-            left: '-130px',
-            top: '-30px',
-            zIndex: 40,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2px',
-          }}
-        >
-          <div 
-            className="relative overflow-visible"
-            style={{
-              width: 'calc(var(--seat-size) * 0.33)',
-              height: 'calc(var(--seat-size) * 0.33)',
-              flexShrink: 0,
-            }}
-          >
-            <WhiteColorRemovalShader
-              imageSrc="/1787158869902.png"
-              threshold={0.85}
-              className="w-full h-full"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                maxWidth: 'none',
-                maxHeight: 'none',
-                pointerEvents: 'none',
+      {showRoomPasswordCard && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRoomPasswordCard(false)} />
+          <div className="relative bg-white w-80 rounded-3xl shadow-2xl p-6 mx-4 animate-scale-up">
+            <h3 className="text-xl font-bold text-gray-800 text-center mb-2">Locked Room</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">Enter password to join</p>
+            <PasswordInput value={enteredRoomPassword} onChange={setEnteredRoomPassword} />
+            <button
+              onClick={handleRoomPasswordSubmit}
+              disabled={enteredRoomPassword.length !== 4}
+              className={`w-full mt-6 py-3.5 rounded-2xl font-semibold text-white transition-all ${
+                enteredRoomPassword.length === 4
+                  ? 'bg-blue-500 hover:bg-blue-600 active:scale-[0.98]'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Enter Room
+            </button>
+            <button
+              onClick={() => {
+                setShowRoomPasswordCard(false)
+                setEnteredRoomPassword('')
               }}
-            />
-          </div>
-          <span 
-            className="font-bold whitespace-nowrap"
-            style={{
-              color: '#FFD700',
-              textShadow: '0 0 4px rgba(255,215,0,0.8), 0 0 8px rgba(255,215,0,0.5)',
-              letterSpacing: '0.2px',
-              fontSize: 'calc(var(--seat-size) * 0.15)',
-            }}
-          >
-            500K
-          </span>
-        </div>
-      )}
-
-      {/* RIGHT side image */}
-      {seatNumber === 1 && (
-        <div 
-          className="absolute pointer-events-none"
-          style={{
-            right: '-130px',
-            top: '-30px',
-            zIndex: 40,
-          }}
-        >
-          <div 
-            className="relative overflow-visible"
-            style={{
-              width: 'calc(var(--seat-size) * 0.83)',
-              height: 'calc(var(--seat-size) * 0.83)',
-              backgroundColor: 'transparent',
-              border: 'none',
-              boxShadow: 'none',
-            }}
-          >
-            <WhiteColorRemovalShader
-              imageSrc="/1787162568668.png"
-              threshold={0.85}
-              removeColor="white"
-              className="w-full h-full"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                maxWidth: 'none',
-                maxHeight: 'none',
-                pointerEvents: 'none',
-              }}
-            />
+              className="w-full mt-3 py-3 text-gray-500 font-medium text-center hover:bg-gray-50 rounded-2xl active:scale-[0.98] transition-all"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
 
-      {/* Seat circle */}
-      <div className="relative overflow-visible">
-        {activeSpeaking && (
-          <>
-            <div className="absolute rounded-full bg-blue-400 wave-ripple pointer-events-none" style={{ width: 'var(--seat-size)', height: 'var(--seat-size)', left: '50%', top: '50%', zIndex: 0 }} />
-            <div className="absolute rounded-full bg-blue-500 wave-ripple-delayed pointer-events-none" style={{ width: 'var(--seat-size)', height: 'var(--seat-size)', left: '50%', top: '50%', zIndex: 0 }} />
-            <div className="absolute rounded-full pointer-events-none" style={{ width: 'calc(var(--seat-size) * 1.066)', height: 'calc(var(--seat-size) * 1.066)', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
-          </>
-        )}
-        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${activeSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
-          {isLocked ? (
-            <div className="flex items-center justify-center" style={{ width: 'calc(var(--seat-size) * 0.53)', height: 'calc(var(--seat-size) * 0.53)' }}>
-              <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="5" y="11" width="14" height="10" rx="2.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><circle cx="12" cy="16" r="1.2" fill="#94a7be" /></svg>
-            </div>
-          ) : isOccupied && user ? (
-            <>
-              <div className="relative w-full h-full rounded-full overflow-visible">
-                <img
-                  src={user.image || "/default-avatar.png"}
-                  alt={user.name}
-                  className="w-full h-full rounded-full object-cover pointer-events-none"
-                  draggable={false}
-                  onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
-                  onClick={onAvatarClick}
-                  style={{ 
-                    cursor: 'pointer', 
-                    pointerEvents: 'auto',
-                    borderRadius: '50%',
-                    position: 'relative',
-                    zIndex: 1
-                  }}
-                />
-                <div 
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: '160%',
-                    height: '160%',
-                    zIndex: 2,
-                    overflow: 'visible',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <WhiteColorRemovalShader
-                    imageSrc="/1786867564769.png"
-                    threshold={0.85}
-                    className="w-full h-full"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      maxWidth: 'none',
-                      maxHeight: 'none',
-                      overflow: 'visible',
-                    }}
-                  />
-                </div>
-              </div>
-              {isMuted && (
-                <div className="absolute -right-1 -bottom-1 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 bg-red-500" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
-                  <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
-                </div>
-              )}
-              {/* Emoji reaction bubble */}
-              {emojiReaction && (
-                <div 
-                  className="absolute pointer-events-none animate-bounce"
-                  style={{
-                    top: '-30px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: '28px',
-                    zIndex: 20,
-                    animation: 'bounce 0.6s ease-out',
-                  }}
-                >
-                  {emojiReaction.emoji}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex items-center justify-center pointer-events-none relative" style={{ width: '58%', height: '58%' }}>
-              <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style={{ overflow: "visible", display: "block" }}>
-                <g fill="none" stroke="#94a7be" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"><path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" /><path d="M 50 74 L 50 86" /><path d="M 38 90 L 62 90" /></g>
-                <g fill="#94a7be" stroke="#5a6d89" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" transform="translate(0, 6)"><path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" /></g>
+      {isSearchOpen && (
+        <div
+          className="fixed inset-0 z-[120] bg-white flex flex-col"
+          style={{
+            animation: 'slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            height: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
+          }}
+        >
+          <div className="flex items-center gap-2.5 px-4 pb-3 border-b border-gray-100 safe-top">
+            <button
+              onClick={() => setIsSearchOpen(false)}
+              className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D2D2D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
               </svg>
-              {isMuted && (
-                <div className="absolute -right-2 -bottom-2 rounded-full bg-red-500 flex items-center justify-center shadow-md" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
-                  <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
-                </div>
+            </button>
+            <div className="flex-1 flex items-center bg-gradient-to-r from-gray-100/90 to-blue-50/70 border border-white/60 shadow-inner rounded-full px-4 py-2 backdrop-blur-md">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by ID or name..."
+                className="w-full bg-transparent text-sm font-semibold text-gray-800 placeholder-gray-400 outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handlePerformSearch()
+                }}
+              />
+            </div>
+            <button
+              onClick={handlePerformSearch}
+              className="p-2.5 bg-gradient-to-tr from-blue-500 to-indigo-500 text-white rounded-full shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex px-4 border-b border-gray-100 mt-1">
+            <button
+              type="button"
+              onClick={() => setActiveSearchTab('user')}
+              className={`py-3 px-6 text-sm font-bold relative transition-colors ${
+                activeSearchTab === 'user' ? 'text-blue-600' : 'text-gray-400'
+              }`}
+            >
+              User
+              {activeSearchTab === 'user' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
               )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSearchTab('room')}
+              className={`py-3 px-6 text-sm font-bold relative transition-colors ${
+                activeSearchTab === 'room' ? 'text-blue-600' : 'text-gray-400'
+              }`}
+            >
+              Room
+              {activeSearchTab === 'room' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 hide-scrollbar">
+            {isSearching ? (
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p className="text-xs font-semibold">Searching...</p>
+              </div>
+            ) : hasSearched ? (
+              searchResults.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {searchResults.map((user) => (
+                    activeSearchTab === 'user' ? (
+                      <div
+                        key={user.accountId}
+                        onClick={() => handleUserProfileClick({
+                          id: user.id || user.accountId,
+                          accountId: user.accountId,
+                          name: user.name,
+                          country: user.country,
+                          image: user.image
+                        })}
+                        className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"
+                      >
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">
+                          <img
+                            src={user.image}
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>
+                            <span className="text-xs">{user.country}</span>
+                          </div>
+                          <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        key={user.accountId}
+                        onClick={() => handleUserCardClick({
+                          id: user.id || user.accountId,
+                          accountId: user.accountId,
+                          name: user.name,
+                          country: user.country,
+                          image: user.image,
+                          isLocked: user.isLocked
+                        })}
+                        className="flex items-center gap-3.5 p-3.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:shadow-md"
+                      >
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-100">
+                          <img
+                            src={user.image}
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-gray-900 text-sm truncate">{user.name}</span>
+                            <span className="text-xs">{user.country}</span>
+                          </div>
+                          <span className="text-xs text-gray-400 mt-0.5 font-medium">ID: {user.accountId}</span>
+                        </div>
+                        <div className="px-3.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-sm">
+                          Enter
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-40">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <p className="text-sm font-semibold">No result found</p>
+                  <p className="text-xs text-gray-400 mt-1">Try different ID or name</p>
+                </div>
+              )
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-3 opacity-40">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <p className="text-sm font-semibold mb-1">Search {activeSearchTab === 'user' ? 'Users' : 'Rooms'}</p>
+                <p className="text-xs font-medium text-gray-400">Enter ID or name to find people</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <DailyCheckInModal
+        isOpen={isSignInModalOpen}
+        onClose={handleCloseModal}
+        currentDay={currentSignInDay}
+        onSignIn={handleSignIn}
+      />
+
+      {showDeleteZone && keptRoom && (
+        <div
+          ref={deleteZoneRef}
+          className="fixed bottom-4 right-4 z-[60] transition-all duration-300"
+          style={{
+            animation: isOverDeleteZone ? 'deletePulse 0.5s ease-in-out infinite' : 'none'
+          }}
+        >
+          <div
+            className={`flex items-center justify-center rounded-full transition-all duration-300 ${
+              isOverDeleteZone
+                ? 'w-16 h-16 bg-red-600 shadow-lg shadow-red-500/50 scale-110'
+                : 'w-14 h-14 bg-red-500/60'
+            }`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className={`transition-all duration-300 ${isOverDeleteZone ? 'w-8 h-8' : 'w-6 h-6'}`}
+              fill="none"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {keptRoom && currentPage === 'home' && !isSearchOpen && (
+        <div
+          ref={circleRef}
+          className={`fixed z-50 cursor-grab active:cursor-grabbing group ${
+            isDragging ? 'transition-none' : 'transition-all duration-300'
+          } ${isOverDeleteZone ? 'opacity-50 scale-75' : 'opacity-100'}`}
+          style={{
+            left: `${dragPosition.x}px`,
+            top: `${dragPosition.y}px`,
+            touchAction: 'none'
+          }}
+          onClick={handleKeptRoomClick}
+          onMouseDown={handleCircleMouseDown}
+          onTouchStart={handleCircleTouchStart}
+        >
+          <div className="relative">
+            <div
+              className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg bg-white"
+              style={{ animation: isDragging ? 'none' : 'pulseGlow 2s infinite' }}
+            >
+              <img
+                src={keptRoom.image}
+                alt={keptRoom.name}
+                className="w-full h-full object-cover pointer-events-none"
+                draggable="false"
+              />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white pointer-events-none"></div>
+          </div>
+          {!isDragging && (
+            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              {keptRoom.name}
             </div>
           )}
         </div>
-      </div>
-      <span className="font-medium text-white/80 pointer-events-none flex items-center gap-1" style={{ fontSize: 'calc(var(--seat-size) * 0.17)' }}>
-        {isRoomOwnerSeat && (
-          <span className="rounded-full bg-blue-500 flex items-center justify-center inline-flex" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}>
-            <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'calc(var(--seat-size) * 0.13)', height: 'calc(var(--seat-size) * 0.13)' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
-          </span>
-        )}
-        {isLocked ? `No ${seatNumber}` : (isOccupied && user ? user.name : `No ${seatNumber}`)}
-      </span>
+      )}
 
-      {/* Add bounce animation for emoji */}
-      <style jsx>{`
-        @keyframes bounce {
-          0% { transform: translateX(-50%) scale(0.5) translateY(10px); opacity: 0; }
-          50% { transform: translateX(-50%) scale(1.2) translateY(-10px); opacity: 1; }
-          100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
-        }
-      `}</style>
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && currentPage !== 'leaderboard' && ( // ✅ ADDED leaderboard
+        <div 
+          className="fixed right-4 z-40"
+          style={{
+            bottom: 'calc(75px + max(env(safe-area-inset-bottom, 0px),16px))'
+          }}
+        >
+          <img
+            src="/IMG_20260719_203213.png"
+            alt="Corner decoration"
+            className="rounded-2xl object-cover cursor-pointer hover:scale-105 transition-transform active:scale-95"
+            style={{
+              width: '70px',
+              height: '70px',
+            }}
+            onClick={handleImageClick}
+          />
+        </div>
+      )}
+
+      <div className="w-full">
+        {currentPage === 'home' && (
+          <div
+            className="w-full bg-white"
+            style={{
+              minHeight: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
+            }}
+          >
+            <div
+              ref={bannerContainerRef}
+              className="w-full px-4 safe-top"
+              style={{
+                height: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
+                minHeight: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
+                background: activeTab === 'mine'
+                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
+                  : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
+                paddingBottom: '12px'
+              }}
+            >
+              <div className="w-full flex justify-between items-center py-1 box-border mb-4">
+                <button
+                  type="button"
+                  onClick={handleHouseClick}
+                  className="flex items-center justify-center cursor-pointer"
+                  aria-label="Home"
+                >
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <path
+                      d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"
+                      stroke="#2D2D2D"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <rect x="9" y="14.5" width="3.5" height="6" rx="1.5" fill="#2D2D2D" />
+                    <rect x="14.2" y="11.5" width="3.5" height="9" rx="1.5" fill="#2D2D2D" />
+                    <rect x="19.5" y="14" width="3.5" height="6.5" rx="1.5" fill="#2D2D2D" />
+                  </svg>
+                </button>
+
+                <div className="flex items-center gap-8">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('mine')}
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                      activeTab === 'mine'
+                        ? 'font-bold text-[#1E1E1E]'
+                        : 'font-medium text-[#6E6E6E]'
+                    }`}
+                  >
+                    Mine
+                    {activeTab === 'mine' && (
+                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('popular')}
+                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
+                      activeTab === 'popular'
+                        ? 'font-bold text-[#1E1E1E]'
+                        : 'font-medium text-[#6E6E6E]'
+                    }`}
+                  >
+                    Popular
+                    {activeTab === 'popular' && (
+                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                  aria-label="Search"
+                >
+                  <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+                    <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+
+              {activeTab === 'popular' && (
+                <>
+                  <div
+                    ref={bannerRef}
+                    className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
+                    style={{
+                      height: '100px',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                      transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
+                    }}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <div
+                      key={currentBanner}
+                      className="w-full h-full"
+                      style={{
+                        animation: isSwiping ? 'none' : 'fadeInBanner 400ms ease-out',
+                      }}
+                    >
+                      <img
+                        src={BANNERS[currentBanner].image}
+                        alt="Banner"
+                        className="w-full h-full object-cover rounded-2xl"
+                        draggable="false"
+                      />
+                    </div>
+                  </div>
+
+                  <div 
+                    ref={bannerDotsRef}
+                    className="flex justify-center gap-1.5" 
+                    style={{ 
+                      marginTop: '2px', 
+                      marginBottom: '0px',
+                      minHeight: '6px'
+                    }}
+                  >
+                    {BANNERS.map((_, index) => (
+                      <div
+                        key={index}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                          index === currentBanner ? 'bg-black w-3' : 'bg-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {activeTab === 'mine' ? renderMineTab() : renderPopularTab()}
+          </div>
+        )}
+
+        {currentPage === 'message' && (
+          <MessagePage onChatOpen={setIsChatOpen} onJoinRoom={handleJoinRoomFromChat} />
+        )}
+
+        {currentPage === 'me' && (
+          <MePage
+            onLogout={onLogout}
+            onPublicProfileChange={(active: boolean) => setIsPublicProfileActive(active)}
+          />
+        )}
+
+        {currentPage === 'room' && selectedUser && (
+          <RoomPage
+            roomOwner={selectedUser}
+            currentUser={{
+              id: userUID,
+              uid: userUID,
+              accountId: (() => {
+                const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
+                return typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
+              })(),
+              name: userName,
+              image: userPhoto
+            }}
+            onBack={handleBackFromRoom}
+            onKeepRoom={handleKeepRoom}
+            onFollowToggle={(roomId: string, follow: boolean) => {
+              if (follow) {
+                const room = selectedUser
+                if (room) handleFollowRoom({ name: room.name, image: room.image, accountId: room.accountId || room.id })
+              } else {
+                handleUnfollowRoom(roomId)
+              }
+            }}
+          />
+        )}
+
+        {currentPage === 'public_profile' && (
+          <PublicProfile
+            onBack={handleBackFromPublicProfile}
+            onJoinRoom={handleJoinRoomFromChat}
+            isOtherUser={true}
+            targetUser={selectedUser ? {
+              id: selectedUser.id,
+              uid: selectedUser.id,
+              accountId: selectedUser.accountId,
+              displayAccountNumber: selectedUser.accountId,
+              name: selectedUser.name,
+              country: selectedUser.country,
+              photo: selectedUser.image,
+              image: selectedUser.image
+            } : null}
+          />
+        )}
+
+        {currentPage === 'leaderboard' && ( // ✅ ADDED
+          <Leaderboard onBack={() => setCurrentPage('home')} />
+        )}
+      </div>
+
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && currentPage !== 'leaderboard' && ( // ✅ ADDED leaderboard
+        <div 
+          className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom"
+          style={{
+            paddingBottom: 'max(env(safe-area-inset-bottom, 0px),8px)'
+          }}
+        >
+          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+            >
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+                <path
+                  d="M18 2.8C20.2 2.8 30.2 8.2 30.2 12.6V23.2C30.2 27.8 28 31 18 31C8 31 5.8 27.8 5.8 23.2V12.6C5.8 8.2 15.8 2.8 18 2.8Z"
+                  fill={currentPage === 'home' ? '#3b82f6' : 'white'}
+                  stroke="#1D1D1F"
+                  strokeWidth="2.4"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M12.2 14.2C13.3 12.6 14.9 12.1 16.8 13.4"
+                  stroke="#1D1D1F"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M11.2 20.8C12.5 24.2 21 25.6 24.3 20.2"
+                  stroke="#1D1D1F"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className={`text-[12px] ${currentPage === 'home' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+                {t.home}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setCurrentPage('message')}
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+            >
+              <div className="relative">
+                <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+                  <path
+                    d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
+                    fill={currentPage === 'message' ? '#3b82f6' : 'white'}
+                    stroke="#1D1D1F"
+                    strokeWidth="2.4"
+                  />
+                  <path
+                    d="M12 14.5C13.5 12.5 15.5 14.5 19.5 12.5C21.5 14.5 24 14.5 24 14.5"
+                    stroke="#1D1D1F"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                {totalUnreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-white">
+                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                  </div>
+                )}
+              </div>
+              <span className={`text-[12px] ${currentPage === 'message' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+                {t.message}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setCurrentPage('me')}
+              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+            >
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+                <path
+                  d="M18 4.5C23.5 4.5 28 8.5 27.2 13.8L26.2 19.8C26 21.2 27.2 22.5 28.6 23.1C30.6 24 31 26.2 29 27.5C27.5 28.5 25 28.8 22 28.8H14C11 28.8 8.5 28.5 7 27.5C5 26.2 5.4 24 7.4 23.1C8.8 22.5 10 21.2 9.8 19.8L8.8 13.8C8 8.5 12.5 4.5 18 4.5Z"
+                  fill={currentPage === 'me' ? '#3b82f6' : 'white'}
+                  stroke="#1D1D1F"
+                  strokeWidth="2.4"
+                />
+                <circle cx="14" cy="15" r="1.6" fill="#1D1D1F" />
+                <circle cx="22" cy="15" r="1.6" fill="#1D1D1F" />
+              </svg>
+              <span className={`text-[12px] ${currentPage === 'me' ? 'font-semibold text-black' : 'text-gray-500'}`}>
+                {t.me}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  );
-      }
+  )
+        }
