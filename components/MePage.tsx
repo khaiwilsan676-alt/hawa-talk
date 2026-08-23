@@ -10,7 +10,11 @@ import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
 import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
 import Wallet from './Wallet'
-import StorePage from './StorePage' // ✅ Added StorePage import
+import StorePage from './StorePage'
+import InviteFriends from './InviteFriends'
+import Family from './Family'
+import Level from './Level'
+import Medal from './Medal'
 
 // ============ IndexedDB Functions for User Data ============
 const USER_DB_NAME = 'UserDataDB';
@@ -250,10 +254,10 @@ const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
 const FEEDBACK_TYPES = [
-  { id: 'app_bug', label: 'App Bug', icon: '' },
-  { id: 'suggestion', label: 'Suggestion', icon: '' },
-  { id: 'recharge', label: 'Recharge', icon: '' },
-  { id: 'others', label: 'Others', icon: '' }
+  { id: 'app_bug', label: 'App Bug', icon: '🐛' },
+  { id: 'suggestion', label: 'Suggestion', icon: '💡' },
+  { id: 'recharge', label: 'Recharge', icon: '💰' },
+  { id: 'others', label: 'Others', icon: '📝' }
 ]
 
 export const getOrCreateAccountNumber = (uid: string) => {
@@ -465,18 +469,30 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [appLang, setAppLang] = useState<LanguageCode>('en')
   
   const [showFeedbackPage, setShowFeedbackPage] = useState(false)
-
   const [showWallet, setShowWallet] = useState(false)
   const [walletTab, setWalletTab] = useState<'coins' | 'diamond'>('coins')
-
-  // ✅ Store state
   const [showStore, setShowStore] = useState(false)
+  
+  // New states for additional pages
+  const [showInviteFriends, setShowInviteFriends] = useState(false)
+  const [showFamily, setShowFamily] = useState(false)
+  const [showLevel, setShowLevel] = useState(false)
+  const [showMedal, setShowMedal] = useState(false)
 
   useEffect(() => {
     if (onPublicProfileChange) {
-      onPublicProfileChange(currentView !== 'me' || showFeedbackPage || showWallet || showStore)
+      onPublicProfileChange(
+        currentView !== 'me' || 
+        showFeedbackPage || 
+        showWallet || 
+        showStore ||
+        showInviteFriends ||
+        showFamily ||
+        showLevel ||
+        showMedal
+      )
     }
-  }, [showFeedbackPage, currentView, showWallet, showStore])
+  }, [showFeedbackPage, currentView, showWallet, showStore, showInviteFriends, showFamily, showLevel, showMedal])
   
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
@@ -515,7 +531,16 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view !== 'me' || showFeedbackPage || showWallet || showStore)
+      onPublicProfileChange(
+        view !== 'me' || 
+        showFeedbackPage || 
+        showWallet || 
+        showStore ||
+        showInviteFriends ||
+        showFamily ||
+        showLevel ||
+        showMedal
+      )
     }
   }
 
@@ -740,7 +765,23 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // ✅ Wallet और Store की early returns
+  // Early returns for all pages
+  if (showInviteFriends) {
+    return <InviteFriends onBack={() => setShowInviteFriends(false)} />
+  }
+
+  if (showFamily) {
+    return <Family onBack={() => setShowFamily(false)} />
+  }
+
+  if (showLevel) {
+    return <Level onBack={() => setShowLevel(false)} />
+  }
+
+  if (showMedal) {
+    return <Medal onBack={() => setShowMedal(false)} />
+  }
+
   if (showWallet) {
     return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
   }
@@ -1033,10 +1074,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               <div 
                 className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => {
-                  if (item.id === '5') {
+                  if (item.id === '1') {
+                    setShowInviteFriends(true);
+                  } else if (item.id === '2') {
+                    setShowFamily(true);
+                  } else if (item.id === '3') {
+                    setShowLevel(true);
+                  } else if (item.id === '4') {
+                    setShowMedal(true);
+                  } else if (item.id === '5') {
                     setShowStore(true);
                   }
-                  // Add other menu actions if needed
                 }}
               >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
@@ -1115,4 +1163,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-                                              }
+  }
