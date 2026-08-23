@@ -53,6 +53,11 @@ interface Seat {
   user?: { name: string; image: string; accountId: string };
   isMuted?: boolean;
   isSpeaking?: boolean;
+  gif?: {
+    src: string;
+    removeColor: "white" | "black" | "both";
+    timestamp: number;
+  };
 }
 
 interface Message {
@@ -156,7 +161,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const remoteParticipants = useRemoteParticipants();
 
   // Music controller state
-  const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full' | 'minimized'>('hidden');
+  const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full'>('hidden');
   const [currentTrack, setCurrentTrack] = useState<MusicTrack | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicVolume, setMusicVolume] = useState(1);
@@ -165,11 +170,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
   const [musicDuration, setMusicDuration] = useState(0);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Drag for minimized music
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
@@ -420,7 +420,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           isLocked: data.isLocked || false,
           isMuted: data.isMuted || false,
           isSpeaking: data.isSpeaking || false,
-          user: data.user || undefined
+          user: data.user || undefined,
+          gif: data.gif || undefined
         });
       });
 
@@ -643,7 +644,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     try {
       const updatedSeats = seats.map(s => {
         if (s.number === selectedSeat && s.user?.accountId === userAccountId) {
-          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false };
+          return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false, gif: undefined };
         }
         return s;
       });
@@ -658,6 +659,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     } catch (err) {
       console.error("Error leaving seat:", err);
     }
+  };
+
+  // New function to leave seat directly by accountId (used from RoomProfile)
+  const handleLeaveUserSeat = async (accountId: string) => {
+    const updatedSeats = seats.map(seat =>
+      seat.isOccupied && seat.user?.accountId === accountId
+        ? { ...seat, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false, gif: undefined }
+        : seat
+    );
+    setSeats(updatedSeats);
+    await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
   };
 
   const handleBottomMicToggle = async (e?: React.MouseEvent) => {
@@ -824,7 +836,41 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (onBack) onBack();
   };
 
-  const handleEmojiSelect = (emoji: string) => console.log("Selected Emoji:", emoji);
+  // Handle GIF emoji selection from EmojiPicker
+  const handleSeatEmoji = async (emojiData: any) => {
+    if (!hasSeat || !currentUserSeat) return;
+    
+    const gifData = {
+      src: emojiData.src,
+      removeColor: emojiData.removeColor || "both",
+      timestamp: Date.now(),
+    };
+    
+    const updatedSeats = seats.map(seat =>
+      seat.number === currentUserSeat.number
+        ? { ...seat, gif: gifData }
+        : seat
+    );
+    setSeats(updatedSeats);
+    await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
+
+    // Agar duration diya hai toh utne time baad clear karo
+    if (emojiData.duration && typeof emojiData.duration === 'number' && emojiData.duration > 0) {
+      setTimeout(() => {
+        const clearedSeats = seats.map(seat =>
+          seat.number === currentUserSeat.number
+            ? { ...seat, gif: undefined }
+            : seat
+        );
+        setSeats(clearedSeats);
+        clearedSeats.forEach(seat => updateSeatInFirestore(seat));
+      }, emojiData.duration * 1000);
+    }
+  };
+
+  const handleEmojiSelect = (emojiData: any) => {
+    handleSeatEmoji(emojiData);
+  };
 
   const handleClearChat = () => {
     clearedAtRef.current = Date.now();
@@ -1003,51 +1049,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     setIsMusicPlaying(false);
   };
 
-  const handleMinimizeMusicController = () => {
-    setMusicControllerState('minimized');
-  };
-
-  const handleMaximizeMusicController = () => {
-    setMusicControllerState('full');
-  };
-
-  // Drag handlers for minimized music
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    setIsDragging(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    dragRef.current = { x: clientX, y: clientY };
-  };
-
-  const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isDragging) return;
-    const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
-    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
-    const dx = clientX - dragRef.current.x;
-    const dy = clientY - dragRef.current.y;
-    setDragOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
-    dragRef.current = { x: clientX, y: clientY };
-  }, [isDragging]);
-
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleDragMove);
-      document.addEventListener('mouseup', handleDragEnd);
-      document.addEventListener('touchmove', handleDragMove);
-      document.addEventListener('touchend', handleDragEnd);
-      return () => {
-        document.removeEventListener('mousemove', handleDragMove);
-        document.removeEventListener('mouseup', handleDragEnd);
-        document.removeEventListener('touchmove', handleDragMove);
-        document.removeEventListener('touchend', handleDragEnd);
-      };
-    }
-  }, [isDragging, handleDragMove, handleDragEnd]);
-
   useEffect(() => {
     return () => {
       if (musicAudioRef.current) {
@@ -1087,11 +1088,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
         height: '100dvh'
-      }}
-      onClick={() => {
-        if (musicControllerState === 'full') {
-          setMusicControllerState('minimized');
-        }
       }}
     >
       <img
@@ -1416,7 +1412,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Active Users Sheet - Removed Copy Option */}
+      {/* Active Users Sheet */}
       {showActiveUsers && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
@@ -1449,7 +1445,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Room Info Sheet - Increased DP size only here */}
+      {/* Room Info Sheet */}
       {showRoomInfo && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
@@ -1561,34 +1557,36 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
           }}
           onLeaveSeat={() => {
-            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-            if (userSeat) {
-              setSelectedSeat(userSeat.number);
-              setTimeout(() => handleLeaveSeat(), 100);
+            if (profileUser) {
+              handleLeaveUserSeat(profileUser.accountId);
             }
             setShowUserProfile(false);
           }}
           onMute={() => {
-            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-            if (userSeat) {
-              setSelectedSeat(userSeat.number);
-              setTimeout(() => handleToggleMute(), 100);
+            if (profileUser) {
+              const seat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
+              if (seat) {
+                const updated = seats.map(s => s.number === seat.number ? { ...s, isMuted: !s.isMuted } : s);
+                setSeats(updated);
+                updated.forEach(s => updateSeatInFirestore(s));
+              }
             }
             setShowUserProfile(false);
           }}
           onLock={() => {
-            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-            if (userSeat) {
-              setSelectedSeat(userSeat.number);
-              setTimeout(() => handleToggleLock(), 100);
+            if (profileUser) {
+              const seat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
+              if (seat) {
+                const updated = seats.map(s => s.number === seat.number ? { ...s, isLocked: !s.isLocked } : s);
+                setSeats(updated);
+                updated.forEach(s => updateSeatInFirestore(s));
+              }
             }
             setShowUserProfile(false);
           }}
           onKickOut={() => {
-            const userSeat = seats.find(s => s.isOccupied && s.user?.accountId === profileUser.accountId);
-            if (userSeat) {
-              setSelectedSeat(userSeat.number);
-              setTimeout(() => handleLeaveSeat(), 100);
+            if (profileUser) {
+              handleLeaveUserSeat(profileUser.accountId);
             }
             setShowUserProfile(false);
           }}
@@ -1699,7 +1697,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         />
       )}
 
-      {/* Music Controller - Full Size */}
+      {/* Music Controller - Full Size (no minimize button) */}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
         <div 
           className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm px-3"
@@ -1723,17 +1721,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--music-icon-size)', height: 'var(--music-icon-size)' }}>
                 <path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
                 <line x1="12" y1="2" x2="12" y2="12" />
-              </svg>
-            </button>
-
-            <button
-              onClick={handleMinimizeMusicController}
-              className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
-              aria-label="Minimize music controller"
-            >
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--music-icon-size)', height: 'var(--music-icon-size)' }}>
-                <line x1="7" y1="17" x2="17" y2="7" />
-                <polyline points="7 7 17 7 17 17" />
               </svg>
             </button>
 
@@ -1825,48 +1812,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Music Controller - Minimized with Drag */}
-      {musicControllerState === 'minimized' && currentTrack && !showFourGride && (
-        <div
-          className="fixed z-[45] touch-none select-none"
-          style={{ 
-            bottom: `calc(var(--music-mini-bottom) + ${dragOffset.y}px)`, 
-            right: `calc(var(--music-mini-right) + ${dragOffset.x}px)`,
-            cursor: 'grab'
-          }}
-          onMouseDown={handleDragStart}
-          onTouchStart={handleDragStart}
-          onDoubleClick={handleMaximizeMusicController}
-        >
-          <div
-            className="relative rounded-full overflow-hidden shadow-lg transition-transform hover:scale-105"
-            style={{
-              width: 'var(--music-mini-size)',
-              height: 'var(--music-mini-size)',
-              border: 'var(--music-mini-border) solid black',
-              backgroundColor: 'black',
-            }}
-          >
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <div className="relative w-full h-full flex items-center justify-center">
-                <div className="absolute w-18 h-18 rounded-full border-2 border-red-500 animate-ping-slow" style={{ animationDuration: '1.5s' }} />
-                <div className="absolute w-18 h-18 rounded-full border-2 border-red-400 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }} />
-                <div className="absolute w-18 h-18 rounded-full border-2 border-red-300 animate-ping-slow" style={{ animationDuration: '1.5s', animationDelay: '1s' }} />
-                <div className="rounded-full bg-red-500 animate-pulse" style={{ width: 'var(--music-mini-dot)', height: 'var(--music-mini-dot)' }} />
-              </div>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center music-minimize-icon z-20">
-              <img 
-                src="/IMG_20260815_133309.png" 
-                alt="Music" 
-                className="w-full h-full object-cover rounded-full" 
-                style={{ borderRadius: '50%' }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Custom styles */}
       <style jsx global>{`
         :root {
@@ -1918,13 +1863,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-control-size: 20px;
           --music-play-size: 24px;
           --music-volume-width: 28px;
-          
-          /* Music Minimized */
-          --music-mini-size: 44px;
-          --music-mini-bottom: 6vh;
-          --music-mini-right: 8px;
-          --music-mini-border: 2px;
-          --music-mini-dot: 8px;
         }
 
         .music-volume-slider {
@@ -2169,6 +2107,24 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                     zIndex: 1
                   }}
                 />
+                {/* GIF Overlay above avatar */}
+                {seatData?.gif && (
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                    <WhiteColorRemovalShader
+                      imageSrc={seatData.gif.src}
+                      threshold={0.88}
+                      removeColor={seatData.gif.removeColor}
+                      className="w-10 h-10"
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        objectFit: 'contain',
+                        maxWidth: 'none',
+                        maxHeight: 'none',
+                      }}
+                    />
+                  </div>
+                )}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
@@ -2230,4 +2186,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-}
+      }
