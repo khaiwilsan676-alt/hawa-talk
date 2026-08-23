@@ -91,6 +91,7 @@ export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps
     { id: "pleading", name: "Pleading", src: "/512 (4).gif" },
     { id: "hug", name: "Hug", src: "/512 (8).gif" },
     { id: "kiss", name: "Kiss-R", src: "/512 (14).gif" },
+    { id: "Angery", name: " Angery", src: "/512 (1).gif" }, 
   ];
 
   const handleGifClick = (gif: { id: string; name: string; src: string }) => {
