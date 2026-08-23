@@ -1,84 +1,96 @@
 "use client";
 
 import React, { useState } from "react";
-import { Smile, Send } from "lucide-react";
+import { Smile } from "lucide-react";
+import WhiteColorRemovalShader from "./WhiteColorRemovalShader";
 
 export default function EmojiPicker({ onClose, onSelectEmoji }: { onClose: () => void, onSelectEmoji: (e: any) => void }) {
-  const [selectedEmoji, setSelectedEmoji] = useState("😊");
+  const [selectedGif, setSelectedGif] = useState("");
 
-  // Frequently used emojis
-  const emojis = [
-    "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣",
-    "🥹", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍",
-    "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝",
-    "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🥸", "🤩",
-    "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁",
-    "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭",
-    "😮‍💨", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵",
-    "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔"
+  // PNG stickers data - with WebShader background removal
+  const gifStickers = [
+    { id: 'laugh', name: 'Laugh', src: '/512.png', removeColor: 'white' },
+    { id: 'sad', name: 'Sad', src: '/512 (6).png', removeColor: 'white' },
+    { id: 'love', name: 'Love', src: '/512 (3).png', removeColor: 'white' },
+    { id: 'thinking', name: 'Thinking', src: '/512 (2).png', removeColor: 'white' },
+    { id: 'party', name: 'Party', src: '/512 (16).png', removeColor: 'white' },
+    { id: 'loving', name: 'Loving', src: '/512 (15).png', removeColor: 'white' },
+    { id: 'smart', name: 'Smart', src: '/512 (13).png', removeColor: 'white' },
+    { id: 'irritating', name: 'Irritating', src: '/512 (12).png', removeColor: 'white' },
+    { id: 'rolling', name: 'Rolling', src: '/512 (10).png', removeColor: 'white' },
+    { id: 'unamused', name: 'Unamused', src: '/512 (11).png', removeColor: 'white' },
+    { id: 'pleading', name: 'Pleading', src: '/512 (4).png', removeColor: 'white' },
+    { id: 'hug', name: 'Hug', src: '/512 (8).png', removeColor: 'white' },
+    { id: 'kiss', name: 'Kiss-R', src: '/512 (14).png', removeColor: 'white' },
   ];
+
+  const handleGifClick = (gif: any) => {
+    setSelectedGif(gif.name);
+    if (onSelectEmoji) {
+      onSelectEmoji(gif);
+    }
+    // Auto close after selection
+    if (onClose) {
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col justify-end bg-black/50 backdrop-blur-xs">
       {/* 40vh Black Sheet Container */}
       <div className="h-[40vh] w-full bg-black text-white flex flex-col justify-between rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3 pb-3">
         
-        {/* 1. TOP HEADING */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
+        {/* TOP HEADING */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-2 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Smile className="w-5 h-5 text-yellow-400" />
-            <h2 className="text-base font-bold tracking-wide text-white">Emojis</h2>
+            <h2 className="text-base font-bold tracking-wide text-white">Stickers</h2>
           </div>
-          {/* Close button (optional) */}
           {onClose && (
             <button 
               onClick={onClose}
-              className="text-gray-400 hover:text-white text-xs px-2 py-1 rounded-md bg-white/5"
+              className="text-gray-400 hover:text-white text-xs px-2 py-1 rounded-md bg-white/5 transition-colors"
             >
               ✕
             </button>
           )}
         </div>
 
-        {/* 2. EMOJI GRID AREA */}
-        <div className="flex-1 overflow-y-auto py-3 grid grid-cols-8 gap-2 place-items-center scrollbar-none">
-          {emojis.map((emoji, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setSelectedEmoji(emoji);
-                if (onSelectEmoji) onSelectEmoji(emoji);
-              }}
-              className={`text-2xl p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center ${
-                selectedEmoji === emoji
-                  ? "bg-blue-600/30 border border-blue-500 scale-110"
-                  : "hover:bg-white/10 border border-transparent"
-              }`}
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
-
-        {/* 3. BOTTOM SEND BAR */}
-        <div className="flex items-center justify-between border-t border-white/10 pt-2">
-          <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full">
-            <span className="text-xs text-gray-400">Selected:</span>
-            <span className="text-lg">{selectedEmoji}</span>
+        {/* PNG STICKERS GRID - 4 per row, WebShader for background removal */}
+        <div className="flex-1 overflow-y-auto py-3 scrollbar-none">
+          <div className="grid grid-cols-4 gap-2 place-items-center">
+            {gifStickers.map((gif) => (
+              <button
+                key={gif.id}
+                onClick={() => handleGifClick(gif)}
+                className={`w-full aspect-square rounded-xl transition-all active:scale-90 flex items-center justify-center overflow-hidden border ${
+                  selectedGif === gif.name
+                    ? "bg-blue-600/30 border-blue-500 scale-105"
+                    : "hover:bg-white/10 border-transparent"
+                }`}
+              >
+                {/* WebShader - STRICT background removal for PNG */}
+                <WhiteColorRemovalShader
+                  imageSrc={gif.src}
+                  threshold={0.85}
+                  removeColor={gif.removeColor || 'white'}
+                  className="w-full h-full"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    maxWidth: 'none',
+                    maxHeight: 'none',
+                    pointerEvents: 'none',
+                  }}
+                />
+              </button>
+            ))}
           </div>
-
-          {/* Send Button */}
-          <button
-            onClick={() => console.log("Sent Emoji:", selectedEmoji)}
-            className="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs px-5 py-2 rounded-full shadow-lg shadow-blue-600/30 transition-all flex items-center gap-1.5"
-          >
-            <span>Send</span>
-            <Send className="w-3.5 h-3.5" />
-          </button>
         </div>
 
+        {/* NO BOTTOM BAR - Removed */}
       </div>
     </div>
   );
 }
-
