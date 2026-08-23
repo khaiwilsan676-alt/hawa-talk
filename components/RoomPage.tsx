@@ -389,7 +389,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     };
   }, [roomId]);
 
-  // Firestore Snapshot listener with Single-User enforcement & Auto-Expire check
   useEffect(() => {
     if (!db) return;
 
@@ -563,7 +562,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     }
   };
 
-  // 100% Guaranteed Single Active Seat Switcher
   const handleTakeSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -582,7 +580,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         return; 
       }
 
-      // Purani seat clear karo aur selected seat par bitha do
       const updatedSeats = seats.map(s => {
         if (s.isOccupied && s.user?.accountId === userAccountId && s.number !== selectedSeat) {
           return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false, gif: undefined };
@@ -602,7 +599,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       setSeats(updatedSeats);
 
-      // Firestore update for all impacted seats
       const updatePromises = updatedSeats.map(seat => {
         const seatDocRef = doc(db, seatsCollection, String(seat.number));
         return setDoc(seatDocRef, {
@@ -851,7 +847,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (onBack) onBack();
   };
 
-  // ONE-TIME GIF EMIT & HARD DELETE FUNCTION
   const handleSeatEmoji = async (emojiData: any) => {
     if (!hasSeat || !currentUserSeat || !db) return;
     
@@ -859,7 +854,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     const seatNum = currentUserSeat.number;
     const seatDocRef = doc(db, seatsCollection, String(seatNum));
 
-    // 1. Set GIF in Firestore with timestamp
     await updateDoc(seatDocRef, {
       gif: {
         src: emojiData.src,
@@ -867,7 +861,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       }
     });
 
-    // 2. Exactly after 3.5 seconds, permanently delete GIF field
     setTimeout(async () => {
       try {
         const snap = await getDoc(seatDocRef);
@@ -1874,7 +1867,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// SeatItem Component - 100% Exact Circular Avatar Placement + Fresh 1-Time Overlap
+// SeatItem Component - 100% Unclipped Avatar Frame + Large Uncut Overlay GIF
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1998,7 +1991,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Main Seat Circle */}
+      {/* Main Seat Circle - Fully Overflow Visible */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2007,39 +2000,53 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             <div className="absolute rounded-full pointer-events-none" style={{ width: 'calc(var(--seat-size) * 1.066)', height: 'calc(var(--seat-size) * 1.066)', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
           </>
         )}
-        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto ${activeSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
+        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto overflow-visible ${activeSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
           {isLocked ? (
             <div className="flex items-center justify-center" style={{ width: 'calc(var(--seat-size) * 0.53)', height: 'calc(var(--seat-size) * 0.53)' }}>
               <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#94a7be] stroke-[2] stroke-linecap-round stroke-linejoin-round"><rect x="5" y="11" width="14" height="10" rx="2.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><circle cx="12" cy="16" r="1.2" fill="#94a7be" /></svg>
             </div>
           ) : isOccupied && user ? (
             <>
-              {/* EXACT AVATAR CONTAINER */}
-              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+              {/* UNCLIPPED AVATAR CONTAINER */}
+              <div className="relative w-full h-full rounded-full overflow-visible flex items-center justify-center">
                 {/* 1. Base User Avatar */}
                 <img
                   src={user.image || "/default-avatar.png"}
                   alt={user.name}
-                  className={`w-full h-full rounded-full object-cover select-none pointer-events-auto transition-opacity duration-150 ${gif ? 'opacity-0' : 'opacity-100'}`}
+                  className="w-full h-full rounded-full object-cover select-none pointer-events-auto cursor-pointer"
                   draggable={false}
                   onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
                   onClick={onAvatarClick}
-                  style={{ cursor: 'pointer', zIndex: 1 }}
+                  style={{ zIndex: 1 }}
                 />
 
-                {/* 2. EXACT OVERLAPPING GIF */}
+                {/* 2. LARGE OVERLAPPING GIF (Uncut, Extends Beyond Avatar If Needed) */}
                 {gif && (
-                  <div className="absolute inset-0 z-10 w-full h-full rounded-full overflow-hidden bg-transparent flex items-center justify-center pointer-events-none">
+                  <div 
+                    className="absolute pointer-events-none overflow-visible flex items-center justify-center"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '125%',
+                      height: '125%',
+                      zIndex: 30,
+                    }}
+                  >
                     <img
                       key={`${gif.src}-${gif.timestamp}`}
                       src={`${encodeURI(gif.src)}?t=${gif.timestamp}`}
                       alt="Reaction"
-                      className="w-full h-full object-cover select-none pointer-events-none"
+                      className="w-full h-full object-contain select-none pointer-events-none"
+                      style={{
+                        maxWidth: 'none',
+                        maxHeight: 'none',
+                      }}
                     />
                   </div>
                 )}
 
-                {/* Avatar Frame */}
+                {/* 3. 160% Avatar Frame (Uncut, Overflow Visible) */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
