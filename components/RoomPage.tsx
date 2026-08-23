@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import EmojiPicker from './Emojipicker';
 import GiftPicker from './GiftPicker';
 import RoomSettingPage, { RoomSettingsData } from './RoomSettingPage';
@@ -9,7 +9,7 @@ import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { db } from "../src/lib/firebase";
-import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, updateDoc, deleteField, collection } from "firebase/firestore";
 import { 
   LiveKitRoom, 
   RoomAudioRenderer, 
@@ -18,11 +18,7 @@ import {
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { 
-  Room, 
-  RoomEvent, 
-  Track as LKTrack, 
-  RemoteParticipant, 
-  RemoteTrackPublication
+  Track as LKTrack
 } from "livekit-client";
 
 interface RoomPageProps {
@@ -56,7 +52,6 @@ interface Seat {
   gif?: {
     src: string;
     timestamp: number;
-    duration?: number;
   };
 }
 
@@ -95,7 +90,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
   const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
   const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
-  const isRoomOwner = userAccountId === roomOwnerId;
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -143,7 +137,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 }
 
 function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
-  // UI state
   const [showExitMenu, setShowExitMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
@@ -160,7 +153,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
 
-  // Music controller state
   const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full'>('hidden');
   const [currentTrack, setCurrentTrack] = useState<MusicTrack | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
@@ -171,7 +163,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [musicDuration, setMusicDuration] = useState(0);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Message restriction state
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
 
@@ -194,12 +185,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
   const isRoomOwner = userAccountId === roomOwnerId;
 
-  // Message state
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [fullImageModal, setFullImageModal] = useState<string | null>(null);
 
-  // Room data state
   const [roomName, setRoomName] = useState<string>("");
   const [roomAnnouncement, setRoomAnnouncement] = useState<string>("");
   const [isLocked, setIsLocked] = useState<boolean>(false);
@@ -209,19 +198,16 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
   const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg");
 
-  // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
 
-  // Presence and users
   const [showChatInput, setShowChatInput] = useState(false);
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
   const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([]);
 
-  // Seat helpers
   const getInitialSeats = (mode: number): Seat[] => {
     const seats: Seat[] = [];
     for (let i = 1; i <= mode; i++) {
@@ -254,7 +240,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     setShowUserProfile(true);
   };
 
-  // Sync LiveKit Microphone state with Seat Mute & Occupied Status
   const desiredAudioStateRef = useRef<boolean | null>(null);
 
   useEffect(() => {
@@ -266,12 +251,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       if (desiredAudioStateRef.current !== desiredState) {
         desiredAudioStateRef.current = desiredState;
         localParticipant.setMicrophoneEnabled(desiredState).catch(console.error);
-        console.log("Microphone state synced to:", desiredState);
       }
     }
   }, [currentUserSeat?.isMuted, hasSeat, localParticipant]);
 
-  // Monitor remote participants for seat synchronization
   useEffect(() => {
     if (!remoteParticipants || remoteParticipants.length === 0) return;
     
@@ -306,7 +289,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     updateSeatsWithRemoteParticipants();
   }, [remoteParticipants, seats]);
 
-  // Fetch room data from Firestore
   useEffect(() => {
     const fetchRoomData = async () => {
       if (roomId && db) {
@@ -407,6 +389,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     };
   }, [roomId]);
 
+  // Firestore Snapshot listener with Single-User enforcement & Auto-Expire check
   useEffect(() => {
     if (!db) return;
 
@@ -414,16 +397,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       const seatMap = new Map<number, Seat>();
       const now = Date.now();
 
-      snapshot.docs.forEach(doc => {
-        const data = doc.data() as Seat;
-        let validGif = data.gif;
+      snapshot.docs.forEach(docSnap => {
+        const data = docSnap.data() as Seat;
+        let activeGif = data.gif;
 
-        // Auto expire GIF agar time over ho gaya ho
-        if (validGif) {
-          const gifDuration = (validGif.duration || 4) * 1000;
-          if (now - validGif.timestamp > gifDuration) {
-            validGif = undefined;
-          }
+        if (activeGif && (now - activeGif.timestamp > 3500)) {
+          activeGif = undefined;
         }
 
         seatMap.set(data.number, {
@@ -432,8 +411,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           isLocked: data.isLocked || false,
           isMuted: data.isMuted || false,
           isSpeaking: data.isSpeaking || false,
-          user: data.user || undefined,
-          gif: validGif
+          user: data.isOccupied && data.user ? data.user : undefined,
+          gif: activeGif
         });
       });
 
@@ -584,21 +563,13 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     }
   };
 
-  const updateSeatInFirestore = async (seat: Seat) => {
-    if (!db) return;
-    try {
-      await setDoc(doc(db, seatsCollection, String(seat.number)), seat, { merge: true });
-    } catch (err) {
-      console.error("Error updating seat:", err);
-    }
-  };
-
+  // 100% Guaranteed Single Active Seat Switcher
   const handleTakeSeat = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null) return;
+    if (selectedSeat === null || !db) return;
     
     try {
       const targetSeat = seats.find(s => s.number === selectedSeat);
@@ -611,6 +582,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         return; 
       }
 
+      // Purani seat clear karo aur selected seat par bitha do
       const updatedSeats = seats.map(s => {
         if (s.isOccupied && s.user?.accountId === userAccountId && s.number !== selectedSeat) {
           return { ...s, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false, gif: undefined };
@@ -621,7 +593,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             isOccupied: true,
             user: { name: currentUser.name, image: currentUser.image, accountId: userAccountId },
             isMuted: false,
-            isSpeaking: false
+            isSpeaking: false,
+            gif: undefined
           };
         }
         return s;
@@ -629,7 +602,20 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       setSeats(updatedSeats);
 
-      const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
+      // Firestore update for all impacted seats
+      const updatePromises = updatedSeats.map(seat => {
+        const seatDocRef = doc(db, seatsCollection, String(seat.number));
+        return setDoc(seatDocRef, {
+          number: seat.number,
+          isOccupied: seat.isOccupied,
+          isLocked: seat.isLocked || false,
+          isMuted: seat.isMuted || false,
+          isSpeaking: seat.isSpeaking || false,
+          user: seat.isOccupied && seat.user ? seat.user : null,
+          gif: null
+        }, { merge: true });
+      });
+
       await Promise.all(updatePromises);
 
       setShowSeatSheet(false);
@@ -644,7 +630,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null) return;
+    if (selectedSeat === null || !db) return;
     
     try {
       const updatedSeats = seats.map(s => {
@@ -656,8 +642,15 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       
       setSeats(updatedSeats);
       
-      const updatePromises = updatedSeats.map(seat => updateSeatInFirestore(seat));
-      await Promise.all(updatePromises);
+      const seatDocRef = doc(db, seatsCollection, String(selectedSeat));
+      await setDoc(seatDocRef, {
+        number: selectedSeat,
+        isOccupied: false,
+        user: null,
+        isSpeaking: false,
+        isMuted: false,
+        gif: null
+      }, { merge: true });
 
       setShowSeatSheet(false);
       setSelectedSeat(null);
@@ -667,18 +660,31 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   };
 
   const handleLeaveUserSeat = async (accountId: string) => {
+    if (!db) return;
+    const targetSeat = seats.find(s => s.isOccupied && s.user?.accountId === accountId);
+    if (!targetSeat) return;
+
     const updatedSeats = seats.map(seat =>
-      seat.isOccupied && seat.user?.accountId === accountId
+      seat.number === targetSeat.number
         ? { ...seat, isOccupied: false, user: undefined, isSpeaking: false, isMuted: false, gif: undefined }
         : seat
     );
     setSeats(updatedSeats);
-    await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
+
+    const seatDocRef = doc(db, seatsCollection, String(targetSeat.number));
+    await setDoc(seatDocRef, {
+      number: targetSeat.number,
+      isOccupied: false,
+      user: null,
+      isSpeaking: false,
+      isMuted: false,
+      gif: null
+    }, { merge: true });
   };
 
   const handleBottomMicToggle = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!currentUserSeat) return;
+    if (!currentUserSeat || !db) return;
 
     const newMuteState = !currentUserSeat.isMuted;
     const updatedSeats = seats.map(seat => 
@@ -688,7 +694,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     );
     
     setSeats(updatedSeats);
-    await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
+    const seatDocRef = doc(db, seatsCollection, String(currentUserSeat.number));
+    await updateDoc(seatDocRef, { isMuted: newMuteState });
   };
 
   const handleToggleMute = async (e?: React.MouseEvent) => {
@@ -696,18 +703,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null) return;
+    if (selectedSeat === null || !db) return;
     
-    const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) {
-        const newMuteState = !s.isMuted;
-        return { ...s, isMuted: newMuteState };
-      }
-      return s;
-    });
-    
+    const target = seats.find(s => s.number === selectedSeat);
+    if (!target) return;
+
+    const newMuteState = !target.isMuted;
+    const updatedSeats = seats.map(s => s.number === selectedSeat ? { ...s, isMuted: newMuteState } : s);
     setSeats(updatedSeats);
-    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
+
+    const seatDocRef = doc(db, seatsCollection, String(selectedSeat));
+    await updateDoc(seatDocRef, { isMuted: newMuteState });
 
     setShowSeatSheet(false);
     setSelectedSeat(null);
@@ -718,13 +724,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null) return;
-    const updatedSeats = seats.map(s => {
-      if (s.number === selectedSeat) return { ...s, isLocked: !s.isLocked };
-      return s;
-    });
+    if (selectedSeat === null || !db) return;
+
+    const target = seats.find(s => s.number === selectedSeat);
+    if (!target) return;
+
+    const newLockState = !target.isLocked;
+    const updatedSeats = seats.map(s => s.number === selectedSeat ? { ...s, isLocked: newLockState } : s);
     setSeats(updatedSeats);
-    updatedSeats.forEach(seat => updateSeatInFirestore(seat));
+
+    const seatDocRef = doc(db, seatsCollection, String(selectedSeat));
+    await updateDoc(seatDocRef, { isLocked: newLockState });
+
     setShowSeatSheet(false);
     setSelectedSeat(null);
   };
@@ -840,41 +851,38 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (onBack) onBack();
   };
 
-  // Handle GIF emoji selection - Direct GIF & Auto Disappear after duration
+  // ONE-TIME GIF EMIT & HARD DELETE FUNCTION
   const handleSeatEmoji = async (emojiData: any) => {
-    if (!hasSeat || !currentUserSeat) return;
+    if (!hasSeat || !currentUserSeat || !db) return;
     
-    const displayDuration = emojiData.duration || 4; // 4 seconds standard duration
-    const gifData = {
-      src: emojiData.src,
-      timestamp: Date.now(),
-      duration: displayDuration
-    };
-    
-    const updatedSeats = seats.map(seat =>
-      seat.number === currentUserSeat.number
-        ? { ...seat, gif: gifData }
-        : seat
-    );
-    setSeats(updatedSeats);
-    await Promise.all(updatedSeats.map(seat => updateSeatInFirestore(seat)));
+    const sendTimestamp = Date.now();
+    const seatNum = currentUserSeat.number;
+    const seatDocRef = doc(db, seatsCollection, String(seatNum));
 
-    // Timer to clear the GIF from seat automatically
-    setTimeout(async () => {
-      const currentSnapshot = seats.find(s => s.number === currentUserSeat.number);
-      if (currentSnapshot && currentSnapshot.gif?.timestamp === gifData.timestamp) {
-        const clearedSeats = seats.map(seat =>
-          seat.number === currentUserSeat.number
-            ? { ...seat, gif: undefined }
-            : seat
-        );
-        setSeats(clearedSeats);
-        const targetSeat = clearedSeats.find(s => s.number === currentUserSeat.number);
-        if (targetSeat) {
-          await updateSeatInFirestore(targetSeat);
-        }
+    // 1. Set GIF in Firestore with timestamp
+    await updateDoc(seatDocRef, {
+      gif: {
+        src: emojiData.src,
+        timestamp: sendTimestamp,
       }
-    }, displayDuration * 1000);
+    });
+
+    // 2. Exactly after 3.5 seconds, permanently delete GIF field
+    setTimeout(async () => {
+      try {
+        const snap = await getDoc(seatDocRef);
+        if (snap.exists()) {
+          const currentData = snap.data();
+          if (currentData.gif && currentData.gif.timestamp === sendTimestamp) {
+            await updateDoc(seatDocRef, {
+              gif: deleteField()
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error clearing GIF from seat:", err);
+      }
+    }, 3500);
   };
 
   const handleEmojiSelect = (emojiData: any) => {
@@ -945,7 +953,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     );
   };
 
-  // Music controller functions
   const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
     if (playlist && playlist.length > 0) {
       setMusicPlaylist(playlist);
@@ -1195,7 +1202,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
-            {/* Announcement Card - Transparent with Glossy Blue Text */}
             <div className="mx-0 mb-2 flex justify-start">
               <div 
                 className="border border-white/5 max-w-[80%]"
@@ -1301,7 +1307,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-        {/* Footer Controls - hidden when input is open */}
+        {/* Footer Controls */}
         <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-2">
             <button
@@ -1357,7 +1363,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-        {/* Input container - fixed at bottom when open */}
+        {/* Input container */}
         {showChatInput && (
           <div 
             ref={inputContainerRef} 
@@ -1404,11 +1410,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         )}
       </div>
 
-      {/* Public Msg Off Modal */}
+      {/* Modals & Sheets */}
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
           <div className="bg-white rounded-2xl px-5 py-4 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="text-3xl mb-2"></div>
             <h3 className="text-base font-bold text-gray-800 mb-1">Public msg are off</h3>
             <p className="text-xs text-gray-500 mb-3">Only the room owner can send messages right now.</p>
             <button
@@ -1421,7 +1426,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Active Users Sheet */}
       {showActiveUsers && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
@@ -1454,19 +1458,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Room Info Sheet */}
       {showRoomInfo && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            {!isRoomOwner && (
-              <svg viewBox="0 0 24 24" className="absolute top-2 left-2 fill-none stroke-black stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-            )}
-
             <div className="px-4 pt-5 pb-2 flex items-center justify-center">
               <h2 className="text-base font-bold text-gray-800">Room Information</h2>
             </div>
@@ -1477,12 +1472,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {roomInfoTab === 'profile' ? (
                 <div className="space-y-3">
-                  {/* Room DP - Increased size to 80px */}
                   <div className="flex items-center gap-2">
-                    <div 
-                      className="rounded-xl overflow-hidden border border-gray-200 flex-shrink-0" 
-                      style={{ width: '80px', height: '80px' }}
-                    >
+                    <div className="rounded-xl overflow-hidden border border-gray-200 flex-shrink-0" style={{ width: '80px', height: '80px' }}>
                       <img src={roomImage} alt="Room" className="w-full h-full object-cover" />
                     </div>
                     <div>
@@ -1530,7 +1521,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       </div>
                     </div>
                   ))}
-                  {roomFollowers.length === 0 && <p className="text-center text-gray-400 text-xs py-6">No followers yet</p>}
                 </div>
               )}
             </div>
@@ -1538,7 +1528,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* RoomProfile Bottom Sheet */}
       {showUserProfile && profileUser && (
         <RoomProfile
           user={{ 
@@ -1552,13 +1541,13 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           isCurrentUser={profileUser.accountId === userAccountId}
           isRoomOwner={isRoomOwner}
           onClose={() => setShowUserProfile(false)}
-          onFollow={() => console.log('Follow clicked for', profileUser.accountId)}
+          onFollow={() => console.log('Follow clicked')}
           onMessage={() => {
             setShowUserProfile(false);
             setShowChatInput(true);
             setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
           }}
-          onCopyId={() => console.log('Copy ID clicked')}
+          onCopyId={() => console.log('Copy ID')}
           onMention={(username?: string) => {
             setShowUserProfile(false);
             setShowChatInput(true);
@@ -1566,9 +1555,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 200);
           }}
           onLeaveSeat={() => {
-            if (profileUser) {
-              handleLeaveUserSeat(profileUser.accountId);
-            }
+            if (profileUser) handleLeaveUserSeat(profileUser.accountId);
             setShowUserProfile(false);
           }}
           onMute={() => {
@@ -1577,7 +1564,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               if (seat) {
                 const updated = seats.map(s => s.number === seat.number ? { ...s, isMuted: !s.isMuted } : s);
                 setSeats(updated);
-                updated.forEach(s => updateSeatInFirestore(s));
+                updated.forEach(s => {
+                  const sRef = doc(db, seatsCollection, String(s.number));
+                  updateDoc(sRef, { isMuted: s.isMuted });
+                });
               }
             }
             setShowUserProfile(false);
@@ -1588,21 +1578,21 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               if (seat) {
                 const updated = seats.map(s => s.number === seat.number ? { ...s, isLocked: !s.isLocked } : s);
                 setSeats(updated);
-                updated.forEach(s => updateSeatInFirestore(s));
+                updated.forEach(s => {
+                  const sRef = doc(db, seatsCollection, String(s.number));
+                  updateDoc(sRef, { isLocked: s.isLocked });
+                });
               }
             }
             setShowUserProfile(false);
           }}
           onKickOut={() => {
-            if (profileUser) {
-              handleLeaveUserSeat(profileUser.accountId);
-            }
+            if (profileUser) handleLeaveUserSeat(profileUser.accountId);
             setShowUserProfile(false);
           }}
         />
       )}
 
-      {/* Exit Menu */}
       {showExitMenu && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40" onClick={closeExitMenu}>
           <div className="flex flex-col items-center gap-6" onClick={(e) => e.stopPropagation()}>
@@ -1625,7 +1615,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Seat Actions Sheet */}
       {showSeatSheet && selectedSeat !== null && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
@@ -1647,7 +1636,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Full Image Modal */}
       {fullImageModal && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
           <div className="relative max-w-full max-h-full">
@@ -1659,7 +1647,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Message Sheet */}
       {showMessageSheet && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
@@ -1676,7 +1663,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Four Grid Tools Sheet */}
       {showFourGride && (
         <Fourgride
           onClose={() => setShowFourGride(false)}
@@ -1686,9 +1672,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           speaker={isSpeakerOn}
           onToggleSpeaker={() => setIsSpeakerOn(prev => !prev)}
           onMusicPlay={(track) => {
-            const db = indexedDB.open('HurryMusicDB', 1);
-            db.onsuccess = () => {
-              const request = db.result
+            const idb = indexedDB.open('HurryMusicDB', 1);
+            idb.onsuccess = () => {
+              const request = idb.result
                 .transaction('music', 'readonly')
                 .objectStore('music')
                 .getAll();
@@ -1706,7 +1692,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         />
       )}
 
-      {/* Music Controller - Full Size (no minimize button) */}
+      {/* Music Controller */}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
         <div 
           className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm px-3"
@@ -1759,25 +1745,16 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </div>
 
             <div className="flex items-center justify-center gap-4 mb-1.5">
-              <button
-                onClick={handlePrevTrack}
-                className="p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Previous track"
-              >
+              <button onClick={handlePrevTrack} className="p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer" aria-label="Previous track">
                 <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--music-control-size)', height: 'var(--music-control-size)' }}>
                   <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
                 </svg>
               </button>
 
-              <button
-                onClick={handleToggleMusicPlay}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
-                aria-label={isMusicPlaying ? 'Pause' : 'Play'}
-              >
+              <button onClick={handleToggleMusicPlay} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer" aria-label={isMusicPlaying ? 'Pause' : 'Play'}>
                 {isMusicPlaying ? (
                   <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--music-play-size)', height: 'var(--music-play-size)' }}>
-                    <rect x="6" y="4" width="4" height="16" rx="1" />
-                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                    <rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />
                   </svg>
                 ) : (
                   <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--music-play-size)', height: 'var(--music-play-size)' }}>
@@ -1786,11 +1763,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 )}
               </button>
 
-              <button
-                onClick={handleNextTrack}
-                className="p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Next track"
-              >
+              <button onClick={handleNextTrack} className="p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer" aria-label="Next track">
                 <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--music-control-size)', height: 'var(--music-control-size)' }}>
                   <path d="M16 6h2v12h-2zm-2.5 6l-8.5 6V6z" />
                 </svg>
@@ -1821,14 +1794,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Custom styles */}
+      {/* Global Theme styles */}
       <style jsx global>{`
         :root {
-          /* Seat */
           --seat-size: 56px;
           --seat-side-offset: -90px;
-          
-          /* Header */
           --header-btn-size: 32px;
           --header-btn-padding: 4px 8px;
           --header-icon-size: 20px;
@@ -1838,32 +1808,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --header-follow-btn-size: 20px;
           --header-follow-icon-size: 12px;
           --header-count-size: 10px;
-          
-          /* Footer */
           --footer-btn-size: 40px;
           --footer-icon-size: 25px;
           --footer-sayhi-text: 12px;
           --footer-sayhi-padding: 8px 16px;
           --footer-input-text: 14px;
-          
-          /* Announcement */
           --announcement-padding: 12px;
           --announcement-radius: 8px;
           --announcement-text-size: 13px;
           --announcement-label-size: 10px;
-          
-          /* Messages */
           --msg-avatar-size: 24px;
           --msg-name-size: 12px;
           --msg-text-size: 12px;
           --msg-jointime-size: 10px;
-          
-          /* Exit Menu */
           --exit-btn-size: 67px;
           --exit-icon-size: 24px;
           --exit-text-size: 14px;
-          
-          /* Music Controller */
           --music-controller-bottom: 8vh;
           --music-padding: 10px;
           --music-icon-size: 16px;
@@ -1874,73 +1834,27 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-volume-width: 28px;
         }
 
-        .music-volume-slider {
+        .music-volume-slider, .music-progress-slider {
           -webkit-appearance: none;
           appearance: none;
         }
-        .music-volume-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 0px;
-          height: 0px;
-          background: transparent;
-        }
-        .music-volume-slider::-moz-range-thumb {
-          width: 0px;
-          height: 0px;
-          background: transparent;
-          border: none;
-        }
-        .music-volume-slider::-webkit-slider-runnable-track {
-          height: 8px;
-          border-radius: 4px;
-        }
-        .music-volume-slider::-moz-range-track {
-          height: 8px;
-          border-radius: 4px;
-        }
-
-        .music-progress-slider {
-          -webkit-appearance: none;
-          appearance: none;
-        }
-        .music-progress-slider::-webkit-slider-thumb {
+        .music-volume-slider::-webkit-slider-thumb, .music-progress-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
           width: 0px;
           height: 0px;
           background: transparent;
         }
-        .music-progress-slider::-moz-range-thumb {
+        .music-volume-slider::-moz-range-thumb, .music-progress-slider::-moz-range-thumb {
           width: 0px;
           height: 0px;
           background: transparent;
           border: none;
         }
-        .music-progress-slider::-webkit-slider-runnable-track {
-          height: 6px;
-          border-radius: 3px;
-        }
-        .music-progress-slider::-moz-range-track {
-          height: 6px;
-          border-radius: 3px;
-        }
-
-        @keyframes ping-slow {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(1.5); opacity: 0; }
-        }
-        .animate-ping-slow {
-          animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-
-        @keyframes rotate-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .music-minimize-icon {
-          animation: rotate-slow 4s linear infinite;
-        }
+        .music-volume-slider::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; }
+        .music-volume-slider::-moz-range-track { height: 8px; border-radius: 4px; }
+        .music-progress-slider::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; }
+        .music-progress-slider::-moz-range-track { height: 6px; border-radius: 3px; }
 
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
@@ -1952,7 +1866,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         .scrollbar-none::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* Emoji & Gift Pickers */}
       {showEmojiPicker && <EmojiPicker onClose={() => setShowEmojiPicker(false)} onSelectEmoji={handleEmojiSelect} />}
       {showGiftPicker && <GiftPicker onClose={() => setShowGiftPicker(false)} />}
 
@@ -1961,7 +1874,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// SeatItem Component - Clean Avatar + Direct GIF Overlay (No Shader / No white-remove)
+// SeatItem Component - 100% Exact Circular Avatar Placement + Fresh 1-Time Overlap
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -1976,6 +1889,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
   const isMuted = seatData?.isMuted ?? false;
   const user = seatData?.user;
   const isRoomOwnerSeat = isOccupied && user?.accountId === roomOwnerId;
+  const gif = seatData?.gif;
 
   const remoteParticipants = useRemoteParticipants();
   const { localParticipant } = useLocalParticipant();
@@ -1994,7 +1908,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 
   return (
     <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      {/* LEFT side image - UPAR KI TARAF */}
+      {/* 500K Badge on Seat 1 */}
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none hidden sm:flex"
@@ -2045,7 +1959,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* RIGHT side image - UPAR KI TARAF */}
+      {/* Right side badge on Seat 1 */}
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none"
@@ -2084,7 +1998,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Seat circle */}
+      {/* Main Seat Circle */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2100,42 +2014,32 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             </div>
           ) : isOccupied && user ? (
             <>
-              <div className="relative w-full h-full rounded-full overflow-visible">
+              {/* EXACT AVATAR CONTAINER */}
+              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                {/* 1. Base User Avatar */}
                 <img
                   src={user.image || "/default-avatar.png"}
                   alt={user.name}
-                  className="w-full h-full rounded-full object-cover pointer-events-none"
+                  className={`w-full h-full rounded-full object-cover select-none pointer-events-auto transition-opacity duration-150 ${gif ? 'opacity-0' : 'opacity-100'}`}
                   draggable={false}
                   onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
                   onClick={onAvatarClick}
-                  style={{ 
-                    cursor: 'pointer', 
-                    pointerEvents: 'auto',
-                    borderRadius: '50%',
-                    position: 'relative',
-                    zIndex: 1
-                  }}
+                  style={{ cursor: 'pointer', zIndex: 1 }}
                 />
 
-                {/* Animated GIF Overlay Above / On Avatar - Pure Direct GIF without any Shader/Removal */}
-                {seatData?.gif && (
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center justify-center animate-bounce">
+                {/* 2. EXACT OVERLAPPING GIF */}
+                {gif && (
+                  <div className="absolute inset-0 z-10 w-full h-full rounded-full overflow-hidden bg-transparent flex items-center justify-center pointer-events-none">
                     <img
-                      src={encodeURI(seatData.gif.src)}
-                      alt="Reaction GIF"
-                      className="w-12 h-12 object-contain select-none"
-                      style={{
-                        maxWidth: 'none',
-                        maxHeight: 'none',
-                      }}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
+                      key={`${gif.src}-${gif.timestamp}`}
+                      src={`${encodeURI(gif.src)}?t=${gif.timestamp}`}
+                      alt="Reaction"
+                      className="w-full h-full object-cover select-none pointer-events-none"
                     />
                   </div>
                 )}
 
-                {/* Avatar Ring Frame */}
+                {/* Avatar Frame */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
@@ -2144,7 +2048,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                     transform: 'translate(-50%, -50%)',
                     width: '160%',
                     height: '160%',
-                    zIndex: 2,
+                    zIndex: 20,
                     overflow: 'visible',
                     display: 'flex',
                     alignItems: 'center',
@@ -2166,8 +2070,10 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   />
                 </div>
               </div>
+
+              {/* Mute Badge */}
               {isMuted && (
-                <div className="absolute -right-1 -bottom-1 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 bg-red-500" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
+                <div className="absolute -right-1 -bottom-1 rounded-full flex items-center justify-center shadow-md pointer-events-none z-30 bg-red-500" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
