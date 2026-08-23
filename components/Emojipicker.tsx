@@ -111,19 +111,18 @@ export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps
         aria-hidden="true" 
       />
 
-      {/* Bottom Sheet Modal with Custom Background Image */}
+      {/* Bottom Sheet Modal */}
       <div 
-        className="h-[42vh] w-full text-white flex flex-col justify-between rounded-t-2xl shadow-2xl px-4 pt-3 pb-4 pointer-events-auto relative overflow-hidden bg-cover bg-center"
+        className="h-[42vh] w-full text-white flex flex-col justify-between rounded-none shadow-2xl px-4 pt-3 pb-4 pointer-events-auto relative overflow-hidden bg-cover bg-center"
         style={{
           backgroundImage: "url('/1787514857468~2.jpg')",
           backgroundColor: "#121212",
         }}
       >
-        {/* Optional subtle overlay for readability */}
         <div className="absolute inset-0 bg-black/25 pointer-events-none" />
 
-        {/* TOP MIDDLE TAB BAR ONLY */}
-        <div className="relative z-10 flex items-center justify-center gap-8 border-b border-white/15 pb-2 flex-shrink-0">
+        {/* TOP MIDDLE TAB BAR ONLY (No bottom border line) */}
+        <div className="relative z-10 flex items-center justify-center gap-8 pb-2 flex-shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab("emojis")}
