@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Sparkles } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -122,7 +122,7 @@ function ShaderImageBadge({
   return (
     <canvas
       ref={canvasRef}
-      className={`${className} drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transition-transform duration-200`}
+      className={`${className} drop-shadow-[0_6px_14px_rgba(0,0,0,0.8)] transition-transform duration-300`}
     />
   )
 }
@@ -134,126 +134,145 @@ export default function Level({ onBack }: LevelProps) {
   const progressPercent = Math.min((currentXP / nextLevelXP) * 100, 100)
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#07060f] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-[0_0_50px_rgba(168,85,247,0.15)]">
-      {/* Dynamic Multi-Color Shiny Mesh Gradients */}
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#05030a] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-[0_0_80px_rgba(168,85,247,0.25)] border-x border-white/5">
+      
+      {/* Dynamic Vivid Light Orbs */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Top-Left Cyan/Blue Gloss Aura */}
-        <div className="absolute -top-12 -left-16 w-80 h-80 bg-gradient-to-br from-cyan-500/25 via-blue-600/20 to-transparent rounded-full blur-[70px]" />
-        
-        {/* Mid-Right Pink/Rose Gloss Aura */}
-        <div className="absolute top-[32%] -right-20 w-88 h-88 bg-gradient-to-bl from-pink-500/25 via-fuchsia-600/20 to-transparent rounded-full blur-[80px]" />
-        
-        {/* Center Purple Shimmer */}
-        <div className="absolute top-[58%] left-1/2 -translate-x-1/2 w-96 h-96 bg-purple-600/15 rounded-full blur-[90px]" />
-        
-        {/* Bottom Blue/Cyan Glow */}
-        <div className="absolute -bottom-16 -left-12 w-80 h-80 bg-gradient-to-tr from-blue-600/20 via-indigo-500/15 to-transparent rounded-full blur-[75px]" />
+        {/* Electric Cyan Beacon */}
+        <div className="absolute -top-16 -left-16 w-80 h-80 bg-[#00d2ff]/30 rounded-full blur-[90px]" />
+        {/* Intense Hot Pink / Fuchsia Flare */}
+        <div className="absolute top-[28%] -right-20 w-96 h-96 bg-[#ff007f]/25 rounded-full blur-[100px]" />
+        {/* Deep Royal Purple Center Aura */}
+        <div className="absolute top-[52%] -left-10 w-96 h-96 bg-[#7928ca]/30 rounded-full blur-[110px]" />
+        {/* Bottom Laser Sky Glow */}
+        <div className="absolute -bottom-10 right-0 w-80 h-80 bg-[#3b82f6]/25 rounded-full blur-[90px]" />
       </div>
 
-      {/* Top Gloss Flare Bar */}
-      <div className="absolute top-0 left-0 right-0 h-[14vh] pointer-events-none z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-fuchsia-500/30 via-blue-500/20 to-transparent blur-2xl" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 via-pink-400 to-transparent shadow-[0_0_20px_#f472b6]" />
+      {/* Gloss Top Beam */}
+      <div className="absolute top-0 left-0 right-0 h-36 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-fuchsia-600/40 via-purple-600/20 to-transparent blur-3xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-[1.5px] bg-gradient-to-r from-transparent via-[#00f2fe] via-[#ff007f] to-transparent shadow-[0_0_25px_#00f2fe]" />
       </div>
 
       {/* Header */}
-      <div className="relative z-10 flex items-center justify-center px-4 pt-4 pb-3 mb-6">
+      <div className="relative z-10 flex items-center justify-between px-4 pt-4 pb-3 mb-4">
         <button
           onClick={onBack}
-          className="absolute left-3 p-2 bg-white/5 border border-white/10 hover:bg-white/15 active:scale-95 rounded-full backdrop-blur-md transition-all shadow-[0_0_12px_rgba(255,255,255,0.05)] cursor-pointer"
+          className="p-2.5 bg-gradient-to-b from-white/15 to-white/5 border border-white/20 hover:border-pink-400/50 active:scale-90 rounded-2xl backdrop-blur-xl transition-all shadow-[0_4px_15px_rgba(0,0,0,0.5)] cursor-pointer"
         >
-          <ChevronLeft size={22} className="text-white" />
+          <ChevronLeft size={20} className="text-white" />
         </button>
-        <h1 className="text-base font-bold tracking-wider bg-gradient-to-r from-white via-pink-200 to-sky-200 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)]">
-          Level
-        </h1>
+        <div className="flex items-center gap-1.5">
+          <Sparkles size={15} className="text-pink-400 animate-pulse" />
+          <h1 className="text-base font-black tracking-widest bg-gradient-to-r from-[#ffffff] via-[#ffd6f6] to-[#a5f3fc] bg-clip-text text-transparent drop-shadow-[0_2px_15px_rgba(255,255,255,0.6)]">
+            LEVEL SYSTEM
+          </h1>
+          <Sparkles size={15} className="text-cyan-400 animate-pulse" />
+        </div>
+        <div className="w-9" />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 px-4 pt-2 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      {/* Main Scroll Content */}
+      <div className="flex-1 px-4 pt-1 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
-        {/* Level Card - Glossy Blue/Purple/Pink Gradient */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1b3cb5]/90 via-[#3a1b7a]/85 to-[#831843]/80 p-3.5 shadow-[0_8px_32px_rgba(147,51,234,0.3)] border border-pink-400/30 backdrop-blur-xl">
-          {/* Internal Top Gloss Reflection */}
-          <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 via-white/5 to-transparent pointer-events-none" />
-          <div className="absolute -top-10 -right-10 w-36 h-36 bg-pink-400/30 blur-2xl rounded-full pointer-events-none" />
+        {/* VIP Level Card - Metallic Glass Morphism */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1a1138]/95 via-[#23093b]/90 to-[#0e1b4d]/95 p-4 shadow-[0_12px_40px_rgba(255,0,128,0.25)] border border-pink-400/40 backdrop-blur-2xl group">
+          {/* Glass Gloss Shimmer Stripe */}
+          <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/25 via-white/5 to-transparent pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-44 h-44 bg-gradient-to-br from-pink-500/40 to-cyan-400/30 blur-2xl rounded-full pointer-events-none" />
 
           <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-white/25 to-white/5 border border-white/50 flex items-center justify-center text-white text-lg font-black shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                K
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#ff007f] via-[#7928ca] to-[#00d2ff] p-[2px] shadow-[0_0_15px_rgba(255,0,128,0.5)]">
+                  <div className="w-full h-full rounded-[14px] bg-[#0c0919] flex items-center justify-center text-white text-lg font-black tracking-wider">
+                    K
+                  </div>
+                </div>
               </div>
               <div>
-                <h2 className="text-sm font-bold text-white tracking-wide leading-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
+                <h2 className="text-base font-black text-white tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
                   Aawara.
                 </h2>
-                <div className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-full bg-black/40 border border-pink-300/30 backdrop-blur-md">
-                  <span className="text-[9px] font-black text-pink-200 bg-gradient-to-r from-pink-500 to-purple-600 px-1 rounded shadow-sm">
-                    ID
+                <div className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full bg-black/60 border border-white/20 shadow-inner backdrop-blur-md">
+                  <span className="text-[9px] font-black text-white bg-gradient-to-r from-[#ff007f] to-[#7928ca] px-1.5 py-[1px] rounded-full shadow-sm">
+                    UID
                   </span>
-                  <span className="text-[11px] text-pink-100 font-medium tracking-wide">
+                  <span className="text-[11px] text-cyan-200 font-mono font-semibold tracking-wide">
                     100658242
                   </span>
                 </div>
               </div>
             </div>
-            <div className="relative flex items-center justify-center w-14 h-14">
-              <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400/40 via-purple-500/40 to-pink-500/40 blur-md rounded-full" />
+            
+            <div className="relative flex items-center justify-center w-16 h-16">
+              <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400/50 via-fuchsia-500/50 to-purple-600/50 blur-lg rounded-full animate-pulse" />
               <ShaderImageBadge
                 src="/1787590094184~2.jpg"
                 isWhiteBg={false}
                 className="w-24 h-24 object-contain"
               />
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-100 to-cyan-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] pointer-events-none">
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-200 to-cyan-200 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] pointer-events-none">
                 Lv.9
               </span>
             </div>
           </div>
 
-          <div className="mt-3 relative z-10 space-y-1.5">
-            <p className="text-[11px] text-pink-100/90 font-medium">
-              {neededXP} needed for the next level.
-            </p>
-            <div className="w-full h-2 bg-black/50 rounded-full p-[1px] border border-white/20 shadow-inner">
+          <div className="mt-4 relative z-10 space-y-2">
+            <div className="flex justify-between items-center text-[11px] font-semibold">
+              <span className="text-pink-200/90 drop-shadow-sm">
+                Next Rank Target
+              </span>
+              <span className="text-cyan-300 font-mono">
+                {neededXP.toLocaleString()} XP left
+              </span>
+            </div>
+
+            {/* Glowing Dual Progress Bar */}
+            <div className="relative w-full h-2.5 bg-black/70 rounded-full p-[1.5px] border border-white/20 shadow-inner overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-cyan-400 via-pink-400 to-purple-500 rounded-full shadow-[0_0_12px_rgba(244,114,182,0.8)] transition-all duration-500"
+                className="h-full bg-gradient-to-r from-[#00f2fe] via-[#ff0844] to-[#f355da] rounded-full shadow-[0_0_15px_rgba(255,0,128,0.9)] transition-all duration-700"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <p className="text-[10px] text-pink-200/90 font-mono tracking-tight">
-              Lv.9 {currentXP}/{nextLevelXP}
-            </p>
-            <button className="mt-1 px-3 py-1 rounded-full bg-gradient-to-r from-white/20 to-white/10 hover:from-white/30 hover:to-white/15 border border-white/40 backdrop-blur-md text-[11px] font-semibold text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)] active:scale-95 transition-all">
-              How to upgrade?
-            </button>
+            
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-[10px] text-purple-200 font-mono">
+                Lv.9 [{currentXP.toLocaleString()}/{nextLevelXP.toLocaleString()}]
+              </span>
+              <button className="px-3.5 py-1 rounded-full bg-gradient-to-r from-white/20 via-pink-500/20 to-purple-500/20 hover:from-white/30 hover:to-pink-500/40 border border-white/30 backdrop-blur-md text-[10px] font-bold text-white shadow-[0_0_15px_rgba(255,255,255,0.15)] active:scale-95 transition-all">
+                Upgrade Rules ↗
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Medal Section - Shiny Glassmorphic Gradients */}
-        <div className="space-y-2.5">
+        {/* Level Medal Section */}
+        <div className="space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <span className="text-pink-400 text-xs shadow-sm">✦</span>
-            <h3 className="text-xs font-bold tracking-widest bg-gradient-to-r from-cyan-300 via-pink-300 to-purple-300 bg-clip-text text-transparent uppercase">
-              Level Medal
+            <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-pink-500" />
+            <h3 className="text-xs font-black tracking-widest bg-gradient-to-r from-cyan-400 via-pink-400 to-purple-400 bg-clip-text text-transparent uppercase drop-shadow-[0_2px_8px_rgba(255,0,128,0.4)]">
+              Honor Medals
             </h3>
-            <span className="text-cyan-400 text-xs shadow-sm">✦</span>
+            <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-cyan-500" />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+
+          <div className="grid grid-cols-3 gap-2.5">
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden bg-gradient-to-b from-[#1c1829]/90 via-[#120f20]/85 to-[#0b0a14]/95 rounded-xl p-2.5 flex flex-col items-center justify-center space-y-1 border border-white/[0.12] hover:border-pink-500/40 shadow-[0_6px_20px_rgba(0,0,0,0.5)] active:scale-95 transition-all cursor-pointer group backdrop-blur-md"
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#19142b]/95 via-[#110d1f]/90 to-[#090712]/95 p-3 flex flex-col items-center justify-center space-y-1.5 border border-white/10 hover:border-pink-500/60 shadow-[0_8px_24px_rgba(0,0,0,0.7)] hover:shadow-[0_0_20px_rgba(255,0,128,0.3)] active:scale-95 transition-all duration-300 cursor-pointer group backdrop-blur-md"
               >
-                {/* Shiny Specular Edge & Glow */}
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-pink-400/40" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/[0.04] via-pink-500/[0.04] to-purple-500/[0.04] opacity-0 group-hover:opacity-100 transition-opacity" />
-                
+                {/* Shiny Edge Highlight */}
+                <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-pink-500/60 via-cyan-400/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/[0.08] via-purple-500/[0.08] to-cyan-500/[0.08] opacity-0 group-hover:opacity-100 transition-opacity" />
+
                 <ShaderImageBadge
                   src={tier.imageSrc}
                   isWhiteBg={tier.isWhiteBg}
-                  className="w-14 h-7 object-contain group-hover:scale-110"
+                  className="w-14 h-8 object-contain group-hover:scale-110"
                 />
-                <span className="text-[10px] font-semibold text-neutral-300 group-hover:text-pink-200 transition-colors">
+                <span className="text-[10px] font-bold text-neutral-300 group-hover:text-cyan-200 transition-colors tracking-tight">
                   {tier.range}
                 </span>
               </div>
@@ -261,35 +280,40 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Rewards Section - Gloss Cards with Glow Tags */}
-        <div className="space-y-2.5">
+        {/* Rewards Section */}
+        <div className="space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <span className="text-purple-400 text-xs">✦</span>
-            <h3 className="text-xs font-bold tracking-widest bg-gradient-to-r from-purple-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent uppercase">
-              Rewards
+            <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-purple-500" />
+            <h3 className="text-xs font-black tracking-widest bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent uppercase drop-shadow-[0_2px_8px_rgba(0,210,255,0.4)]">
+              Level Perks & Rewards
             </h3>
-            <span className="text-pink-400 text-xs">✦</span>
+            <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-purple-500" />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+
+          <div className="grid grid-cols-3 gap-2.5">
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden bg-gradient-to-b from-[#1c1829]/90 via-[#120f20]/85 to-[#0b0a14]/95 rounded-xl p-2.5 pt-3.5 flex flex-col items-center justify-between min-h-[95px] border border-white/[0.12] hover:border-cyan-400/40 shadow-[0_6px_20px_rgba(0,0,0,0.5)] active:scale-95 transition-all cursor-pointer group backdrop-blur-md"
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#19142b]/95 via-[#110d1f]/90 to-[#090712]/95 p-2.5 pt-4 flex flex-col items-center justify-between min-h-[102px] border border-white/10 hover:border-cyan-400/60 shadow-[0_8px_24px_rgba(0,0,0,0.7)] hover:shadow-[0_0_20px_rgba(0,210,255,0.3)] active:scale-95 transition-all duration-300 cursor-pointer group backdrop-blur-md"
               >
-                {/* Shiny Specular Highlight */}
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
-                
-                <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 border border-white/30 flex items-center justify-center shadow-[0_0_10px_rgba(236,72,153,0.5)]">
-                  <span className="text-[8px] font-black text-white leading-none tracking-tight">
-                    {reward.level}
-                  </span>
+                {/* Shiny Edge Highlight */}
+                <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/60 via-purple-500/60 to-transparent" />
+
+                <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-[#ff007f] via-[#7928ca] to-[#00d2ff] p-[1px] shadow-[0_0_12px_rgba(255,0,128,0.6)]">
+                  <div className="px-1.5 py-[1px] rounded-full bg-black/80 backdrop-blur-sm">
+                    <span className="text-[8px] font-black text-pink-200 leading-none">
+                      {reward.level}
+                    </span>
+                  </div>
                 </div>
+
                 <ShaderImageBadge
                   src={reward.imageSrc}
                   isWhiteBg={true}
-                  className="w-9 h-9 object-contain group-hover:scale-110 drop-shadow-[0_2px_8px_rgba(244,114,182,0.4)]"
+                  className="w-10 h-10 object-contain group-hover:scale-110 drop-shadow-[0_4px_12px_rgba(255,0,128,0.4)]"
                 />
-                <span className="text-[10px] font-bold text-neutral-100 group-hover:text-pink-200 mt-0.5 transition-colors">
+                
+                <span className="text-[11px] font-black bg-gradient-to-r from-white via-pink-100 to-cyan-100 bg-clip-text text-transparent mt-1">
                   {reward.amount}
                 </span>
               </div>
