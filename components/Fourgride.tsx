@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Wildparty from './Wildparty'; // assuming Wildparty.tsx is in the same directory
+import Wildparty from './Wildparty';
+import Fruitparty from './Fruitparty';
 
 interface FourgrideProps {
   onClose: () => void;
@@ -93,9 +94,10 @@ export default function Fourgride({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // NEW STATE: Game sheet and Wildparty
+  // Game sheet and overlay states
   const [showGameSheet, setShowGameSheet] = useState(false);
   const [showWildParty, setShowWildParty] = useState(false);
+  const [showFruitParty, setShowFruitParty] = useState(false);
 
   // Toggle handlers
   const toggleEntryEffect = () => setEntryEffect(!entryEffect);
@@ -167,7 +169,7 @@ export default function Fourgride({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Play/pause handler - fixed logic
+  // Play/pause handler
   const togglePlay = (id: string, url: string, name: string) => {
     if (currentlyPlaying === id) {
       // Same track - toggle play/pause
@@ -251,7 +253,6 @@ export default function Fourgride({
   // Close music sheet but keep playing
   const handleCloseMusicSheet = () => {
     setShowMusicSheet(false);
-    // Don't stop audio - keep playing
   };
 
   // Filter music by search query
@@ -261,7 +262,7 @@ export default function Fourgride({
 
   // Handler for opening Game Sheet
   const openGameSheet = () => {
-    setShowMusicSheet(false); // close music sheet if open
+    setShowMusicSheet(false);
     setShowGameSheet(true);
   };
 
@@ -271,11 +272,22 @@ export default function Fourgride({
     setShowWildParty(true);
   };
 
+  // Handler for opening Fruitparty from Game Sheet
+  const openFruitParty = () => {
+    setShowGameSheet(false);
+    setShowFruitParty(true);
+  };
+
   return (
     <>
       {/* ---------- Wildparty Overlay ---------- */}
       {showWildParty && (
         <Wildparty onClose={() => setShowWildParty(false)} />
+      )}
+
+      {/* ---------- Fruitparty Overlay ---------- */}
+      {showFruitParty && (
+        <Fruitparty onClose={() => setShowFruitParty(false)} />
       )}
 
       {/* ---------- Game Sheet ---------- */}
@@ -304,26 +316,44 @@ export default function Fourgride({
               </button>
             </div>
 
-            {/* First row, first column - Wild party */}
-            <div className="flex flex-col items-start">
-              <button
-                onClick={openWildParty}
-                className="transition-transform hover:scale-105"
-              >
-                <img
-                  src="/1787338085121.png"   // Update path if needed
-                  alt="Wild party"
-                  className="w-12 h-12 object-contain"
-                />
-              </button>
-              <span className="text-[10px] text-gray-700 mt-1">Wild party</span>
+            {/* Games Grid Row */}
+            <div className="grid grid-cols-4 gap-4">
+              {/* 1. Wild party */}
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={openWildParty}
+                  className="transition-transform hover:scale-105"
+                >
+                  <img
+                    src="/1787338085121.png"
+                    alt="Wild party"
+                    className="w-12 h-12 object-contain"
+                  />
+                </button>
+                <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Wild party</span>
+              </div>
+
+              {/* 2. Fruit party */}
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={openFruitParty}
+                  className="transition-transform hover:scale-105"
+                >
+                  <img
+                    src="/IMG_20260824_232321.png"
+                    alt="Fruit party"
+                    className="w-12 h-12 object-contain"
+                  />
+                </button>
+                <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Fruit party</span>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* ---------- Main Tools Sheet (Fourgride) ---------- */}
-      {!showGameSheet && !showWildParty && (
+      {!showGameSheet && !showWildParty && !showFruitParty && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/30" onClick={onClose} />
@@ -482,7 +512,7 @@ export default function Fourgride({
               <div className="flex justify-around">
                 <div className="flex flex-col items-center">
                   <button
-                    onClick={openGameSheet}   // <-- Changed to open Game Sheet
+                    onClick={openGameSheet}
                     className="transition-transform hover:scale-105"
                   >
                     <img src="/IMG_20260814_111008.png" alt="Games" className="w-12 h-12 object-contain" />
@@ -652,3 +682,4 @@ export default function Fourgride({
     </>
   );
 }
+
