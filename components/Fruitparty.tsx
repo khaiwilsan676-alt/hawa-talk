@@ -172,7 +172,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       {/* 70vh Bottom Sheet */}
       <div
         className="relative bg-[#330c36] w-full max-w-md shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
-        style={{ height: '65vh' }}
+        style={{ height: '70vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
