@@ -18,7 +18,7 @@ const medalTiers: MedalTier[] = [
   { range: 'Lv.11-20', imageSrc: '/1787573593167~2.jpg', isWhiteBg: false },
   { range: 'Lv.21-30', imageSrc: '/1787573599045~2.jpg', isWhiteBg: false },
   { range: 'Lv.31-40', imageSrc: '/1787573616413~2.jpg', isWhiteBg: false },
-  { range: 'Lv.41-50', imageSrc: '/1787586465659~2.jpg', iswhiteBg: false }, 
+  { range: 'Lv.41-50', imageSrc: '/1787586493548~2.jpg', iswhiteBg: false }, 
   { range: 'Lv.51-60', imageSrc: '/1787573621768~2.jpg', isWhiteBg: false },
   { range: 'Lv.61-70', imageSrc: '/1787586465659~2.jpg', isWhiteBg: false },
   { range: 'Lv.71-80', imageSrc: '/1787573604873~2.jpg', isWhiteBg: false },
@@ -107,7 +107,7 @@ export default function Level({ onBack }: LevelProps) {
   return (
     <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#000000] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl">
       {/* 5vh Top Glossy Blue Shine */}
-      <div className="absolute top-0 left-0 right-0 h-[5vh] pointer-events-none z-0 overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[10vh] pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#0088ff]/40 via-[#0055ff]/15 to-transparent blur-md" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-[1.5px] bg-gradient-to-r from-transparent via-[#60a5fa] to-transparent shadow-[0_0_12px_#38bdf8]" />
       </div>
@@ -126,7 +126,7 @@ export default function Level({ onBack }: LevelProps) {
       {/* Main Scroll Content */}
       <div className="flex-1 px-4 pb-8 space-y-4 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Blue Level Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e4db7] via-[#1560bd] to-[#0d2a6b] p-4 shadow-xl border border-sky-400/20">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e4db7] via-[#1560bd] to-[#0d2a6b] h-[135px] p-3 shadow-xl border border-sky-400/20">
           <div className="relative z-10 flex items-center justify-between">
             {/* User Profile */}
             <div className="flex items-center gap-2.5">
