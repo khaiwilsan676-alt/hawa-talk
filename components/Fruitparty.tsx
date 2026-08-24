@@ -7,23 +7,29 @@ interface FruitpartyProps {
 }
 
 // -------------------------------------------------------------
-// Fruit Positions & Sizes (Adjust X, Y, W, H % according to the main background square)
+// Fruit Positions & Sizes (Strictly 3x3 Grid, Zero/Minimal Gap, Curved Corners)
+// Layout:
+// [1] [2] [3]
+// [8] [T] [4]  <-- T is the 30s Timer at (33.33%, 33.33%)
+// [7] [6] [5]
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG-20260823-WA0003.jpg', x: 8,  y: 8,  w: 24, h: 24 }, // Mango
-  { id: 2, img: '/IMG-20260823-WA0004.jpg', x: 38, y: 8,  w: 24, h: 24 }, // Banana
-  { id: 3, img: '/IMG-20260823-WA0005.jpg', x: 68, y: 8,  w: 24, h: 24 }, // Watermelon
-  { id: 4, img: '/IMG-20260823-WA0006.jpg', x: 68, y: 38, w: 24, h: 24 }, // Kiwi
-  { id: 5, img: '/IMG-20260823-WA0007.jpg', x: 68, y: 68, w: 24, h: 24 }, // Grapes
-  { id: 6, img: '/IMG-20260823-WA0008.jpg', x: 38, y: 68, w: 24, h: 24 }, // Apple
-  { id: 7, img: '/IMG-20260823-WA0009.jpg', x: 8,  y: 68, w: 24, h: 24 }, // Strawberry
-  { id: 8, img: '/IMG-20260822-WA0124.jpg', x: 8,  y: 38, w: 24, h: 24 }, // Cherry
+  { id: 1, img: '/IMG-20260823-WA0003.jpg', x: 0,  y: 0,  w: 24, h: 24 }, // Mango
+  { id: 2, img: '/IMG-20260823-WA0004.jpg', x: 33.33, y: 0,  w: 24, h: 24 }, // Banana
+  { id: 3, img: '/IMG-20260823-WA0005.jpg', x: 66.66, y: 0,  w: 24, h: 24 }, // Watermelon
+  { id: 4, img: '/IMG-20260823-WA0006.jpg', x: 66.66, y: 33.33, w: 24, h: 24 }, // Kiwi
+  { id: 5, img: '/IMG-20260823-WA0007.jpg', x: 66.66, y: 66.66, w: 24, h: 24 }, // Grapes
+  { id: 6, img: '/IMG-20260823-WA0008.jpg', x: 33.33, y: 66.66, w: 24, h: 24 }, // Apple
+  { id: 7, img: '/IMG-20260823-WA0009.jpg', x: 0,  y: 66.66, w: 24, h: 24 }, // Strawberry
+  { id: 8, img: '/IMG-20260822-WA0124.jpg', x: 0,  y: 33.33, w: 24, h: 24 }, // Cherry
 ];
 
 export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [countdown, setCountdown] = useState(30);
 
+  // Loading Progress Bar Effect
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -39,12 +45,28 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // 30s Countdown Timer Effect (Runs after loading completes and repeats)
+  useEffect(() => {
+    if (loading) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          return 30; // Reset back to 30s
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [loading]);
+
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* 60vh Bottom Sheet (No rounded corners) */}
+      {/* 60vh Bottom Sheet (No rounded corners at top) */}
       <div
         className="relative bg-[#330c36] w-full max-w-md shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
         style={{ height: '60vh' }}
@@ -62,18 +84,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         </button>
 
         {loading ? (
-          /* ---------- Loading State (Purple Screen with White Color Removal Shader/Filter) ---------- */
+          /* ---------- Loading State ---------- */
           <div className="w-full h-full bg-gradient-to-b from-[#4A154B] via-[#330c36] to-[#1e0520] flex flex-col items-center justify-center px-6">
-            {/* Center Logo with white background blend (mix-blend-multiply removes solid white) */}
-            <div className="w-28 h-28 flex items-center justify-center mb-6">
+            <div className="w-32 h-32 flex items-center justify-center mb-6">
               <img
                 src="/IMG_20260824_232321.png"
                 alt="Fruit Party Logo"
-                className="w-full h-full object-contain mix-blend-multiply filter contrast-125"
+                className="w-full h-full object-contain [mix-blend-mode:screen]"
               />
             </div>
 
-            {/* Loading Strip Bar (Yellow) */}
             <div className="w-48 bg-black/40 rounded-full h-3 p-0.5 border border-yellow-300/40 shadow-inner">
               <div
                 className="bg-gradient-to-r from-yellow-400 to-amber-300 h-full rounded-full transition-all duration-150 ease-out shadow-[0_0_8px_rgba(250,204,21,0.7)]"
@@ -85,17 +105,18 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </span>
           </div>
         ) : (
-          /* ---------- Game Screen: Full 60vh Main Image + Pure Raw Fruits Overlay ---------- */
+          /* ---------- Game Screen: Full 60vh Main Image + Fruits + Center 30s Countdown ---------- */
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-            {/* Puri Main Image strictly fitted inside 60vh */}
+            {/* Main Background Image */}
             <img
               src="/1787413631876~2.jpg"
               alt="Fruit Party Background"
               className="absolute inset-0 w-full h-full object-fill pointer-events-none"
             />
 
-            {/* Fruits Overlay (Original images placed directly on top, no cards, no borders) */}
-            <div className="relative z-10 w-full h-full">
+            {/* Grid Container */}
+            <div className="relative z-10 w-[88%] max-w-[340px] aspect-square p-[1px]">
+              {/* 8 Fruits */}
               {FRUITS_CONFIG.map((fruit) => (
                 <div
                   key={fruit.id}
@@ -106,15 +127,38 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     width: `${fruit.w}%`,
                     height: `${fruit.h}%`,
                   }}
-                  className="flex items-center justify-center"
+                  className="p-[0.5px]"
                 >
-                  <img
-                    src={fruit.img}
-                    alt="Fruit"
-                    className="w-full h-full object-contain"
-                  />
+                  <div className="w-full h-full overflow-hidden rounded-xl bg-black/20">
+                    <img
+                      src={fruit.img}
+                      alt="Fruit"
+                      className="w-full h-full object-cover rounded-xl"
+                    />
+                  </div>
                 </div>
               ))}
+
+              {/* Center Box: 30s Countdown */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '33.33%',
+                  top: '33.33%',
+                  width: '33.33%',
+                  height: '33.33%',
+                }}
+                className="p-[0.5px]"
+              >
+                <div className="w-full h-full flex flex-col items-center justify-center rounded-xl bg-black/50 backdrop-blur-[2px] border border-amber-400/40 shadow-inner">
+                  <span className="text-amber-400 font-extrabold text-2xl tracking-wider drop-shadow-[0_2px_8px_rgba(251,191,36,0.8)]">
+                    {countdown}s
+                  </span>
+                  <span className="text-[10px] text-amber-200/90 font-medium tracking-wide uppercase mt-0.5">
+                    Waiting
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -136,3 +180,4 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
+
