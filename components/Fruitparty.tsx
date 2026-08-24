@@ -214,7 +214,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             />
 
             {/* Compact Square Container Positioned Upwards */}
-            <div className="relative z-10 w-[60%] max-w-[230px] aspect-square -mt-20">
+            <div className="relative z-10 w-[60%] max-w-[240px] aspect-square -mt-40">
               {/* 8 Fruit Images with 0.5px tight padding */}
               {FRUITS_CONFIG.map((fruit) => (
                 <div
