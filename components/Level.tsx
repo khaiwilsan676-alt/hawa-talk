@@ -14,15 +14,16 @@ interface MedalTier {
 }
 
 const medalTiers: MedalTier[] = [
-  { range: 'Lv.1~Lv.10', imageSrc: '/1785137410522.png', isWhiteBg: true },
-  { range: 'Lv.11~Lv.20', imageSrc: '/1787573593167~2.jpg', isWhiteBg: false },
-  { range: 'Lv.21~Lv.30', imageSrc: '/1787573599045~2.jpg', isWhiteBg: false },
-  { range: 'Lv.31~Lv.40', imageSrc: '/1787573616413~2.jpg', isWhiteBg: false },
-  { range: 'Lv.41~Lv.50', imageSrc: '/1787573621768~2.jpg', isWhiteBg: false },
-  { range: 'Lv.51~Lv.60', imageSrc: '/1787573610638~2.jpg', isWhiteBg: false },
-  { range: 'Lv.61~Lv.70', imageSrc: '/1787573604873~2.jpg', isWhiteBg: false },
-  { range: 'Lv.71~Lv.80', imageSrc: '/1787573627153~2.jpg', isWhiteBg: false },
-  { range: 'Lv.81~Lv.90', imageSrc: '/1787573633612~2.jpg', isWhiteBg: false },
+  { range: 'Lv.1-10', imageSrc: '/1785137410522.png', isWhiteBg: true },
+  { range: 'Lv.11-20', imageSrc: '/1787573593167~2.jpg', isWhiteBg: false },
+  { range: 'Lv.21-30', imageSrc: '/1787573599045~2.jpg', isWhiteBg: false },
+  { range: 'Lv.31-40', imageSrc: '/1787573616413~2.jpg', isWhiteBg: false },
+  { range: 'Lv.41-50', imageSrc: '/1787586465659~2.jpg', iswhiteBg: false }, 
+  { range: 'Lv.51-60', imageSrc: '/1787573621768~2.jpg', isWhiteBg: false },
+  { range: 'Lv.61-70', imageSrc: '/1787586465659~2.jpg', isWhiteBg: false },
+  { range: 'Lv.71-80', imageSrc: '/1787573604873~2.jpg', isWhiteBg: false },
+  { range: 'Lv.81-90', imageSrc: '/1787573627153~2.jpg', isWhiteBg: false },
+  { range: 'Lv.91-100', imageSrc: '/1787573633612~2.jpg', isWhiteBg: false },
 ]
 
 function ShaderImageBadge({ src, isWhiteBg }: { src: string; isWhiteBg: boolean }) {
@@ -58,7 +59,7 @@ function ShaderImageBadge({ src, isWhiteBg }: { src: string; isWhiteBg: boolean 
           if (isWhiteBg) {
             const minVal = Math.min(r, g, b)
             const maxVal = Math.max(r, g, b)
-            const isNeutral = (maxVal - minVal) < 30
+            const isNeutral = maxVal - minVal < 30
 
             if (r > 200 && g > 200 && b > 200 && isNeutral) {
               if (r > 235 && g > 235 && b > 235) {
@@ -92,7 +93,7 @@ function ShaderImageBadge({ src, isWhiteBg }: { src: string; isWhiteBg: boolean 
   return (
     <canvas
       ref={canvasRef}
-      className="w-16 h-8 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-transform duration-200 group-hover:scale-110"
+      className="w-16 h-8 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)] transition-transform duration-200 group-hover:scale-110"
     />
   )
 }
@@ -104,89 +105,95 @@ export default function Level({ onBack }: LevelProps) {
   const progressPercent = Math.min((currentXP / nextLevelXP) * 100, 100)
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col font-sans select-none relative overflow-hidden">
-      {/* TOP 25vh: Glossy Blue Mixing into Black */}
-      <div className="h-[25vh] w-full bg-gradient-to-b from-[#0e2a5c] via-[#081736] to-transparent relative px-4 pt-3 flex flex-col justify-between shrink-0">
-        {/* Glossy Radial Glows */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-36 bg-sky-500/20 blur-3xl pointer-events-none rounded-full" />
-        <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-600/25 blur-2xl pointer-events-none rounded-full" />
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#000000] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl">
+      {/* 5vh Top Glossy Blue Shine */}
+      <div className="absolute top-0 left-0 right-0 h-[5vh] pointer-events-none z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0088ff]/40 via-[#0055ff]/15 to-transparent blur-md" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-[1.5px] bg-gradient-to-r from-transparent via-[#60a5fa] to-transparent shadow-[0_0_12px_#38bdf8]" />
+      </div>
 
-        {/* Top Header */}
-        <div className="relative z-10 flex items-center justify-center">
-          <button
-            onClick={onBack}
-            className="absolute left-0 p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
-          >
-            <ChevronLeft size={26} className="text-white" />
-          </button>
-          <h1 className="text-base font-semibold tracking-wide text-white">Level</h1>
-        </div>
+      {/* Top Header */}
+      <div className="relative z-10 flex items-center justify-center px-4 pt-3 pb-2">
+        <button
+          onClick={onBack}
+          className="absolute left-3 p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
+        >
+          <ChevronLeft size={24} className="text-white" />
+        </button>
+        <h1 className="text-base font-semibold tracking-wide text-white">Level</h1>
+      </div>
 
-        {/* Compact Glossy Blue Card */}
-        <div className="relative z-10 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900/80 via-sky-900/60 to-indigo-950/80 backdrop-blur-xl p-3.5 shadow-[0_4px_25px_rgba(14,165,233,0.15)] border border-sky-400/25 mb-1">
-          <div className="flex items-center justify-between">
+      {/* Main Scroll Content */}
+      <div className="flex-1 px-4 pb-8 space-y-4 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* Blue Level Card */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e4db7] via-[#1560bd] to-[#0d2a6b] p-4 shadow-xl border border-sky-400/20">
+          <div className="relative z-10 flex items-center justify-between">
             {/* User Profile */}
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-full bg-sky-400/20 border border-sky-300/40 flex items-center justify-center text-white text-base font-bold shadow-inner">
+              <div className="w-11 h-11 rounded-full bg-slate-500/40 border border-white/40 flex items-center justify-center text-white text-lg font-bold shadow-inner">
                 K
               </div>
               <div>
                 <h2 className="text-sm font-bold text-white leading-tight">Aawara.</h2>
-                <div className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-full bg-black/40 border border-sky-400/30 backdrop-blur-sm">
-                  <span className="text-[9px] font-bold text-sky-300 bg-sky-500/30 px-1 rounded">ID</span>
-                  <span className="text-[10px] text-sky-100 font-medium">100658242</span>
+                <div className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-full bg-blue-950/60 border border-sky-400/30">
+                  <span className="text-[9px] font-bold text-sky-200 bg-sky-500/40 px-1 rounded">ID</span>
+                  <span className="text-[11px] text-sky-100 font-medium">100658242</span>
                 </div>
               </div>
             </div>
 
-            {/* Glowing Lv.9 Badge */}
-            <div className="relative flex items-center justify-center w-14 h-14">
-              <div className="absolute inset-0 bg-sky-400/20 blur-md rounded-full" />
-              <div className="relative w-12 h-12 rounded-xl rotate-45 bg-gradient-to-tr from-sky-400 via-blue-300 to-indigo-600 p-[1.5px] shadow-md">
+            {/* Glowing Badge */}
+            <div className="relative flex items-center justify-center w-16 h-16">
+              <div className="absolute inset-0 bg-sky-400/25 blur-md rounded-full" />
+              <div className="relative w-14 h-14 rounded-xl rotate-45 bg-gradient-to-tr from-sky-400 via-blue-200 to-indigo-600 p-[2px] shadow-md">
                 <div className="w-full h-full bg-gradient-to-br from-[#0b1c40] to-[#040a18] rounded-[10px] flex items-center justify-center border border-sky-300/40">
-                  <span className="-rotate-45 text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-200 to-cyan-300">
+                  <span className="-rotate-45 text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-200 to-cyan-300">
                     Lv.9
                   </span>
                 </div>
               </div>
-              <Sparkles size={10} className="absolute -top-0.5 right-0 text-sky-200 animate-pulse" />
+              <Sparkles size={11} className="absolute -top-1 right-0 text-sky-200 animate-pulse" />
             </div>
           </div>
 
           {/* Progress Section */}
-          <div className="mt-2 space-y-1">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-sky-200/90">{neededXP} needed for the next level.</span>
-              <span className="text-sky-300/80 font-mono">Lv.9 {currentXP}/{nextLevelXP}</span>
-            </div>
+          <div className="mt-2.5 relative z-10 space-y-1">
+            <p className="text-[11px] text-sky-100/90">
+              {neededXP} needed for the next level.
+            </p>
 
-            <div className="w-full h-1.5 bg-black/60 rounded-full p-[1px] border border-sky-400/20">
+            <div className="w-full h-2 bg-blue-950/80 rounded-full p-[1px] border border-sky-400/20">
               <div
                 className="h-full bg-gradient-to-r from-sky-300 via-cyan-400 to-blue-400 rounded-full shadow-[0_0_8px_rgba(56,189,248,0.7)] transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
+
+            <p className="text-[10px] text-sky-200/80 font-mono">
+              Lv.9 {currentXP}/{nextLevelXP}
+            </p>
+
+            <button className="mt-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 border border-white/30 backdrop-blur-md text-[11px] font-medium text-white active:scale-95 transition-all">
+              How to upgrade?
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* LOWER 75vh: Pure Pitch Black Sheet */}
-      <div className="h-[75vh] w-full bg-black px-4 pt-3 pb-6 flex flex-col space-y-3 overflow-y-auto">
-        {/* Section Heading */}
-        <div className="flex items-center justify-center gap-1.5">
+        {/* Section Title */}
+        <div className="flex items-center justify-center gap-1.5 pt-1">
           <span className="text-sky-400 text-xs">✦</span>
-          <h3 className="text-xs font-semibold tracking-wider text-zinc-300 uppercase">
+          <h3 className="text-xs font-semibold tracking-wider text-neutral-400 uppercase">
             Level Medal
           </h3>
           <span className="text-sky-400 text-xs">✦</span>
         </div>
 
-        {/* 3-Column Medals Grid on Pure Black */}
-        <div className="grid grid-cols-3 gap-2.5 pb-4">
+        {/* 3-Column Grid */}
+        <div className="grid grid-cols-3 gap-2.5">
           {medalTiers.map((tier, idx) => (
             <div
               key={idx}
-              className="bg-[#0b0f17] rounded-2xl p-3 flex flex-col items-center justify-center space-y-1.5 border border-white/[0.06] hover:border-sky-500/40 hover:bg-[#111724] transition-all cursor-pointer group"
+              className="bg-[#0e0e11] rounded-2xl p-3 flex flex-col items-center justify-center space-y-1.5 border border-white/[0.08] active:scale-95 transition-all cursor-pointer group"
             >
               <div className="h-8 flex items-center justify-center">
                 <ShaderImageBadge
@@ -195,7 +202,7 @@ export default function Level({ onBack }: LevelProps) {
                 />
               </div>
 
-              <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200">
+              <span className="text-[11px] font-medium text-neutral-400 group-hover:text-neutral-200">
                 {tier.range}
               </span>
             </div>
