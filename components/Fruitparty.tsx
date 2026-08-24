@@ -7,10 +7,10 @@ interface FruitpartyProps {
 }
 
 // -------------------------------------------------------------
-// Fruit Positions & Sizes (Adjustable X, Y, W, H % to scale square size)
+// Fruit Positions & Sizes (Strict 3x3 Grid, Zero-Gap Alignment)
 // Layout:
 // [1] [2] [3]
-// [8] [T] [4]
+// [8] [T] [4]  <-- T = Countdown Timer
 // [7] [6] [5]
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
@@ -24,7 +24,7 @@ const FRUITS_CONFIG = [
   { id: 8, img: '/IMG-20260822-WA0124.jpg', x: 0,      y: 33.333, w: 33.333, h: 33.333 }, // Cherry
 ];
 
-// WebGL Shader for real-time solid white keying / removal
+// WebGL Shader for real-time solid white background removal
 function WebGLShaderImage({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -132,7 +132,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(30);
 
-  // Loading progression
+  // Loading progression effect
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -169,10 +169,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* 60vh Bottom Sheet */}
+      {/* 70vh Bottom Sheet */}
       <div
         className="relative bg-[#330c36] w-full max-w-md shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
-        style={{ height: '60vh' }}
+        style={{ height: '70vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -187,7 +187,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         </button>
 
         {loading ? (
-          /* ---------- Loading State with WebGL Shader Texture ---------- */
+          /* ---------- Loading State with WebGL Shader ---------- */
           <div className="w-full h-full bg-gradient-to-b from-[#4A154B] via-[#330c36] to-[#1e0520] flex flex-col items-center justify-center px-6">
             <div className="w-32 h-32 flex items-center justify-center mb-6">
               <WebGLShaderImage src="/IMG_20260824_232321.png" />
@@ -204,18 +204,18 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </span>
           </div>
         ) : (
-          /* ---------- Game Screen: Reduced Square Box Size ---------- */
+          /* ---------- Game Screen: 70vh Background + Compact Upper Square Grid ---------- */
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-            {/* Full 60vh Background Image */}
+            {/* Full 70vh Background Image */}
             <img
               src="/1787413631876~2.jpg"
               alt="Fruit Party Background"
               className="absolute inset-0 w-full h-full object-fill pointer-events-none"
             />
 
-            {/* Reduced Compact Square Container (72% width / max 260px) */}
-            <div className="relative z-10 w-[72%] max-w-[260px] aspect-square">
-              {/* 8 Fruits */}
+            {/* Compact Square Container Positioned Upwards */}
+            <div className="relative z-10 w-[60%] max-w-[210px] aspect-square -mt-10">
+              {/* 8 Fruit Images with 0.5px tight padding */}
               {FRUITS_CONFIG.map((fruit) => (
                 <div
                   key={fruit.id}
@@ -236,7 +236,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 </div>
               ))}
 
-              {/* Exact Center: Pure Countdown */}
+              {/* Center 30s Countdown (Zero Card / No Box) */}
               <div
                 style={{
                   position: 'absolute',
