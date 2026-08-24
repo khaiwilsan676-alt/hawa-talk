@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { ChevronLeft, Sparkles } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -24,7 +24,7 @@ const medalTiers: MedalTier[] = [
   { range: 'Lv.11-20', imageSrc: '/1787573593167~2.jpg', isWhiteBg: false },
   { range: 'Lv.21-30', imageSrc: '/1787573599045~2.jpg', isWhiteBg: false },
   { range: 'Lv.31-40', imageSrc: '/1787573616413~2.jpg', isWhiteBg: false },
-  { range: 'Lv.41-50', imageSrc: '/1787586493548~2.jpg', isWhiteBg: false },
+  { range: 'Lv.41-50', imageSrc: '/1787586493548~2.jpg', isWhiteBg: false }, 
   { range: 'Lv.51-60', imageSrc: '/1787573621768~2.jpg', isWhiteBg: false },
   { range: 'Lv.61-70', imageSrc: '/1787586465659~2.jpg', isWhiteBg: false },
   { range: 'Lv.71-80', imageSrc: '/1787573604873~2.jpg', isWhiteBg: false },
@@ -134,7 +134,14 @@ export default function Level({ onBack }: LevelProps) {
   const progressPercent = Math.min((currentXP / nextLevelXP) * 100, 100)
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#000000] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#060608] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl">
+      {/* Background Subtle Gloss & Mesh Glow */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[20%] -left-20 w-72 h-72 bg-sky-600/[0.04] rounded-full blur-3xl" />
+        <div className="absolute top-[50%] -right-20 w-80 h-80 bg-blue-500/[0.03] rounded-full blur-3xl" />
+        <div className="absolute bottom-[10%] left-10 w-64 h-64 bg-indigo-500/[0.03] rounded-full blur-3xl" />
+      </div>
+
       {/* 10vh Top Glossy Blue Shine */}
       <div className="absolute top-0 left-0 right-0 h-[10vh] pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#0088ff]/60 via-[#0055ff]/25 to-transparent blur-xl" />
@@ -142,7 +149,7 @@ export default function Level({ onBack }: LevelProps) {
       </div>
 
       {/* Top Header */}
-      <div className="relative z-10 flex items-center justify-center px-4 pt-4 pb-3 mb-2">
+      <div className="relative z-10 flex items-center justify-center px-4 pt-4 pb-3 mb-6">
         <button
           onClick={onBack}
           className="absolute left-3 p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
@@ -153,7 +160,7 @@ export default function Level({ onBack }: LevelProps) {
       </div>
 
       {/* Main Scroll Content */}
-      <div className="flex-1 px-4 pt-2 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 px-4 pt-4 pb-10 space-y-7 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Blue Level Card */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e4db7] via-[#1560bd] to-[#0d2a6b] p-3 shadow-xl border border-sky-400/20">
           <div className="relative z-10 flex items-center justify-between">
@@ -172,17 +179,16 @@ export default function Level({ onBack }: LevelProps) {
             </div>
 
             {/* Top Card Badge */}
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center w-14 h-14">
               <div className="absolute inset-0 bg-sky-400/30 blur-md rounded-full" />
               <ShaderImageBadge
                 src="/1787590094184~2.jpg"
                 isWhiteBg={false}
-                className="w-16 h-12 object-contain"
+                className="w-12 h-12 object-contain"
               />
-              <span className="absolute -top-1.5 text-[11px] font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-sky-100 via-cyan-200 to-sky-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-sky-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] pointer-events-none">
                 Lv.9
               </span>
-              <Sparkles size={11} className="absolute -top-2 -right-1 text-sky-200 animate-pulse" />
             </div>
           </div>
 
@@ -223,8 +229,9 @@ export default function Level({ onBack }: LevelProps) {
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="bg-[#0e0e11] rounded-2xl p-3 flex flex-col items-center justify-center space-y-1.5 border border-white/[0.08] active:scale-95 transition-all cursor-pointer group"
+                className="relative overflow-hidden bg-gradient-to-b from-[#14151a] via-[#0d0e12] to-[#08080a] rounded-2xl p-3 flex flex-col items-center justify-center space-y-1.5 border border-white/[0.1] shadow-[0_4px_12px_rgba(0,0,0,0.6)] active:scale-95 transition-all cursor-pointer group"
               >
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                 <div className="h-8 flex items-center justify-center">
                   <ShaderImageBadge
                     src={tier.imageSrc}
@@ -255,11 +262,13 @@ export default function Level({ onBack }: LevelProps) {
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative bg-[#0e0e11] rounded-2xl p-3 pt-4 flex flex-col items-center justify-between min-h-[105px] border border-white/[0.08] active:scale-95 transition-all cursor-pointer group"
+                className="relative overflow-hidden bg-gradient-to-b from-[#14151a] via-[#0d0e12] to-[#08080a] rounded-2xl p-3 pt-4 flex flex-col items-center justify-between min-h-[105px] border border-white/[0.1] shadow-[0_4px_12px_rgba(0,0,0,0.6)] active:scale-95 transition-all cursor-pointer group"
               >
-                {/* Top Left Circle Badge */}
-                <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-sky-950/80 border border-sky-400/40 flex items-center justify-center shadow-sm">
-                  <span className="text-[9px] font-bold text-sky-200 leading-none">
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+                {/* Top Left Bright Blue Circle Badge */}
+                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-gradient-to-r from-[#0088ff] to-[#0055ff] border border-sky-300/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,136,255,0.6)]">
+                  <span className="text-[9px] font-black text-white leading-none tracking-tight">
                     {reward.level}
                   </span>
                 </div>
@@ -274,7 +283,7 @@ export default function Level({ onBack }: LevelProps) {
                 </div>
 
                 {/* Bottom Amount */}
-                <span className="text-xs font-bold text-neutral-200 mt-1">
+                <span className="text-[11px] font-bold text-neutral-200 mt-1">
                   {reward.amount}
                 </span>
               </div>
@@ -285,3 +294,4 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
+
