@@ -172,7 +172,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       {/* 70vh Bottom Sheet */}
       <div
         className="relative bg-[#330c36] w-full max-w-md shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
-        style={{ height: '70vh' }}
+        style={{ height: '65vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -214,7 +214,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             />
 
             {/* Compact Square Container Positioned Upwards */}
-            <div className="relative z-10 w-[60%] max-w-[240px] aspect-square -mt-40">
+            <div className="relative z-10 w-[60%] max-w-[243px] aspect-square -mt-50">
               {/* 8 Fruit Images with 0.5px tight padding */}
               {FRUITS_CONFIG.map((fruit) => (
                 <div
