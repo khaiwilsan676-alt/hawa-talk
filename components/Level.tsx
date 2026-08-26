@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { ChevronLeft, Lock } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -122,7 +122,7 @@ function ShaderImageBadge({
   return (
     <canvas
       ref={canvasRef}
-      className={`${className} drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] filter transition-transform duration-200`}
+      className={`${className} drop-shadow-[0_6px_14px_rgba(0,0,0,0.6)] filter transition-transform duration-200`}
     />
   )
 }
@@ -138,16 +138,12 @@ export default function Level({ onBack }: LevelProps) {
       
       {/* Dynamic Top Cinematic Light Rays & Atmospheric Beams */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Angular Shining Light Rays */}
         <div className="absolute -top-12 -left-20 w-[180px] h-[350px] bg-gradient-to-b from-cyan-300/35 via-sky-400/10 to-transparent rotate-[32deg] blur-xl" />
         <div className="absolute -top-16 left-1/4 w-[130px] h-[380px] bg-gradient-to-b from-white/30 via-sky-300/15 to-transparent rotate-[18deg] blur-lg" />
         <div className="absolute -top-10 right-8 w-[160px] h-[340px] bg-gradient-to-b from-sky-200/25 via-cyan-500/10 to-transparent -rotate-[24deg] blur-xl" />
         <div className="absolute -top-14 -right-16 w-[140px] h-[320px] bg-gradient-to-b from-cyan-400/20 via-sky-500/5 to-transparent -rotate-[38deg] blur-2xl" />
 
-        {/* Central Radial Sunburst Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-80 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400/30 via-cyan-600/15 to-transparent blur-2xl" />
-
-        {/* Deep Ambient Background Glows */}
         <div className="absolute top-[38%] -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-[25%] -right-20 w-80 h-80 bg-sky-500/10 rounded-full blur-[110px]" />
       </div>
@@ -170,8 +166,6 @@ export default function Level({ onBack }: LevelProps) {
         
         {/* Main Level Profile Card */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#29b4f8] via-[#028ceb] to-[#0060ba] p-4 shadow-[0_12px_28px_rgba(0,70,140,0.55),inset_0_1px_2px_rgba(255,255,255,0.7),inset_0_-2px_6px_rgba(0,35,80,0.6)] border border-sky-200/40">
-          
-          {/* Shining Gloss Overlays */}
           <div className="absolute -top-24 -left-20 w-72 h-72 bg-white/25 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute top-0 left-0 right-0 h-[45%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
           <div className="absolute -bottom-10 right-0 w-44 h-44 bg-cyan-300/20 rounded-full blur-2xl pointer-events-none" />
@@ -208,7 +202,6 @@ export default function Level({ onBack }: LevelProps) {
                       className="h-full bg-gradient-to-r from-sky-200 via-cyan-200 to-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.95)] transition-all duration-500"
                       style={{ width: `${progressPercent}%` }}
                     />
-                    {/* Glowing Circular Progress Pointer */}
                     <div
                       className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.5),0_0_8px_#38bdf8] border border-cyan-400"
                       style={{ left: `calc(${progressPercent}% - 7px)` }}
@@ -228,19 +221,14 @@ export default function Level({ onBack }: LevelProps) {
               </div>
             </div>
 
-            {/* Right Badge Container (Niche Shifted + Overlapped Pure Lv.9 Text) */}
+            {/* Right Badge Container */}
             <div className="relative flex items-center justify-center shrink-0 translate-y-3">
-              {/* Radial Golden Glow Underneath */}
               <div className="absolute inset-0 bg-yellow-300/35 blur-xl rounded-full scale-110 pointer-events-none" />
-
-              {/* Badge Canvas */}
               <ShaderImageBadge
                 src="/1787590094184~2.jpg"
                 isWhiteBg={false}
                 className="w-24 h-24 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
               />
-
-              {/* Direct Pure Text Overlay (Card ke bina) */}
               <span className="absolute inset-0 flex items-center justify-center text-sm font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-white via-amber-100 to-yellow-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] pointer-events-none select-none">
                 Lv.9
               </span>
@@ -248,7 +236,7 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Level Section Divider */}
+        {/* Level Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
@@ -256,38 +244,34 @@ export default function Level({ onBack }: LevelProps) {
             <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-cyan-400/50 to-transparent" />
           </div>
 
-          {/* 3D Embossed Navy Glass Cards */}
+          {/* Clean Unified Plain Cards */}
           <div className="grid grid-cols-3 gap-2.5">
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#173a61] via-[#0d223c] to-[#081526] border-t border-l border-sky-400/30 border-r-sky-950/80 border-b-sky-950/90 shadow-[0_8px_16px_rgba(0,0,0,0.75),inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between min-h-[115px] group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(14,165,233,0.3)] hover:border-sky-400/50"
+                className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-500/40"
               >
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-
-                <div className="w-full bg-gradient-to-b from-[#1f4e82] to-[#14355a] py-1 text-center border-b border-sky-900/60 shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-                  <span className="text-[10px] font-bold text-cyan-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                {/* Top-Left Level Circle */}
+                <div className="absolute top-1.5 left-1.5 min-w-[20px] px-1.5 h-5 rounded-full bg-sky-950/80 border border-sky-400/30 flex items-center justify-center shadow-sm">
+                  <span className="text-[8px] font-bold text-cyan-200 leading-none">
                     {tier.range}
                   </span>
                 </div>
 
-                <div className="py-2.5 flex items-center justify-center">
+                {/* Badge Center */}
+                <div className="pt-2 flex items-center justify-center">
                   <ShaderImageBadge
                     src={tier.imageSrc}
                     isWhiteBg={tier.isWhiteBg}
-                    className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)] transition-transform duration-200"
+                    className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-md transition-transform duration-200"
                   />
-                </div>
-
-                <div className="w-full py-1.5 bg-gradient-to-b from-[#06101c] to-[#030911] flex items-center justify-center border-t border-sky-950/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]">
-                  <Lock size={12} className="text-slate-400 group-hover:text-cyan-300 transition-colors" />
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Coins Reward Section Divider */}
+        {/* Coins Reward Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
@@ -295,35 +279,30 @@ export default function Level({ onBack }: LevelProps) {
             <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-cyan-400/50 to-transparent" />
           </div>
 
-          {/* 3D Coins Reward Cards */}
+          {/* Clean Unified Plain Cards */}
           <div className="grid grid-cols-3 gap-2.5">
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#173a61] via-[#0d223c] to-[#081526] border-t border-l border-sky-400/30 border-r-sky-950/80 border-b-sky-950/90 shadow-[0_8px_16px_rgba(0,0,0,0.75),inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between min-h-[125px] group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(245,158,11,0.3)] hover:border-amber-400/40"
+                className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[105px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
               >
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-
-                <div className="w-full bg-gradient-to-b from-[#1f4e82] to-[#14355a] py-1 px-2.5 flex items-center justify-start border-b border-sky-900/60 shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-                  <span className="text-[9px] font-bold text-cyan-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                {/* Top-Left Level Circle */}
+                <div className="absolute top-1.5 left-1.5 px-1.5 h-5 rounded-full bg-sky-950/80 border border-sky-400/30 flex items-center justify-center shadow-sm">
+                  <span className="text-[8px] font-bold text-cyan-200 leading-none">
                     {reward.level}
                   </span>
                 </div>
 
-                <div className="flex flex-col items-center justify-center py-2 space-y-1.5">
-                  <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-b from-[#ff4d4d] via-[#e62e2e] to-[#b31414] text-[9px] font-black text-white shadow-[0_3px_6px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.6)] flex items-center gap-1 border border-red-300/40">
-                    <span className="text-[10px]"></span>
-                    <span>{reward.amount}</span>
-                  </div>
+                {/* Reward Content */}
+                <div className="flex-1 w-full flex flex-col items-center justify-center pt-3 space-y-1">
                   <ShaderImageBadge
                     src={reward.imageSrc}
                     isWhiteBg={true}
-                    className="w-11 h-11 object-contain group-hover:scale-115 drop-shadow-[0_6px_14px_rgba(0,0,0,0.8)] transition-transform duration-200"
+                    className="w-10 h-10 object-contain group-hover:scale-110 drop-shadow-md transition-transform duration-200"
                   />
-                </div>
-
-                <div className="w-full py-1.5 bg-gradient-to-b from-[#06101c] to-[#030911] flex items-center justify-center border-t border-sky-950/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]">
-                  <Lock size={12} className="text-slate-400 group-hover:text-amber-300 transition-colors" />
+                  <span className="text-[10px] font-bold text-amber-300">
+                     {reward.amount}
+                  </span>
                 </div>
               </div>
             ))}
