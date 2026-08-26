@@ -136,17 +136,16 @@ export default function Level({ onBack }: LevelProps) {
   return (
     <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#08182b] via-[#05111f] to-[#02070e] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-cyan-950/40">
       
-      {/* Top 5vh Pure Royal Blue Mixing Layer with Left Light Rays */}
-      <div className="absolute top-0 left-0 right-0 h-[5vh] pointer-events-none z-0 overflow-hidden">
-        {/* Deep Vivid Blue 🔵 Top Base */}
-        <div className="absolute inset-0 bg-[#0048ff] opacity-80" />
-        {/* 5vh Gradient Bleed into Dark Sheet below */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#08182b]/60 to-[#08182b]" />
-        
-        {/* High-intensity Left Light Rays */}
-        <div className="absolute -top-10 -left-12 w-48 h-64 bg-gradient-to-br from-cyan-200/60 via-blue-400/25 to-transparent rotate-[28deg] blur-lg pointer-events-none" />
-        <div className="absolute -top-4 -left-4 w-32 h-52 bg-gradient-to-br from-white/70 via-sky-300/30 to-transparent rotate-[20deg] blur-md pointer-events-none" />
-        <div className="absolute -top-12 left-10 w-28 h-60 bg-gradient-to-br from-sky-200/40 via-blue-500/15 to-transparent rotate-[35deg] blur-xl pointer-events-none" />
+      {/* Dynamic Top Cinematic Light Rays & Atmospheric Beams */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-12 -left-20 w-[180px] h-[350px] bg-gradient-to-b from-cyan-300/35 via-sky-400/10 to-transparent rotate-[32deg] blur-xl" />
+        <div className="absolute -top-16 left-1/4 w-[130px] h-[380px] bg-gradient-to-b from-white/30 via-sky-300/15 to-transparent rotate-[18deg] blur-lg" />
+        <div className="absolute -top-10 right-8 w-[160px] h-[340px] bg-gradient-to-b from-sky-200/25 via-cyan-500/10 to-transparent -rotate-[24deg] blur-xl" />
+        <div className="absolute -top-14 -right-16 w-[140px] h-[320px] bg-gradient-to-b from-cyan-400/20 via-sky-500/5 to-transparent -rotate-[38deg] blur-2xl" />
+
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-80 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400/30 via-cyan-600/15 to-transparent blur-2xl" />
+        <div className="absolute top-[38%] -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[25%] -right-20 w-80 h-80 bg-sky-500/10 rounded-full blur-[110px]" />
       </div>
 
       {/* Top Header */}
@@ -299,7 +298,7 @@ export default function Level({ onBack }: LevelProps) {
                   <ShaderImageBadge
                     src={reward.imageSrc}
                     isWhiteBg={true}
-                    className="w-11 h-11 object-contain group-hover:scale-115 drop-shadow-md transition-transform duration-200"
+                    className="w-11 h-11 object-contain group-hover:scale-110 drop-shadow-md transition-transform duration-200"
                   />
                 </div>
 
