@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Lock } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -122,7 +122,7 @@ function ShaderImageBadge({
   return (
     <canvas
       ref={canvasRef}
-      className={`${className} drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)] transition-transform duration-200`}
+      className={`${className} drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transition-transform duration-200`}
     />
   )
 }
@@ -134,154 +134,178 @@ export default function Level({ onBack }: LevelProps) {
   const progressPercent = Math.min((currentXP / nextLevelXP) * 100, 100)
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#07060e] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-[0_0_60px_rgba(236,72,153,0.15)] border-x border-purple-900/30">
-      {/* Dynamic Multi-Color Ambient Glows (Blue, Pink, Red, Purple) */}
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#0a2342] via-[#051426] to-[#020b14] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-cyan-950/40">
+      {/* Background Soft Ray / Glow Effect */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Blue Orb */}
-        <div className="absolute top-[8%] -left-16 w-80 h-80 bg-blue-600/25 rounded-full blur-[110px]" />
-        {/* Purple Orb */}
-        <div className="absolute top-[32%] -right-16 w-80 h-80 bg-purple-600/30 rounded-full blur-[115px]" />
-        {/* Pink Orb */}
-        <div className="absolute top-[58%] -left-14 w-72 h-72 bg-pink-500/25 rounded-full blur-[105px]" />
-        {/* Red / Crimson Orb */}
-        <div className="absolute bottom-[4%] right-0 w-80 h-80 bg-rose-600/20 rounded-full blur-[110px]" />
-      </div>
-
-      {/* Top Gloss Aurora Bar */}
-      <div className="absolute top-0 left-0 right-0 h-[14vh] pointer-events-none z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/40 via-pink-500/30 to-purple-600/40 blur-2xl" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-11/12 h-[2px] bg-gradient-to-r from-transparent via-pink-400 to-transparent shadow-[0_0_20px_#ec4899]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-80 bg-gradient-to-b from-sky-500/20 via-sky-900/5 to-transparent blur-3xl" />
+        <div className="absolute top-[40%] -left-20 w-72 h-72 bg-blue-600/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[20%] -right-20 w-72 h-72 bg-cyan-700/10 rounded-full blur-[100px]" />
       </div>
 
       {/* Header */}
-      <div className="relative z-10 flex items-center justify-center px-4 pt-4 pb-3 mb-6">
+      <div className="relative z-10 flex items-center justify-center px-4 pt-4 pb-2">
         <button
           onClick={onBack}
-          className="absolute left-3 p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer backdrop-blur-md"
+          className="absolute left-3 p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
         >
-          <ChevronLeft size={24} className="text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]" />
+          <ChevronLeft size={24} className="text-white drop-shadow-md" />
         </button>
-        <h1 className="text-base font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-100 to-sky-100 drop-shadow-[0_2px_8px_rgba(236,72,153,0.3)]">
+        <h1 className="text-lg font-medium text-white tracking-wide drop-shadow-md">
           Level
         </h1>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-4 pt-2 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {/* Level Card - Glossy Metallic Multi-Glow */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e1b4b]/90 via-[#31103f]/90 to-[#1e112a]/95 p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-pink-500/30 backdrop-blur-xl">
-          {/* Internal Shimmer Accent */}
-          <div className="absolute -top-16 -right-16 w-36 h-36 bg-gradient-to-br from-pink-500/40 to-purple-600/0 rounded-full blur-2xl pointer-events-none" />
-          
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-purple-700 via-pink-600 to-sky-400 p-[1.5px] shadow-[0_0_12px_rgba(236,72,153,0.5)]">
-                <div className="w-full h-full rounded-full bg-slate-950/80 flex items-center justify-center text-white text-lg font-bold">
+      <div className="flex-1 px-4 pt-3 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* Main Level Profile Card - Bright Cyan & Golden Badge Style */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] p-4 shadow-[0_10px_25px_rgba(2,132,199,0.3)] border border-sky-300/30">
+          <div className="relative z-10 flex items-start justify-between">
+            <div className="space-y-3">
+              {/* User Info */}
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#52352a]/90 flex items-center justify-center text-white text-xl font-bold shadow-md border-2 border-white/20">
                   K
                 </div>
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-white leading-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                  Aawara.
-                </h2>
-                <div className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-full bg-purple-950/70 border border-pink-400/40 shadow-[0_0_6px_rgba(236,72,153,0.2)]">
-                  <span className="text-[9px] font-bold text-pink-200 bg-gradient-to-r from-pink-500 to-rose-500 px-1 rounded">ID</span>
-                  <span className="text-[11px] text-pink-100 font-medium">100658242</span>
+                <div>
+                  <h2 className="text-base font-semibold text-white drop-shadow-sm">
+                    Aawara.
+                  </h2>
+                  <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full bg-black/30 border border-white/10">
+                    <span className="text-[10px] font-bold text-sky-200">ID</span>
+                    <span className="text-[11px] text-white/90 font-medium">100658242</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="relative flex items-center justify-center w-14 h-14">
-              <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/40 to-blue-500/40 blur-md rounded-full" />
-              <ShaderImageBadge
-                src="/1787590094184~2.jpg"
-                isWhiteBg={false}
-                className="w-24 h-24 object-contain"
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-100 to-sky-200 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] pointer-events-none">
-                Lv.9
-              </span>
-            </div>
-          </div>
 
-          <div className="mt-3 relative z-10 space-y-1.5">
-            <p className="text-[11px] text-pink-100/90 font-medium">
-              {neededXP} needed for the next level.
-            </p>
-            <div className="w-full h-2.5 bg-black/60 rounded-full p-[1px] border border-white/20 shadow-inner">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-rose-500 rounded-full shadow-[0_0_12px_rgba(236,72,153,0.8)] transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
+              {/* Progress & XP Details */}
+              <div className="space-y-1.5 pt-1">
+                <div className="inline-flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-full text-[10px] font-medium text-sky-100">
+                  <span className="text-[#fde047] font-bold">{currentXP.toLocaleString()}</span>
+                  <span>/</span>
+                  <span>{nextLevelXP.toLocaleString()}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative w-44 h-2 bg-black/40 rounded-full p-[1px] border border-white/20">
+                    <div
+                      className="h-full bg-gradient-to-r from-sky-200 to-cyan-300 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)] transition-all duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                    {/* Circle thumb on bar */}
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md border border-cyan-400"
+                      style={{ left: `calc(${progressPercent}% - 6px)` }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-white/90">Lv.10</span>
+                </div>
+
+                <p className="text-[11px] text-sky-100 font-medium">
+                  Need {neededXP.toLocaleString()} EXP to reach the next level
+                </p>
+
+                <button className="inline-flex items-center gap-1 mt-1 px-3 py-1 rounded-full bg-black/30 hover:bg-black/40 text-[11px] font-medium text-white/95 border border-white/15 transition-all">
+                  <span>How to upgrade?</span>
+                  <span className="text-yellow-400 text-xs">▲</span>
+                </button>
+              </div>
             </div>
-            <p className="text-[10px] text-purple-200/90 font-mono">
-              Lv.9 {currentXP}/{nextLevelXP}
-            </p>
-            <button className="mt-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-pink-500/30 to-purple-600/30 hover:from-pink-500/40 hover:to-purple-600/40 border border-pink-400/40 backdrop-blur-md text-[11px] font-semibold text-white shadow-[0_0_10px_rgba(236,72,153,0.3)] active:scale-95 transition-all">
-              How to upgrade?
-            </button>
+
+            {/* Big Right Badge */}
+            <div className="relative flex flex-col items-center justify-center shrink-0">
+              <div className="relative flex items-center justify-center">
+                <ShaderImageBadge
+                  src="/1787590094184~2.jpg"
+                  isWhiteBg={false}
+                  className="w-24 h-24 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.4)]"
+                />
+              </div>
+              <div className="mt-[-10px] px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-300 to-yellow-400 text-amber-950 text-[11px] font-black shadow-md border border-amber-200">
+                Lv.9
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Medal Section */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-center gap-1.5">
-            <span className="text-pink-400 text-xs">✦</span>
-            <h3 className="text-xs font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300 uppercase">
-              Level Medal
-            </h3>
-            <span className="text-purple-400 text-xs">✦</span>
+        {/* Level Section Divider */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-2 text-white/90">
+            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/40" />
+            <span className="text-xs font-bold tracking-wider">Level</span>
+            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/40" />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+
+          {/* Medals Grid (Navy Blue Frosted Card Style) */}
+          <div className="grid grid-cols-3 gap-2.5">
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden bg-gradient-to-b from-[#251d38]/80 via-[#130f1e]/85 to-[#09070f]/95 rounded-xl p-2.5 flex flex-col items-center justify-center space-y-1 border border-pink-500/20 shadow-[0_4px_16px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.18)] hover:border-pink-400/50 hover:shadow-[0_0_15px_rgba(236,72,153,0.35)] active:scale-95 transition-all cursor-pointer group"
+                className="relative overflow-hidden bg-gradient-to-b from-[#132c4a]/90 to-[#0c1c30]/95 rounded-xl border border-sky-900/50 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col items-center justify-between min-h-[110px] group cursor-pointer transition-all hover:border-sky-500/40"
               >
-                {/* Shiny Specular Top Line */}
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                <ShaderImageBadge
-                  src={tier.imageSrc}
-                  isWhiteBg={tier.isWhiteBg}
-                  className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-[0_2px_8px_rgba(236,72,153,0.25)]"
-                />
-                <span className="text-[10px] font-medium text-neutral-300 group-hover:text-pink-200">
-                  {tier.range}
-                </span>
+                {/* Header Tag */}
+                <div className="w-full bg-[#1b3d63]/80 py-1 text-center border-b border-sky-900/40">
+                  <span className="text-[10px] font-semibold text-cyan-200">
+                    {tier.range}
+                  </span>
+                </div>
+
+                {/* Badge Center */}
+                <div className="py-2 flex items-center justify-center">
+                  <ShaderImageBadge
+                    src={tier.imageSrc}
+                    isWhiteBg={tier.isWhiteBg}
+                    className="w-14 h-7 object-contain group-hover:scale-105 drop-shadow-md"
+                  />
+                </div>
+
+                {/* Bottom Lock Area */}
+                <div className="w-full py-1.5 bg-[#091524]/90 flex items-center justify-center border-t border-sky-950/60">
+                  <Lock size={12} className="text-slate-400" />
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Rewards Section */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-center gap-1.5">
-            <span className="text-rose-400 text-xs">✦</span>
-            <h3 className="text-xs font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-pink-300 to-blue-300 uppercase">
-              Rewards
-            </h3>
-            <span className="text-blue-400 text-xs">✦</span>
+        {/* Coins Reward Section Divider */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-2 text-white/90">
+            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/40" />
+            <span className="text-xs font-bold tracking-wider">Coins Reward</span>
+            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/40" />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+
+          {/* Rewards Grid (Navy Blue & Orange Coin Badges Style) */}
+          <div className="grid grid-cols-3 gap-2.5">
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden bg-gradient-to-b from-[#251d38]/80 via-[#130f1e]/85 to-[#09070f]/95 rounded-xl p-2.5 pt-3.5 flex flex-col items-center justify-between min-h-[95px] border border-purple-500/20 shadow-[0_4px_16px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.18)] hover:border-purple-400/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.35)] active:scale-95 transition-all cursor-pointer group"
+                className="relative overflow-hidden bg-gradient-to-b from-[#132c4a]/90 to-[#0c1c30]/95 rounded-xl border border-sky-900/50 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col items-center justify-between min-h-[120px] group cursor-pointer transition-all hover:border-sky-500/40"
               >
-                {/* Shiny Specular Top Line */}
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 border border-white/40 flex items-center justify-center shadow-[0_0_8px_rgba(236,72,153,0.6)]">
-                  <span className="text-[8px] font-black text-white leading-none tracking-tight">
+                {/* Top Level Tag */}
+                <div className="w-full bg-[#1b3d63]/80 py-1 px-2 flex items-center justify-start border-b border-sky-900/40">
+                  <span className="text-[9px] font-semibold text-cyan-200">
                     {reward.level}
                   </span>
                 </div>
-                <ShaderImageBadge
-                  src={reward.imageSrc}
-                  isWhiteBg={true}
-                  className="w-9 h-9 object-contain group-hover:scale-110 drop-shadow-[0_2px_8px_rgba(244,63,94,0.3)]"
-                />
-                <span className="text-[10px] font-bold text-neutral-100 mt-0.5 group-hover:text-pink-100">
-                  {reward.amount}
-                </span>
+
+                {/* Amount Ribbon & Coins Image */}
+                <div className="flex flex-col items-center justify-center py-2 space-y-1">
+                  <div className="px-2 py-0.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 text-[9px] font-bold text-white shadow-sm flex items-center gap-1 border border-white/20">
+                    <span></span>
+                    <span>{reward.amount}</span>
+                  </div>
+                  <ShaderImageBadge
+                    src={reward.imageSrc}
+                    isWhiteBg={true}
+                    className="w-10 h-10 object-contain group-hover:scale-110 drop-shadow-md"
+                  />
+                </div>
+
+                {/* Bottom Lock Area */}
+                <div className="w-full py-1.5 bg-[#091524]/90 flex items-center justify-center border-t border-sky-950/60">
+                  <Lock size={12} className="text-slate-400" />
+                </div>
               </div>
             ))}
           </div>
@@ -290,4 +314,3 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
-
