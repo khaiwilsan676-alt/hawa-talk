@@ -122,7 +122,7 @@ function ShaderImageBadge({
   return (
     <canvas
       ref={canvasRef}
-      className={`${className} drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transition-transform duration-200`}
+      className={`${className} drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] filter transition-transform duration-200`}
     />
   )
 }
@@ -134,95 +134,116 @@ export default function Level({ onBack }: LevelProps) {
   const progressPercent = Math.min((currentXP / nextLevelXP) * 100, 100)
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#0a2342] via-[#051426] to-[#020b14] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-cyan-950/40">
-      {/* Background Soft Ray / Glow Effect */}
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#08182b] via-[#05111f] to-[#02070e] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-cyan-950/40">
+      
+      {/* Dynamic Top Cinematic Light Rays & Atmospheric Beams */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-80 bg-gradient-to-b from-sky-500/20 via-sky-900/5 to-transparent blur-3xl" />
-        <div className="absolute top-[40%] -left-20 w-72 h-72 bg-blue-600/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[20%] -right-20 w-72 h-72 bg-cyan-700/10 rounded-full blur-[100px]" />
+        {/* Angular Shining Light Rays */}
+        <div className="absolute -top-12 -left-20 w-[180px] h-[350px] bg-gradient-to-b from-cyan-300/35 via-sky-400/10 to-transparent rotate-[32deg] blur-xl" />
+        <div className="absolute -top-16 left-1/4 w-[130px] h-[380px] bg-gradient-to-b from-white/30 via-sky-300/15 to-transparent rotate-[18deg] blur-lg" />
+        <div className="absolute -top-10 right-8 w-[160px] h-[340px] bg-gradient-to-b from-sky-200/25 via-cyan-500/10 to-transparent -rotate-[24deg] blur-xl" />
+        <div className="absolute -top-14 -right-16 w-[140px] h-[320px] bg-gradient-to-b from-cyan-400/20 via-sky-500/5 to-transparent -rotate-[38deg] blur-2xl" />
+
+        {/* Central Radial Sunburst Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-80 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400/30 via-cyan-600/15 to-transparent blur-2xl" />
+
+        {/* Deep Ambient Background Glows */}
+        <div className="absolute top-[38%] -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[25%] -right-20 w-80 h-80 bg-sky-500/10 rounded-full blur-[110px]" />
       </div>
 
-      {/* Header */}
+      {/* Top Header */}
       <div className="relative z-10 flex items-center justify-center px-4 pt-4 pb-2">
         <button
           onClick={onBack}
           className="absolute left-3 p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
         >
-          <ChevronLeft size={24} className="text-white drop-shadow-md" />
+          <ChevronLeft size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
         </button>
-        <h1 className="text-lg font-medium text-white tracking-wide drop-shadow-md">
+        <h1 className="text-lg font-bold text-white tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
           Level
         </h1>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 px-4 pt-3 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {/* Main Level Profile Card - Bright Cyan & Golden Badge Style */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] p-4 shadow-[0_10px_25px_rgba(2,132,199,0.3)] border border-sky-300/30">
+        
+        {/* Main Level Profile Card */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#29b4f8] via-[#028ceb] to-[#0060ba] p-4 shadow-[0_12px_28px_rgba(0,70,140,0.55),inset_0_1px_2px_rgba(255,255,255,0.7),inset_0_-2px_6px_rgba(0,35,80,0.6)] border border-sky-200/40">
+          
+          {/* Shining Gloss Overlays */}
+          <div className="absolute -top-24 -left-20 w-72 h-72 bg-white/25 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-[45%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
+          <div className="absolute -bottom-10 right-0 w-44 h-44 bg-cyan-300/20 rounded-full blur-2xl pointer-events-none" />
+
           <div className="relative z-10 flex items-start justify-between">
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {/* User Info */}
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-[#52352a]/90 flex items-center justify-center text-white text-xl font-bold shadow-md border-2 border-white/20">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#5c3e2e] to-[#3a2215] flex items-center justify-center text-white text-xl font-bold shadow-[0_4px_8px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30">
                   K
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-white drop-shadow-sm">
+                  <h2 className="text-base font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                     Aawara.
                   </h2>
-                  <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full bg-black/30 border border-white/10">
-                    <span className="text-[10px] font-bold text-sky-200">ID</span>
-                    <span className="text-[11px] text-white/90 font-medium">100658242</span>
+                  <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full bg-black/40 border border-white/20 shadow-inner">
+                    <span className="text-[10px] font-extrabold text-sky-200">ID</span>
+                    <span className="text-[11px] text-white font-semibold">100658242</span>
                   </div>
                 </div>
               </div>
 
               {/* Progress & XP Details */}
-              <div className="space-y-1.5 pt-1">
-                <div className="inline-flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-full text-[10px] font-medium text-sky-100">
-                  <span className="text-[#fde047] font-bold">{currentXP.toLocaleString()}</span>
+              <div className="space-y-2 pt-0.5">
+                <div className="inline-flex items-center gap-1 bg-[#01356b]/80 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-sky-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)] border border-sky-400/30">
+                  <span className="text-[#ffe066]">{currentXP.toLocaleString()}</span>
                   <span>/</span>
                   <span>{nextLevelXP.toLocaleString()}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="relative w-44 h-2 bg-black/40 rounded-full p-[1px] border border-white/20">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative w-44 h-2.5 bg-[#00264d]/80 rounded-full p-[1px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] border border-sky-300/30">
                     <div
-                      className="h-full bg-gradient-to-r from-sky-200 to-cyan-300 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)] transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-sky-200 via-cyan-200 to-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.95)] transition-all duration-500"
                       style={{ width: `${progressPercent}%` }}
                     />
-                    {/* Circle thumb on bar */}
+                    {/* Glowing Circular Progress Pointer */}
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md border border-cyan-400"
-                      style={{ left: `calc(${progressPercent}% - 6px)` }}
+                      className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.5),0_0_8px_#38bdf8] border border-cyan-400"
+                      style={{ left: `calc(${progressPercent}% - 7px)` }}
                     />
                   </div>
-                  <span className="text-xs font-semibold text-white/90">Lv.10</span>
+                  <span className="text-xs font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">Lv.10</span>
                 </div>
 
-                <p className="text-[11px] text-sky-100 font-medium">
+                <p className="text-[11px] text-sky-50 font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                   Need {neededXP.toLocaleString()} EXP to reach the next level
                 </p>
 
-                <button className="inline-flex items-center gap-1 mt-1 px-3 py-1 rounded-full bg-black/30 hover:bg-black/40 text-[11px] font-medium text-white/95 border border-white/15 transition-all">
+                <button className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/40 hover:bg-black/50 text-[11px] font-semibold text-white shadow-[0_4px_10px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.25)] border border-white/20 active:scale-95 transition-all">
                   <span>How to upgrade?</span>
-                  <span className="text-yellow-400 text-xs">▲</span>
+                  <span className="text-amber-300 text-[10px]">▲</span>
                 </button>
               </div>
             </div>
 
-            {/* Big Right Badge */}
-            <div className="relative flex flex-col items-center justify-center shrink-0">
-              <div className="relative flex items-center justify-center">
-                <ShaderImageBadge
-                  src="/1787590094184~2.jpg"
-                  isWhiteBg={false}
-                  className="w-24 h-24 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.4)]"
-                />
-              </div>
-              <div className="mt-[-10px] px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-300 to-yellow-400 text-amber-950 text-[11px] font-black shadow-md border border-amber-200">
+            {/* Right Badge Container (Niche Shifted + Overlapped Pure Lv.9 Text) */}
+            <div className="relative flex items-center justify-center shrink-0 translate-y-3">
+              {/* Radial Golden Glow Underneath */}
+              <div className="absolute inset-0 bg-yellow-300/35 blur-xl rounded-full scale-110 pointer-events-none" />
+
+              {/* Badge Canvas */}
+              <ShaderImageBadge
+                src="/1787590094184~2.jpg"
+                isWhiteBg={false}
+                className="w-24 h-24 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
+              />
+
+              {/* Direct Pure Text Overlay (Card ke bina) */}
+              <span className="absolute inset-0 flex items-center justify-center text-sm font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-white via-amber-100 to-yellow-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] pointer-events-none select-none">
                 Lv.9
-              </div>
+              </span>
             </div>
           </div>
         </div>
@@ -230,37 +251,36 @@ export default function Level({ onBack }: LevelProps) {
         {/* Level Section Divider */}
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2 text-white/90">
-            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/40" />
-            <span className="text-xs font-bold tracking-wider">Level</span>
-            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/40" />
+            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+            <span className="text-xs font-bold tracking-wider text-cyan-100 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Level</span>
+            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-cyan-400/50 to-transparent" />
           </div>
 
-          {/* Medals Grid (Navy Blue Frosted Card Style) */}
+          {/* 3D Embossed Navy Glass Cards */}
           <div className="grid grid-cols-3 gap-2.5">
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden bg-gradient-to-b from-[#132c4a]/90 to-[#0c1c30]/95 rounded-xl border border-sky-900/50 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col items-center justify-between min-h-[110px] group cursor-pointer transition-all hover:border-sky-500/40"
+                className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#173a61] via-[#0d223c] to-[#081526] border-t border-l border-sky-400/30 border-r-sky-950/80 border-b-sky-950/90 shadow-[0_8px_16px_rgba(0,0,0,0.75),inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between min-h-[115px] group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(14,165,233,0.3)] hover:border-sky-400/50"
               >
-                {/* Header Tag */}
-                <div className="w-full bg-[#1b3d63]/80 py-1 text-center border-b border-sky-900/40">
-                  <span className="text-[10px] font-semibold text-cyan-200">
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+
+                <div className="w-full bg-gradient-to-b from-[#1f4e82] to-[#14355a] py-1 text-center border-b border-sky-900/60 shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                  <span className="text-[10px] font-bold text-cyan-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                     {tier.range}
                   </span>
                 </div>
 
-                {/* Badge Center */}
-                <div className="py-2 flex items-center justify-center">
+                <div className="py-2.5 flex items-center justify-center">
                   <ShaderImageBadge
                     src={tier.imageSrc}
                     isWhiteBg={tier.isWhiteBg}
-                    className="w-14 h-7 object-contain group-hover:scale-105 drop-shadow-md"
+                    className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.8)] transition-transform duration-200"
                   />
                 </div>
 
-                {/* Bottom Lock Area */}
-                <div className="w-full py-1.5 bg-[#091524]/90 flex items-center justify-center border-t border-sky-950/60">
-                  <Lock size={12} className="text-slate-400" />
+                <div className="w-full py-1.5 bg-gradient-to-b from-[#06101c] to-[#030911] flex items-center justify-center border-t border-sky-950/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]">
+                  <Lock size={12} className="text-slate-400 group-hover:text-cyan-300 transition-colors" />
                 </div>
               </div>
             ))}
@@ -270,41 +290,40 @@ export default function Level({ onBack }: LevelProps) {
         {/* Coins Reward Section Divider */}
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2 text-white/90">
-            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/40" />
-            <span className="text-xs font-bold tracking-wider">Coins Reward</span>
-            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/40" />
+            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+            <span className="text-xs font-bold tracking-wider text-cyan-100 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Coins Reward</span>
+            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-cyan-400/50 to-transparent" />
           </div>
 
-          {/* Rewards Grid (Navy Blue & Orange Coin Badges Style) */}
+          {/* 3D Coins Reward Cards */}
           <div className="grid grid-cols-3 gap-2.5">
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden bg-gradient-to-b from-[#132c4a]/90 to-[#0c1c30]/95 rounded-xl border border-sky-900/50 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col items-center justify-between min-h-[120px] group cursor-pointer transition-all hover:border-sky-500/40"
+                className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#173a61] via-[#0d223c] to-[#081526] border-t border-l border-sky-400/30 border-r-sky-950/80 border-b-sky-950/90 shadow-[0_8px_16px_rgba(0,0,0,0.75),inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between min-h-[125px] group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(245,158,11,0.3)] hover:border-amber-400/40"
               >
-                {/* Top Level Tag */}
-                <div className="w-full bg-[#1b3d63]/80 py-1 px-2 flex items-center justify-start border-b border-sky-900/40">
-                  <span className="text-[9px] font-semibold text-cyan-200">
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+
+                <div className="w-full bg-gradient-to-b from-[#1f4e82] to-[#14355a] py-1 px-2.5 flex items-center justify-start border-b border-sky-900/60 shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                  <span className="text-[9px] font-bold text-cyan-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                     {reward.level}
                   </span>
                 </div>
 
-                {/* Amount Ribbon & Coins Image */}
-                <div className="flex flex-col items-center justify-center py-2 space-y-1">
-                  <div className="px-2 py-0.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 text-[9px] font-bold text-white shadow-sm flex items-center gap-1 border border-white/20">
-                    <span></span>
+                <div className="flex flex-col items-center justify-center py-2 space-y-1.5">
+                  <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-b from-[#ff4d4d] via-[#e62e2e] to-[#b31414] text-[9px] font-black text-white shadow-[0_3px_6px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.6)] flex items-center gap-1 border border-red-300/40">
+                    <span className="text-[10px]"></span>
                     <span>{reward.amount}</span>
                   </div>
                   <ShaderImageBadge
                     src={reward.imageSrc}
                     isWhiteBg={true}
-                    className="w-10 h-10 object-contain group-hover:scale-110 drop-shadow-md"
+                    className="w-11 h-11 object-contain group-hover:scale-115 drop-shadow-[0_6px_14px_rgba(0,0,0,0.8)] transition-transform duration-200"
                   />
                 </div>
 
-                {/* Bottom Lock Area */}
-                <div className="w-full py-1.5 bg-[#091524]/90 flex items-center justify-center border-t border-sky-950/60">
-                  <Lock size={12} className="text-slate-400" />
+                <div className="w-full py-1.5 bg-gradient-to-b from-[#06101c] to-[#030911] flex items-center justify-center border-t border-sky-950/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]">
+                  <Lock size={12} className="text-slate-400 group-hover:text-amber-300 transition-colors" />
                 </div>
               </div>
             ))}
@@ -314,3 +333,4 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
+
