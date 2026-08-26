@@ -216,7 +216,7 @@ export default function Level({ onBack }: LevelProps) {
 
                 <button className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/40 hover:bg-black/50 text-[11px] font-semibold text-white shadow-[0_4px_10px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.25)] border border-white/20 active:scale-95 transition-all">
                   <span>How to upgrade?</span>
-                  <span className="text-amber-300 text-[10px]"></span>
+                  <span className="text-amber-300 text-[10px]">▲</span>
                 </button>
               </div>
             </div>
@@ -244,16 +244,16 @@ export default function Level({ onBack }: LevelProps) {
             <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-cyan-400/50 to-transparent" />
           </div>
 
-          {/* Clean Cards - Blue Pill at exact top-left corner */}
+          {/* Clean Cards - 3D Blue Corner Pill */}
           <div className="grid grid-cols-3 gap-2.5">
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
                 className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-500/40"
               >
-                {/* Blue Pill at exact top-left corner */}
-                <div className="absolute top-0 left-0 px-2 py-0.5 rounded-br-lg bg-[#0284c7] shadow-sm flex items-center justify-center">
-                  <span className="text-[8px] font-bold text-white leading-tight">
+                {/* 3D Blue Pill at exact top-left corner */}
+                <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.4)] border-r border-b border-sky-300/40 flex items-center justify-center">
+                  <span className="text-[8px] font-black text-white leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                     {tier.range}
                   </span>
                 </div>
@@ -279,37 +279,37 @@ export default function Level({ onBack }: LevelProps) {
             <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-cyan-400/50 to-transparent" />
           </div>
 
-          {/* Coins Reward Cards - Blue Pill in corner + Red Pill for Coin Amount */}
+          {/* Coins Reward Cards - 3D Blue Corner Pill + Coin Image + 3D Red Pill Below */}
           <div className="grid grid-cols-3 gap-2.5">
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[110px] p-2.5 pb-2 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
+                className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[115px] p-2 pt-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
               >
-                {/* Blue Pill at exact top-left corner */}
-                <div className="absolute top-0 left-0 px-2 py-0.5 rounded-br-lg bg-[#0284c7] shadow-sm flex items-center justify-center">
-                  <span className="text-[8px] font-bold text-white leading-tight">
+                {/* 3D Blue Pill at exact top-left corner */}
+                <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.4)] border-r border-b border-sky-300/40 flex items-center justify-center">
+                  <span className="text-[8px] font-black text-white leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                     {reward.level}
                   </span>
                 </div>
 
-                {/* Red Pill for Coin Amount at top */}
-                <div className="w-full flex justify-center pt-2">
-                  <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-600 to-red-600 shadow-sm flex items-center gap-1 border border-red-400/30">
-                    <span className="text-[9px]"></span>
-                    <span className="text-[9px] font-black text-white leading-none tracking-tight">
-                      {reward.amount}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Coin Image */}
-                <div className="flex items-center justify-center pt-1">
+                {/* Coin Image (Center) */}
+                <div className="flex-1 flex items-center justify-center pt-2">
                   <ShaderImageBadge
                     src={reward.imageSrc}
                     isWhiteBg={true}
-                    className="w-10 h-10 object-contain group-hover:scale-110 drop-shadow-md transition-transform duration-200"
+                    className="w-11 h-11 object-contain group-hover:scale-110 drop-shadow-md transition-transform duration-200"
                   />
+                </div>
+
+                {/* 3D Red Pill with Coin Value directly underneath the image */}
+                <div className="w-full flex justify-center pb-1">
+                  <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-b from-[#ff4d4d] via-[#e62e2e] to-[#b31414] shadow-[0_3px_6px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.5)] flex items-center gap-1 border border-red-300/40">
+                    <span className="text-[9px] drop-shadow-sm">🪙</span>
+                    <span className="text-[9px] font-black text-white leading-none tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
+                      {reward.amount}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -319,3 +319,4 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
+
