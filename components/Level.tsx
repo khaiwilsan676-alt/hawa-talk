@@ -134,20 +134,19 @@ export default function Level({ onBack }: LevelProps) {
   const progressPercent = Math.min((currentXP / nextLevelXP) * 100, 100)
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#1d4ed8] via-[#0b2866] to-[#040f28] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-blue-900/40">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#08182b] via-[#05111f] to-[#02070e] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-cyan-950/40">
       
-      {/* Dynamic Top Cinematic Light Rays & Atmospheric Beams */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Strong Vivid Blue & Sky Angular Rays */}
-        <div className="absolute -top-10 -left-20 w-[200px] h-[400px] bg-gradient-to-b from-sky-300/45 via-blue-400/20 to-transparent rotate-[34deg] blur-xl" />
-        <div className="absolute -top-16 left-1/4 w-[150px] h-[420px] bg-gradient-to-b from-white/40 via-sky-200/25 to-transparent rotate-[18deg] blur-lg" />
-        <div className="absolute -top-10 right-6 w-[180px] h-[390px] bg-gradient-to-b from-sky-300/35 via-blue-500/20 to-transparent -rotate-[22deg] blur-xl" />
-        <div className="absolute -top-14 -right-16 w-[160px] h-[360px] bg-gradient-to-b from-blue-300/30 via-sky-500/10 to-transparent -rotate-[38deg] blur-2xl" />
-
-        {/* Central Royal Blue Radial Sunburst */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400/40 via-blue-600/30 to-transparent blur-2xl" />
-        <div className="absolute top-[38%] -left-20 w-80 h-80 bg-blue-500/15 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[25%] -right-20 w-80 h-80 bg-indigo-600/15 rounded-full blur-[110px]" />
+      {/* Top 5vh Pure Royal Blue Mixing Layer with Left Light Rays */}
+      <div className="absolute top-0 left-0 right-0 h-[5vh] pointer-events-none z-0 overflow-hidden">
+        {/* Deep Vivid Blue 🔵 Top Base */}
+        <div className="absolute inset-0 bg-[#0048ff] opacity-80" />
+        {/* 5vh Gradient Bleed into Dark Sheet below */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#08182b]/60 to-[#08182b]" />
+        
+        {/* High-intensity Left Light Rays */}
+        <div className="absolute -top-10 -left-12 w-48 h-64 bg-gradient-to-br from-cyan-200/60 via-blue-400/25 to-transparent rotate-[28deg] blur-lg pointer-events-none" />
+        <div className="absolute -top-4 -left-4 w-32 h-52 bg-gradient-to-br from-white/70 via-sky-300/30 to-transparent rotate-[20deg] blur-md pointer-events-none" />
+        <div className="absolute -top-12 left-10 w-28 h-60 bg-gradient-to-br from-sky-200/40 via-blue-500/15 to-transparent rotate-[35deg] blur-xl pointer-events-none" />
       </div>
 
       {/* Top Header */}
@@ -167,10 +166,10 @@ export default function Level({ onBack }: LevelProps) {
       <div className="flex-1 px-4 pt-3 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
         {/* Main Level Profile Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#38bdf8] via-[#2563eb] to-[#1d4ed8] p-4 shadow-[0_14px_32px_rgba(37,99,235,0.45),inset_0_1px_2px_rgba(255,255,255,0.75),inset_0_-2px_6px_rgba(15,23,42,0.6)] border border-sky-200/50">
-          <div className="absolute -top-24 -left-20 w-72 h-72 bg-white/30 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-0 left-0 right-0 h-[45%] bg-gradient-to-b from-white/35 to-transparent pointer-events-none" />
-          <div className="absolute -bottom-10 right-0 w-44 h-44 bg-blue-300/25 rounded-full blur-2xl pointer-events-none" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#29b4f8] via-[#028ceb] to-[#0060ba] p-4 shadow-[0_12px_28px_rgba(0,70,140,0.55),inset_0_1px_2px_rgba(255,255,255,0.7),inset_0_-2px_6px_rgba(0,35,80,0.6)] border border-sky-200/40">
+          <div className="absolute -top-24 -left-20 w-72 h-72 bg-white/25 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-[45%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
+          <div className="absolute -bottom-10 right-0 w-44 h-44 bg-cyan-300/20 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 flex items-start justify-between">
             <div className="space-y-3.5">
@@ -192,14 +191,14 @@ export default function Level({ onBack }: LevelProps) {
 
               {/* Progress & XP Details */}
               <div className="space-y-2 pt-0.5">
-                <div className="inline-flex items-center gap-1 bg-[#0f2d6b]/85 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-sky-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)] border border-sky-300/40">
+                <div className="inline-flex items-center gap-1 bg-[#01356b]/80 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-sky-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)] border border-sky-400/30">
                   <span className="text-[#ffe066]">{currentXP.toLocaleString()}</span>
                   <span>/</span>
                   <span>{nextLevelXP.toLocaleString()}</span>
                 </div>
 
                 <div className="flex items-center gap-2.5">
-                  <div className="relative w-44 h-2.5 bg-[#081a42]/85 rounded-full p-[1px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] border border-sky-300/30">
+                  <div className="relative w-44 h-2.5 bg-[#00264d]/80 rounded-full p-[1px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] border border-sky-300/30">
                     <div
                       className="h-full bg-gradient-to-r from-sky-200 via-cyan-200 to-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.95)] transition-all duration-500"
                       style={{ width: `${progressPercent}%` }}
@@ -251,7 +250,7 @@ export default function Level({ onBack }: LevelProps) {
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#0a1f42] border border-blue-900/50 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-400/50"
+                className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-500/40"
               >
                 {/* 3D Blue Pill at exact top-left corner */}
                 <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.4)] border-r border-b border-sky-300/40 flex items-center justify-center">
@@ -286,7 +285,7 @@ export default function Level({ onBack }: LevelProps) {
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#0a1f42] border border-blue-900/50 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[115px] p-2 pt-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
+                className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[115px] p-2 pt-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
               >
                 {/* 3D Blue Pill at exact top-left corner */}
                 <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.4)] border-r border-b border-sky-300/40 flex items-center justify-center">
@@ -300,7 +299,7 @@ export default function Level({ onBack }: LevelProps) {
                   <ShaderImageBadge
                     src={reward.imageSrc}
                     isWhiteBg={true}
-                    className="w-11 h-11 object-contain group-hover:scale-110 drop-shadow-md transition-transform duration-200"
+                    className="w-11 h-11 object-contain group-hover:scale-115 drop-shadow-md transition-transform duration-200"
                   />
                 </div>
 
