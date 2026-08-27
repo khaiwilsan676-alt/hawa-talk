@@ -15,7 +15,7 @@ interface MedalItem {
   category: 'achievement' | 'gift' | 'activity'
 }
 
-// 1. WebGL Background Shader
+// 1. WebGL Background Shader (Always Visible)
 function WebGLBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -198,8 +198,8 @@ export default function Medal({ onBack }: MedalProps) {
       {/* Background WebGL Shader */}
       <WebGLBackground />
 
-      {/* Header - Adjusted with Safe Area Padding for Android Notch/Status Bar */}
-      <div className="relative z-10 flex items-center justify-between px-3 pt-10 pb-2 sm:pt-4">
+      {/* Header - Android Top Safe Spacing */}
+      <div className="relative z-10 flex items-center justify-between px-3 pt-12 pb-2 sm:pt-4">
         <button
           onClick={onBack}
           className="p-1 text-gray-300 hover:text-white transition-colors cursor-pointer"
@@ -223,7 +223,7 @@ export default function Medal({ onBack }: MedalProps) {
               <span className="w-10 h-[1px] bg-gradient-to-l from-transparent to-amber-400/60" />
             </div>
 
-            {/* Small Slots 2x5 Grid with gap-1.5 */}
+            {/* Small Slots 2x5 Grid */}
             <div className="grid grid-cols-5 gap-1.5 px-0.5 relative z-10">
               {Array.from({ length: 10 }).map((_, index) => (
                 <div
@@ -235,7 +235,7 @@ export default function Medal({ onBack }: MedalProps) {
               ))}
             </div>
 
-            {/* Glowing Base Platform */}
+            {/* Bottom Glow Platform */}
             <div className="relative -mt-2">
               <div className="h-6 w-4/5 mx-auto rounded-[100%] bg-gradient-to-r from-blue-600/40 via-purple-500/50 to-blue-600/40 blur-sm" />
             </div>
@@ -261,7 +261,7 @@ export default function Medal({ onBack }: MedalProps) {
             ))}
           </div>
 
-          {/* Big Medal Cards Grid with gap-1.5 */}
+          {/* Big Medal Cards Grid */}
           <div className="grid grid-cols-2 gap-1.5 pt-1">
             {filteredMedals.map((medal) => (
               <div
@@ -293,36 +293,38 @@ export default function Medal({ onBack }: MedalProps) {
         </div>
       </div>
 
-      {/* Center Screen Modal: Solid Black Background + Rotating White Rays */}
+      {/* Center Modal - No Black Screen (Original Background Visible) with Smaller Rotating White Shine */}
       {selectedMedal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/25"
           onClick={() => setSelectedMedal(null)}
         >
           {/* Close Button Adjusted for Android */}
           <button 
             onClick={() => setSelectedMedal(null)}
-            className="absolute top-10 sm:top-6 right-6 p-2 rounded-full bg-white/10 text-gray-300 hover:text-white transition-all z-50 cursor-pointer"
+            className="absolute top-12 sm:top-6 right-6 p-2 rounded-full bg-white/15 text-gray-200 hover:text-white transition-all z-50 cursor-pointer shadow-md"
           >
-            <X size={26} />
+            <X size={24} />
           </button>
 
           <div 
             className="relative flex flex-col items-center justify-center text-center max-w-sm w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Crisp Rotating White Sunburst Rays */}
-            <div className="absolute w-[340px] h-[340px] sm:w-[440px] sm:h-[440px] -z-10 animate-spin-slow pointer-events-none flex items-center justify-center">
+            {/* Small Compact White Shiny Rays */}
+            <div className="absolute w-60 h-60 sm:w-72 sm:h-72 -z-10 animate-spin-slow pointer-events-none flex items-center justify-center">
               <div 
                 className="w-full h-full rounded-full"
                 style={{
-                  background: 'repeating-conic-gradient(from 0deg, rgba(255,255,255,0.22) 0deg 10deg, transparent 10deg 20deg)'
+                  background: 'repeating-conic-gradient(from 0deg, rgba(255,255,255,0.4) 0deg 8deg, transparent 8deg 24deg)'
                 }}
               />
+              {/* Inner Soft Glow */}
+              <div className="absolute inset-4 rounded-full bg-white/10 blur-sm pointer-events-none" />
             </div>
 
-            {/* Medal Image */}
-            <div className="w-56 h-56 sm:w-68 sm:h-68 my-2 relative flex items-center justify-center">
+            {/* Medal Image (Original Color without Background) */}
+            <div className="w-48 h-48 sm:w-56 sm:h-56 my-2 relative flex items-center justify-center">
               <ChromaKeyImage src={selectedMedal.image} alt={selectedMedal.name} />
             </div>
 
@@ -331,7 +333,7 @@ export default function Medal({ onBack }: MedalProps) {
               {Array.from({ length: selectedMedal.stars }).map((_, i) => (
                 <Star
                   key={i}
-                  size={22}
+                  size={20}
                   className="fill-amber-400 text-amber-400"
                 />
               ))}
@@ -356,7 +358,7 @@ export default function Medal({ onBack }: MedalProps) {
           }
         }
         .animate-spin-slow {
-          animation: spinSlow 16s linear infinite;
+          animation: spinSlow 14s linear infinite;
         }
       `}</style>
     </div>
