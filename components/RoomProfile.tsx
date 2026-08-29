@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { 
   Copy, 
   AlertTriangle,
@@ -10,6 +10,180 @@ import {
   Mic
 } from 'lucide-react'
 import WhiteColorRemovalShader from './WhiteColorRemovalShader'
+import { db } from '../src/lib/firebase'
+import { doc, onSnapshot } from 'firebase/firestore'
+
+// ============ Green Color Removal Shader Component ============
+const GreenColorRemovalShader = ({ 
+  imageSrc, 
+  className = "",
+  style = {}
+}: { 
+  imageSrc: string
+  className?: string
+  style?: React.CSSProperties
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
+    if (!gl) {
+      console.warn('WebGL not supported')
+      return
+    }
+
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `
+
+    const fragmentShaderSource = `
+      precision mediump float;
+      
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture;
+      
+      void main() {
+        vec4 color = texture2D(u_texture, v_texCoord);
+        
+        // Detect green background (high green, low red and blue)
+        if (color.g > 0.25 && color.g > color.r * 1.3 && color.g > color.b * 1.3) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); // Make transparent
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `
+
+    const compileShader = (type: number, source: string) => {
+      const shader = gl.createShader(type)
+      if (!shader) return null
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+      
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
+        gl.deleteShader(shader)
+        return null
+      }
+      return shader
+    }
+
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
+    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
+    
+    if (!vertexShader || !fragmentShader) return
+
+    const program = gl.createProgram()
+    if (!program) return
+    
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program))
+      return
+    }
+
+    gl.useProgram(program)
+
+    const positionBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    const positions = new Float32Array([
+      -1.0, -1.0,
+       1.0, -1.0,
+      -1.0,  1.0,
+      -1.0,  1.0,
+       1.0, -1.0,
+       1.0,  1.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(positionLocation)
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    const texCoords = new Float32Array([
+      0.0, 1.0,
+      1.0, 1.0,
+      0.0, 0.0,
+      0.0, 0.0,
+      1.0, 1.0,
+      1.0, 0.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
+    gl.enableVertexAttribArray(texCoordLocation)
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+      
+      canvas.width = image.width
+      canvas.height = image.height
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      
+      gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      
+      setIsLoaded(true)
+    }
+    image.onerror = () => {
+      console.error('Failed to load image for WebGL processing')
+    }
+    image.src = imageSrc
+
+    return () => {
+      gl.deleteProgram(program)
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      gl.deleteBuffer(positionBuffer)
+      gl.deleteBuffer(texCoordBuffer)
+      gl.deleteTexture(texture)
+    }
+  }, [imageSrc])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={className}
+      style={{
+        ...style,
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
+      }}
+    />
+  )
+}
 
 interface RoomProfileProps {
   user: {
@@ -72,6 +246,79 @@ export default function RoomProfile({
   const isFollowing = user.isFollowing || false
   const isMuted = user.isMuted || false
   const isLocked = user.isLocked || false
+
+  // Tag states
+  const [tags, setTags] = useState({
+    adminTag: false,
+    officialTag: false,
+    vipTag: false,
+    premiumTag: false,
+  })
+
+  // Fetch tags from Firestore
+  useEffect(() => {
+    const uid = user.uid || user.id || user.accountId
+    if (!uid || uid === 'N/A' || uid === 'User') return
+
+    let unsubscribe: (() => void) | undefined
+
+    const fetchTags = async () => {
+      try {
+        const userDocRef = doc(db, 'users', uid)
+        unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data()
+            setTags({
+              adminTag: data.adminTag || false,
+              officialTag: data.officialTag || false,
+              vipTag: data.vipTag || false,
+              premiumTag: data.premiumTag || false,
+            })
+          } else {
+            // Try globalRooms if not in users
+            const globalRoomRef = doc(db, 'globalRooms', uid)
+            const unsub2 = onSnapshot(globalRoomRef, (roomSnap) => {
+              if (roomSnap.exists()) {
+                const data = roomSnap.data()
+                setTags({
+                  adminTag: data.adminTag || false,
+                  officialTag: data.officialTag || false,
+                  vipTag: data.vipTag || false,
+                  premiumTag: data.premiumTag || false,
+                })
+              } else {
+                // Default to false
+                setTags({
+                  adminTag: false,
+                  officialTag: false,
+                  vipTag: false,
+                  premiumTag: false,
+                })
+              }
+            })
+            return () => unsub2()
+          }
+        })
+      } catch (err) {
+        console.warn('Error fetching tags in RoomProfile:', err)
+        setTags({
+          adminTag: false,
+          officialTag: false,
+          vipTag: false,
+          premiumTag: false,
+        })
+      }
+    }
+
+    fetchTags()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [user.uid, user.id, user.accountId])
+
+  // Check if any tags are assigned
+  const hasAnyTag = tags.adminTag || tags.officialTag || tags.vipTag || tags.premiumTag
 
   // Get user ID correctly
   const getUserId = () => {
@@ -235,13 +482,36 @@ export default function RoomProfile({
               </span>
             </div>
 
-            {/* Row 2: Tags */}
-            <div className="flex items-center justify-center gap-0.5 mt-1.5 w-auto flex-wrap">
-              <img src="/1785131462125.png" alt="" className="h-8 w-auto object-contain" />
-              <img src="/1785131792693.png" alt="" className="h-8 w-auto object-contain" />
-              <img src="/1785469775751.png" alt="" className="h-6 w-auto object-contain" />
-              <img src="/1785469365805.png" alt="" className="h-6 w-auto object-contain" />
-            </div>
+            {/* Row 2: Tags - ONLY show if assigned from Owner Panel */}
+            {hasAnyTag && (
+              <div className="flex items-center justify-center gap-0.5 mt-1.5 w-auto flex-wrap">
+                {/* Admin Tag with Green Removal */}
+                {tags.adminTag && (
+                  <GreenColorRemovalShader
+                    imageSrc="/1788021461820~2.jpg"
+                    className="h-8 w-auto object-contain"
+                  />
+                )}
+                
+                {/* Official Tag with Green Removal */}
+                {tags.officialTag && (
+                  <GreenColorRemovalShader
+                    imageSrc="/1788021468845~2.jpg"
+                    className="h-8 w-auto object-contain"
+                  />
+                )}
+                
+                {/* VIP Tag */}
+                {tags.vipTag && (
+                  <img src="/1785469775751.png" alt="VIP" className="h-6 w-auto object-contain" />
+                )}
+                
+                {/* Premium Tag */}
+                {tags.premiumTag && (
+                  <img src="/1785469365805.png" alt="Premium" className="h-6 w-auto object-contain" />
+                )}
+              </div>
+            )}
 
             {/* Row 3: Level Badge + Additional Image */}
             <div className="flex items-center justify-center gap-0.5 mt-1.5">
@@ -398,4 +668,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-        }
+    }
