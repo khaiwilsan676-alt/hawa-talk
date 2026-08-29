@@ -1,12 +1,82 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 interface LeaderboardProps {
   onBack: () => void
 }
 
 type LeaderboardTab = 'honour' | 'charm' | 'room'
+
+// Global in-memory cache to prevent re-processing same image multiple times
+const processedImageCache: Record<string, string> = {}
+
+// Ultra-fast Chroma Key green screen remover without WebGL crashes
+function ChromaImage({
+  src,
+  alt,
+  className = '',
+}: {
+  src: string
+  alt: string
+  className?: string
+}) {
+  const [dataUrl, setDataUrl] = useState<string>(processedImageCache[src] || '')
+
+  useEffect(() => {
+    if (processedImageCache[src]) {
+      setDataUrl(processedImageCache[src])
+      return
+    }
+
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = src
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth || 300
+      canvas.height = img.naturalHeight || 300
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0)
+
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const data = imgData.data
+
+      // Loop through RGBA pixels and erase green screen background
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+
+        // Green Chroma Key Detection
+        if (g > 60 && g > r * 1.25 && g > b * 1.25) {
+          data[i + 3] = 0 // Transparent alpha
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0)
+      const finalUrl = canvas.toDataURL('image/png')
+      processedImageCache[src] = finalUrl
+      setDataUrl(finalUrl)
+    }
+  }, [src])
+
+  if (!dataUrl) {
+    return <div className={`opacity-0 ${className}`} style={{ minHeight: '60px' }} />
+  }
+
+  return (
+    <img
+      src={dataUrl}
+      alt={alt}
+      className={className}
+      draggable="false"
+    />
+  )
+}
 
 export default function Leaderboard({ onBack }: LeaderboardProps) {
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('honour')
@@ -28,16 +98,16 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-[#4A0E17] text-white overflow-hidden flex flex-col select-none"
+      className="fixed inset-0 bg-[#3B0508] text-white overflow-hidden flex flex-col select-none"
       style={{ touchAction: 'manipulation', WebkitUserSelect: 'none' }}
     >
-      {/* Background Top Image with smooth fade into Maroon */}
+      {/* BACKGROUND TOP IMAGE: Exactly 50vh blended into Dark Red */}
       <div
         className="absolute top-0 left-0 w-full pointer-events-none z-0 overflow-hidden"
         style={{
-          height: '40vh',
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
+          height: '50vh',
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
         }}
       >
         <img
@@ -49,7 +119,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         />
       </div>
 
-      {/* Top Header: Simple White Icons & Underlined Tabs */}
+      {/* FIXED TOP HEADER */}
       <header className="relative z-50 flex items-center justify-between px-4 py-3 shrink-0">
         <button
           onClick={onBack}
@@ -88,57 +158,55 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         </button>
       </header>
 
-      {/* 60vh Scrollable Maroon Sheet Area */}
-      <main className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pt-2 pb-8 px-4 flex flex-col items-center">
-        {/* Podium: Top 1, Top 2, Top 3 */}
+      {/* FIXED TOP SECTION (Top 1, 2, 3 Podium) - NO SCROLL */}
+      <div className="relative z-10 w-full shrink-0 flex flex-col items-center px-4">
         <div className="w-full max-w-md flex flex-col items-center gap-2 mt-2">
           {/* Row 1: Top 1 (Center) */}
           <div className="flex justify-center w-full">
-            <img
-              src={encodeURI('/1787994771034~2.jpg')}
+            <ChromaImage
+              src="/1787994771034~2.jpg"
               alt="Top 1"
-              className="w-28 h-auto object-contain mix-blend-screen"
-              draggable="false"
+              className="w-40 h-auto object-contain drop-shadow-lg"
             />
           </div>
 
           {/* Row 2: Top 2 (Left) & Top 3 (Right) */}
           <div className="flex justify-between items-center w-full px-6 -mt-3">
-            <img
-              src={encodeURI('/1787994751636~2.jpg')}
+            <ChromaImage
+              src="/1787994751636~2.jpg"
               alt="Top 2"
-              className="w-24 h-auto object-contain mix-blend-screen"
-              draggable="false"
+              className="w-30 h-auto object-contain drop-shadow-lg"
             />
-            <img
-              src={encodeURI('/1787994761762~2.jpg')}
+            <ChromaImage
+              src="/1787994761762~2.jpg"
               alt="Top 3"
-              className="w-24 h-auto object-contain mix-blend-screen"
-              draggable="false"
+              className="w-30 h-auto object-contain drop-shadow-lg"
             />
           </div>
         </div>
 
-        {/* 10vh Middle Gap */}
-        <div style={{ height: '10vh' }} className="w-full shrink-0" />
+        {/* 10vh Middle Gap - Fixed */}
+        <div style={{ height: '15vh' }} className="w-full shrink-0" />
+      </div>
 
-        {/* 50 Cards (Top 4 to 50) */}
-        <div className="w-full max-w-md flex flex-col gap-3">
+      {/* ONLY SCROLLABLE AREA: TOP 4 TO 50 CARDS */}
+      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pb-8 px-4 flex flex-col items-center">
+        <div className="w-full max-w-md flex flex-col gap-2">
           {rankCards.map((rank) => (
             <div
               key={rank}
-              className="relative w-full flex items-center justify-center rounded-xl overflow-hidden"
+              className="relative w-full flex items-center justify-center rounded-xl overflow-hidden shrink-0"
             >
-              <img
-                src={encodeURI('/1787992320047~2.jpg')}
+              <ChromaImage
+                src="/1787992320047~2.jpg"
                 alt={`Rank ${rank}`}
-                className="w-full h-auto object-cover mix-blend-screen"
-                draggable="false"
+                className="w-full h-auto object-cover"
               />
             </div>
           ))}
         </div>
-      </main>
+      </div>
     </div>
   )
 }
+
