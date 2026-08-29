@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 interface LeaderboardProps {
   onBack: () => void
@@ -8,268 +8,279 @@ interface LeaderboardProps {
 
 type LeaderboardTab = 'honour' | 'charm' | 'room'
 
+// Helper component to remove green screen from images using WebGL Shaders
+function ChromaKeyImage({
+  src,
+  alt,
+  className = '',
+  style = {}
+}: {
+  src: string
+  alt: string
+  className?: string
+  style?: React.CSSProperties
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: false })
+    if (!gl) return
+
+    const vsSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `
+
+    // Green screen keying fragment shader
+    const fsSource = `
+      precision mediump float;
+      uniform sampler2D u_image;
+      varying vec2 v_texCoord;
+      void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        // Green key detection
+        float greenDiff = color.g - max(color.r, color.b);
+        if (greenDiff > 0.15 && color.g > 0.35) {
+          discard;
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `
+
+    function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+      const shader = gl.createShader(type)
+      if (!shader) return null
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+      return shader
+    }
+
+    const vs = createShader(gl, gl.VERTEX_SHADER, vsSource)
+    const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource)
+    if (!vs || !fs) return
+
+    const program = gl.createProgram()
+    if (!program) return
+    gl.attachShader(program, vs)
+    gl.attachShader(program, fs)
+    gl.linkProgram(program)
+    gl.useProgram(program)
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
+    const imageLocation = gl.getUniformLocation(program, 'u_image')
+
+    const positionBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([
+        -1, -1,
+         1, -1,
+        -1,  1,
+        -1,  1,
+         1, -1,
+         1,  1,
+      ]),
+      gl.STATIC_DRAW
+    )
+
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([
+        0.0, 1.0,
+        1.0, 1.0,
+        0.0, 0.0,
+        0.0, 0.0,
+        1.0, 1.0,
+        1.0, 0.0,
+      ]),
+      gl.STATIC_DRAW
+    )
+
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = src
+    img.onload = () => {
+      canvas.width = img.naturalWidth || 300
+      canvas.height = img.naturalHeight || 300
+      gl.viewport(0, 0, canvas.width, canvas.height)
+
+      const texture = gl.createTexture()
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+
+      gl.enableVertexAttribArray(positionLocation)
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+      gl.enableVertexAttribArray(texCoordLocation)
+      gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+      gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
+
+      gl.uniform1i(imageLocation, 0)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+    }
+  }, [src])
+
+  return <canvas ref={canvasRef} aria-label={alt} className={className} style={style} />
+}
+
 export default function Leaderboard({ onBack }: LeaderboardProps) {
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('honour')
-  const [mounted, setMounted] = useState(false)
 
-  // Mount animation
-  useEffect(() => {
-    const id = setTimeout(() => setMounted(true), 30)
-    return () => clearTimeout(id)
-  }, [])
-
-  // Tab data
   const tabs: { id: LeaderboardTab; label: string }[] = [
     { id: 'honour', label: 'Honour' },
     { id: 'charm', label: 'Charm' },
     { id: 'room', label: 'Room' },
   ]
 
-  // Image data for each tab
-  const tabImages: Record<LeaderboardTab, { top: string; bottom: string }> = {
+  const tabImages: Record<LeaderboardTab, { top: string }> = {
     honour: {
       top: '/IMG-20260820-WA0068.jpg',
-      bottom: '/IMG_20260821_005021.png'
     },
     charm: {
       top: '/file_000000006adc82118aca1654ab78b34a.png',
-      bottom: '/IMG_20260821_004949.png'
     },
     room: {
       top: '/file_000000006f4082119aa31cd73d4211e2.png',
-      bottom: '/IMG_20260821_005004.png'
-    }
-  }
-
-  // Card colors for each tab with glossy 3D effects
-  const cardColors: Record<LeaderboardTab, {
-    primary: string;
-    secondary: string;
-    highlight: string;
-    shadow: string;
-    gradient: string;
-  }> = {
-    honour: {
-      primary: '#8B5CF6', // Purple
-      secondary: '#6D28D9',
-      highlight: '#A78BFA',
-      shadow: 'rgba(139, 92, 246, 0.6)',
-      gradient: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 50%, #4C1D95 100%)'
-    },
-    charm: {
-      primary: '#3B82F6', // Blue
-      secondary: '#2563EB',
-      highlight: '#60A5FA',
-      shadow: 'rgba(59, 130, 246, 0.6)',
-      gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #1E40AF 100%)'
-    },
-    room: {
-      primary: '#10B981', // Green
-      secondary: '#059669',
-      highlight: '#34D399',
-      shadow: 'rgba(16, 185, 129, 0.6)',
-      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 50%, #065F46 100%)'
     },
   }
 
-  const goldenColor = '#D4AF37'
+  // Top 4 to 50 cards array
+  const rankCards = Array.from({ length: 47 }, (_, index) => index + 4)
 
   return (
     <div
-      className="fixed inset-0 bg-black overflow-hidden"
+      className="fixed inset-0 bg-[#2B1704] text-white overflow-hidden flex flex-col select-none"
       style={{
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
-        userSelect: 'none',
-        WebkitTouchCallout: 'none'
       }}
     >
-      <style>{`
-        * {
-          -webkit-text-size-adjust: 100%;
-          -ms-text-size-adjust: 100%;
-          touch-action: manipulation;
-          margin: 0;
-          padding: 0;
-        }
-        button, div, span {
-          touch-action: manipulation;
-        }
-        @keyframes tabIndicator {
-          0% { transform: scaleX(0); }
-          100% { transform: scaleX(1); }
-        }
-        @keyframes imageFadeIn {
-          0% { opacity: 0; transform: scale(0.98); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes cardPop {
-          0% { transform: scale(0.85) rotateX(-15deg); opacity: 0; }
-          60% { transform: scale(1.1) rotateX(5deg); }
-          100% { transform: scale(1.08) rotateX(0deg); opacity: 1; }
-        }
-        @keyframes glowPulse {
-          0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.2), 0 8px 25px rgba(0,0,0,0.5); }
-          50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.7), 0 0 50px rgba(212, 175, 55, 0.4), 0 8px 35px rgba(0,0,0,0.6); }
-        }
-        @keyframes float3D {
-          0%, 100% { transform: translateY(0px) rotateX(0deg); }
-          50% { transform: translateY(-2px) rotateX(2deg); }
-        }
-      `}</style>
+      {/* BACKGROUND TOP IMAGE WITH FADE INTO BROWN */}
+      <div
+        className="absolute top-0 left-0 w-full pointer-events-none z-0 overflow-hidden"
+        style={{
+          height: '45vh',
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+        }}
+      >
+        <img
+          key={`${activeTab}-top`}
+          src={tabImages[activeTab].top}
+          alt={`${activeTab} leaderboard top`}
+          className="w-full h-full object-cover"
+          draggable="false"
+        />
+      </div>
 
-      {/* Full screen images container */}
-      <div className="w-full h-full relative">
-        {/* Top image - 50vh */}
-        <div
-          className="w-full absolute top-0 left-0 overflow-hidden"
-          style={{
-            height: '50vh',
-            animation: mounted ? 'imageFadeIn 0.5s ease-out' : 'none',
-          }}
+      {/* TOP HEADER: Clean Back, Underlined Tabs, Simple Info */}
+      <header className="relative z-50 flex items-center justify-between px-4 py-3 shrink-0">
+        {/* Simple White Back Arrow */}
+        <button
+          onClick={onBack}
+          className="p-2 text-white active:opacity-60 transition-opacity"
+          aria-label="Back"
         >
-          <img
-            key={`${activeTab}-top`}
-            src={tabImages[activeTab].top}
-            alt={`${activeTab} leaderboard top`}
-            className="w-full h-full object-cover"
-            draggable="false"
-          />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+        </button>
+
+        {/* Tab Buttons with Simple Underline */}
+        <div className="flex items-center justify-center gap-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="relative pb-1.5 font-semibold text-base transition-colors"
+              style={{
+                color: activeTab === tab.id ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
+              }}
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-white rounded-full" />
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Bottom image - 50vh */}
-        <div
-          className="w-full absolute bottom-0 left-0 overflow-hidden"
-          style={{
-            height: '50vh',
-            animation: mounted ? 'imageFadeIn 0.5s ease-out 0.1s' : 'none',
-          }}
+        {/* Simple White Question Mark */}
+        <button
+          className="p-2 text-white active:opacity-60 transition-opacity text-xl font-bold"
+          aria-label="Info"
         >
-          <img
-            key={`${activeTab}-bottom`}
-            src={tabImages[activeTab].bottom}
-            alt={`${activeTab} leaderboard bottom`}
-            className="w-full h-full object-cover object-top"
-            draggable="false"
-          />
-        </div>
+          ?
+        </button>
+      </header>
 
-        {/* OVERLAY: Header with Back, Tabs, Question Mark - ON TOP OF IMAGES */}
-        <div className="absolute top-0 left-0 right-0 z-50 px-5 py-4 safe-top">
-          {/* Top Row: Back, Tabs (Top Middle), Question Mark - All in one line */}
-          <div className="flex items-center justify-between gap-2">
-            {/* Back Arrow - Compact Glossy 3D Circle */}
-            <button
-              onClick={onBack}
-              className="relative w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0"
-              style={{
-                background: cardColors[activeTab].gradient,
-                border: `2px solid ${goldenColor}`,
-                boxShadow: `
-                  0 8px 25px ${cardColors[activeTab].shadow},
-                  0 0 20px rgba(212, 175, 55, 0.4),
-                  inset 0 2px 4px rgba(255,255,255,0.3),
-                  inset 0 -2px 4px rgba(0,0,0,0.3)
-                `,
-                animation: 'glowPulse 2s ease-in-out infinite, float3D 3s ease-in-out infinite',
-                transform: 'perspective(500px) rotateX(5deg)',
-                transformStyle: 'preserve-3d'
-              }}
-              aria-label="Back"
-            >
-              {/* Glossy overlay */}
-              <span 
-                className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
-                style={{
-                  background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)'
-                }}
-              />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={goldenColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
-            </button>
+      {/* SCROLLABLE CONTENT AREA (BROWN CONTAINER) */}
+      <main className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pt-2 pb-8 px-4 flex flex-col items-center">
+        {/* PODIUM SECTION (TOP 1, 2, 3) */}
+        <div className="w-full max-w-md flex flex-col items-center gap-3 mt-2">
+          {/* Row 1: Top 1 (Middle) */}
+          <div className="flex justify-center w-full">
+            <ChromaKeyImage
+              src="/1787994771034~2.jpg"
+              alt="Top 1"
+              className="w-28 h-auto object-contain drop-shadow-md"
+            />
+          </div>
 
-            {/* Tab Buttons - Directly without container */}
-            <div className="flex items-center justify-center gap-2 flex-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="relative px-6 py-3.5 rounded-full font-bold text-sm transition-all duration-300"
-                  style={{
-                    background: activeTab === tab.id ? cardColors[tab.id].gradient : 'transparent',
-                    color: activeTab === tab.id ? goldenColor : 'rgba(255,255,255,0.7)',
-                    border: activeTab === tab.id ? `2px solid ${goldenColor}` : '2px solid transparent',
-                    boxShadow: activeTab === tab.id 
-                      ? `
-                        0 15px 35px ${cardColors[tab.id].shadow},
-                        0 0 25px rgba(212, 175, 55, 0.6),
-                        inset 0 2px 4px rgba(255,255,255,0.3),
-                        inset 0 -2px 4px rgba(0,0,0,0.3)
-                      ` 
-                      : 'none',
-                    animation: activeTab === tab.id ? 'cardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
-                    transform: activeTab === tab.id ? 'scale(1.1) rotateX(5deg)' : 'scale(1) rotateX(0deg)',
-                    transformStyle: 'preserve-3d',
-                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    textShadow: activeTab === tab.id ? '0 2px 4px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.5)',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {activeTab === tab.id && (
-                    <span 
-                      className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
-                      style={{
-                        background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)'
-                      }}
-                    />
-                  )}
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Question Mark - Glossy 3D Circle with simple ? sign */}
-            <button
-              className="relative w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0"
-              style={{
-                background: cardColors[activeTab].gradient,
-                border: `2px solid ${goldenColor}`,
-                boxShadow: `
-                  0 8px 25px ${cardColors[activeTab].shadow},
-                  0 0 20px rgba(212, 175, 55, 0.4),
-                  inset 0 2px 4px rgba(255,255,255,0.3),
-                  inset 0 -2px 4px rgba(0,0,0,0.3)
-                `,
-                animation: 'glowPulse 2s ease-in-out infinite, float3D 3s ease-in-out infinite 0.5s',
-                transform: 'perspective(500px) rotateX(5deg)',
-                transformStyle: 'preserve-3d'
-              }}
-              aria-label="Info"
-            >
-              {/* Glossy overlay */}
-              <span 
-                className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
-                style={{
-                  background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.5) 0%, transparent 50%)'
-                }}
-              />
-              <span 
-                className="relative z-10 text-xl font-bold"
-                style={{
-                  color: goldenColor,
-                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                  lineHeight: '1',
-                  fontSize: '24px'
-                }}
-              >
-                ?
-              </span>
-            </button>
+          {/* Row 2: Top 2 (Left) and Top 3 (Right) */}
+          <div className="flex justify-between items-center w-full px-6 -mt-3">
+            <ChromaKeyImage
+              src="/1787994751636~2.jpg"
+              alt="Top 2"
+              className="w-24 h-auto object-contain drop-shadow-md"
+            />
+            <ChromaKeyImage
+              src="/1787994761762~2.jpg"
+              alt="Top 3"
+              className="w-24 h-auto object-contain drop-shadow-md"
+            />
           </div>
         </div>
-      </div>
+
+        {/* Middle Gap: 10vh */}
+        <div style={{ height: '10vh' }} className="w-full shrink-0" />
+
+        {/* 50 CARDS (TOP 4 TO 50) */}
+        <div className="w-full max-w-md flex flex-col gap-3">
+          {rankCards.map((rank) => (
+            <div
+              key={rank}
+              className="relative w-full flex items-center justify-center rounded-xl overflow-hidden shadow-sm"
+            >
+              <ChromaKeyImage
+                src="/1787992320047~2.jpg"
+                alt={`Rank ${rank}`}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      </main>
     </div>
   )
-          }
+}
+
