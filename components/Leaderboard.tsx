@@ -45,15 +45,15 @@ function ChromaImage({
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       const data = imgData.data
 
-      // Loop through RGBA pixels and erase green screen background
+      // Loop through RGBA pixels and erase green screen background cleanly
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i]
         const g = data[i + 1]
         const b = data[i + 2]
 
-        // Green Chroma Key Detection
-        if (g > 60 && g > r * 1.25 && g > b * 1.25) {
-          data[i + 3] = 0 // Transparent alpha
+        // Sharp green chroma detection
+        if (g > 50 && g > r * 1.15 && g > b * 1.15) {
+          data[i + 3] = 0 // Transparent
         }
       }
 
@@ -98,16 +98,16 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-[#3B0508] text-white overflow-hidden flex flex-col select-none"
+      className="fixed inset-0 bg-[#1A0204] text-white overflow-hidden flex flex-col select-none"
       style={{ touchAction: 'manipulation', WebkitUserSelect: 'none' }}
     >
-      {/* BACKGROUND TOP IMAGE: Exactly 50vh blended into Dark Red */}
+      {/* BACKGROUND TOP IMAGE: 50vh blended into Ultra-Dark Red */}
       <div
         className="absolute top-0 left-0 w-full pointer-events-none z-0 overflow-hidden"
         style={{
           height: '50vh',
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)',
         }}
       >
         <img
@@ -158,15 +158,15 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         </button>
       </header>
 
-      {/* FIXED TOP SECTION (Top 1, 2, 3 Podium) - NO SCROLL */}
+      {/* FIXED PODIUM AREA (Top 1, 2, 3) */}
       <div className="relative z-10 w-full shrink-0 flex flex-col items-center px-4">
         <div className="w-full max-w-md flex flex-col items-center gap-2 mt-2">
-          {/* Row 1: Top 1 (Center) */}
+          {/* Row 1: Top 1 (Large Size) */}
           <div className="flex justify-center w-full">
             <ChromaImage
               src="/1787994771034~2.jpg"
               alt="Top 1"
-              className="w-40 h-auto object-contain drop-shadow-lg"
+              className="w-60 h-auto object-contain drop-shadow-2xl"
             />
           </div>
 
@@ -175,23 +175,23 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             <ChromaImage
               src="/1787994751636~2.jpg"
               alt="Top 2"
-              className="w-30 h-auto object-contain drop-shadow-lg"
+              className="w-40 h-auto object-contain drop-shadow-lg"
             />
             <ChromaImage
               src="/1787994761762~2.jpg"
               alt="Top 3"
-              className="w-30 h-auto object-contain drop-shadow-lg"
+              className="w-40 h-auto object-contain drop-shadow-lg"
             />
           </div>
         </div>
 
-        {/* 10vh Middle Gap - Fixed */}
-        <div style={{ height: '15vh' }} className="w-full shrink-0" />
+        {/* 10vh Fixed Middle Gap */}
+        <div style={{ height: '13vh' }} className="w-full shrink-0" />
       </div>
 
-      {/* ONLY SCROLLABLE AREA: TOP 4 TO 50 CARDS */}
+      {/* SCROLLABLE SECTION: ONLY TOP 4 TO 50 CARDS */}
       <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pb-8 px-4 flex flex-col items-center">
-        <div className="w-full max-w-md flex flex-col gap-2">
+        <div className="w-full max-w-md flex flex-col gap-1.5">
           {rankCards.map((rank) => (
             <div
               key={rank}
@@ -200,7 +200,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
               <ChromaImage
                 src="/1787992320047~2.jpg"
                 alt={`Rank ${rank}`}
-                className="w-full h-auto object-cover"
+                className="w-50 h-auto object-cover"
               />
             </div>
           ))}
