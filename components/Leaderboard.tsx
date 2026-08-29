@@ -175,18 +175,18 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             <ChromaImage
               src="/1787994751636~2.jpg"
               alt="Top 2"
-              className="w-40 h-auto object-contain drop-shadow-lg -ml-1"
+              className="w-50 h-auto object-contain drop-shadow-lg -ml-1"
             />
             <ChromaImage
               src="/1787994761762~2.jpg"
               alt="Top 3"
-              className="w-40 h-auto object-contain drop-shadow-lg -mr-1"
+              className="w-50 h-auto object-contain drop-shadow-lg -mr-1"
             />
           </div>
         </div>
 
         {/* 10vh Fixed Middle Gap */}
-        <div style={{ height: '10vh' }} className="w-full shrink-0" />
+        <div style={{ height: '9vh' }} className="w-full shrink-0" />
       </div>
 
       {/* SCROLLABLE SECTION: ONLY TOP 4 TO 50 CARDS */}
