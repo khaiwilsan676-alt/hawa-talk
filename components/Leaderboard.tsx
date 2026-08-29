@@ -186,7 +186,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         </div>
 
         {/* 10vh Fixed Middle Gap */}
-        <div style={{ height: '9vh' }} className="w-full shrink-0" />
+        <div style={{ height: '5vh' }} className="w-full shrink-0" />
       </div>
 
       {/* SCROLLABLE SECTION: ONLY TOP 4 TO 50 CARDS */}
