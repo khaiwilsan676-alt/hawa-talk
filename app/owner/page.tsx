@@ -1,164 +1,196 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star, MessageSquare, Trash2, RefreshCw, Bot, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Menu, X, Shield, Lock, Save, Eye, EyeOff, Key,
+  Users, Flame, Radio, Store, Landmark, FileText,
+  AlertTriangle, BarChart3, Settings, Search, ArrowUpDown,
+  Trash2, RefreshCw, Bot, ChevronDown, ChevronUp, LogOut
+} from "lucide-react";
 
-import { supabase, db, doc, onSnapshot, query, collection, orderBy, getDocs, deleteDoc, setDoc } from '../../src/lib/supabase';
+import { db, doc, onSnapshot, query, collection, orderBy, getDocs, deleteDoc, setDoc } from '../../src/lib/supabase';
 
 export default function OwnerPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsLoggedIn(localStorage.getItem('ownerPanelLoggedIn') === 'true');
-    }
-  }, []);
-  
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activeView, setActiveView] = useState("official_id");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [activeMenu, setActiveMenu] = useState("manage_users");
   const [saveMessage, setSaveMessage] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginKey, setLoginKey] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  // Feedback States
+  // Feedback & Chat states
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
-
-  // AI Chat States
   const [aiChats, setAiChats] = useState<any[]>([]);
   const [loadingAiChats, setLoadingAiChats] = useState(false);
   const [expandedChats, setExpandedChats] = useState<Record<string, boolean>>({});
 
-  const getDefaultIdsData = () => ({
-    "100002": { email: "", password: "" },
-    "100003": { email: "", password: "" },
-    "500001": { email: "", password: "" },
-    "500002": { email: "", password: "" },
-    "500003": { email: "", password: "" },
-    "500004": { email: "", password: "" },
-    "500005": { email: "", password: "" },
-    "700001": { email: "", password: "" },
-    "700002": { email: "", password: "" },
-    "700003": { email: "", password: "" },
-  });
+  const defaultIds = ["100002", "100003", "500001", "500002", "500003", "500004", "500005", "700001", "700002", "700003"];
+
+  const getDefaultIdsData = () => {
+    const data: Record<string, { email: string; password: string }> = {};
+    defaultIds.forEach(id => {
+      data[id] = { email: "", password: "" };
+    });
+    return data;
+  };
 
   const [idsData, setIdsData] = useState<Record<string, any>>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("ownerPanelCredentials");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error(e);
-        }
+      try {
+        const saved = localStorage.getItem("ownerPanelCredentials");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Local storage error:", e);
       }
     }
     return getDefaultIdsData();
   });
 
-  const focusedField = useRef<string | null>(null);
+  const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
   const isDirtied = useRef(false);
-  const isLoadedFromFirestore = useRef(false);
-  const lastTypingTime = useRef<number>(0);
 
-  // Load from firestore (Real-time sync)
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsLoggedIn(localStorage.getItem("ownerPanelLoggedIn") === "true");
+    }
+  }, []);
+
+  // Sync credentials from Firestore safely
+  useEffect(() => {
+    if (!db) return;
     const docRef = doc(db, "adminSettings", "credentials");
-    const unsubscribe = onSnapshot(
-      docRef,
-      (docSnap: any) => {
-        if (isDirtied.current) {
-          // User has unsaved local changes!
-          // DO NOT OVERWRITE THEIR TYPING!
-          isLoadedFromFirestore.current = true;
-          return;
-        }
-
-        if (docSnap.exists()) {
-          const serverData = docSnap.data().ownerPanelCredentials || {};
-          const mergedData = getDefaultIdsData();
-          
-          Object.keys(getDefaultIdsData()).forEach(id => {
-            if (serverData[id]) {
-              mergedData[id as keyof typeof mergedData] = {
-                email: serverData[id].email || "",
-                password: serverData[id].password || ""
-              };
-            }
-          });
-
-          setIdsData(currentData => {
-            const finalData = JSON.parse(JSON.stringify(mergedData));
-
-            if (focusedField.current) {
-              const [focusedId, focusedKey] = focusedField.current.split('-');
-              if (finalData[focusedId] && currentData[focusedId]) {
-                finalData[focusedId][focusedKey] = currentData[focusedId][focusedKey];
-              }
-            }
-
-            if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
-              return currentData;
-            }
-
-            isLoadedFromFirestore.current = true;
-            
-            localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
-            return finalData;
-          });
-        }
-      },
-      (error: any) => {
-        console.error("Error fetching credentials:", error);
-        isLoadedFromFirestore.current = true;
+    const unsubscribe = onSnapshot(docRef, (docSnap: any) => {
+      if (isDirtied.current) return;
+      if (docSnap.exists()) {
+        const serverData = docSnap.data().ownerPanelCredentials || {};
+        const mergedData = getDefaultIdsData();
+        defaultIds.forEach(id => {
+          if (serverData[id]) {
+            mergedData[id] = {
+              email: serverData[id].email || "",
+              password: serverData[id].password || ""
+            };
+          }
+        });
+        setIdsData(mergedData);
+        localStorage.setItem("ownerPanelCredentials", JSON.stringify(mergedData));
       }
-    );
+    }, (err) => console.error("Firestore error:", err));
 
     return () => unsubscribe();
   }, []);
 
-  // Track online status
-  const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
-
+  // Track online status safely without memory leak
   useEffect(() => {
-    const unsubscribes = Object.keys(idsData).map(id => {
+    if (!db) return;
+    const unsubscribes = defaultIds.map(id => {
       const docRef = doc(db, "adminSettings", `sessions_${id}`);
       return onSnapshot(docRef, (docSnap: any) => {
-        if (docSnap.exists()) {
-          setOnlineStatus(prev => ({
-            ...prev,
-            [id]: docSnap.data().isLoggedIn === true
-          }));
-        } else {
-          setOnlineStatus(prev => ({
-            ...prev,
-            [id]: false
-          }));
-        }
-      });
+        setOnlineStatus(prev => ({
+          ...prev,
+          [id]: docSnap.exists() ? docSnap.data().isLoggedIn === true : false
+        }));
+      }, (err) => console.error(`Session error ${id}:`, err));
     });
 
     return () => {
       unsubscribes.forEach(unsub => unsub());
     };
+  }, []);
+
+  const handleLogin = () => {
+    if (loginUsername === "HAWA.IN" && loginPassword === "HAWA.OWNER/CEO" && loginKey === "25/7/2026") {
+      setIsLoggedIn(true);
+      setLoginError("");
+      localStorage.setItem("ownerPanelLoggedIn", "true");
+    } else {
+      setLoginError("Invalid credentials. Please try again.");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem("ownerPanelLoggedIn");
+    setLoginUsername("");
+    setLoginPassword("");
+    setLoginKey("");
+  };
+
+  const handleChange = (id: string, field: string, value: string) => {
+    isDirtied.current = true;
+    setIdsData(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value }
+    }));
+  };
+
+  const handleSave = useCallback(async () => {
+    try {
+      const credentials: any[] = [];
+      Object.entries(idsData).forEach(([id, data]: [string, any]) => {
+        const email = (data.email || "").trim();
+        const password = (data.password || "").trim();
+        if (email && password) {
+          credentials.push({
+            id,
+            email,
+            password,
+            type: id.startsWith("5") ? "official" : id.startsWith("7") ? "admin" : "special"
+          });
+        }
+      });
+
+      const docRef = doc(db, "adminSettings", "credentials");
+      await setDoc(docRef, {
+        ownerPanelCredentials: idsData,
+        officialCredentials: credentials
+      }, { merge: true });
+
+      isDirtied.current = false;
+      localStorage.setItem("ownerPanelCredentials", JSON.stringify(idsData));
+      localStorage.setItem("officialCredentials", JSON.stringify(credentials));
+
+      setSaveMessage("Saved successfully!");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error("Save error:", error);
+      setSaveMessage("Error saving data!");
+      setTimeout(() => setSaveMessage(""), 3000);
+    }
   }, [idsData]);
+
+  const handleIDLogout = async (id: string) => {
+    try {
+      const docRef = doc(db, "adminSettings", `sessions_${id}`);
+      await setDoc(docRef, {
+        isLoggedIn: false,
+        forceLogoutTimestamp: Date.now()
+      }, { merge: true });
+
+      setSaveMessage(`ID ${id} Logged Out!`);
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error("Logout Error:", error);
+    }
+  };
 
   // Load Feedbacks
   const loadFeedbacks = async () => {
     setLoadingFeedbacks(true);
     try {
       const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
-      const querySnapshot: any = await getDocs(q);
-      const feedbackList: any[] = [];
-      querySnapshot.forEach((doc: any) => {
-        feedbackList.push({ id: doc.id, ...doc.data() });
-      });
-      setFeedbacks(feedbackList);
-    } catch (error: any) {
-      console.error("Error loading feedbacks:", error);
+      const snap: any = await getDocs(q);
+      const list: any[] = [];
+      snap.forEach((d: any) => list.push({ id: d.id, ...d.data() }));
+      setFeedbacks(list);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoadingFeedbacks(false);
     }
@@ -169,721 +201,437 @@ export default function OwnerPanel() {
     setLoadingAiChats(true);
     try {
       const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
-      const querySnapshot: any = await getDocs(q);
-      const chatList: any[] = [];
-      querySnapshot.forEach((doc: any) => {
-        chatList.push({ id: doc.id, ...doc.data() });
-      });
-      setAiChats(chatList);
-    } catch (error: any) {
-      console.error("Error loading AI chats:", error);
+      const snap: any = await getDocs(q);
+      const list: any[] = [];
+      snap.forEach((d: any) => list.push({ id: d.id, ...d.data() }));
+      setAiChats(list);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoadingAiChats(false);
     }
   };
 
-  // Auto-delete feedbacks older than 48 hours
   useEffect(() => {
-    const checkAndDeleteOldFeedbacks = async () => {
-      try {
-        const q = query(collection(db, "feedbacks"));
-        const querySnapshot: any = await getDocs(q);
-        const now = Date.now();
-        const fortyEightHours = 48 * 60 * 60 * 1000;
+    if (activeMenu === "reports") loadFeedbacks();
+    if (activeMenu === "hawa_ai") loadAiChats();
+  }, [activeMenu]);
 
-        const deletePromises: Promise<void>[] = [];
-
-        querySnapshot.forEach((document: any) => {
-          const data = document.data();
-          const feedbackTime = data.timestamp || 0;
-          
-          if (now - feedbackTime > fortyEightHours) {
-            const p = deleteDoc(doc(db, "feedbacks", document.id)).then(() => {
-              console.log(`Deleted old feedback: ${document.id}`);
-            });
-            deletePromises.push(p);
-          }
-        });
-
-        await Promise.all(deletePromises);
-
-        loadFeedbacks();
-      } catch (error: any) {
-        console.error("Error cleaning up old feedbacks:", error);
-      }
-    };
-
-    if (activeView === "moderator") {
-      checkAndDeleteOldFeedbacks();
-    }
-
-    const interval = setInterval(() => {
-      if (activeView === "moderator") {
-        checkAndDeleteOldFeedbacks();
-      }
-    }, 600000);
-
-    return () => clearInterval(interval);
-  }, [activeView]);
-
-  // Load feedbacks/aiChats when switching views
-  useEffect(() => {
-    if (activeView === "moderator") {
-      loadFeedbacks();
-    } else if (activeView === "hawa_ai") {
-      loadAiChats();
-    }
-  }, [activeView]);
-
-  const handleLogin = () => {
-    if (loginUsername === "HAWA.IN" && loginPassword === "HAWA.OWNER/CEO" && loginKey === "25/7/2026") {
-      setIsLoggedIn(true);
-      setLoginError("");
-      localStorage.setItem('ownerPanelLoggedIn', 'true');
-    } else {
-      setLoginError("Invalid credentials. Please try again.");
-    }
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem('ownerPanelLoggedIn');
-    setLoginUsername("");
-    setLoginPassword("");
-    setLoginKey("");
-  };
-
-  // FIRESTORE SAVE & SYNC FUNCTION
-  const handleSave = useCallback(async (customData?: Record<string, any>) => {
-    isDirtied.current = false;
-    try {
-      const targetData = customData || idsData;
-      const credentials: any[] = [];
-      
-      Object.entries(targetData).forEach(([id, data]: [string, any]) => {
-        const email = (data.email || "").trim();
-        const password = (data.password || "").trim();
-        if (email && password) {
-          credentials.push({
-            id: id,
-            email: email,
-            password: password,
-            type: id.startsWith('5') ? 'official' : id.startsWith('7') ? 'admin' : 'special'
-          });
-        }
-      });
-
-      const docRef = doc(db, "adminSettings", "credentials");
-      await setDoc(docRef, {
-        ownerPanelCredentials: targetData,
-        officialCredentials: credentials
-      }, { merge: true });
-
-      localStorage.setItem('ownerPanelCredentials', JSON.stringify(targetData));
-      localStorage.setItem('officialCredentials', JSON.stringify(credentials));
-
-      setSaveMessage("Credentials saved!");
-      setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error: any) {
-      console.error("Error saving credentials:", error);
-      setSaveMessage("Error saving credentials!");
-      setTimeout(() => setSaveMessage(""), 3000);
-    }
-  }, [idsData]);
-
-  useEffect(() => {
-    if (!isDirtied.current) {
-      return;
-    }
-
-    if (!isLoadedFromFirestore.current) {
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      isDirtied.current = false;
-      handleSave();
-      isDirtied.current = false; // Mark as saved!
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
-  }, [idsData, handleSave]);
-
-  const handleChange = (id: string, field: string, value: string) => {
-    isDirtied.current = true;
-    setIdsData((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value },
-    }));
-  };
-
-  const handleIDLogout = async (id: string) => {
-    try {
-      const docRef = doc(db, "adminSettings", `sessions_${id}`);
-      await setDoc(docRef, {
-        isLoggedIn: false,
-        forceLogoutTimestamp: Date.now()
-      }, { merge: true });
-
-      const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-      delete loggedInSessions[id]
-      localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
-      localStorage.removeItem(`session_${id}`)
-      localStorage.removeItem(`user_data_${id}`)
-      localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
-
-      setSaveMessage(`ID ${id} logged out successfully!`)
-      setTimeout(() => setSaveMessage(""), 3000)
-    } catch (error: any) {
-      console.error(`Error logging out ID ${id}:`, error);
-    }
-  }
-
-  const handleLogoutGroup = async (ids: string[]) => {
-    try {
-      await Promise.all(
-        ids.map(async (id) => {
-          const docRef = doc(db, "adminSettings", `sessions_${id}`);
-          await setDoc(
-            docRef,
-            {
-              isLoggedIn: false,
-              forceLogoutTimestamp: Date.now(),
-            },
-            { merge: true }
-          );
-        })
-      );
-
-      const loggedInSessions = JSON.parse(
-        localStorage.getItem("loggedInSessions") || "{}"
-      );
-      for (const id of ids) {
-        delete loggedInSessions[id];
-        localStorage.removeItem(`session_${id}`);
-        localStorage.removeItem(`user_data_${id}`);
-        localStorage.setItem(`forceLogout_${id}`, Date.now().toString());
-      }
-      localStorage.setItem(
-        "loggedInSessions",
-        JSON.stringify(loggedInSessions)
-      );
-
-      setSaveMessage(`Selected IDs logged out successfully!`);
-      setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error: any) {
-      console.error(`Error logging out group:`, error);
-    }
-  };
-
-  // Format timestamp to readable date
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // Calculate time remaining
-  const getTimeRemaining = (timestamp: number) => {
-    const now = Date.now();
-    const fortyEightHours = 48 * 60 * 60 * 1000;
-    const expiryTime = timestamp + fortyEightHours;
-    const remaining = expiryTime - now;
-
-    if (remaining <= 0) return 'Expired';
-
-    const hours = Math.floor(remaining / (60 * 60 * 1000));
-    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-    return `${hours}h ${minutes}m remaining`;
-  };
-
-  // Delete single feedback
-  const handleDeleteFeedback = async (feedbackId: string) => {
-    try {
-      await deleteDoc(doc(db, "feedbacks", feedbackId));
-      setFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
-      setSaveMessage("Feedback deleted!");
-      setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error: any) {
-      console.error("Error deleting feedback:", error);
-    }
-  };
-
-  // Toggle chat expansion
-  const toggleChatExpansion = (chatId: string) => {
-    setExpandedChats(prev => ({
-      ...prev,
-      [chatId]: !prev[chatId]
-    }));
-  };
-
-  // LOGIN PAGE
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-8 w-full max-w-md text-white">
           <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-              <Shield className="w-8 h-8 text-white" />
+            <div className="mx-auto w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-indigo-600/30">
+              <Shield className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Owner Panel Login</h1>
-            <p className="text-gray-500 text-sm mt-1">Enter credentials to continue</p>
+            <h1 className="text-2xl font-bold">Haka Live Staff Panel</h1>
+            <p className="text-slate-400 text-xs mt-1">Staff Control & Verification</p>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">User Name</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Username</label>
               <input
                 type="text"
-                placeholder="Enter username"
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                placeholder="HAWA.IN"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm"
               />
             </div>
-
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Password</label>
               <input
                 type="password"
-                placeholder="Enter password"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                placeholder="••••••••••••"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm"
               />
             </div>
-
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <Key className="w-4 h-4" /> Key
-              </label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Security Key</label>
               <input
                 type="password"
-                placeholder="Enter key"
                 value={loginKey}
                 onChange={(e) => setLoginKey(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                placeholder="25/7/2026"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm"
               />
             </div>
 
-            {loginError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                {loginError}
-              </div>
-            )}
+            {loginError && <p className="text-rose-400 text-xs text-center bg-rose-500/10 py-2 rounded-lg">{loginError}</p>}
 
             <button
               onClick={handleLogin}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition cursor-pointer mt-2"
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition text-sm cursor-pointer shadow-lg shadow-indigo-600/30 mt-2"
             >
-              Sign In
+              Access Dashboard
             </button>
-          </div>
-
-          <div className="mt-6 text-center text-xs text-gray-400">
-            Owner Panel • Secure Access
           </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      
-      {/* TOP NAVBAR */}
-      <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsDrawerOpen(true)}
-            className="p-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg transition cursor-pointer"
-          >
-            <Menu className="w-6 h-6 text-white" />
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">Owner Control Panel</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          {activeView === "official_id" && (
-            <button
-              onClick={() => setShowPasswords(!showPasswords)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition cursor-pointer"
-            >
-              {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              {showPasswords ? "Hide Passwords" : "Show Passwords"}
-            </button>
-          )}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-            Logout
-          </button>
-          {saveMessage && (
-            <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-medium">
-              {saveMessage}
-            </div>
-          )}
-        </div>
-      </header>
+  const filteredIds = defaultIds.filter(id =>
+    id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (idsData[id]?.email || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-      {/* DRAWER */}
-      {isDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            onClick={() => setIsDrawerOpen(false)}
-            className="fixed inset-0 bg-black/40"
-          />
-          <div className="relative w-80 h-full bg-gray-900 p-6 flex flex-col justify-between z-10">
+  return (
+    <div className="flex h-screen bg-[#f8fafc] text-slate-800 font-sans overflow-hidden">
+      
+      {/* LEFT SIDEBAR (Haka Live Theme) */}
+      <aside className={`bg-[#0f172a] text-slate-400 w-64 flex-shrink-0 flex flex-col justify-between transition-all duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-64 fixed lg:static lg:translate-x-0"} z-40`}>
+        <div className="flex flex-col h-full overflow-y-auto">
+          {/* Logo Header */}
+          <div className="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-700 mb-6">
-                <Shield className="w-6 h-6 text-blue-400" />
-                <span className="font-bold text-lg text-white">Owner Menu</span>
-              </div>
-              
-              <button
-                onClick={() => { setActiveView("official_id"); setIsDrawerOpen(false); }}
-                className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer mb-3 ${
-                  activeView === "official_id" ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Manage IDs
-              </button>
-              
-              <button
-                onClick={() => { setActiveView("moderator"); setIsDrawerOpen(false); }}
-                className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer mb-3 ${
-                  activeView === "moderator" ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Moderator (Feedbacks)
-              </button>
-              
-              <button
-                onClick={() => { setActiveView("hawa_ai"); setIsDrawerOpen(false); }}
-                className={`w-full text-left px-5 py-4 rounded-xl transition cursor-pointer ${
-                  activeView === "hawa_ai" ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                HAWA AI (Chats)
-              </button>
+              <h2 className="text-white font-bold text-base tracking-wide">Haka Live</h2>
+              <p className="text-[10px] tracking-wider uppercase text-slate-500 font-semibold">Staff Control Panel</p>
             </div>
-            <div className="text-xs text-gray-500 text-center">
-              Owner Panel v1.0
+            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="p-3 space-y-1 text-xs font-medium">
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-300">
+              <Flame className="w-4 h-4 text-orange-400" /> Dashboard
+            </button>
+
+            <div className="pt-2 pb-1 text-[11px] font-semibold text-slate-500 px-3 uppercase tracking-wider">User Center</div>
+            <button
+              onClick={() => setActiveMenu("manage_users")}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                activeMenu === "manage_users" ? "bg-indigo-600/20 text-indigo-400 font-semibold" : "hover:bg-slate-800/60 text-slate-300"
+              }`}
+            >
+              <Users className="w-4 h-4 text-indigo-400" /> Manage Users / IDs
+            </button>
+
+            <div className="pt-2 pb-1 text-[11px] font-semibold text-slate-500 px-3 uppercase tracking-wider">Live & Store</div>
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400">
+              <Radio className="w-4 h-4 text-sky-400" /> Manage Rooms
+            </button>
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400">
+              <Store className="w-4 h-4 text-emerald-400" /> Special IDs & Themes
+            </button>
+
+            <div className="pt-2 pb-1 text-[11px] font-semibold text-slate-500 px-3 uppercase tracking-wider">Economy & Moderation</div>
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400">
+              <Landmark className="w-4 h-4 text-amber-400" /> Master Wallet & Revenue
+            </button>
+            <button
+              onClick={() => setActiveMenu("reports")}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                activeMenu === "reports" ? "bg-indigo-600/20 text-indigo-400 font-semibold" : "hover:bg-slate-800/60 text-slate-400"
+              }`}
+            >
+              <AlertTriangle className="w-4 h-4 text-rose-400" /> Reports & Feedbacks
+            </button>
+            <button
+              onClick={() => setActiveMenu("hawa_ai")}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                activeMenu === "hawa_ai" ? "bg-indigo-600/20 text-indigo-400 font-semibold" : "hover:bg-slate-800/60 text-slate-400"
+              }`}
+            >
+              <Bot className="w-4 h-4 text-purple-400" /> AI Assistant Logs
+            </button>
+
+            <div className="pt-2 pb-1 text-[11px] font-semibold text-slate-500 px-3 uppercase tracking-wider">Platform</div>
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400">
+              <BarChart3 className="w-4 h-4 text-cyan-400" /> Analytics & Reports
+            </button>
+          </nav>
+        </div>
+
+        {/* User Footer */}
+        <div className="p-4 border-t border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+              H
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white">Owner Admin</p>
+              <p className="text-[10px] text-slate-500">Live Server</p>
             </div>
           </div>
+          <button onClick={handleLogout} className="text-slate-400 hover:text-rose-400 transition" title="Logout">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
-      )}
+      </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="p-8">
+      {/* RIGHT MAIN CONTAINER */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         
-        {/* HAWA AI VIEW */}
-        {activeView === "hawa_ai" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <Bot className="w-7 h-7 text-purple-600" />
-                HAWA AI Conversations
-              </h2>
-              <button
-                onClick={loadAiChats}
-                disabled={loadingAiChats}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
-              >
-                <RefreshCw className={`w-4 h-4 ${loadingAiChats ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </div>
+        {/* Top Navbar */}
+        <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden text-slate-600">
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="text-base font-bold text-slate-900">
+              {activeMenu === "manage_users" ? "Users" : activeMenu === "reports" ? "Feedbacks & Reports" : "AI Logs"}
+            </h1>
+          </div>
 
-            {loadingAiChats ? (
-              <div className="text-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin mx-auto text-purple-600 mb-4" />
-                <p className="text-gray-500">Loading conversations...</p>
-              </div>
-            ) : aiChats.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-                <Bot className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 font-medium">No conversations yet</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {aiChats.map((chat) => (
-                  <div key={chat.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                    <button
-                      onClick={() => toggleChatExpansion(chat.id)}
-                      className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition cursor-pointer"
-                    >
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{chat.userName || "Unknown User"}</h3>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {chat.userEmail} • {formatDate(chat.timestamp)} • {chat.messages?.length || 0} messages
-                        </p>
-                      </div>
-                      {expandedChats[chat.id] ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </button>
-
-                    {expandedChats[chat.id] && (
-                      <div className="border-t p-5 bg-gray-50 max-h-96 overflow-y-auto space-y-3">
-                        {chat.messages?.map((msg: any, i: number) => (
-                          <div key={i} className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}>
-                            <div className={`max-w-[80%] p-3 rounded-2xl ${
-                              msg.isBot ? 'bg-white border' : 'bg-blue-500 text-white'
-                            }`}>
-                              <p className="text-sm whitespace-pre-line">{msg.text}</p>
-                              {msg.timestamp && (
-                                <p className={`text-xs mt-1 ${msg.isBot ? 'text-gray-400' : 'text-blue-200'}`}>
-                                  {formatDate(msg.timestamp)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+          <div className="flex items-center gap-3">
+            {saveMessage && (
+              <span className="text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 font-semibold px-3 py-1.5 rounded-md">
+                {saveMessage}
+              </span>
+            )}
+            {activeMenu === "manage_users" && (
+              <>
+                <button
+                  onClick={() => setShowPasswords(!showPasswords)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition"
+                >
+                  {showPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  {showPasswords ? "Hide" : "Show"} Passwords
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition shadow-sm cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save Changes
+                </button>
+              </>
             )}
           </div>
-        )}
+        </header>
 
-        {/* MODERATOR VIEW */}
-        {activeView === "moderator" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <MessageSquare className="w-7 h-7 text-blue-600" />
-                Feedback Submissions
-              </h2>
-              <button
-                onClick={loadFeedbacks}
-                disabled={loadingFeedbacks}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
-              >
-                <RefreshCw className={`w-4 h-4 ${loadingFeedbacks ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700">
-              Feedbacks auto-delete after 48 hours
-            </div>
-
-            {loadingFeedbacks ? (
-              <div className="text-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-4" />
-                <p className="text-gray-500">Loading feedbacks...</p>
+        {/* Content Container */}
+        <main className="flex-1 overflow-y-auto p-6">
+          
+          {/* USER MANAGEMENT VIEW (Exact Table Theme) */}
+          {activeMenu === "manage_users" && (
+            <div className="space-y-4 max-w-7xl mx-auto">
+              
+              {/* Filter Controls Row */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-3 text-xs">
+                <div className="relative flex-1 min-w-[220px]">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name, phone, email, Haka ID..."
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-500 transition text-xs"
+                  />
+                </div>
+                <select className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 outline-none">
+                  <option>All Roles</option>
+                  <option>Official</option>
+                  <option>Admin</option>
+                  <option>Special</option>
+                </select>
+                <select className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 outline-none">
+                  <option>All Status</option>
+                  <option>Online</option>
+                  <option>Offline</option>
+                </select>
+                <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 font-medium">
+                  <ArrowUpDown className="w-3 h-3" /> DESC
+                </button>
               </div>
-            ) : feedbacks.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-                <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 font-medium">No feedback yet</p>
+
+              {/* Data Table */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="py-3 px-4">USER</th>
+                        <th className="py-3 px-4">HAKA ID</th>
+                        <th className="py-3 px-4">EMAIL</th>
+                        <th className="py-3 px-4">PASSWORD</th>
+                        <th className="py-3 px-4">ROLE</th>
+                        <th className="py-3 px-4">STATUS</th>
+                        <th className="py-3 px-4 text-right">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredIds.map((id) => {
+                        const role = id.startsWith("1") ? "Special" : id.startsWith("5") ? "Official" : "Admin";
+                        const isOnline = onlineStatus[id];
+                        const roleColor = id.startsWith("1") ? "bg-amber-50 text-amber-600 border-amber-200" : id.startsWith("5") ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-purple-50 text-purple-600 border-purple-200";
+
+                        return (
+                          <tr key={id} className="hover:bg-slate-50/80 transition group">
+                            {/* User Avatar + Name */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs uppercase">
+                                  {id.slice(-2)}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-800">Staff Account</p>
+                                  <p className="text-[10px] text-slate-400">@staff_{id}</p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* ID */}
+                            <td className="py-3 px-4 font-semibold text-indigo-600">
+                              {id}
+                            </td>
+
+                            {/* Email Input */}
+                            <td className="py-3 px-4">
+                              <input
+                                type="text"
+                                placeholder="name@example.com"
+                                value={idsData[id]?.email || ""}
+                                onChange={(e) => handleChange(id, "email", e.target.value)}
+                                className="w-56 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-500 focus:bg-white transition"
+                              />
+                            </td>
+
+                            {/* Password Input */}
+                            <td className="py-3 px-4">
+                              <input
+                                type={showPasswords ? "text" : "password"}
+                                placeholder="••••••••"
+                                value={idsData[id]?.password || ""}
+                                onChange={(e) => handleChange(id, "password", e.target.value)}
+                                className="w-36 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-500 focus:bg-white transition"
+                              />
+                            </td>
+
+                            {/* Role Badge */}
+                            <td className="py-3 px-4">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase ${roleColor}`}>
+                                {role}
+                              </span>
+                            </td>
+
+                            {/* Online/Offline Status */}
+                            <td className="py-3 px-4">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                                isOnline ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-slate-400"}`}></span>
+                                {isOnline ? "Online" : "Offline"}
+                              </span>
+                            </td>
+
+                            {/* Action */}
+                            <td className="py-3 px-4 text-right">
+                              <button
+                                onClick={() => handleIDLogout(id)}
+                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-semibold transition cursor-pointer"
+                              >
+                                Logout
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {feedbacks.map((feedback) => (
-                  <div key={feedback.id} className="bg-white rounded-2xl border border-gray-200 p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase ${
-                          feedback.type === 'app_bug' ? 'bg-red-100 text-red-700' :
-                          feedback.type === 'suggestion' ? 'bg-blue-100 text-blue-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {feedback.typeLabel || feedback.type}
-                        </span>
-                        <span className="text-xs text-gray-400">{formatDate(feedback.timestamp)}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-orange-500">{getTimeRemaining(feedback.timestamp)}</span>
-                        <button onClick={() => handleDeleteFeedback(feedback.id)} className="p-2 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
+            </div>
+          )}
+
+          {/* REPORTS / FEEDBACKS VIEW */}
+          {activeMenu === "reports" && (
+            <div className="space-y-4 max-w-5xl mx-auto">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-800">User Feedbacks & Bug Reports</h2>
+                <button
+                  onClick={loadFeedbacks}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingFeedbacks ? "animate-spin" : ""}`} /> Refresh
+                </button>
+              </div>
+
+              {feedbacks.length === 0 ? (
+                <div className="text-center py-16 bg-white border border-slate-200 rounded-xl text-slate-400 text-xs">
+                  No active reports available.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {feedbacks.map(f => (
+                    <div key={f.id} className="bg-white p-4 rounded-xl border border-slate-200 text-xs">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-bold text-indigo-600 uppercase">{f.type || "Feedback"}</span>
+                        <button
+                          onClick={async () => {
+                            await deleteDoc(doc(db, "feedbacks", f.id));
+                            setFeedbacks(prev => prev.filter(item => item.id !== f.id));
+                          }}
+                          className="text-slate-400 hover:text-rose-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
+                      <p className="text-slate-700">{f.description}</p>
+                      <p className="text-[10px] text-slate-400 mt-2">{f.contactInfo}</p>
                     </div>
-                    <p className="text-gray-700 mb-2">{feedback.description}</p>
-                    <p className="text-sm text-gray-500">{feedback.contactInfo}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* MANAGE IDs VIEW */}
-        {activeView === "official_id" && (
-          <div className="space-y-8 max-w-5xl mx-auto">
-            
-            {/* Special Official IDs */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-amber-600 flex items-center gap-2">
-                  <Star className="w-5 h-5" /> Special Official IDs
-                </h2>
+          {/* AI CHATS VIEW */}
+          {activeMenu === "hawa_ai" && (
+            <div className="space-y-4 max-w-5xl mx-auto">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-800">Live AI Conversation Logs</h2>
                 <button
-                  onClick={() => handleLogoutGroup(["100002", "100003"])}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
+                  onClick={loadAiChats}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
                 >
-                  Logout All Special
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingAiChats ? "animate-spin" : ""}`} /> Refresh
                 </button>
               </div>
 
-              {["100002", "100003"].map((id) => (
-                <div key={id} className="flex items-center gap-4 mb-3 last:mb-0 bg-gray-50 p-4 rounded-xl">
-                  <span className="w-24 text-sm font-bold text-amber-600">ID: {id}</span>
-                  <input
-                    type="text"
-                    placeholder="Email"
-                    value={idsData[id]?.email || ""}
-                    onChange={(e) => handleChange(id, "email", e.target.value)}
-                    onFocus={() => focusedField.current = `${id}-email`}
-                    onBlur={() => focusedField.current = null}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-amber-500"
-                  />
-                  <input
-                    type={showPasswords ? "text" : "password"}
-                    placeholder="Password"
-                    value={idsData[id]?.password || ""}
-                    onChange={(e) => handleChange(id, "password", e.target.value)}
-                    onFocus={() => focusedField.current = `${id}-password`}
-                    onBlur={() => focusedField.current = null}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-amber-500"
-                  />
-                  <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                    onlineStatus[id] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {onlineStatus[id] ? 'Online' : 'Offline'}
-                  </span>
-                  <button
-                    onClick={() => handleIDLogout(id)}
-                    className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
-                  >
-                    Logout
-                  </button>
+              {aiChats.length === 0 ? (
+                <div className="text-center py-16 bg-white border border-slate-200 rounded-xl text-slate-400 text-xs">
+                  No chat logs recorded yet.
                 </div>
-              ))}
-            </div>
-
-            {/* Official IDs */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-blue-600 flex items-center gap-2">
-                  <Lock className="w-5 h-5" /> Official IDs
-                </h2>
-                <button
-                  onClick={() => handleLogoutGroup(["500001", "500002", "500003", "500004", "500005"])}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
-                >
-                  Logout All Official
-                </button>
-              </div>
-
-              {["500001", "500002", "500003", "500004", "500005"].map((id) => (
-                <div key={id} className="flex items-center gap-4 mb-3 last:mb-0 bg-gray-50 p-4 rounded-xl">
-                  <span className="w-24 text-sm font-bold text-blue-600">ID: {id}</span>
-                  <input
-                    type="text"
-                    placeholder="Email"
-                    value={idsData[id]?.email || ""}
-                    onChange={(e) => handleChange(id, "email", e.target.value)}
-                    onFocus={() => focusedField.current = `${id}-email`}
-                    onBlur={() => focusedField.current = null}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
-                  />
-                  <input
-                    type={showPasswords ? "text" : "password"}
-                    placeholder="Password"
-                    value={idsData[id]?.password || ""}
-                    onChange={(e) => handleChange(id, "password", e.target.value)}
-                    onFocus={() => focusedField.current = `${id}-password`}
-                    onBlur={() => focusedField.current = null}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
-                  />
-                  <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                    onlineStatus[id] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {onlineStatus[id] ? 'Online' : 'Offline'}
-                  </span>
-                  <button
-                    onClick={() => handleIDLogout(id)}
-                    className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
-                  >
-                    Logout
-                  </button>
+              ) : (
+                <div className="space-y-3">
+                  {aiChats.map(chat => (
+                    <div key={chat.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden text-xs">
+                      <button
+                        onClick={() => setExpandedChats(prev => ({ ...prev, [chat.id]: !prev[chat.id] }))}
+                        className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-50"
+                      >
+                        <div>
+                          <p className="font-semibold text-slate-800">{chat.userName || "Anonymous User"}</p>
+                          <p className="text-[10px] text-slate-400">{chat.userEmail}</p>
+                        </div>
+                        {expandedChats[chat.id] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      {expandedChats[chat.id] && (
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 space-y-2 max-h-60 overflow-y-auto">
+                          {chat.messages?.map((m: any, idx: number) => (
+                            <div key={idx} className={`p-2 rounded-lg text-xs ${m.isBot ? "bg-white border border-slate-200 text-slate-700" : "bg-indigo-600 text-white ml-auto max-w-[80%]"}`}>
+                              {m.text}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
+          )}
 
-            {/* Admin IDs */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-purple-600 flex items-center gap-2">
-                  <Shield className="w-5 h-5" /> Admin IDs
-                </h2>
-                <button
-                  onClick={() => handleLogoutGroup(["700001", "700002", "700003"])}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
-                >
-                  Logout All Admin
-                </button>
-              </div>
-
-              {["700001", "700002", "700003"].map((id) => (
-                <div key={id} className="flex items-center gap-4 mb-3 last:mb-0 bg-gray-50 p-4 rounded-xl">
-                  <span className="w-24 text-sm font-bold text-purple-600">ID: {id}</span>
-                  <input
-                    type="text"
-                    placeholder="Email"
-                    value={idsData[id]?.email || ""}
-                    onChange={(e) => handleChange(id, "email", e.target.value)}
-                    onFocus={() => focusedField.current = `${id}-email`}
-                    onBlur={() => focusedField.current = null}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-purple-500"
-                  />
-                  <input
-                    type={showPasswords ? "text" : "password"}
-                    placeholder="Password"
-                    value={idsData[id]?.password || ""}
-                    onChange={(e) => handleChange(id, "password", e.target.value)}
-                    onFocus={() => focusedField.current = `${id}-password`}
-                    onBlur={() => focusedField.current = null}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-purple-500"
-                  />
-                  <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                    onlineStatus[id] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {onlineStatus[id] ? 'Online' : 'Offline'}
-                  </span>
-                  <button
-                    onClick={() => handleIDLogout(id)}
-                    className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition cursor-pointer"
-                  >
-                    Logout
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Save Button */}
-            <button
-              onClick={() => {
-                handleSave();
-                isDirtied.current = false;
-              }}
-              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Save className="w-5 h-5" /> Save All Credentials
-            </button>
-
-          </div>
-        )}
-      </main>
+        </main>
+      </div>
     </div>
   );
-                     }
+}
+
