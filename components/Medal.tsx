@@ -44,7 +44,6 @@ function WebGLBackground() {
 
         float len = length(p);
         
-        // Pure ultra dark black/dark-navy tone
         vec3 baseDark = vec3(0.005, 0.008, 0.02);
         vec3 faintGlow = vec3(0.01, 0.02, 0.06) * (0.4 / (len + 0.5));
         vec3 softStars = vec3(0.02, 0.04, 0.1) * sin(uv.y * 3.0 + u_time * 0.2);
@@ -231,7 +230,7 @@ export default function Medal({ onBack }: MedalProps) {
       {/* 1. Base Dark WebGL Canvas */}
       <WebGLBackground />
 
-      {/* 2. Top 50vh Background Image with Bottom Smooth Color Mix */}
+      {/* 2. Top 50vh Background Image */}
       <div 
         className="fixed top-0 left-0 right-0 h-[50vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
@@ -266,9 +265,9 @@ export default function Medal({ onBack }: MedalProps) {
             {Array.from({ length: 10 }).map((_, index) => (
               <div
                 key={index}
-                className="aspect-square rounded-full bg-[#0d2253]/60 border border-blue-400/40 flex items-center justify-center shadow-lg shadow-black/80 hover:border-yellow-400/60 transition-all cursor-pointer backdrop-blur-sm"
+                className="aspect-square rounded-full bg-[#0a2368]/50 border border-[#3b71ca]/40 flex items-center justify-center shadow-md shadow-black/60 hover:border-yellow-400/60 transition-all cursor-pointer backdrop-blur-sm"
               >
-                <Plus size={20} className="text-blue-200/90 stroke-[2.5]" />
+                <Plus size={20} className="text-blue-100 stroke-[2.2]" />
               </div>
             ))}
           </div>
@@ -283,7 +282,7 @@ export default function Medal({ onBack }: MedalProps) {
         </div>
 
         {/* Sub Navigation Category Tabs */}
-        <div className="flex items-center justify-center gap-12 border-b border-blue-900/40 pb-2 text-sm pt-2">
+        <div className="flex items-center justify-center gap-12 pb-2 text-sm pt-2">
           {[
             { key: 'achievement', label: 'Achievements' },
             { key: 'activity', label: 'Activities' },
@@ -308,12 +307,12 @@ export default function Medal({ onBack }: MedalProps) {
 
       {/* 4. SCROLLABLE AREA - ONLY CARD GRID SCROLLS */}
       <div className="flex-1 overflow-y-auto px-3.5 pb-8 relative z-10 w-full max-w-md mx-auto scrollbar-thin scrollbar-thumb-blue-900/40">
-        <div className="grid grid-cols-3 gap-2 pt-1">
+        <div className="grid grid-cols-3 gap-2.5 pt-1">
           {filteredMedals.map((medal) => (
             <div
               key={medal.id}
               onClick={() => setSelectedMedal(medal)}
-              className="relative bg-gradient-to-b from-[#040d28] via-[#091b48] to-[#040d28] border border-blue-500/30 rounded-2xl p-2 flex flex-col items-center justify-between text-center hover:border-yellow-400/60 active:scale-95 transition-all duration-200 shadow-lg shadow-black/80 cursor-pointer min-h-[155px]"
+              className="relative bg-gradient-to-b from-[#0c3596] to-[#041a54] border border-[#2563eb]/40 rounded-2xl p-2.5 flex flex-col items-center justify-between text-center hover:border-yellow-400/60 active:scale-95 transition-all duration-200 shadow-lg shadow-black/70 cursor-pointer min-h-[160px]"
             >
               {/* Colorless Chrome/Silver Medal Image */}
               <div className="w-20 h-20 sm:w-24 sm:h-24 my-auto flex items-center justify-center relative">
@@ -327,14 +326,14 @@ export default function Medal({ onBack }: MedalProps) {
                     <Star
                       key={i}
                       size={11}
-                      className="fill-yellow-400 text-yellow-400"
+                      className="fill-yellow-400 text-yellow-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
                     />
                   ))}
                 </div>
               )}
 
               {/* Title */}
-              <h3 className="text-[11px] sm:text-xs font-medium text-blue-100 tracking-wide mt-1 line-clamp-1">
+              <h3 className="text-[11px] sm:text-xs font-semibold text-white tracking-wide mt-1 line-clamp-1 drop-shadow-sm">
                 {medal.name}
               </h3>
             </div>
@@ -342,10 +341,10 @@ export default function Medal({ onBack }: MedalProps) {
         </div>
       </div>
 
-      {/* Center Modal with Perfectly Centered Rays */}
+      {/* Center Modal with Smooth Zoom & Realistic Shine Sweeping */}
       {selectedMedal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
           onClick={() => setSelectedMedal(null)}
         >
           <button 
@@ -356,44 +355,49 @@ export default function Medal({ onBack }: MedalProps) {
           </button>
 
           <div 
-            className="relative flex flex-col items-center justify-center text-center max-w-sm w-full"
+            className="relative flex flex-col items-center justify-center text-center max-w-sm w-full animate-modal-zoom"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Image Wrapper with Centered Shine Behind It */}
-            <div className="relative w-56 h-56 sm:w-64 sm:h-64 my-2 flex items-center justify-center">
+            {/* Modal Image Wrapper with Centered Shine & Rays */}
+            <div className="relative w-64 h-64 sm:w-72 sm:h-72 my-2 flex items-center justify-center">
               
-              {/* Rotating Shiny Ray Effect */}
-              <div className="absolute inset-0 -inset-6 -z-10 animate-spin-slow pointer-events-none flex items-center justify-center">
+              {/* Rotating Shiny Ray Effect behind medal */}
+              <div className="absolute inset-0 -inset-10 -z-10 animate-spin-slow pointer-events-none flex items-center justify-center">
                 <div 
-                  className="w-full h-full rounded-full"
+                  className="w-full h-full rounded-full opacity-60"
                   style={{
-                    background: 'repeating-conic-gradient(from 0deg, rgba(255,255,255,0.45) 0deg 8deg, transparent 8deg 24deg)'
+                    background: 'repeating-conic-gradient(from 0deg, rgba(255,255,255,0.4) 0deg 8deg, transparent 8deg 24deg)'
                   }}
                 />
-                <div className="absolute inset-6 rounded-full bg-blue-300/10 blur-md pointer-events-none" />
+                <div className="absolute inset-8 rounded-full bg-blue-400/25 blur-xl pointer-events-none" />
               </div>
 
-              {/* Modal Colored Medal Image */}
-              <div className="w-48 h-48 sm:w-56 sm:h-56 relative flex items-center justify-center">
+              {/* Modal Colored Medal Image with Shine Streak Overlay */}
+              <div className="w-52 h-52 sm:w-60 sm:h-60 relative flex items-center justify-center overflow-hidden rounded-full animate-subtle-pulse">
                 <ChromaKeyImage src={selectedMedal.image} alt={selectedMedal.name} isColorless={false} />
+                
+                {/* Diagonal Metallic Shine Sweep Effect over Image */}
+                <div className="absolute inset-0 pointer-events-none animate-shine-sweep">
+                  <div className="w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent transform -skew-x-25" />
+                </div>
               </div>
             </div>
 
             {/* Stars */}
             {selectedMedal.stars > 0 && (
-              <div className="flex items-center gap-1 mt-1 mb-1">
+              <div className="flex items-center gap-1.5 mt-2 mb-1">
                 {Array.from({ length: selectedMedal.stars }).map((_, i) => (
                   <Star
                     key={i}
-                    size={18}
-                    className="fill-yellow-400 text-yellow-400"
+                    size={20}
+                    className="fill-yellow-400 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]"
                   />
                 ))}
               </div>
             )}
 
             {/* Medal Name */}
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-wider mt-1">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-wider mt-1 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
               {selectedMedal.name}
             </h2>
           </div>
@@ -410,8 +414,58 @@ export default function Medal({ onBack }: MedalProps) {
             transform: rotate(360deg);
           }
         }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        @keyframes modalZoom {
+          0% {
+            opacity: 0;
+            transform: scale(0.65) translateY(20px);
+          }
+          60% {
+            transform: scale(1.05) translateY(-4px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        @keyframes shineSweep {
+          0% {
+            transform: translateX(-150%) skewX(-25deg);
+          }
+          35%, 100% {
+            transform: translateX(150%) skewX(-25deg);
+          }
+        }
+        @keyframes subtlePulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.03);
+          }
+        }
+
         .animate-spin-slow {
           animation: spinSlow 14s linear infinite;
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.25s ease-out forwards;
+        }
+        .animate-modal-zoom {
+          animation: modalZoom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-shine-sweep {
+          animation: shineSweep 2.8s infinite ease-in-out;
+        }
+        .animate-subtle-pulse {
+          animation: subtlePulse 3s infinite ease-in-out;
         }
       `}</style>
     </div>
