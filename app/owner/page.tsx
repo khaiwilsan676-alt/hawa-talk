@@ -1,619 +1,420 @@
-"use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+'use client';
+
+import React, { useState } from 'react';
 import {
-  Flame, Users, Mic, Radio, Palette, Star, Gift,
-  Landmark, History, Coins, Wallet, CreditCard,
-  ArrowDownToLine, RefreshCw, DollarSign, Trophy,
-  Image as ImageIcon, AlertOctagon, Headphones,
-  ShieldAlert, BarChart2, Briefcase, Gamepad2,
-  Settings, ChevronDown, ChevronRight, ArrowUpDown,
-  Search, Shield, Eye, EyeOff, Save, LogOut
-} from "lucide-react";
+  LayoutDashboard,
+  Users,
+  UserCheck,
+  Radio,
+  ShoppingBag,
+  Palette,
+  Star,
+  Gift,
+  Landmark,
+  Wallet,
+  History,
+  Coins,
+  ArrowDownCircle,
+  Banknote,
+  TrendingUp,
+  FileText,
+  Trophy,
+  Image as ImageIcon,
+  ShieldAlert,
+  HelpCircle,
+  AlertTriangle,
+  BarChart3,
+  Building2,
+  Gamepad2,
+  Settings,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  ArrowUpDown,
+  Filter
+} from 'lucide-react';
 
-import * as SupabaseLib from '../../src/lib/supabase';
+interface UserData {
+  id: string;
+  name: string;
+  username?: string;
+  hakaId: string;
+  emailPhone: string;
+  role: 'NORMAL' | 'HOST' | 'AGENCY';
+  roleColor: string;
+  avatarLetter: string;
+  avatarBg: string;
+}
 
-const db = (SupabaseLib as any).db || null;
-const doc = (SupabaseLib as any).doc || (() => {});
-const onSnapshot = (SupabaseLib as any).onSnapshot || (() => () => {});
-const setDoc = (SupabaseLib as any).setDoc || (async () => {});
+const mockUsers: UserData[] = [
+  { id: '1', name: 'Robot Gaming Master', username: '', hakaId: '—', emailPhone: 'abhishekumar912004@gmail.com', role: 'NORMAL', roleColor: 'bg-blue-100 text-blue-600', avatarLetter: 'R', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '2', name: 'Uuhbh Bhhhn', username: '', hakaId: '—', emailPhone: 'bhhhnuthbh@gmail.com', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'U', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '3', name: 'Riya', username: '', hakaId: '—', emailPhone: 'riyag3383@gmail.com', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'R', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '4', name: 'Rider', username: '', hakaId: '—', emailPhone: 'coosaksha@gmail.com', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'R', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '5', name: 'Samir', username: '', hakaId: '—', emailPhone: 'mdsamira153@gmail.com', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'S', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '6', name: 'Newbie Fan', username: 'newbie_fan', hakaId: '531006005', emailPhone: '—', role: 'NORMAL', roleColor: 'bg-blue-100 text-blue-600', avatarLetter: 'N', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '7', name: 'Luna Star', username: 'luna_star', hakaId: '821004571', emailPhone: '—', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'L', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '8', name: 'Agent Boss', username: 'agent_boss', hakaId: '320919038', emailPhone: '—', role: 'AGENCY', roleColor: 'bg-amber-100 text-amber-600', avatarLetter: 'A', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '9', name: 'Marco 🎤', username: 'marco_talks', hakaId: '486052034', emailPhone: '—', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'M', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '10', name: 'Zara Beats 🎵', username: 'zara_beats', hakaId: '927199637', emailPhone: '—', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'Z', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '11', name: 'Nova ✨', username: 'nova_live', hakaId: '248708597', emailPhone: '—', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'N', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '12', name: 'Mia Chen', username: 'ts_mia', hakaId: '941224460', emailPhone: '—', role: 'NORMAL', roleColor: 'bg-blue-100 text-blue-600', avatarLetter: 'M', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '13', name: 'Leo Stone', username: 'ts_leo', hakaId: '265022948', emailPhone: '—', role: 'NORMAL', roleColor: 'bg-blue-100 text-blue-600', avatarLetter: 'L', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '14', name: 'Sara Lin', username: 'ts_sara', hakaId: '621965153', emailPhone: '—', role: 'NORMAL', roleColor: 'bg-blue-100 text-blue-600', avatarLetter: 'S', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '15', name: 'Kai Rivera', username: 'ts_kai', hakaId: '028452631', emailPhone: '—', role: 'NORMAL', roleColor: 'bg-blue-100 text-blue-600', avatarLetter: 'K', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '16', name: 'Aisha Malik', username: 'ts_aisha', hakaId: '219185727', emailPhone: '—', role: 'NORMAL', roleColor: 'bg-blue-100 text-blue-600', avatarLetter: 'A', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '17', name: 'Yuki Tanaka', username: 'ts_yuki', hakaId: '063153655', emailPhone: '—', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'Y', avatarBg: 'bg-purple-100 text-purple-600' },
+  { id: '18', name: 'JjayFabor', username: 'jjayfabor', hakaId: '917144229', emailPhone: '—', role: 'HOST', roleColor: 'bg-purple-100 text-purple-600', avatarLetter: 'J', avatarBg: 'bg-purple-100 text-purple-600' }
+];
 
-export default function HakaLiveControlPanel() {
-  const [mounted, setMounted] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeMenu, setActiveMenu] = useState("manage_users");
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    user_center: true,
-    live_rooms: false,
-    store: false,
-    economy: false,
-    content: false,
-    moderation: false,
-    platform: false,
-    system: false
-  });
-
-  // Login States
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginKey, setLoginKey] = useState("");
-  const [loginError, setLoginError] = useState("");
-
-  // Table Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [showPasswords, setShowPasswords] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
-
-  // Default Users/IDs Configuration
-  const defaultUsers = [
-    { id: "100002", name: "Robot Gaming Master", username: "robot_gaming", role: "SPECIAL", badgeColor: "text-sky-500 bg-sky-50" },
-    { id: "100003", name: "Uuhbh Bhhhn", username: "uuhbh_live", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "500001", name: "Riya", username: "riya_official", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "500002", name: "Rider", username: "rider_pro", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "500003", name: "Samir", username: "samir_star", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "500004", name: "Newbie Fan", username: "newbie_fan", role: "NORMAL", badgeColor: "text-sky-500 bg-sky-50" },
-    { id: "500005", name: "Luna Star", username: "luna_star", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "700001", name: "Agent Boss", username: "agent_boss", role: "AGENT", badgeColor: "text-amber-500 bg-amber-50" },
-    { id: "700002", name: "Marco 🎤", username: "marco_talks", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "700003", name: "Zara Beats 🎵", username: "zara_beats", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "248708597", name: "Nova ✨", username: "nova_live", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "941224460", name: "Mia Chen", username: "ts_mia", role: "NORMAL", badgeColor: "text-sky-500 bg-sky-50" },
-    { id: "265022948", name: "Leo Stone", username: "ts_leo", role: "NORMAL", badgeColor: "text-sky-500 bg-sky-50" },
-    { id: "621965153", name: "Sara Lin", username: "ts_sara", role: "NORMAL", badgeColor: "text-sky-500 bg-sky-50" },
-    { id: "028452631", name: "Kai Rivera", username: "ts_kai", role: "NORMAL", badgeColor: "text-sky-500 bg-sky-50" },
-    { id: "219185727", name: "Aisha Malik", username: "ts_aisha", role: "NORMAL", badgeColor: "text-sky-500 bg-sky-50" },
-    { id: "063153655", name: "Yuki Tanaka", username: "ts_yuki", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" },
-    { id: "917144229", name: "JjayFabor", username: "jjayfabor", role: "HOST", badgeColor: "text-purple-500 bg-purple-50" }
-  ];
-
-  const [credentials, setCredentials] = useState<Record<string, { email: string; password: string }>>(() => {
-    const init: Record<string, { email: string; password: string }> = {};
-    defaultUsers.forEach(u => {
-      init[u.id] = { email: "", password: "" };
-    });
-    return init;
-  });
-
-  const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
-  const isDirtied = useRef(false);
-
-  // Safe SSR Mount
-  useEffect(() => {
-    setMounted(true);
-    if (typeof window !== "undefined") {
-      setIsLoggedIn(localStorage.getItem("ownerPanelLoggedIn") === "true");
-      try {
-        const saved = localStorage.getItem("ownerPanelCredentials");
-        if (saved) setCredentials(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
-
-  // Sync with Firestore
-  useEffect(() => {
-    if (!mounted || !db) return;
-    try {
-      const docRef = doc(db, "adminSettings", "credentials");
-      const unsubscribe = onSnapshot(docRef, (docSnap: any) => {
-        if (isDirtied.current) return;
-        if (docSnap.exists()) {
-          const serverData = docSnap.data()?.ownerPanelCredentials || {};
-          setCredentials(prev => ({ ...prev, ...serverData }));
-        }
-      });
-      return () => unsubscribe();
-    } catch (e) {
-      console.error(e);
-    }
-  }, [mounted]);
-
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-
-  const handleLogin = () => {
-    if (loginUsername === "HAWA.IN" && loginPassword === "HAWA.OWNER/CEO" && loginKey === "25/7/2026") {
-      setIsLoggedIn(true);
-      setLoginError("");
-      if (typeof window !== "undefined") {
-        localStorage.setItem("ownerPanelLoggedIn", "true");
-      }
-    } else {
-      setLoginError("Invalid credentials. Please verify your login details.");
-    }
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("ownerPanelLoggedIn");
-    }
-  };
-
-  const handleInputChange = (id: string, field: "email" | "password", value: string) => {
-    isDirtied.current = true;
-    setCredentials(prev => ({
-      ...prev,
-      [id]: { ...(prev[id] || { email: "", password: "" }), [field]: value }
-    }));
-  };
-
-  const handleSaveCredentials = useCallback(async () => {
-    if (!db) return;
-    try {
-      const docRef = doc(db, "adminSettings", "credentials");
-      await setDoc(docRef, { ownerPanelCredentials: credentials }, { merge: true });
-      isDirtied.current = false;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("ownerPanelCredentials", JSON.stringify(credentials));
-      }
-      setSaveMessage("Saved!");
-      setTimeout(() => setSaveMessage(""), 3000);
-    } catch (e) {
-      console.error("Save error:", e);
-    }
-  }, [credentials]);
-
-  if (!mounted) {
-    return <div className="min-h-screen bg-[#0d1322] flex items-center justify-center text-white text-xs">Loading panel...</div>;
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-[#0d1322] flex items-center justify-center p-4">
-        <div className="bg-[#172033] border border-slate-700/60 rounded-2xl shadow-2xl p-8 w-full max-w-sm text-white">
-          <div className="text-center mb-6">
-            <div className="mx-auto w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mb-3">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-xl font-bold">Haka Live</h1>
-            <p className="text-slate-400 text-xs mt-0.5">Staff Control Panel</p>
-          </div>
-
-          <div className="space-y-3.5">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">Username</label>
-              <input
-                type="text"
-                value={loginUsername}
-                onChange={e => setLoginUsername(e.target.value)}
-                placeholder="HAWA.IN"
-                className="w-full px-3.5 py-2.5 bg-[#0d1322] border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">Password</label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={e => setLoginPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-3.5 py-2.5 bg-[#0d1322] border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">Key</label>
-              <input
-                type="password"
-                value={loginKey}
-                onChange={e => setLoginKey(e.target.value)}
-                placeholder="25/7/2026"
-                className="w-full px-3.5 py-2.5 bg-[#0d1322] border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-indigo-500"
-              />
-            </div>
-
-            {loginError && <p className="text-rose-400 text-[11px] text-center bg-rose-500/10 py-1.5 rounded-lg">{loginError}</p>}
-
-            <button
-              onClick={handleLogin}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs transition cursor-pointer mt-1"
-            >
-              Sign In
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Filtered List
-  const filteredUsers = defaultUsers
-    .filter(u => {
-      const q = searchQuery.toLowerCase();
-      const matchSearch = u.name.toLowerCase().includes(q) || u.id.includes(q) || (credentials[u.id]?.email || "").toLowerCase().includes(q);
-      const matchRole = roleFilter === "all" || u.role.toLowerCase() === roleFilter.toLowerCase();
-      return matchSearch && matchRole;
-    })
-    .sort((a, b) => (sortOrder === "asc" ? a.id.localeCompare(b.id) : b.id.localeCompare(a.id)));
+export default function OwnerPanelPage() {
+  const [activeMenu, setActiveMenu] = useState('Manage Users');
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <div className="flex h-screen bg-white text-slate-700 font-sans overflow-hidden">
-      
-      {/* LEFT SIDEBAR (Dark UI matching image) */}
-      <aside className="w-56 bg-[#0f172a] text-slate-400 flex flex-col justify-between flex-shrink-0 text-[11px] select-none">
-        <div className="overflow-y-auto">
-          
-          {/* Header */}
-          <div className="px-4 py-3.5 border-b border-slate-800/80">
-            <h1 className="text-white font-bold text-sm tracking-tight">Haka Live</h1>
-            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Staff Control Panel</p>
-          </div>
+    <div className="flex min-h-screen bg-[#F6F8FB] text-[#2D3748] font-sans antialiased">
+      {/* Sidebar */}
+      <aside className="w-[260px] bg-[#0E1322] text-[#8F9CAE] flex flex-col shrink-0 border-r border-[#1B2236]">
+        {/* Brand Header */}
+        <div className="p-5 border-b border-[#1A2234]">
+          <h1 className="text-white text-base font-bold tracking-wide">Haka Live</h1>
+          <p className="text-[10px] font-semibold tracking-wider text-slate-400 mt-0.5 uppercase">Staff Control Panel</p>
+        </div>
 
-          {/* Navigation */}
-          <div className="py-2 px-2 space-y-0.5">
-            
-            {/* Dashboard */}
-            <button className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-300">
-              <Flame className="w-3.5 h-3.5 text-orange-400" />
+        {/* Navigation Items */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 text-[13px] select-none scrollbar-thin scrollbar-thumb-slate-700">
+          
+          <div>
+            <button className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:text-white hover:bg-white/5 transition">
+              <LayoutDashboard size={16} className="text-amber-500" />
               <span>Dashboard</span>
             </button>
-
-            {/* User Center */}
-            <div>
-              <button
-                onClick={() => toggleSection("user_center")}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-300"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Users className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="font-semibold text-white">User Center</span>
-                </div>
-                {expandedSections.user_center ? <ChevronDown className="w-3 h-3 text-slate-500" /> : <ChevronRight className="w-3 h-3 text-slate-500" />}
-              </button>
-              
-              {expandedSections.user_center && (
-                <div className="pl-4 space-y-0.5 mt-0.5">
-                  <button
-                    onClick={() => setActiveMenu("manage_users")}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md ${
-                      activeMenu === "manage_users" ? "bg-indigo-600/20 text-indigo-400 font-semibold" : "hover:bg-slate-800/50 text-slate-400"
-                    }`}
-                  >
-                    <Users className="w-3 h-3 text-indigo-400" />
-                    <span>Manage Users</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-slate-800/50 text-slate-400">
-                    <Mic className="w-3 h-3 text-slate-500" />
-                    <span>Host Applications</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Live Rooms */}
-            <div>
-              <button
-                onClick={() => toggleSection("live_rooms")}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-400"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Radio className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Live Rooms</span>
-                </div>
-                {expandedSections.live_rooms ? <ChevronDown className="w-3 h-3 text-slate-500" /> : <ChevronRight className="w-3 h-3 text-slate-500" />}
-              </button>
-              {expandedSections.live_rooms && (
-                <div className="pl-4 space-y-0.5 mt-0.5">
-                  <button className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <Radio className="w-3 h-3" /> <span>Manage Rooms</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Store */}
-            <div>
-              <button
-                onClick={() => toggleSection("store")}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-400"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Store className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Store</span>
-                </div>
-                {expandedSections.store ? <ChevronDown className="w-3 h-3 text-slate-500" /> : <ChevronRight className="w-3 h-3 text-slate-500" />}
-              </button>
-              {expandedSections.store && (
-                <div className="pl-4 space-y-0.5 mt-0.5">
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <Palette className="w-3 h-3 text-orange-400" /> <span>Themes</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <Star className="w-3 h-3 text-amber-400" /> <span>Special IDs</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <Gift className="w-3 h-3 text-red-400" /> <span>Gift Catalogue</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Economy */}
-            <div>
-              <button
-                onClick={() => toggleSection("economy")}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-400"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Landmark className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Economy</span>
-                </div>
-                {expandedSections.economy ? <ChevronDown className="w-3 h-3 text-slate-500" /> : <ChevronRight className="w-3 h-3 text-slate-500" />}
-              </button>
-              {expandedSections.economy && (
-                <div className="pl-4 space-y-0.5 mt-0.5">
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <Landmark className="w-3 h-3 text-indigo-400" /> <span>Master Wallet</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <History className="w-3 h-3 text-slate-400" /> <span>Gift Send History</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <Coins className="w-3 h-3 text-rose-400" /> <span>Bean Revenue</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <Wallet className="w-3 h-3 text-amber-400" /> <span>User Wallets</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <CreditCard className="w-3 h-3 text-sky-400" /> <span>Wallet History</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <ArrowDownToLine className="w-3 h-3 text-emerald-400" /> <span>Withdrawal Requests</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <RefreshCw className="w-3 h-3 text-amber-400" /> <span>Seller Recharges</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-slate-400 hover:bg-slate-800/50">
-                    <DollarSign className="w-3 h-3 text-emerald-400" /> <span>Currency Rates</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Content */}
-            <div>
-              <button
-                onClick={() => toggleSection("content")}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-400"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Content</span>
-                </div>
-                {expandedSections.content ? <ChevronDown className="w-3 h-3 text-slate-500" /> : <ChevronRight className="w-3 h-3 text-slate-500" />}
-              </button>
-            </div>
-
-            {/* Moderation */}
-            <div>
-              <button
-                onClick={() => toggleSection("moderation")}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-400"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Moderation</span>
-                </div>
-                {expandedSections.moderation ? <ChevronDown className="w-3 h-3 text-slate-500" /> : <ChevronRight className="w-3 h-3 text-slate-500" />}
-              </button>
-            </div>
-
-            {/* Platform */}
-            <div>
-              <button
-                onClick={() => toggleSection("platform")}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-400"
-              >
-                <div className="flex items-center gap-2.5">
-                  <BarChart2 className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Platform</span>
-                </div>
-                {expandedSections.platform ? <ChevronDown className="w-3 h-3 text-slate-500" /> : <ChevronRight className="w-3 h-3 text-slate-500" />}
-              </button>
-            </div>
-
-            {/* System */}
-            <div>
-              <button
-                onClick={() => toggleSection("system")}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-md hover:bg-slate-800 text-slate-400"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Settings className="w-3.5 h-3.5 text-slate-400" />
-                  <span>System</span>
-                </div>
-                <ChevronRight className="w-3 h-3 text-slate-500" />
-              </button>
-            </div>
-
           </div>
-        </div>
 
-        {/* Bottom Logout */}
-        <div className="p-3 border-t border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">
-              H
+          {/* User Center */}
+          <div>
+            <div className="flex items-center justify-between text-white font-medium px-3 py-1 mb-1">
+              <div className="flex items-center gap-3 text-blue-400">
+                <Users size={16} />
+                <span className="text-slate-200">User Center</span>
+              </div>
+              <ChevronDown size={14} className="text-slate-400" />
             </div>
-            <span className="text-[10px] text-slate-300 font-medium truncate">HAWA.OWNER</span>
+            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2">
+              <button 
+                onClick={() => setActiveMenu('Manage Users')}
+                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs transition font-medium ${
+                  activeMenu === 'Manage Users' ? 'bg-[#1C2541] text-blue-400 font-semibold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Users size={14} />
+                <span>Manage Users</span>
+              </button>
+              <button 
+                onClick={() => setActiveMenu('Host Applications')}
+                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs transition font-medium ${
+                  activeMenu === 'Host Applications' ? 'bg-[#1C2541] text-blue-400 font-semibold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <UserCheck size={14} />
+                <span>Host Applications</span>
+              </button>
+            </div>
           </div>
-          <button onClick={handleLogout} className="text-slate-500 hover:text-rose-400">
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
-        </div>
+
+          {/* Live Rooms */}
+          <div>
+            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
+              <div className="flex items-center gap-3">
+                <Radio size={16} className="text-cyan-400" />
+                <span>Live Rooms</span>
+              </div>
+              <ChevronDown size={14} />
+            </div>
+            <div className="ml-2 border-l border-slate-800 pl-2">
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white">
+                <Radio size={14} />
+                <span>Manage Rooms</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Store */}
+          <div>
+            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
+              <div className="flex items-center gap-3">
+                <ShoppingBag size={16} className="text-emerald-400" />
+                <span>Store</span>
+              </div>
+              <ChevronDown size={14} />
+            </div>
+            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Palette size={14} className="text-amber-400" />
+                <span>Themes</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Star size={14} className="text-yellow-400" />
+                <span>Special IDs</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Gift size={14} className="text-rose-400" />
+                <span>Gift Catalogue</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Economy */}
+          <div>
+            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
+              <div className="flex items-center gap-3">
+                <Landmark size={16} className="text-blue-400" />
+                <span>Economy</span>
+              </div>
+              <ChevronDown size={14} />
+            </div>
+            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Wallet size={14} className="text-blue-400" />
+                <span>Master Wallet</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <History size={14} className="text-slate-300" />
+                <span>Gift Send History</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Coins size={14} className="text-red-400" />
+                <span>Bean Revenue</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Coins size={14} className="text-amber-400" />
+                <span>User Wallets</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <FileText size={14} className="text-sky-400" />
+                <span>Wallet History</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <ArrowDownCircle size={14} className="text-emerald-400" />
+                <span>Withdrawal Requests</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Coins size={14} className="text-yellow-500" />
+                <span>Seller Recharges</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Banknote size={14} className="text-emerald-400" />
+                <span>Currency Rates</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div>
+            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
+              <div className="flex items-center gap-3">
+                <ImageIcon size={16} className="text-amber-300" />
+                <span>Content</span>
+              </div>
+              <ChevronDown size={14} />
+            </div>
+            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Trophy size={14} className="text-amber-400" />
+                <span>Events</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <ImageIcon size={14} className="text-sky-400" />
+                <span>Banners</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Moderation */}
+          <div>
+            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
+              <div className="flex items-center gap-3">
+                <ShieldAlert size={16} className="text-rose-400" />
+                <span>Moderation</span>
+              </div>
+              <ChevronDown size={14} />
+            </div>
+            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <ShieldAlert size={14} className="text-rose-500" />
+                <span>Reports & Bans</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <HelpCircle size={14} className="text-blue-400" />
+                <span>Support Tickets</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <AlertTriangle size={14} className="text-amber-400" />
+                <span>Risk Control</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Platform */}
+          <div>
+            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
+              <div className="flex items-center gap-3">
+                <BarChart3 size={16} className="text-cyan-400" />
+                <span>Platform</span>
+              </div>
+              <ChevronDown size={14} />
+            </div>
+            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <TrendingUp size={14} className="text-cyan-400" />
+                <span>Analytics & Reports</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Building2 size={14} className="text-slate-300" />
+                <span>Agency Management</span>
+              </button>
+              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
+                <Gamepad2 size={14} className="text-purple-400" />
+                <span>Game Management</span>
+              </button>
+            </div>
+          </div>
+
+          {/* System */}
+          <div>
+            <div className="flex items-center justify-between px-3 py-1 text-slate-400 hover:text-white cursor-pointer">
+              <div className="flex items-center gap-3">
+                <Settings size={16} className="text-blue-400" />
+                <span>System</span>
+              </div>
+              <ChevronRight size={14} />
+            </div>
+          </div>
+
+        </nav>
       </aside>
 
-      {/* RIGHT MAIN VIEW */}
-      <main className="flex-1 flex flex-col h-full bg-[#f8fafc] overflow-hidden">
-        
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 bg-[#F8FAFC]">
         {/* Top Header */}
-        <div className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-slate-800">Users</h1>
-          <div className="flex items-center gap-2">
-            {saveMessage && <span className="text-xs text-emerald-600 font-medium mr-2">{saveMessage}</span>}
-            <button
-              onClick={() => setShowPasswords(!showPasswords)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition"
-            >
-              {showPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              {showPasswords ? "Hide" : "Show"} Passwords
-            </button>
-            <button
-              onClick={handleSaveCredentials}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow-sm transition"
-            >
-              <Save className="w-3.5 h-3.5" /> Save
-            </button>
-          </div>
-        </div>
+        <header className="px-8 pt-7 pb-4 bg-white border-b border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-900">Users</h2>
+        </header>
 
-        {/* Filters Container */}
-        <div className="p-6 pb-2">
-          {/* Top Search Input */}
-          <div className="mb-3">
+        {/* Content Body */}
+        <div className="p-8 flex-1 flex flex-col">
+          {/* Filters Bar */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 space-y-3">
+            {/* Search Input */}
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, phone, email, Haka ID..."
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-500 shadow-sm"
+                className="w-full bg-[#F8FAFC] border border-slate-200 text-sm text-slate-800 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition placeholder:text-slate-400"
               />
+            </div>
+
+            {/* Filter Dropdowns */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <select className="bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-slate-300">
+                <option>All Roles</option>
+                <option>Normal</option>
+                <option>Host</option>
+                <option>Agency</option>
+              </select>
+
+              <select className="bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-slate-300">
+                <option>All Status</option>
+                <option>Active</option>
+                <option>Banned</option>
+              </select>
+
+              <select className="bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-slate-300">
+                <option>All (mute)</option>
+                <option>Muted</option>
+                <option>Unmuted</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder="Country..."
+                className="bg-[#F8FAFC] border border-slate-200 text-xs text-slate-700 rounded-lg px-3 py-2 outline-none w-32 placeholder:text-slate-400"
+              />
+
+              <select className="bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-slate-300">
+                <option>Sort by</option>
+                <option>Created At</option>
+                <option>Last Active</option>
+              </select>
+
+              <button className="flex items-center gap-1 bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 px-3 py-2 rounded-lg hover:bg-slate-100 transition">
+                <span>↓ DESC</span>
+              </button>
             </div>
           </div>
 
-          {/* Filter Dropdowns Row */}
-          <div className="flex items-center gap-2.5 text-xs">
-            <select
-              value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 outline-none shadow-sm"
-            >
-              <option value="all">All Roles</option>
-              <option value="host">Host</option>
-              <option value="normal">Normal</option>
-              <option value="agent">Agent</option>
-              <option value="special">Special</option>
-            </select>
-
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 outline-none shadow-sm"
-            >
-              <option value="all">All Status</option>
-              <option value="online">Online</option>
-              <option value="offline">Offline</option>
-            </select>
-
-            <select className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 outline-none shadow-sm">
-              <option>All (mute)</option>
-            </select>
-
-            <input
-              type="text"
-              placeholder="Country..."
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 placeholder-slate-400 outline-none shadow-sm w-28 text-xs"
-            />
-
-            <select className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 outline-none shadow-sm">
-              <option>Sort...</option>
-            </select>
-          </div>
-
-          {/* Sort Order Button */}
-          <div className="mt-3">
-            <button
-              onClick={() => setSortOrder(prev => (prev === "desc" ? "asc" : "desc"))}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 text-xs font-semibold shadow-sm hover:bg-slate-50"
-            >
-              <ArrowUpDown className="w-3 h-3" />
-              <span>{sortOrder === "desc" ? "↓ DESC" : "↑ ASC"}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Users Table */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6 mt-2">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 bg-white text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 font-semibold">USER</th>
-                  <th className="py-3.5 px-4 font-semibold">HAKA ID</th>
-                  <th className="py-3.5 px-4 font-semibold">PHONE / EMAIL</th>
-                  <th className="py-3.5 px-4 font-semibold">PASSWORD</th>
-                  <th className="py-3.5 px-4 font-semibold">ROLE</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map(user => {
-                  const cred = credentials[user.id] || { email: "", password: "" };
-
-                  return (
-                    <tr key={user.id} className="hover:bg-slate-50/70 transition">
-                      
-                      {/* USER Column */}
-                      <td className="py-3 px-4">
+          {/* Users Table */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[11px] font-bold tracking-wider text-slate-400 uppercase bg-[#FCFDFE]">
+                    <th className="py-3.5 px-6 font-semibold">User</th>
+                    <th className="py-3.5 px-6 font-semibold">Haka ID</th>
+                    <th className="py-3.5 px-6 font-semibold">Phone / Email</th>
+                    <th className="py-3.5 px-6 font-semibold">Role</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {mockUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
+                      {/* User Column */}
+                      <td className="py-3.5 px-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-indigo-600 font-bold flex items-center justify-center text-xs">
-                            {user.name.charAt(0)}
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${user.avatarBg}`}>
+                            {user.avatarLetter}
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-800 text-[12px]">{user.name}</p>
-                            <p className="text-[10px] text-slate-400">@{user.username}</p>
+                            <div className="font-semibold text-slate-800 text-sm leading-tight">{user.name}</div>
+                            <div className="text-slate-400 text-[11px] mt-0.5">
+                              {user.username ? `@${user.username}` : '—'}
+                            </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* HAKA ID Column */}
-                      <td className="py-3 px-4 font-semibold text-indigo-600">
-                        {user.id}
-                      </td>
-
-                      {/* PHONE / EMAIL Column */}
-                      <td className="py-3 px-4">
-                        <input
-                          type="text"
-                          value={cred.email}
-                          onChange={e => handleInputChange(user.id, "email", e.target.value)}
-                          placeholder="—"
-                          className="w-56 px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white border border-transparent focus:border-slate-200 rounded text-slate-600 text-xs outline-none"
-                        />
-                      </td>
-
-                      {/* PASSWORD Column */}
-                      <td className="py-3 px-4">
-                        <input
-                          type={showPasswords ? "text" : "password"}
-                          value={cred.password}
-                          onChange={e => handleInputChange(user.id, "password", e.target.value)}
-                          placeholder="—"
-                          className="w-32 px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white border border-transparent focus:border-slate-200 rounded text-slate-600 text-xs outline-none"
-                        />
-                      </td>
-
-                      {/* ROLE Column */}
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${user.badgeColor}`}>
-                          {user.role}
+                      {/* Haka ID Column */}
+                      <td className="py-3.5 px-6">
+                        <span className={user.hakaId !== '—' ? 'font-semibold text-indigo-600' : 'text-slate-400'}>
+                          {user.hakaId}
                         </span>
                       </td>
 
+                      {/* Email/Phone Column */}
+                      <td className="py-3.5 px-6">
+                        <span className={user.emailPhone !== '—' ? 'text-slate-600 font-mono text-[11px]' : 'text-slate-400'}>
+                          {user.emailPhone}
+                        </span>
+                      </td>
+
+                      {/* Role Column */}
+                      <td className="py-3.5 px-6">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${user.roleColor}`}>
+                          {user.role}
+                        </span>
+                      </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-
       </main>
     </div>
   );
 }
+
