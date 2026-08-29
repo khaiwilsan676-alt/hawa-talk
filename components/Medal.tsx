@@ -15,7 +15,7 @@ interface MedalItem {
   category: 'achievement' | 'activity'
 }
 
-// 1. WebGL Background Shader (Deep Blue Night Base)
+// 1. WebGL Background Shader (Deep Ultra Dark Base)
 function WebGLBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -44,11 +44,12 @@ function WebGLBackground() {
 
         float len = length(p);
         
-        vec3 baseBlue = vec3(0.01, 0.05, 0.18);
-        vec3 brightGlow = vec3(0.04, 0.18, 0.45) * (0.6 / (len + 0.4));
-        vec3 softStars = vec3(0.08, 0.22, 0.55) * sin(uv.y * 3.0 + u_time * 0.2);
+        // Pure ultra dark black/dark-navy tone
+        vec3 baseDark = vec3(0.005, 0.008, 0.02);
+        vec3 faintGlow = vec3(0.01, 0.02, 0.06) * (0.4 / (len + 0.5));
+        vec3 softStars = vec3(0.02, 0.04, 0.1) * sin(uv.y * 3.0 + u_time * 0.2);
 
-        vec3 finalColor = baseBlue + brightGlow + softStars * 0.2;
+        vec3 finalColor = baseDark + faintGlow + softStars * 0.1;
         gl_FragColor = vec4(finalColor, 1.0);
       }
     `
@@ -226,7 +227,7 @@ export default function Medal({ onBack }: MedalProps) {
   const filteredMedals = medals.filter((m) => m.category === activeTab)
 
   return (
-    <div className="h-screen w-full text-white flex flex-col font-sans select-none relative overflow-hidden bg-[#040d28]">
+    <div className="h-screen w-full text-white flex flex-col font-sans select-none relative overflow-hidden bg-[#02050e]">
       {/* 1. Base Dark WebGL Canvas */}
       <WebGLBackground />
 
@@ -239,7 +240,7 @@ export default function Medal({ onBack }: MedalProps) {
           WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#040d28]/30 to-[#040d28]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#02050e]/50 to-[#02050e]" />
       </div>
 
       {/* 3. FIXED TOP AREA */}
@@ -259,13 +260,13 @@ export default function Medal({ onBack }: MedalProps) {
           </button>
         </div>
 
-        {/* Current Medal Circular Slots 2x5 (Restored Original Blue Style) */}
+        {/* Current Medal Circular Slots 2x5 */}
         <div className="pt-2 pb-1">
           <div className="grid grid-cols-5 gap-2.5 px-2">
             {Array.from({ length: 10 }).map((_, index) => (
               <div
                 key={index}
-                className="aspect-square rounded-full bg-[#0d2253]/60 border border-blue-400/40 flex items-center justify-center shadow-lg shadow-blue-950/60 hover:border-yellow-400/60 transition-all cursor-pointer backdrop-blur-sm"
+                className="aspect-square rounded-full bg-[#0d2253]/60 border border-blue-400/40 flex items-center justify-center shadow-lg shadow-black/80 hover:border-yellow-400/60 transition-all cursor-pointer backdrop-blur-sm"
               >
                 <Plus size={20} className="text-blue-200/90 stroke-[2.5]" />
               </div>
@@ -312,7 +313,7 @@ export default function Medal({ onBack }: MedalProps) {
             <div
               key={medal.id}
               onClick={() => setSelectedMedal(medal)}
-              className="relative bg-gradient-to-b from-[#11317d] to-[#0a1e50] border border-blue-400/30 rounded-2xl p-2 flex flex-col items-center justify-between text-center hover:border-yellow-400/60 active:scale-95 transition-all duration-200 shadow-md shadow-black/50 cursor-pointer min-h-[155px]"
+              className="relative bg-gradient-to-b from-[#040d28] via-[#091b48] to-[#040d28] border border-blue-500/30 rounded-2xl p-2 flex flex-col items-center justify-between text-center hover:border-yellow-400/60 active:scale-95 transition-all duration-200 shadow-lg shadow-black/80 cursor-pointer min-h-[155px]"
             >
               {/* Colorless Chrome/Silver Medal Image */}
               <div className="w-20 h-20 sm:w-24 sm:h-24 my-auto flex items-center justify-center relative">
@@ -344,7 +345,7 @@ export default function Medal({ onBack }: MedalProps) {
       {/* Center Modal with Perfectly Centered Rays */}
       {selectedMedal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
           onClick={() => setSelectedMedal(null)}
         >
           <button 
