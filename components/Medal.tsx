@@ -401,7 +401,7 @@ export default function Medal({ onBack }: MedalProps) {
         </div>
       </div>
 
-      {/* Center Modal with Smooth Zoom & Sparkles */}
+      {/* Center Modal with Smooth Zoom, Metallic Shine & Sparkles */}
       {selectedMedal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
@@ -418,10 +418,10 @@ export default function Medal({ onBack }: MedalProps) {
             className="relative flex flex-col items-center justify-center text-center max-w-sm w-full animate-modal-zoom"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Image Wrapper with Sparkles */}
+            {/* Modal Image Wrapper with Centered Shine & Golden Sparkles */}
             <div className="relative w-64 h-64 sm:w-72 sm:h-72 my-2 flex items-center justify-center">
               
-              {/* Rotating Ray Effect */}
+              {/* Rotating Shiny Ray Effect behind medal */}
               <div className="absolute inset-0 -inset-10 -z-10 animate-spin-slow pointer-events-none flex items-center justify-center">
                 <div 
                   className="w-full h-full rounded-full opacity-40"
@@ -432,12 +432,17 @@ export default function Medal({ onBack }: MedalProps) {
                 <div className="absolute inset-8 rounded-full bg-blue-500/20 blur-xl pointer-events-none" />
               </div>
 
-              {/* Sparkles Twinkling */}
+              {/* Sparkles Twinkling over the modal Medal */}
               <GoldenSparklesOverlay />
 
-              {/* Modal Colored Medal Image (True Colors Preserved) */}
+              {/* Modal Colored Medal Image with Metal Shine Effect Back In */}
               <div className="w-52 h-52 sm:w-60 sm:h-60 relative flex items-center justify-center overflow-hidden rounded-full animate-subtle-pulse z-10">
                 <ChromaKeyImage src={selectedMedal.image} alt={selectedMedal.name} isColorless={false} />
+                
+                {/* 😡 YES! THIS METAL SHINE SWEEP IS BACK! 😡 */}
+                <div className="absolute inset-0 pointer-events-none animate-shine-sweep z-20">
+                  <div className="w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent transform -skew-x-25" />
+                </div>
               </div>
             </div>
 
@@ -511,6 +516,15 @@ export default function Medal({ onBack }: MedalProps) {
             transform: scale(1.3) rotate(45deg);
           }
         }
+        /* 😡 Metal Shine Sweep Animation Is BACK! 😡 */
+        @keyframes shineSweep {
+          0% {
+            transform: translateX(-150%) skewX(-25deg);
+          }
+          40%, 100% {
+            transform: translateX(150%) skewX(-25deg);
+          }
+        }
 
         .animate-spin-slow {
           animation: spinSlow 16s linear infinite;
@@ -527,8 +541,11 @@ export default function Medal({ onBack }: MedalProps) {
         .animate-sparkle-twinkle {
           animation: sparkleTwinkle 3s ease-in-out infinite;
         }
+        /* 😡 Applying the Metal Shine Sweep 😡 */
+        .animate-shine-sweep {
+          animation: shineSweep 3.5s infinite ease-in-out;
+        }
       `}</style>
     </div>
   )
 }
-
