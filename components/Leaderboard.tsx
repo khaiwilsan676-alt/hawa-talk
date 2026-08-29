@@ -166,7 +166,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             <ChromaImage
               src="/1787994771034~2.jpg"
               alt="Top 1"
-              className="w-60 h-auto object-contain drop-shadow-2xl"
+              className="w-40 h-auto object-contain drop-shadow-2xl"
             />
           </div>
 
@@ -175,12 +175,12 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             <ChromaImage
               src="/1787994751636~2.jpg"
               alt="Top 2"
-              className="w-40 h-auto object-contain drop-shadow-lg"
+              className="w-35 h-auto object-contain drop-shadow-lg"
             />
             <ChromaImage
               src="/1787994761762~2.jpg"
               alt="Top 3"
-              className="w-40 h-auto object-contain drop-shadow-lg"
+              className="w-35 h-auto object-contain drop-shadow-lg"
             />
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
               <ChromaImage
                 src="/1787992320047~2.jpg"
                 alt={`Rank ${rank}`}
-                className="w-50 h-auto object-cover"
+                className="w-100 h-auto object-cover"
               />
             </div>
           ))}
