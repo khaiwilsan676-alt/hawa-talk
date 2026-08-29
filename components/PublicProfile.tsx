@@ -59,7 +59,7 @@ const saveProfileToDB = async (profileData: any) => {
     });
 
     db.close();
-    console.log('✅ Profile data IndexedDB mein save hua (Photo, Name, ID, Bio, Album sab):', completeData);
+    console.log('✅ Profile data IndexedDB mein save hua:', completeData);
   } catch (error) {
     console.error('❌ Profile save error:', error);
   }
@@ -91,26 +91,6 @@ const loadProfileFromDB = async (uid: string): Promise<any> => {
   }
 };
 
-// Delete profile from IndexedDB
-const deleteProfileFromDB = async (uid: string): Promise<void> => {
-  try {
-    const db = await openProfileDB();
-    const transaction = db.transaction([PROFILE_STORE], 'readwrite');
-    const store = transaction.objectStore(PROFILE_STORE);
-    
-    await new Promise<void>((resolve, reject) => {
-      const request = store.delete(uid);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-
-    db.close();
-    console.log('🗑️ Profile data IndexedDB se delete hua');
-  } catch (error) {
-    console.error('❌ Profile delete error:', error);
-  }
-};
-
 export interface TargetUser {
   id?: string
   uid?: string
@@ -128,6 +108,11 @@ export interface TargetUser {
   country?: string
   countryCode?: string
   flag?: string
+  // Tag assignments from owner panel
+  officialTag?: boolean
+  adminTag?: boolean
+  vipTag?: boolean
+  premiumTag?: boolean
 }
 
 interface PublicProfileProps {
@@ -258,7 +243,179 @@ const compressImage = (
   })
 }
 
-// WebGL Shader Component for removing white color
+// Green Color Removal Shader Component - For Official/Admin tags
+const GreenColorRemovalShader = ({ 
+  imageSrc, 
+  className = "",
+  style = {}
+}: { 
+  imageSrc: string
+  className?: string
+  style?: React.CSSProperties
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
+    if (!gl) {
+      console.warn('WebGL not supported')
+      return
+    }
+
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `
+
+    const fragmentShaderSource = `
+      precision mediump float;
+      
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture;
+      
+      void main() {
+        vec4 color = texture2D(u_texture, v_texCoord);
+        
+        // Detect green background (high green, low red and blue)
+        if (color.g > 0.25 && color.g > color.r * 1.3 && color.g > color.b * 1.3) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); // Make transparent
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `
+
+    const compileShader = (type: number, source: string) => {
+      const shader = gl.createShader(type)
+      if (!shader) return null
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+      
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
+        gl.deleteShader(shader)
+        return null
+      }
+      return shader
+    }
+
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
+    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
+    
+    if (!vertexShader || !fragmentShader) return
+
+    const program = gl.createProgram()
+    if (!program) return
+    
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program))
+      return
+    }
+
+    gl.useProgram(program)
+
+    const positionBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    const positions = new Float32Array([
+      -1.0, -1.0,
+       1.0, -1.0,
+      -1.0,  1.0,
+      -1.0,  1.0,
+       1.0, -1.0,
+       1.0,  1.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(positionLocation)
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    const texCoords = new Float32Array([
+      0.0, 1.0,
+      1.0, 1.0,
+      0.0, 0.0,
+      0.0, 0.0,
+      1.0, 1.0,
+      1.0, 0.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
+    gl.enableVertexAttribArray(texCoordLocation)
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+      
+      canvas.width = image.width
+      canvas.height = image.height
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      
+      gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      
+      setIsLoaded(true)
+    }
+    image.onerror = () => {
+      console.error('Failed to load image for WebGL processing')
+    }
+    image.src = imageSrc
+
+    return () => {
+      gl.deleteProgram(program)
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      gl.deleteBuffer(positionBuffer)
+      gl.deleteBuffer(texCoordBuffer)
+      gl.deleteTexture(texture)
+    }
+  }, [imageSrc])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={className}
+      style={{
+        ...style,
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
+      }}
+    />
+  )
+}
+
+// WebGL Shader Component for removing white color (for avatar overlay)
 const WhiteColorRemovalShader = ({ 
   imageSrc, 
   threshold = 0.9,
@@ -463,6 +620,11 @@ export default function PublicProfile({
     location: 'India',
     flag: '🇮🇳',
     countryCode: 'IN',
+    // Tag assignments from owner panel
+    officialTag: false,
+    adminTag: false,
+    vipTag: false,
+    premiumTag: false,
   })
 
   const [albumImages, setAlbumImages] = useState<string[]>([])
@@ -538,6 +700,10 @@ export default function PublicProfile({
         flag: user.flag,
         countryCode: user.countryCode,
         albumImages: albumImages,
+        officialTag: user.officialTag,
+        adminTag: user.adminTag,
+        vipTag: user.vipTag,
+        premiumTag: user.premiumTag,
       };
       await saveProfileToDB(profileData);
     }
@@ -565,6 +731,10 @@ export default function PublicProfile({
           : 22
         let followers = targetUser.followers || 0
         let album: string[] = []
+        let officialTag = targetUser.officialTag || false
+        let adminTag = targetUser.adminTag || false
+        let vipTag = targetUser.vipTag || false
+        let premiumTag = targetUser.premiumTag || false
 
         if (targetUid && targetUid !== 'N/A') {
           // Check IndexedDB first for other user
@@ -584,6 +754,10 @@ export default function PublicProfile({
               location: cachedProfile.location || country,
               flag: cachedProfile.flag || '🇮🇳',
               countryCode: cachedProfile.countryCode || countryCode,
+              officialTag: cachedProfile.officialTag || officialTag,
+              adminTag: cachedProfile.adminTag || adminTag,
+              vipTag: cachedProfile.vipTag || vipTag,
+              premiumTag: cachedProfile.premiumTag || premiumTag,
             });
             setAlbumImages(cachedProfile.albumImages || []);
             return;
@@ -610,6 +784,10 @@ export default function PublicProfile({
                 gender = data.gender || gender
                 age = data.age ? parseInt(data.age) : age
                 followers = data.followers !== undefined ? data.followers : followers
+                officialTag = data.officialTag || officialTag
+                adminTag = data.adminTag || adminTag
+                vipTag = data.vipTag || vipTag
+                premiumTag = data.premiumTag || premiumTag
 
                 if (data.albumImages && Array.isArray(data.albumImages)) {
                   album = data.albumImages
@@ -640,6 +818,10 @@ export default function PublicProfile({
                   flag: matchedCountry.flag,
                   countryCode: matchedCountry.code,
                   albumImages: album,
+                  officialTag,
+                  adminTag,
+                  vipTag,
+                  premiumTag,
                 };
 
                 setAlbumImages(album);
@@ -678,6 +860,10 @@ export default function PublicProfile({
             location: cachedProfile.location || 'India',
             flag: cachedProfile.flag || '🇮🇳',
             countryCode: cachedProfile.countryCode || 'IN',
+            officialTag: cachedProfile.officialTag || false,
+            adminTag: cachedProfile.adminTag || false,
+            vipTag: cachedProfile.vipTag || false,
+            premiumTag: cachedProfile.premiumTag || false,
           });
           setAlbumImages(cachedProfile.albumImages || []);
           setEditName(cachedProfile.name || '');
@@ -795,6 +981,10 @@ export default function PublicProfile({
                 age: storedAge ? parseInt(storedAge) : 24,
                 followers: data.followers || 0,
                 albumImages: data.albumImages || [],
+                officialTag: data.officialTag || false,
+                adminTag: data.adminTag || false,
+                vipTag: data.vipTag || false,
+                premiumTag: data.premiumTag || false,
               };
 
               setUser(profileData);
@@ -1156,10 +1346,29 @@ export default function PublicProfile({
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
             {user.gender} {user.age}
           </span>
-          <img src="/1785131462125.png" alt="" className="h-9 w-auto object-contain" />
-          <img src="/1785131792693.png" alt="" className="h-9 w-auto object-contain" />
-          <img src="/1785469775751.png" alt="" className="h-7 w-auto object-contain" />
-          <img src="/1785469365805.png" alt="" className="h-7 w-auto object-contain" />
+          
+          {/* Tags - ONLY show if assigned from Owner Panel */}
+          {user.adminTag && (
+            <GreenColorRemovalShader
+              imageSrc="/1788021461820~2.jpg"
+              className="h-9 w-auto object-contain"
+            />
+          )}
+          
+          {user.officialTag && (
+            <GreenColorRemovalShader
+              imageSrc="/1788021468845~2.jpg"
+              className="h-9 w-auto object-contain"
+            />
+          )}
+          
+          {user.vipTag && (
+            <img src="/1785469775751.png" alt="VIP" className="h-7 w-auto object-contain" />
+          )}
+          
+          {user.premiumTag && (
+            <img src="/1785469365805.png" alt="Premium" className="h-7 w-auto object-contain" />
+          )}
         </div>
 
         <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
@@ -1625,7 +1834,4 @@ export default function PublicProfile({
       `}</style>
     </div>
   )
-}
-
-
-
+    }
