@@ -153,6 +153,63 @@ function ChromaKeyImage({ src, alt, isColorless = false }: { src: string; alt: s
   )
 }
 
+// 3. Realistic Golden Sparkles Component (Only For Fullscreen View)
+function GoldenSparkles() {
+  const sparkles = [
+    { top: '15%', left: '20%', size: 28, delay: '0s', dur: '1.4s' },
+    { top: '25%', left: '75%', size: 36, delay: '0.3s', dur: '1.8s' },
+    { top: '40%', left: '48%', size: 44, delay: '0.6s', dur: '1.5s' }, // Center bright core
+    { top: '55%', left: '22%', size: 30, delay: '0.2s', dur: '2.0s' },
+    { top: '65%', left: '70%', size: 34, delay: '0.8s', dur: '1.6s' },
+    { top: '35%', left: '15%', size: 22, delay: '0.5s', dur: '1.9s' },
+    { top: '48%', left: '82%', size: 26, delay: '0.1s', dur: '1.7s' },
+    { top: '70%', left: '38%', size: 24, delay: '0.7s', dur: '1.3s' },
+    { top: '20%', left: '45%', size: 20, delay: '0.9s', dur: '2.1s' },
+  ]
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-20 overflow-visible">
+      {sparkles.map((sp, idx) => (
+        <div
+          key={idx}
+          className="absolute transform -translate-x-1/2 -translate-y-1/2 animate-sparkle-twinkle"
+          style={{
+            top: sp.top,
+            left: sp.left,
+            width: `${sp.size}px`,
+            height: `${sp.size}px`,
+            animationDelay: sp.delay,
+            animationDuration: sp.dur,
+          }}
+        >
+          {/* 4-Point Golden Star Sparkle SVG */}
+          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_8px_rgba(255,215,0,0.95)]">
+            <defs>
+              <radialGradient id={`goldGlow-${idx}`} cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="30%" stopColor="#ffe600" />
+                <stop offset="70%" stopColor="#ff9900" />
+                <stop offset="100%" stopColor="transparent" />
+              </radialGradient>
+            </defs>
+            {/* Center soft glow orb */}
+            <circle cx="50" cy="50" r="22" fill={`url(#goldGlow-${idx})`} className="opacity-80" />
+            {/* Vertical primary ray */}
+            <path d="M 50 0 Q 50 50 100 50 Q 50 50 50 100 Q 50 50 0 50 Q 50 50 50 0 Z" fill="#fff5a6" />
+            {/* Diagonal secondary rays */}
+            <path
+              d="M 50 15 Q 50 50 85 50 Q 50 50 50 85 Q 50 50 15 50 Q 50 50 50 15 Z"
+              fill="#ffd700"
+              transform="rotate(45 50 50)"
+              className="opacity-90"
+            />
+          </svg>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function Medal({ onBack }: MedalProps) {
   const [activeTab, setActiveTab] = useState<'achievement' | 'activity'>('activity')
   const [selectedMedal, setSelectedMedal] = useState<MedalItem | null>(null)
@@ -312,18 +369,11 @@ export default function Medal({ onBack }: MedalProps) {
             <div
               key={medal.id}
               onClick={() => setSelectedMedal(medal)}
-              className="relative bg-gradient-to-b from-[#0c3596] to-[#041a54] border border-[#2563eb]/40 rounded-2xl p-2.5 flex flex-col items-center justify-between text-center hover:border-yellow-400/60 active:scale-95 transition-all duration-200 shadow-lg shadow-black/70 cursor-pointer min-h-[160px] overflow-hidden"
+              className="relative bg-gradient-to-b from-[#0c3596] to-[#041a54] border border-[#2563eb]/40 rounded-2xl p-2.5 flex flex-col items-center justify-between text-center hover:border-yellow-400/60 active:scale-95 transition-all duration-200 shadow-lg shadow-black/70 cursor-pointer min-h-[160px]"
             >
-              {/* Card Medal Image with Golden Sparkles */}
+              {/* Colorless Chrome/Silver Medal Image */}
               <div className="w-20 h-20 sm:w-24 sm:h-24 my-auto flex items-center justify-center relative">
-                <ChromaKeyImage src={medal.image} alt={medal.name} isColorless={false} />
-
-                {/* Golden Sparkles on Card Image */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <span className="sparkle gold-sparkle-1" />
-                  <span className="sparkle gold-sparkle-2" />
-                  <span className="sparkle gold-sparkle-3" />
-                </div>
+                <ChromaKeyImage src={medal.image} alt={medal.name} isColorless={true} />
               </div>
 
               {/* Stars Display */}
@@ -348,7 +398,7 @@ export default function Medal({ onBack }: MedalProps) {
         </div>
       </div>
 
-      {/* Center Modal with Golden Sparkles & Realistic Shine Sweeping */}
+      {/* Center Modal with Smooth Zoom, Golden Sparkles & Realistic Shine */}
       {selectedMedal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
@@ -365,7 +415,7 @@ export default function Medal({ onBack }: MedalProps) {
             className="relative flex flex-col items-center justify-center text-center max-w-sm w-full animate-modal-zoom"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Image Wrapper with Centered Shine, Rays & Golden Sparkles */}
+            {/* Modal Image Wrapper with Centered Shine, Golden Sparkles & Rays */}
             <div className="relative w-64 h-64 sm:w-72 sm:h-72 my-2 flex items-center justify-center">
               
               {/* Rotating Shiny Ray Effect behind medal */}
@@ -373,29 +423,23 @@ export default function Medal({ onBack }: MedalProps) {
                 <div 
                   className="w-full h-full rounded-full opacity-60"
                   style={{
-                    background: 'repeating-conic-gradient(from 0deg, rgba(255,215,0,0.45) 0deg 8deg, transparent 8deg 24deg)'
+                    background: 'repeating-conic-gradient(from 0deg, rgba(255,255,255,0.4) 0deg 8deg, transparent 8deg 24deg)'
                   }}
                 />
-                <div className="absolute inset-8 rounded-full bg-yellow-500/25 blur-xl pointer-events-none" />
+                <div className="absolute inset-8 rounded-full bg-blue-400/25 blur-xl pointer-events-none" />
               </div>
 
-              {/* Modal Colored Medal Image with Golden Sparkle Stream */}
-              <div className="w-52 h-52 sm:w-60 sm:h-60 relative flex items-center justify-center overflow-hidden rounded-full animate-subtle-pulse">
+              {/* Modal Colored Medal Image with Shine Streak Overlay & Golden Sparkles */}
+              <div className="w-52 h-52 sm:w-60 sm:h-60 relative flex items-center justify-center overflow-visible rounded-full animate-subtle-pulse">
                 <ChromaKeyImage src={selectedMedal.image} alt={selectedMedal.name} isColorless={false} />
                 
                 {/* Diagonal Metallic Shine Sweep Effect over Image */}
-                <div className="absolute inset-0 pointer-events-none animate-shine-sweep">
-                  <div className="w-full h-full bg-gradient-to-r from-transparent via-yellow-200/40 to-transparent transform -skew-x-25" />
+                <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none animate-shine-sweep">
+                  <div className="w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent transform -skew-x-25" />
                 </div>
 
-                {/* Modal Golden Sparkles */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <span className="sparkle gold-sparkle-modal-1" />
-                  <span className="sparkle gold-sparkle-modal-2" />
-                  <span className="sparkle gold-sparkle-modal-3" />
-                  <span className="sparkle gold-sparkle-modal-4" />
-                  <span className="sparkle gold-sparkle-modal-5" />
-                </div>
+                {/* Golden Sparkles Floating on Fullscreen Image */}
+                <GoldenSparkles />
               </div>
             </div>
 
@@ -469,12 +513,12 @@ export default function Medal({ onBack }: MedalProps) {
         }
         @keyframes sparkleTwinkle {
           0%, 100% {
-            opacity: 0;
-            transform: scale(0.2) rotate(0deg);
+            opacity: 0.15;
+            transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
           }
           50% {
             opacity: 1;
-            transform: scale(1.2) rotate(180deg);
+            transform: translate(-50%, -50%) scale(1.15) rotate(45deg);
           }
         }
 
@@ -493,74 +537,8 @@ export default function Medal({ onBack }: MedalProps) {
         .animate-subtle-pulse {
           animation: subtlePulse 3s infinite ease-in-out;
         }
-
-        /* Sparkle Element Base */
-        .sparkle {
-          position: absolute;
-          background: radial-gradient(circle, #fff 10%, #ffd700 60%, transparent 80%);
-          border-radius: 50%;
-          box-shadow: 0 0 6px #ffd700, 0 0 10px #ffae00;
-          pointer-events: none;
-        }
-
-        /* Card Sparkles */
-        .gold-sparkle-1 {
-          width: 5px;
-          height: 5px;
-          top: 15%;
-          left: 20%;
-          animation: sparkleTwinkle 2s infinite ease-in-out;
-        }
-        .gold-sparkle-2 {
-          width: 6px;
-          height: 6px;
-          top: 65%;
-          right: 20%;
-          animation: sparkleTwinkle 2.4s infinite ease-in-out 0.8s;
-        }
-        .gold-sparkle-3 {
-          width: 4px;
-          height: 4px;
-          top: 30%;
-          right: 15%;
-          animation: sparkleTwinkle 1.8s infinite ease-in-out 0.4s;
-        }
-
-        /* Modal Sparkles */
-        .gold-sparkle-modal-1 {
-          width: 9px;
-          height: 9px;
-          top: 15%;
-          left: 15%;
-          animation: sparkleTwinkle 2s infinite ease-in-out;
-        }
-        .gold-sparkle-modal-2 {
-          width: 12px;
-          height: 12px;
-          top: 25%;
-          right: 20%;
-          animation: sparkleTwinkle 2.5s infinite ease-in-out 0.5s;
-        }
-        .gold-sparkle-modal-3 {
-          width: 8px;
-          height: 8px;
-          bottom: 20%;
-          left: 25%;
-          animation: sparkleTwinkle 2.2s infinite ease-in-out 1s;
-        }
-        .gold-sparkle-modal-4 {
-          width: 11px;
-          height: 11px;
-          bottom: 25%;
-          right: 18%;
-          animation: sparkleTwinkle 2.8s infinite ease-in-out 1.4s;
-        }
-        .gold-sparkle-modal-5 {
-          width: 7px;
-          height: 7px;
-          top: 50%;
-          left: 10%;
-          animation: sparkleTwinkle 1.9s infinite ease-in-out 0.3s;
+        .animate-sparkle-twinkle {
+          animation: sparkleTwinkle ease-in-out infinite;
         }
       `}</style>
     </div>
