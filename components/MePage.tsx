@@ -792,7 +792,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   if (showFeedbackPage) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-gray-50 flex flex-col pb-[20vh]">
         <div className="flex items-center p-4 bg-white border-b border-gray-200">
           <button
             onClick={() => {
@@ -925,17 +925,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }
 
   return (
-    <div className="w-full min-h-screen bg-white" >
+    <div className="w-full min-h-screen bg-white pb-[20vh]">
       <div
-        className="px-4 pb-6 relative safe-top"
+        className="px-4 pb-4 relative safe-top"
         style={{
           background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-          paddingTop: 'max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 55px)'
+          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 24px) + 24px)'
         }}
       >
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="relative w-20 h-20 ml-1 shrink-0">
+            <div className="relative w-20 h-20 ml-3 shrink-0">
               {user.photo ? (
                 <img
                   src={user.photo}
@@ -1037,7 +1037,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </div>
         </div>
 
-        <div className="flex gap-1 mt-6">
+        <div className="flex gap-1 mt-4">
           <div 
             className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
             onClick={() => {
@@ -1067,7 +1067,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      <div className="px-4 mt-1">
+      <div className="px-4 mt-0.5">
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {menuItems.map((item, index) => (
             <div key={item.id}>
@@ -1163,4 +1163,5 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       </div>
     </div>
   )
-  }
+}
+
