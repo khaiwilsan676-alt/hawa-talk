@@ -19,7 +19,7 @@ import MePage from './MePage';
 import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
 import PublicProfile from './PublicProfile'
-import Leaderboard from './Leaderboard' // ✅ ADDED
+import Leaderboard from './Leaderboard'
 import { generateStableId } from '../lib/hash'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import DailyCheckInModal from '../components/DailyCheckInModal'
@@ -42,7 +42,6 @@ const openDB = (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event) => {
       const db = request.result;
-      const oldVersion = event.oldVersion;
       
       if (!db.objectStoreNames.contains(ROOM_STORE)) {
         db.createObjectStore(ROOM_STORE, { keyPath: 'accountId' });
@@ -81,7 +80,6 @@ const saveRoomToDB = async (roomData: any) => {
     });
 
     db.close();
-    console.log('✅ Room saved to IndexedDB:', roomData.name);
   } catch (error) {
     console.error('❌ Room save error:', error);
   }
@@ -125,7 +123,6 @@ const saveGlobalRoomsToDB = async (rooms: any[]) => {
     }
 
     db.close();
-    console.log('✅ Global rooms saved to IndexedDB:', rooms.length);
   } catch (error) {
     console.error('❌ Global rooms save error:', error);
   }
@@ -164,7 +161,6 @@ const deleteGlobalRoomFromDB = async (accountId: string) => {
     });
 
     db.close();
-    console.log('✅ Room deleted from IndexedDB:', accountId);
   } catch (error) {
     console.error('❌ Delete room error:', error);
   }
@@ -191,7 +187,6 @@ const saveRecentToDB = async (recentRooms: any[]) => {
     }
 
     db.close();
-    console.log('✅ Recent rooms saved to IndexedDB:', recentRooms.length);
   } catch (error) {
     console.error('❌ Recent save error:', error);
   }
@@ -218,7 +213,6 @@ const loadRecentFromDB = async (): Promise<any[]> => {
     const fiveMinutesAgo = now - (5 * 60 * 1000);
     const validRooms = recentRooms.filter(room => room.timestamp >= fiveMinutesAgo);
     
-    console.log('✅ Recent rooms loaded from IndexedDB:', validRooms.length);
     return validRooms;
   } catch (error) {
     console.error('❌ Recent load error:', error);
@@ -247,7 +241,6 @@ const saveFollowingToDB = async (followingRooms: any[]) => {
     }
 
     db.close();
-    console.log('✅ Following rooms saved to IndexedDB:', followingRooms.length);
   } catch (error) {
     console.error('❌ Following save error:', error);
   }
@@ -266,7 +259,6 @@ const loadFollowingFromDB = async (): Promise<any[]> => {
     });
 
     db.close();
-    console.log('✅ Following rooms loaded from IndexedDB:', followingRooms.length);
     return followingRooms;
   } catch (error) {
     console.error('❌ Following load error:', error);
@@ -367,7 +359,7 @@ const BANNERS = [
 
 type Tab = 'mine' | 'popular'
 type MineTab = 'following' | 'recent'
-type Page = 'home' | 'message' | 'me' | 'room' | 'public_profile' | 'leaderboard' // ✅ ADDED 'leaderboard'
+type Page = 'home' | 'message' | 'me' | 'room' | 'public_profile' | 'leaderboard'
 type SearchTab = 'user' | 'room'
 
 const CATEGORY_CARDS = [
@@ -618,8 +610,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       const deltaOffset = desiredGap - currentGap;
       setCategoryOffset(prev => prev + deltaOffset);
-
-      console.log(`📏 Gap: ${currentGap.toFixed(1)}px → Setting offset delta: ${deltaOffset.toFixed(1)}px`);
     };
 
     const timeoutId = setTimeout(adjustOffset, 100);
@@ -765,7 +755,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
   useEffect(() => {
     loadGlobalRoomsFromDB().then(cachedRooms => {
       if (cachedRooms.length > 0) {
-        console.log('✅ IndexedDB se global rooms loaded:', cachedRooms.length);
         const validRooms = cachedRooms.filter(room => 
           room && 
           room.name &&
@@ -794,8 +783,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
           isExplicitlyCreated: data.isExplicitlyCreated || false
         } as GlobalRoom;
       });
-      
-      console.log('🔥 Firebase rooms synced:', rooms.length);
       
       const validRooms = rooms.filter(room => 
         room.accountId !== 'undefined' &&
@@ -837,7 +824,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return distance < 60
   }, [])
 
-  // ============ LOAD PROFILE ============
+  // ============ LOAD PROFILE (BUG FIX: Check DB first so room doesn't disappear) ============
   useEffect(() => {
     const loadProfile = async () => {
       const name = localStorage.getItem('userName') || ''
@@ -849,41 +836,33 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setUserPhoto(photo)
       setUserUID(uid)
 
-      const roomCreated = localStorage.getItem('isRoomCreated')
-      const roomData = localStorage.getItem('myRoom')
-
-      if (roomCreated === 'true' && roomData) {
-        setIsRoomCreated(true)
+      // BUG FIX: Check globalRooms to prevent room disappearance and DP override
+      if (uid) {
         try {
-          const parsed = JSON.parse(roomData)
-          let finalAccNum = storedAccNum || parsed.accountId;
-          if (!finalAccNum && uid) {
-            const accObj = getOrCreateAccountNumber(uid);
-            finalAccNum = accObj.fullAccNum;
-          }
-          const updatedRoom = {
-            ...parsed,
-            id: uid,
-            accountId: finalAccNum
-          };
-          setMyRoom(updatedRoom);
-          await saveRoomToDB(updatedRoom);
-        } catch (e) {
-          setIsRoomCreated(false)
-          setMyRoom(null)
-        }
-      } else {
-        setIsRoomCreated(false)
-        setMyRoom(null)
-        
-        if (storedAccNum) {
-          const indexedRoom = await loadRoomFromDB(storedAccNum);
-          if (indexedRoom) {
+          const docRef = doc(db, "globalRooms", uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            let finalAccNum = storedAccNum || data.accountId;
+            if (!finalAccNum) {
+              const accObj = getOrCreateAccountNumber(uid);
+              finalAccNum = accObj.fullAccNum;
+            }
+            const updatedRoom = {
+              ...data,
+              id: uid,
+              accountId: finalAccNum
+            };
             setIsRoomCreated(true);
-            setMyRoom(indexedRoom);
+            setMyRoom(updatedRoom as UserCard);
             localStorage.setItem('isRoomCreated', 'true');
-            localStorage.setItem('myRoom', JSON.stringify(indexedRoom));
+            localStorage.setItem('myRoom', JSON.stringify(updatedRoom));
+          } else {
+            setIsRoomCreated(false);
+            setMyRoom(null);
           }
+        } catch (error) {
+          console.error("Error fetching room data on load", error);
         }
       }
 
@@ -966,11 +945,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
         const filtered = prev.filter(room => {
           return room.timestamp >= fiveMinutesAgo;
         });
-        
-        if (filtered.length !== prev.length) {
-          console.log('🕐 Expired recent rooms removed:', prev.length - filtered.length);
-        }
-        
         return filtered;
       });
     };
@@ -1237,7 +1211,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // ============ CREATE ROOM ============
+  // ============ CREATE ROOM (BUG FIX: Preserves custom DB settings) ============
   const handleCardClick = async () => {
     setEnteredFromKept(false);
 
@@ -1255,14 +1229,28 @@ export default function HomePage({ onLogout }: HomePageProps) {
       return;
     }
 
-    const defaultRoomName = "My Room"
+    // BUG FIX: Fetch current room data if it exists so we don't override with Gmail default
+    const roomRef = doc(db, "globalRooms", userUID);
+    const roomSnap = await getDoc(roomRef);
+    let finalName = "My Room";
+    let finalImage = userPhoto || '/default-avatar.png';
+    let isLocked = false;
+    let roomPassword = null;
+
+    if (roomSnap.exists()) {
+       const existingData = roomSnap.data();
+       finalName = existingData.name || finalName;
+       finalImage = existingData.image || finalImage;
+       isLocked = existingData.isLocked || false;
+       roomPassword = existingData.roomPassword || null;
+    }
 
     const createdRoomCard: UserCard = {
       id: userUID,
       accountId: storedAccNum,
-      name: defaultRoomName,
+      name: finalName,
       country: localStorage.getItem('userCountry') || '🇮🇳',
-      image: userPhoto || '/default-avatar.png'
+      image: finalImage
     }
 
     localStorage.setItem('isRoomCreated', 'true')
@@ -1278,14 +1266,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
     const roomData = {
       id: userUID,
-      name: defaultRoomName,
+      name: finalName,
       country: localStorage.getItem("userCountry") || "🇮🇳",
       countryCode: localStorage.getItem("userCountryCode") || "IN",
-      image: userPhoto || '/default-avatar.png',
+      image: finalImage,
       accountId: storedAccNum,
       createdAt: Date.now(),
-      isLocked: false,
-      roomPassword: null,
+      isLocked: isLocked,
+      roomPassword: roomPassword,
       isExplicitlyCreated: true,
       createdFromMineTab: true
     };
@@ -1294,10 +1282,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
     await setDoc(doc(db, "users", userUID), {
       id: userUID,
-      name: userName || defaultRoomName,
+      name: finalName !== "My Room" ? finalName : (userName || "My Room"),
       country: localStorage.getItem("userCountry") || "🇮🇳",
       countryCode: localStorage.getItem("userCountryCode") || "IN",
-      image: userPhoto || '/default-avatar.png',
+      image: finalImage,
       accountId: storedAccNum,
       createdAt: Date.now(),
       isExplicitlyCreated: true
@@ -1518,7 +1506,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     <div className="px-4 mt-6">
       <div
         onClick={handleCardClick}
-        className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
+        className="rounded-2xl p-5 sm:p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-5 sm:mb-6"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
@@ -1526,8 +1514,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
       >
         {!isRoomCreated ? (
           <>
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
                 <path
                   d="M16 8V24M8 16H24"
                   stroke="white"
@@ -1538,17 +1526,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
               </svg>
             </div>
             <div className="flex flex-col">
-              <h3 className="text-white font-bold text-xl leading-tight">
+              <h3 className="text-white font-bold text-lg sm:text-xl leading-tight">
                 Embark Your Hurry Journey!
               </h3>
-              <p className="text-white/80 text-sm mt-1 font-medium">
+              <p className="text-white/80 text-xs sm:text-sm mt-1 font-medium">
                 Tap to create your room
               </p>
             </div>
           </>
         ) : (
           <>
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/50">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/50">
               {myRoom?.image ? (
                 <img
                   src={myRoom.image}
@@ -1562,10 +1550,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
               )}
             </div>
             <div className="flex flex-col">
-              <h3 className="text-white font-bold text-xl leading-tight">
+              <h3 className="text-white font-bold text-lg sm:text-xl leading-tight">
                 {myRoom?.name || "My Room"}
               </h3>
-              <p className="text-white/80 text-sm mt-1 font-medium">
+              <p className="text-white/80 text-xs sm:text-sm mt-1 font-medium">
                 Tap to enter your room
               </p>
             </div>
@@ -1573,14 +1561,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
       </div>
 
-      <div className="flex gap-4 mb-4">
+      <div className="flex gap-5 mb-4">
         <button
           type="button"
           onClick={() => setActiveMineTab('following')}
-          className={`relative pb-1.5 text-xs font-medium transition-colors ${
+          className={`relative pb-1.5 text-sm sm:text-base transition-colors ${
             activeMineTab === 'following'
-              ? 'text-gray-900'
-              : 'text-gray-400 hover:text-gray-600'
+              ? 'text-gray-900 font-bold'
+              : 'text-gray-400 font-medium hover:text-gray-600'
           }`}
         >
           Following
@@ -1591,10 +1579,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
         <button
           type="button"
           onClick={() => setActiveMineTab('recent')}
-          className={`relative pb-1.5 text-sm font-medium transition-colors ${
+          className={`relative pb-1.5 text-sm sm:text-base transition-colors ${
             activeMineTab === 'recent'
-              ? 'text-gray-900'
-              : 'text-gray-400 hover:text-gray-600'
+              ? 'text-gray-900 font-bold'
+              : 'text-gray-400 font-medium hover:text-gray-600'
           }`}
         >
           Recent
@@ -1606,7 +1594,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       {activeMineTab === 'following' && (
         followingRooms.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             {followingRooms.map(room => {
               const user: UserCard = {
                 id: room.accountId,
@@ -1620,8 +1608,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <div
                   key={room.accountId}
                   onClick={() => handleUserCardClick(user)}
-                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                  style={{ height: '180px' }}
+                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 aspect-[4/5] min-h-[160px]"
                 >
                   <img
                     src={room.image}
@@ -1638,9 +1625,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-base">🇮🇳</span>
+                      <span className="text-sm">🇮🇳</span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-semibold text-xs truncate">
+                        <div className="text-white font-semibold text-xs sm:text-sm truncate">
                           {room.name}
                         </div>
                       </div>
@@ -1672,7 +1659,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       {activeMineTab === 'recent' && (
         recentRooms.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             {recentRooms.map(room => {
               const user: UserCard = {
                 id: room.accountId,
@@ -1686,8 +1673,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <div
                   key={room.accountId}
                   onClick={() => handleUserCardClick(user)}
-                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                  style={{ height: '180px' }}
+                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 aspect-[4/5] min-h-[160px]"
                 >
                   <img
                     src={room.image}
@@ -1704,9 +1690,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-base">🇮🇳</span>
+                      <span className="text-sm">🇮🇳</span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-semibold text-xs truncate">
+                        <div className="text-white font-semibold text-xs sm:text-sm truncate">
                           {room.name}
                         </div>
                       </div>
@@ -1748,14 +1734,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
             willChange: 'transform'
           }}
         >
-          <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
+          <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ 
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
             {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
-                onClick={() => setCurrentPage('leaderboard')} // ✅ ADDED: click opens leaderboard
+                onClick={() => setCurrentPage('leaderboard')}
                 className="group flex-1 cursor-pointer"
                 style={{
                   height: '90px',
@@ -1808,7 +1794,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         
         {allRooms.length > 0 ? (
           <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {allRooms.map((room) => (
                 <div
                   key={room.accountId}
@@ -1822,8 +1808,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   })}
                   className="cursor-pointer group"
                 >
-                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                    style={{ height: '170px' }}
+                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 aspect-[4/5] min-h-[160px]"
                   >
                     <img
                       src={room.image}
@@ -1843,9 +1828,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   </div>
                   
                   <div className="mt-2 px-1">
-                    <div className="flex items-center gap-0.5">
-                      <span className="text-sm">{room.country}</span>
-                      <span className="font-semibold text-gray-900 text-sm truncate">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs sm:text-sm">{room.country}</span>
+                      <span className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
                         {room.name}
                       </span>
                     </div>
@@ -1885,7 +1870,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
         minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
-        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen || currentPage === 'leaderboard') ? '0px' : '96px', // ✅ ADDED leaderboard
+        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen || currentPage === 'leaderboard') ? '0px' : '96px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -1935,6 +1920,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
         @keyframes slideUpSheet {
           0% { transform: translateY(100%); }
           100% { transform: translateY(0); }
+        }
+        @keyframes popIconAnim {
+          0% { transform: scale(0.7); opacity: 0.5; }
+          60% { transform: scale(1.15); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .icon-active-anim {
+          animation: popIconAnim 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+          transform-origin: center;
         }
         .hide-scrollbar {
           -ms-overflow-style: none;
@@ -2222,7 +2216,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
       )}
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && currentPage !== 'leaderboard' && ( // ✅ ADDED leaderboard
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && currentPage !== 'leaderboard' && (
         <div 
           className="fixed right-4 z-40"
           style={{
@@ -2262,23 +2256,20 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 paddingBottom: '12px'
               }}
             >
-              <div className="w-full flex justify-between items-center py-1 box-border mb-4">
+              <div className="w-full flex justify-between items-center py-2 box-border mb-4">
                 
                 {/* Left side: Tabs "Me" and "Popular" */}
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-0.5">
                   <button
                     type="button"
                     onClick={() => setActiveTab('mine')}
                     className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
                       activeTab === 'mine'
-                        ? 'font-bold text-[#1E1E1E]'
-                        : 'font-medium text-[#6E6E6E]'
+                        ? 'font-bold text-[#1E1E1E] text-lg'
+                        : 'font-medium text-[#6E6E6E] text-base'
                     }`}
                   >
                     Me
-                    {activeTab === 'mine' && (
-                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
-                    )}
                   </button>
 
                   <button
@@ -2286,19 +2277,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     onClick={() => setActiveTab('popular')}
                     className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
                       activeTab === 'popular'
-                        ? 'font-bold text-[#1E1E1E]'
-                        : 'font-medium text-[#6E6E6E]'
+                        ? 'font-bold text-[#1E1E1E] text-lg'
+                        : 'font-medium text-[#6E6E6E] text-base'
                     }`}
                   >
                     Popular
-                    {activeTab === 'popular' && (
-                      <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
-                    )}
                   </button>
                 </div>
 
                 {/* Right side: Search and House icons */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <button
                     type="button"
                     onClick={() => setIsSearchOpen(true)}
@@ -2340,7 +2328,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     ref={bannerRef}
                     className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
                     style={{
-                      height: '100px',
+                      height: 'min(12vh, 100px)',
+                      minHeight: '80px',
                       width: '100%',
                       display: 'flex',
                       alignItems: 'center',
@@ -2376,7 +2365,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     ref={bannerDotsRef}
                     className="flex justify-center gap-1.5" 
                     style={{ 
-                      marginTop: '2px', 
+                      marginTop: '4px', 
                       marginBottom: '0px',
                       minHeight: '6px'
                     }}
@@ -2453,24 +2442,28 @@ export default function HomePage({ onLogout }: HomePageProps) {
           />
         )}
 
-        {currentPage === 'leaderboard' && ( // ✅ ADDED
+        {currentPage === 'leaderboard' && (
           <Leaderboard onBack={() => setCurrentPage('home')} />
         )}
       </div>
 
-      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && currentPage !== 'leaderboard' && ( // ✅ ADDED leaderboard
+      {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && currentPage !== 'leaderboard' && (
         <div 
           className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom bg-white"
           style={{
             paddingBottom: 'env(safe-area-inset-bottom, 0px)'
           }}
         >
-          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-2 w-full">
+          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-1.5 w-full h-[65px]">
             <button
               onClick={() => setCurrentPage('home')}
-              className="flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 active:-rotate-6 origin-center"
+              className="group flex flex-col items-center gap-1 w-16 transition-all duration-200 active:scale-95 origin-center"
             >
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+              <svg 
+                key={currentPage === 'home' ? 'home-active' : 'home-inactive'}
+                className={currentPage === 'home' ? 'icon-active-anim' : ''}
+                width="30" height="30" viewBox="0 0 36 36" fill="none"
+              >
                 <path
                   d="M18 2.8C20.2 2.8 30.2 8.2 30.2 12.6V23.2C30.2 27.8 28 31 18 31C8 31 5.8 27.8 5.8 23.2V12.6C5.8 8.2 15.8 2.8 18 2.8Z"
                   fill={currentPage === 'home' ? '#3b82f6' : 'white'}
@@ -2498,10 +2491,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
             <button
               onClick={() => setCurrentPage('message')}
-              className="flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 active:-rotate-6 origin-center"
+              className="group flex flex-col items-center gap-1 w-16 transition-all duration-200 active:scale-95 origin-center"
             >
               <div className="relative">
-                <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+                <svg 
+                  key={currentPage === 'message' ? 'message-active' : 'message-inactive'}
+                  className={currentPage === 'message' ? 'icon-active-anim' : ''}
+                  width="30" height="30" viewBox="0 0 36 36" fill="none"
+                >
                   <path
                     d="M6 10.5C6 7 8.3 5 12.2 5H23.8C27.7 5 30 7 30 10.5V16.5C30 20 27.7 22 23.8 22H21 L17.5 27.2C17 28 15.8 28 15.2 27.2L12.2 22C8.3 22 6 20 6 16.5V10.5Z"
                     fill={currentPage === 'message' ? '#3b82f6' : 'white'}
@@ -2528,9 +2525,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
             <button
               onClick={() => setCurrentPage('me')}
-              className="flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 active:-rotate-6 origin-center"
+              className="group flex flex-col items-center gap-1 w-16 transition-all duration-200 active:scale-95 origin-center"
             >
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+              <svg 
+                key={currentPage === 'me' ? 'me-active' : 'me-inactive'}
+                className={currentPage === 'me' ? 'icon-active-anim' : ''}
+                width="30" height="30" viewBox="0 0 36 36" fill="none"
+              >
                 <path
                   d="M18 4.5C23.5 4.5 28 8.5 27.2 13.8L26.2 19.8C26 21.2 27.2 22.5 28.6 23.1C30.6 24 31 26.2 29 27.5C27.5 28.5 25 28.8 22 28.8H14C11 28.8 8.5 28.5 7 27.5C5 26.2 5.4 24 7.4 23.1C8.8 22.5 10 21.2 9.8 19.8L8.8 13.8C8 8.5 12.5 4.5 18 4.5Z"
                   fill={currentPage === 'me' ? '#3b82f6' : 'white'}
