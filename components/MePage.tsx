@@ -175,6 +175,13 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
+const FEEDBACK_TYPES = [
+  { id: 'app_bug', label: 'App Bug', icon: '🐛' },
+  { id: 'suggestion', label: 'Suggestion', icon: '💡' },
+  { id: 'recharge', label: 'Recharge', icon: '💎' },
+  { id: 'others', label: 'Others', icon: '❓' }
+]
+
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
