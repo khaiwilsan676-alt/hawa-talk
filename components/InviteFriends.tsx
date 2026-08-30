@@ -237,11 +237,11 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             </div>
 
             {/* ROW 3: Friends Send Gift (Top moved down from 165px to 195px) */}
-            <div className="absolute flex flex-col" style={{ top: '240px', left: '40px' }}>
+            <div className="absolute flex flex-col" style={{ top: '255px', left: '40px' }}>
               <span className="text-yellow-400 font-bold text-sm leading-tight">Friends Send</span>
               <span className="text-yellow-400 font-bold text-sm leading-tight">Gift</span>
             </div>
-            <div className="absolute flex items-center gap-1 cursor-pointer" style={{ top: '240px', right: '35px' }}>
+            <div className="absolute flex items-center gap-1 cursor-pointer" style={{ top: '255px', right: '35px' }}>
               <span className="text-yellow-400 text-xs font-semibold">Get</span>
               <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '20px', height: '20px' }} />
               <span className="text-yellow-400 text-sm font-bold pr-1">6%</span>
@@ -260,7 +260,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
           <div className="absolute inset-0 z-10">
             
             {/* Top Center Items (Coin, 0, Claim) - Set to 28vh from bottom to move it Upar */}
-            <div className="absolute flex flex-col items-center w-full" style={{ bottom: '30vh' }}>
+            <div className="absolute flex flex-col items-center w-full" style={{ bottom: '32vh' }}>
               <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '50px', height: '50px' }} />
               <div className="text-yellow-400 font-bold text-3xl drop-shadow-md leading-none mt-1">0</div>
               <button className="mt-3 bg-gradient-to-b from-yellow-300 to-yellow-500 text-[#451a03] font-extrabold text-sm rounded-full px-6 py-1.5 shadow-[0_4px_0_#92400e] active:shadow-[0_0px_0_#92400e] active:translate-y-1 transition-all cursor-pointer">
@@ -285,7 +285,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         </div>
 
         {/* 10VH Spacer for bottom scroll area */}
-        <div className="w-full h-[10vh] shrink-0 pointer-events-none"></div>
+        <div className="w-full h-[8vh] shrink-0 pointer-events-none"></div>
       </div>
 
       {/* Bottom Floating Decor Image */}
