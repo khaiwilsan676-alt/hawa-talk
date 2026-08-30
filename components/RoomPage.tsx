@@ -8,6 +8,7 @@ import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
+import { generateStableId } from '../lib/hash';
 import { db } from "../src/lib/firebase";
 import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, updateDoc, deleteField, collection, getDocs } from "firebase/firestore";
 import { 
@@ -872,7 +873,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (e) e.stopPropagation();
     // Keep karne par yeh true ho jayega jisse DB se id nahi hatega 
     isKeepingRef.current = true;
-    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' };
+    const keptAccId = roomOwner.accountId || (roomOwner.id ? generateStableId(roomOwner.id) : '');
+    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: keptAccId };
     localStorage.setItem('keptRoom', JSON.stringify(roomData));
     setShowExitMenu(false);
     if (onKeepRoom) onKeepRoom(roomData);

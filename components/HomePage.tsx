@@ -401,7 +401,7 @@ async function fetchSearchResults(queryRaw: string, globalRooms: GlobalRoom[]): 
   const addedIds = new Set<string>()
 
   const addResult = (docId: string, uData: any, isGlobalRoom: boolean = false) => {
-    const accId = String(uData.accountId || uData.id || docId)
+    const accId = String(uData.accountId || uData.id || generateStableId(docId))
     if (!addedIds.has(docId) && !addedIds.has(accId)) {
       addedIds.add(docId)
       addedIds.add(accId)
@@ -773,12 +773,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
       const rooms = snapshot.docs.map((d) => {
         const data = d.data();
+        const accId = data.accountId || generateStableId(d.id);
         return {
           id: d.id,
           name: data.name || 'User',
           country: data.country || '🇮🇳',
           image: data.image || '/default-avatar.png',
-          accountId: data.accountId || d.id,
+          accountId: accId,
           createdAt: data.createdAt || Date.now(),
           isLocked: data.isLocked || false,
           roomPassword: data.roomPassword || null,
@@ -1799,8 +1800,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <div
                   key={room.accountId}
                   onClick={() => handleUserCardClick({
-                    id: room.accountId || room.id,
-                    accountId: room.accountId || room.id,
+                    id: room.id,
+                    accountId: room.accountId,
                     name: room.name,
                     country: room.country,
                     image: room.image,
