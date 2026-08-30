@@ -5,10 +5,11 @@ import {
   ArrowLeft, 
   Link2, 
   MoreHorizontal, 
-  X 
+  X,
+  ChevronRight
 } from 'lucide-react'
 
-// WebShader / Chroma Key Component jo sirf green background remove karta hai
+// WebShader / Chroma Key Component jo sirf GREEN background remove karta hai
 const ChromaKeyImage = ({ 
   src, 
   alt, 
@@ -55,6 +56,69 @@ const ChromaKeyImage = ({
           const factor = (greenDifference - 10) / 20
           data[i + 3] = Math.round(data[i + 3] * (1 - factor))
           data[i + 1] = maxRB
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0)
+    }
+  }, [src])
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className={className} 
+      style={style} 
+      aria-label={alt}
+    />
+  )
+}
+
+// Special WebShader / Component jo sirf WHITE background remove karta hai (For Coin Image)
+const WhiteKeyImage = ({ 
+  src, 
+  alt, 
+  className = "", 
+  style = {} 
+}: { 
+  src: string; 
+  alt: string; 
+  className?: string; 
+  style?: React.CSSProperties 
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  useEffect(() => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = src
+
+    img.onload = () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      canvas.width = img.naturalWidth || img.width
+      canvas.height = img.naturalHeight || img.height
+
+      ctx.drawImage(img, 0, 0)
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const data = imgData.data
+
+      // Pixel by pixel white color removal
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+
+        if (r > 210 && g > 210 && b > 210) {
+          const avg = (r + g + b) / 3
+          if (avg > 240) {
+            data[i + 3] = 0
+          } else {
+            const factor = (avg - 210) / 30
+            data[i + 3] = Math.round(data[i + 3] * (1 - factor))
+          }
         }
       }
 
@@ -166,7 +230,8 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
   }
 
   return (
-    <div className="min-h-screen relative w-full h-full bg-[#4d0515] overflow-hidden select-none">
+    <div className="min-h-screen relative w-full h-full bg-[#4d0515] overflow-y-auto overflow-x-hidden select-none pb-40">
+      
       {/* Top 50vh Background Image - Sirf bottom se blend hota hai */}
       <div className="absolute top-0 left-0 right-0 h-[50vh] z-0 pointer-events-none overflow-hidden">
         <ChromaKeyImage
@@ -177,16 +242,129 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#4d0515]" />
       </div>
 
-      {/* Middle Ornament Image */}
-      <div className="absolute top-[42vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 pointer-events-none flex justify-center">
-        <ChromaKeyImage
-          src="/1788074201753~2.jpg"
-          alt="Middle Ornament"
-          className="w-full object-contain pointer-events-none"
-        />
+      {/* Middle Images Container */}
+      <div className="absolute top-[42vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 flex flex-col justify-center items-center gap-3">
+        
+        {/* Existing Middle Ornament Image WITH Overlay for Top Image */}
+        <div className="relative w-full">
+          <ChromaKeyImage
+            src="/1788074201753~2.jpg"
+            alt="Middle Ornament"
+            className="w-full object-contain pointer-events-none"
+          />
+          {/* Overlay Texts on Top Image */}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-between items-end px-[12%] md:px-[14%] pb-[10%] md:pb-[12%] z-10 pointer-events-none">
+            <span className="text-yellow-400 font-bold text-sm md:text-base drop-shadow-md">Friend's Invite</span>
+            <span className="text-yellow-400 font-bold text-sm md:text-base drop-shadow-md">0</span>
+          </div>
+        </div>
+
+        {/* My gain Box WITH Custom Yellow Text Overlay */}
+        <div className="relative w-full">
+          {/* Base My gain Image (Green Removed) */}
+          <ChromaKeyImage
+            src="/1788100666322~2.jpg"
+            alt="My gain"
+            className="w-full object-contain pointer-events-none"
+          />
+
+          {/* Texts Overlay Layer for My Gain */}
+          <div className="absolute inset-0 flex flex-col justify-evenly py-[12%] px-[8%] md:py-[10%] md:px-[10%] z-10">
+            
+            {/* ROW 1 */}
+            <div className="flex items-center justify-between">
+              <div className="text-yellow-400 font-bold text-sm md:text-base pl-2">
+                Invite Friends
+              </div>
+              <div className="flex items-center gap-1.5 bg-yellow-950/60 border border-yellow-500/30 rounded-full px-2 py-1 backdrop-blur-sm cursor-pointer active:scale-95 transition-transform">
+                <span className="text-yellow-400 text-[10px] md:text-xs font-semibold pl-1">Get</span>
+                <WhiteKeyImage src="/1786855398290.png" alt="coin" className="w-4 h-4 md:w-5 md:h-5 object-contain" />
+                <span className="text-yellow-400 text-xs md:text-sm font-bold">250000</span>
+                <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center ml-0.5">
+                  <ChevronRight size={12} strokeWidth={3} className="text-[#4d0515] -mr-0.5" />
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 2 */}
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col pl-2">
+                <span className="text-yellow-400 font-bold text-sm md:text-base leading-tight">Friends Recharge</span>
+                <span className="text-yellow-300 text-[10px] md:text-xs font-medium tracking-wider">&gt;500000 Coins</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-yellow-950/60 border border-yellow-500/30 rounded-full px-2 py-1 backdrop-blur-sm cursor-pointer active:scale-95 transition-transform">
+                <span className="text-yellow-400 text-[10px] md:text-xs font-semibold pl-1">Get</span>
+                <WhiteKeyImage src="/1786855398290.png" alt="coin" className="w-4 h-4 md:w-5 md:h-5 object-contain" />
+                <span className="text-yellow-400 text-xs md:text-sm font-bold">250000</span>
+                <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center ml-0.5">
+                  <ChevronRight size={12} strokeWidth={3} className="text-[#4d0515] -mr-0.5" />
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 3 */}
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col pl-2">
+                <span className="text-yellow-400 font-bold text-sm md:text-base leading-tight">Friends Send</span>
+                <span className="text-yellow-400 font-bold text-sm md:text-base leading-tight">Gift</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-yellow-950/60 border border-yellow-500/30 rounded-full px-2 py-1 backdrop-blur-sm cursor-pointer active:scale-95 transition-transform">
+                <span className="text-yellow-400 text-[10px] md:text-xs font-semibold pl-1">Get</span>
+                <WhiteKeyImage src="/1786855398290.png" alt="coin" className="w-4 h-4 md:w-5 md:h-5 object-contain" />
+                <span className="text-yellow-400 text-xs md:text-sm font-bold pr-1">6%</span>
+                <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center ml-0.5">
+                  <ChevronRight size={12} strokeWidth={3} className="text-[#4d0515] -mr-0.5" />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* New Image: Coins (Green Removed) with Data Overlay */}
+        <div className="relative w-full">
+          <ChromaKeyImage
+            src="/1788102034828~2.jpg"
+            alt="Coins"
+            className="w-full object-contain pointer-events-none"
+          />
+          
+          {/* Texts Overlay Layer for Coins Box */}
+          <div className="absolute inset-0 flex flex-col justify-between py-[12%] px-[12%] md:py-[10%] md:px-[14%] z-10">
+            
+            {/* Top Center part */}
+            <div className="flex flex-col items-center mt-2 md:mt-4">
+              <div className="flex items-center gap-1.5">
+                <WhiteKeyImage src="/1786855398290.png" alt="coin" className="w-6 h-6 md:w-8 md:h-8 object-contain" />
+                <span className="text-yellow-400 font-bold text-2xl md:text-3xl drop-shadow-md">0</span>
+              </div>
+              {/* Yellow 3D Button with Brown Text */}
+              <button className="mt-2 bg-gradient-to-b from-yellow-300 to-yellow-500 text-[#451a03] font-extrabold text-sm md:text-base rounded-full px-6 py-1.5 shadow-[0_4px_0_#92400e] active:shadow-[0_0px_0_#92400e] active:translate-y-1 transition-all cursor-pointer">
+                Claim
+              </button>
+            </div>
+
+            {/* Bottom Left & Right part */}
+            <div className="flex justify-between items-end mb-2 md:mb-4">
+              {/* Left Side: 0 & Number Invitation */}
+              <div className="flex flex-col items-center text-yellow-400 drop-shadow-md">
+                <span className="font-bold text-xl md:text-2xl">0</span>
+                <span className="text-[10px] md:text-xs font-semibold text-center leading-tight mt-1">Number<br/>Invitation</span>
+              </div>
+              
+              {/* Right Side: Coin & 0 & Total Coins Rewards */}
+              <div className="flex flex-col items-center text-yellow-400 drop-shadow-md">
+                <WhiteKeyImage src="/1786855398290.png" alt="coin" className="w-5 h-5 md:w-6 md:h-6 object-contain mb-0.5" />
+                <span className="font-bold text-xl md:text-2xl leading-none">0</span>
+                <span className="text-[10px] md:text-xs font-semibold text-center leading-tight mt-1">Total Coins<br/>Rewards</span>
+              </div>
+            </div>
+            
+          </div>
+        </div>
       </div>
 
-      {/* Clickable Fixed Bottom Image - Thoda sa chhota */}
+      {/* Clickable Fixed Bottom Image */}
       <div 
         onClick={() => setIsSheetOpen(true)}
         className="fixed bottom-0 left-0 right-0 z-20 flex justify-end pr-2 cursor-pointer active:scale-[0.98] transition-transform"
@@ -198,7 +376,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         />
       </div>
 
-      {/* Header - ONLY Back Icon without any Card / Background */}
+      {/* Header - ONLY Back Icon */}
       <div className="relative z-30 flex items-center p-4">
         <button
           onClick={onBack}
@@ -216,7 +394,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         />
       )}
 
-      {/* Bottom Sheet: Exactly 20vh, Pure White, Zero Line */}
+      {/* Bottom Sheet */}
       <div 
         className={`fixed bottom-0 left-0 right-0 h-[20vh] bg-white rounded-t-3xl z-50 transition-transform duration-300 ease-out shadow-2xl flex flex-col px-4 py-2 border-0 outline-none ${
           isSheetOpen ? 'translate-y-0' : 'translate-y-full'
@@ -257,7 +435,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             <span className="text-[11px] font-medium text-gray-800">Facebook</span>
           </button>
 
-          {/* Link Icon - Blue */}
+          {/* Link Icon */}
           <button
             onClick={() => handleShare('copy')}
             className="flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
@@ -268,7 +446,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             <span className="text-[11px] font-medium text-gray-800">Copy Link</span>
           </button>
 
-          {/* More Button - Orange */}
+          {/* More Button */}
           <button
             onClick={() => handleShare('more')}
             className="flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
