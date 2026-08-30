@@ -1,7 +1,20 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ArrowLeft, Copy, Share2, Users, Gift, MessageCircle, Mail, Link2 } from 'lucide-react'
+import { 
+  ArrowLeft, 
+  Copy, 
+  Share2, 
+  Users, 
+  Gift, 
+  MessageCircle, 
+  Mail, 
+  Link2, 
+  Facebook, 
+  MoreHorizontal, 
+  X,
+  Download
+} from 'lucide-react'
 
 interface InviteFriendsProps {
   onBack: () => void
@@ -11,9 +24,16 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
   const [copied, setCopied] = useState(false)
   const [copiedType, setCopiedType] = useState<'code' | 'link' | null>(null)
   
+  // State for Bottom 30vh Red Sheet
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  
   // Get user info from localStorage
-  const userId = localStorage.getItem('userUID') || localStorage.getItem('accountNumber') || 'N/A'
-  const userName = localStorage.getItem('userName') || 'User'
+  const userId = typeof window !== 'undefined' 
+    ? (localStorage.getItem('userUID') || localStorage.getItem('accountNumber') || 'N/A')
+    : 'N/A'
+  const userName = typeof window !== 'undefined'
+    ? (localStorage.getItem('userName') || 'User')
+    : 'User'
   
   const inviteCode = userId !== 'N/A' ? userId : 'WELCOME123'
   const inviteLink = `https://yourapp.com/invite/${inviteCode}`
@@ -45,24 +65,64 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
     
     switch(platform) {
       case 'whatsapp':
+        // Link copy pehle and direct open WhatsApp
+        navigator.clipboard.writeText(inviteLink).then(() => {
+          setCopied(true)
+          setCopiedType('link')
+          setTimeout(() => {
+            setCopied(false)
+            setCopiedType(null)
+          }, 2000)
+        })
         window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank')
         break
+
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(inviteLink)}`, '_blank')
+        break
+
       case 'telegram':
         window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`, '_blank')
         break
+
       case 'email':
         window.location.href = `mailto:?subject=Join me on this app!&body=${encodeURIComponent(shareText)}`
         break
+
       case 'copy':
         handleCopyLink()
         break
+
+      case 'more':
+        // Native Share / Save file logic
+        if (navigator.share) {
+          navigator.share({
+            title: 'Invite Code & Link',
+            text: shareText,
+            url: inviteLink,
+          }).catch(() => {})
+        } else {
+          // Fallback: Save text file download
+          const blob = new Blob([shareText], { type: 'text/plain' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `invite_${inviteCode}.txt`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        }
+        break
+
       default:
         break
     }
   }
 
+  // Top list share options (No Green Colors)
   const shareOptions = [
-    { id: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle size={24} />, color: 'bg-green-500' },
+    { id: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle size={24} />, color: 'bg-amber-600' },
     { id: 'telegram', label: 'Telegram', icon: <Share2 size={24} />, color: 'bg-blue-500' },
     { id: 'email', label: 'Email', icon: <Mail size={24} />, color: 'bg-red-500' },
     { id: 'copy', label: 'Copy Link', icon: <Link2 size={24} />, color: 'bg-gray-600' },
@@ -75,22 +135,54 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center p-4 bg-white border-b border-gray-200">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-        >
-          <ArrowLeft size={24} className="text-gray-700" />
-        </button>
-        <h1 className="text-lg font-semibold text-gray-900 ml-3">Invite Friends</h1>
+    <div className="min-h-screen relative flex flex-col bg-[#4d0515] overflow-hidden select-none">
+      {/* Top 40vh Image with bottom smooth fade into the maroon color */}
+      <div className="absolute top-0 left-0 right-0 h-[40vh] z-0 pointer-events-none overflow-hidden">
+        <img
+          src="/IMG-20260821-WA0100.jpg"
+          alt="Top Background"
+          className="w-full h-full object-cover object-top"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4d0515]/50 to-[#4d0515]" />
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto">
+      {/* Middle Transition Image (1788074201753~2.jpg) */}
+      <div className="absolute top-[32vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 pointer-events-none flex justify-center opacity-85">
+        <img
+          src="/1788074201753~2.jpg"
+          alt="Middle Sheet Ornament"
+          className="w-full object-contain pointer-events-none"
+        />
+      </div>
+
+      {/* Fixed Bottom Image (1788074191602~2.jpg) - Click opens Red Sheet */}
+      <div 
+        onClick={() => setIsSheetOpen(true)}
+        className="fixed bottom-0 left-0 right-0 z-20 flex justify-center cursor-pointer active:scale-95 transition-transform"
+      >
+        <img
+          src="/1788074191602~2.jpg"
+          alt="Bottom Decor Clickable"
+          className="w-full max-w-md object-contain object-bottom pointer-events-auto"
+        />
+      </div>
+
+      {/* Header */}
+      <div className="relative z-10 flex items-center p-4 bg-black/30 backdrop-blur-md border-b border-white/10">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer"
+        >
+          <ArrowLeft size={24} className="text-white" />
+        </button>
+        <h1 className="text-lg font-semibold text-white ml-3">Invite Friends</h1>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="relative z-10 flex-1 p-4 overflow-y-auto pb-36">
         <div className="max-w-md mx-auto space-y-6">
           {/* Hero Section */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white text-center">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white text-center shadow-xl backdrop-blur-sm">
             <div className="text-5xl mb-4">🎉</div>
             <h2 className="text-2xl font-bold mb-2">Invite Friends & Earn Rewards!</h2>
             <p className="text-sm opacity-90 mb-4">
@@ -110,7 +202,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
                 </button>
               </div>
               {copied && copiedType === 'code' && (
-                <div className="text-xs mt-2 text-green-200">✓ Code copied!</div>
+                <div className="text-xs mt-2 text-amber-200 font-medium">✓ Code copied!</div>
               )}
             </div>
 
@@ -131,7 +223,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
                 </button>
               </div>
               {copied && copiedType === 'link' && (
-                <div className="text-xs mt-2 text-green-200">✓ Link copied!</div>
+                <div className="text-xs mt-2 text-amber-200 font-medium">✓ Link copied!</div>
               )}
             </div>
           </div>
@@ -201,6 +293,86 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Backdrop overlay for bottom sheet */}
+      {isSheetOpen && (
+        <div 
+          onClick={() => setIsSheetOpen(false)}
+          className="fixed inset-0 bg-black/60 z-40 transition-opacity backdrop-blur-[2px]"
+        />
+      )}
+
+      {/* Bottom 30vh RED Sheet */}
+      <div 
+        className={`fixed bottom-0 left-0 right-0 h-[30vh] bg-red-600 text-white rounded-t-3xl z-50 transition-transform duration-300 ease-out shadow-2xl flex flex-col p-4 ${
+          isSheetOpen ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        {/* Top Handle & Close Bar */}
+        <div className="flex items-center justify-between pb-2 border-b border-red-500/40">
+          <div className="w-10 h-1 bg-white/40 rounded-full mx-auto" />
+          <button 
+            onClick={() => setIsSheetOpen(false)} 
+            className="absolute right-4 top-3 text-white/80 hover:text-white p-1"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Action Buttons in Red Sheet */}
+        <div className="flex-1 grid grid-cols-4 gap-2 items-center justify-center pt-3 text-center">
+          {/* WhatsApp */}
+          <button
+            onClick={() => handleShare('whatsapp')}
+            className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
+          >
+            <div className="w-13 h-13 rounded-full bg-white text-red-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+              <MessageCircle size={28} />
+            </div>
+            <span className="text-xs font-semibold text-white">WhatsApp</span>
+          </button>
+
+          {/* Facebook */}
+          <button
+            onClick={() => handleShare('facebook')}
+            className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
+          >
+            <div className="w-13 h-13 rounded-full bg-[#1877F2] text-white flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+              <Facebook size={28} />
+            </div>
+            <span className="text-xs font-semibold text-white">Facebook</span>
+          </button>
+
+          {/* Link Icon */}
+          <button
+            onClick={() => handleShare('copy')}
+            className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
+          >
+            <div className="w-13 h-13 rounded-full bg-white/20 text-white border border-white/30 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+              <Link2 size={28} />
+            </div>
+            <span className="text-xs font-semibold text-white">Copy Link</span>
+          </button>
+
+          {/* More Button (Save File / Share) */}
+          <button
+            onClick={() => handleShare('more')}
+            className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
+          >
+            <div className="w-13 h-13 rounded-full bg-white/20 text-white border border-white/30 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+              <MoreHorizontal size={28} />
+            </div>
+            <span className="text-xs font-semibold text-white">More</span>
+          </button>
+        </div>
+
+        {/* Copy Feedback inside sheet */}
+        {copied && (
+          <div className="text-center text-xs text-amber-200 font-medium pb-1 animate-pulse">
+            ✓ Link copied successfully!
+          </div>
+        )}
       </div>
     </div>
   )
