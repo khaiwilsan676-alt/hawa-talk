@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { db } from "../src/lib/supabase"
 import { doc, setDoc } from "../src/lib/supabase"
+import { getTranslation, LanguageCode } from '../lib/translations'
 
 interface SettingPageProps {
   onBack?: () => void
@@ -22,6 +23,25 @@ export default function SettingPage({
   onAboutPress,
 }: SettingPageProps) {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true)
+  const [appLang, setAppLang] = useState<LanguageCode>('en')
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem('appLanguage') as LanguageCode
+    if (savedLang) {
+      setAppLang(savedLang)
+    }
+
+    const handleLangChange = (e: CustomEvent) => {
+      if (e.detail && e.detail.lang) {
+        setAppLang(e.detail.lang)
+      }
+    }
+
+    window.addEventListener('languageChange', handleLangChange as EventListener)
+    return () => window.removeEventListener('languageChange', handleLangChange as EventListener)
+  }, [])
+
+  const t = getTranslation(appLang)
 
   const toggleSwitch = () => {
     setIsNotificationsEnabled((prev) => !prev)
@@ -82,13 +102,13 @@ export default function SettingPage({
         <button onClick={onBack} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
           <ChevronLeft size={24} className="text-slate-900" />
         </button>
-        <h1 className="text-lg font-semibold text-slate-900">Settings</h1>
+        <h1 className="text-lg font-semibold text-slate-900">{t.settings}</h1>
         <div className="w-6" />
       </div>
 
       <div className="bg-white mt-4 border-t border-b border-slate-200">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <span className="text-base text-slate-800">Message Notifications</span>
+          <span className="text-base text-slate-800">{t.messageNotifications}</span>
           <button
             type="button"
             onClick={toggleSwitch}
@@ -108,7 +128,7 @@ export default function SettingPage({
           onClick={onBlocklistPress}
           className="flex items-center justify-between px-5 py-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors"
         >
-          <span className="text-base text-slate-800">Blocklist</span>
+          <span className="text-base text-slate-800">{t.blocklist}</span>
           <ChevronRight size={20} className="text-slate-400" />
         </div>
 
@@ -116,7 +136,7 @@ export default function SettingPage({
           onClick={onAboutPress}
           className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
         >
-          <span className="text-base text-slate-800">About</span>
+          <span className="text-base text-slate-800">{t.about}</span>
           <ChevronRight size={20} className="text-slate-400" />
         </div>
       </div>
@@ -126,7 +146,7 @@ export default function SettingPage({
           onClick={handleLogout}
           className="w-full border border-slate-300 rounded-full py-3.5 text-center bg-white hover:bg-slate-50 transition-colors shadow-sm"
         >
-          <span className="text-base font-medium text-slate-700">Logout</span>
+          <span className="text-base font-medium text-slate-700">{t.logout}</span>
         </button>
       </div>
     </div>
