@@ -178,13 +178,6 @@ const bottomMenuItems: MenuItem[] = [
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-const FEEDBACK_TYPES = [
-  { id: 'app_bug', label: 'App Bug', icon: '🐛' },
-  { id: 'suggestion', label: 'Suggestion', icon: '💡' },
-  { id: 'recharge', label: 'Recharge', icon: '💰' },
-  { id: 'others', label: 'Others', icon: '📝' }
-]
-
 export const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return { fullAccNum: '', displayAccNum: '' }
 
@@ -413,7 +406,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const t = getTranslation(appLang)
 
-  // Instant Synchronous Lock state load
+  // Aggressive Local Storage & State Lock
   const [user, setUser] = useState(() => {
     if (typeof window === 'undefined') {
       return { name: "", uid: "", accountNumber: "", displayAccountNumber: "", phone: "", photo: "" }
@@ -434,6 +427,27 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       photo: photo,
     }
   })
+
+  // Poll localStorage continuously to instantly reflect edits made in PublicProfile/Edit Sheet
+  useEffect(() => {
+    const syncLocalInterval = setInterval(() => {
+      const currentStoredName = localStorage.getItem("userName") || "";
+      const currentStoredPhoto = localStorage.getItem("userPhoto") || "";
+      
+      setUser(prev => {
+        if (prev.name !== currentStoredName || prev.photo !== currentStoredPhoto) {
+          return {
+            ...prev,
+            name: isValidName(currentStoredName) ? currentStoredName : prev.name,
+            photo: currentStoredPhoto || prev.photo
+          };
+        }
+        return prev;
+      });
+    }, 500);
+
+    return () => clearInterval(syncLocalInterval);
+  }, []);
 
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
@@ -526,10 +540,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
         const cachedUser = await loadUserFromDB(uid);
         if (cachedUser && (isValidName(cachedUser.name) || cachedUser.accountNumber || cachedUser.photo)) {
-          const validCleanName = isValidName(cachedUser.name) ? cachedUser.name : (isValidName(localStorage.getItem("userName")) ? localStorage.getItem("userName")! : "");
+          const localStoredName = localStorage.getItem("userName");
+          const finalName = isValidName(localStoredName) ? localStoredName! : (isValidName(cachedUser.name) ? cachedUser.name : "");
+          const finalPhoto = localStorage.getItem("userPhoto") || cachedUser.photo || "";
+
           const lockedData = {
             ...cachedUser,
-            name: validCleanName,
+            name: finalName,
+            photo: finalPhoto,
             accountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
             displayAccountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
           };
@@ -541,21 +559,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           const userDocRef = doc(db, "users", uid);
           const docSnap = await getDoc(userDocRef);
           
-          let resolvedName = "";
+          let resolvedName = localStorage.getItem("userName") || "";
           let photo = localStorage.getItem("userPhoto") || "";
           let phone = localStorage.getItem("userPhone") || "";
           let accNum = localStorage.getItem("accountNumber") || "";
 
           if (docSnap.exists()) {
             const firebaseData = docSnap.data();
-            if (isValidName(firebaseData.name)) resolvedName = firebaseData.name;
-            if (firebaseData.photo) photo = firebaseData.photo;
-            if (firebaseData.phone) phone = firebaseData.phone;
-            if (firebaseData.accountId) accNum = firebaseData.accountId;
-          }
-
-          if (!resolvedName && isValidName(localStorage.getItem("userName"))) {
-            resolvedName = localStorage.getItem("userName")!;
+            if (isValidName(firebaseData.name) && !isValidName(resolvedName)) resolvedName = firebaseData.name;
+            if (firebaseData.photo && !photo) photo = firebaseData.photo;
+            if (firebaseData.phone && !phone) phone = firebaseData.phone;
+            if (firebaseData.accountId && !accNum) accNum = firebaseData.accountId;
           }
 
           if (!accNum) {
@@ -563,7 +577,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           }
 
           const finalLockedUser = {
-            name: resolvedName,
+            name: isValidName(resolvedName) ? resolvedName : "",
             uid: uid,
             accountNumber: accNum,
             displayAccountNumber: accNum,
@@ -572,10 +586,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           };
 
           await saveUserToDB(finalLockedUser);
-          if (resolvedName) localStorage.setItem("userName", resolvedName);
+          if (isValidName(finalLockedUser.name)) localStorage.setItem("userName", finalLockedUser.name);
           if (accNum) localStorage.setItem("accountNumber", accNum);
           if (photo) localStorage.setItem("userPhoto", photo);
-          if (phone) localStorage.setItem("userPhone", phone);
 
           setUser(finalLockedUser);
         } catch (firebaseError) {
