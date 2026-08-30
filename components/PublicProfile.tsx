@@ -59,7 +59,6 @@ const saveProfileToDB = async (profileData: any) => {
     });
 
     db.close();
-    console.log('✅ Profile data IndexedDB mein save hua:', completeData);
   } catch (error) {
     console.error('❌ Profile save error:', error);
   }
@@ -79,11 +78,6 @@ const loadProfileFromDB = async (uid: string): Promise<any> => {
     });
 
     db.close();
-    
-    if (profileData) {
-      console.log('✅ IndexedDB se profile data mila:', profileData);
-    }
-    
     return profileData || null;
   } catch (error) {
     console.error('❌ Profile load error:', error);
@@ -108,7 +102,6 @@ export interface TargetUser {
   country?: string
   countryCode?: string
   flag?: string
-  // Tag assignments from owner panel
   officialTag?: boolean
   adminTag?: boolean
   vipTag?: boolean
@@ -162,6 +155,12 @@ const SPECIAL_ACCOUNTS: { [key: string]: string } = {
 
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
+
+const isValidName = (val?: string | null): boolean => {
+  if (!val) return false;
+  const clean = val.trim().toLowerCase();
+  return clean !== '' && clean !== 'guest' && clean !== 'user' && clean !== 'null' && clean !== 'undefined';
+}
 
 const getDefaultAvatar = (gender: string): string => {
   if (gender === '♀' || gender === 'female') {
@@ -261,16 +260,12 @@ const GreenColorRemovalShader = ({
     if (!canvas) return
 
     const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
-    if (!gl) {
-      console.warn('WebGL not supported')
-      return
-    }
+    if (!gl) return
 
     const vertexShaderSource = `
       attribute vec2 a_position;
       attribute vec2 a_texCoord;
       varying vec2 v_texCoord;
-      
       void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
         v_texCoord = a_texCoord;
@@ -279,16 +274,12 @@ const GreenColorRemovalShader = ({
 
     const fragmentShaderSource = `
       precision mediump float;
-      
       varying vec2 v_texCoord;
       uniform sampler2D u_texture;
-      
       void main() {
         vec4 color = texture2D(u_texture, v_texCoord);
-        
-        // Detect green background (high green, low red and blue)
         if (color.g > 0.25 && color.g > color.r * 1.3 && color.g > color.b * 1.3) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); // Make transparent
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
           gl_FragColor = color;
         }
@@ -300,9 +291,7 @@ const GreenColorRemovalShader = ({
       if (!shader) return null
       gl.shaderSource(shader, source)
       gl.compileShader(shader)
-      
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
         gl.deleteShader(shader)
         return null
       }
@@ -311,34 +300,20 @@ const GreenColorRemovalShader = ({
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-    
     if (!vertexShader || !fragmentShader) return
 
     const program = gl.createProgram()
     if (!program) return
-    
     gl.attachShader(program, vertexShader)
     gl.attachShader(program, fragmentShader)
     gl.linkProgram(program)
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program))
-      return
-    }
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return
 
     gl.useProgram(program)
 
     const positionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    const positions = new Float32Array([
-      -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-      -1.0,  1.0,
-       1.0, -1.0,
-       1.0,  1.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW)
 
     const positionLocation = gl.getAttribLocation(program, 'a_position')
     gl.enableVertexAttribArray(positionLocation)
@@ -346,15 +321,7 @@ const GreenColorRemovalShader = ({
 
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    const texCoords = new Float32Array([
-      0.0, 1.0,
-      1.0, 1.0,
-      0.0, 0.0,
-      0.0, 0.0,
-      1.0, 1.0,
-      1.0, 0.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]), gl.STATIC_DRAW)
 
     const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
     gl.enableVertexAttribArray(texCoordLocation)
@@ -362,12 +329,10 @@ const GreenColorRemovalShader = ({
 
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
-    
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
@@ -376,19 +341,13 @@ const GreenColorRemovalShader = ({
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      
       canvas.width = image.width
       canvas.height = image.height
       gl.viewport(0, 0, canvas.width, canvas.height)
-      
       gl.clearColor(0.0, 0.0, 0.0, 0.0)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
-      
       setIsLoaded(true)
-    }
-    image.onerror = () => {
-      console.error('Failed to load image for WebGL processing')
     }
     image.src = imageSrc
 
@@ -435,16 +394,12 @@ const WhiteColorRemovalShader = ({
     if (!canvas) return
 
     const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
-    if (!gl) {
-      console.warn('WebGL not supported')
-      return
-    }
+    if (!gl) return
 
     const vertexShaderSource = `
       attribute vec2 a_position;
       attribute vec2 a_texCoord;
       varying vec2 v_texCoord;
-      
       void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
         v_texCoord = a_texCoord;
@@ -453,19 +408,15 @@ const WhiteColorRemovalShader = ({
 
     const fragmentShaderSource = `
       precision mediump float;
-      
       varying vec2 v_texCoord;
       uniform sampler2D u_texture;
       uniform float u_threshold;
-      
       void main() {
         vec4 color = texture2D(u_texture, v_texCoord);
-        
         float maxColor = max(color.r, max(color.g, color.b));
         float minColor = min(color.r, min(color.g, color.b));
         float lightness = (maxColor + minColor) / 2.0;
         float saturation = maxColor - minColor;
-        
         if (lightness > u_threshold && saturation < 0.3) {
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
@@ -479,9 +430,7 @@ const WhiteColorRemovalShader = ({
       if (!shader) return null
       gl.shaderSource(shader, source)
       gl.compileShader(shader)
-      
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
         gl.deleteShader(shader)
         return null
       }
@@ -490,34 +439,20 @@ const WhiteColorRemovalShader = ({
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-    
     if (!vertexShader || !fragmentShader) return
 
     const program = gl.createProgram()
     if (!program) return
-    
     gl.attachShader(program, vertexShader)
     gl.attachShader(program, fragmentShader)
     gl.linkProgram(program)
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program))
-      return
-    }
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return
 
     gl.useProgram(program)
 
     const positionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    const positions = new Float32Array([
-      -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-      -1.0,  1.0,
-       1.0, -1.0,
-       1.0,  1.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW)
 
     const positionLocation = gl.getAttribLocation(program, 'a_position')
     gl.enableVertexAttribArray(positionLocation)
@@ -525,15 +460,7 @@ const WhiteColorRemovalShader = ({
 
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    const texCoords = new Float32Array([
-      0.0, 1.0,
-      1.0, 1.0,
-      0.0, 0.0,
-      0.0, 0.0,
-      1.0, 1.0,
-      1.0, 0.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]), gl.STATIC_DRAW)
 
     const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
     gl.enableVertexAttribArray(texCoordLocation)
@@ -541,12 +468,10 @@ const WhiteColorRemovalShader = ({
 
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
-    
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
@@ -555,22 +480,15 @@ const WhiteColorRemovalShader = ({
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      
       const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
       gl.uniform1f(thresholdLocation, threshold)
-      
       canvas.width = image.width
       canvas.height = image.height
       gl.viewport(0, 0, canvas.width, canvas.height)
-      
       gl.clearColor(0.0, 0.0, 0.0, 0.0)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
-      
       setIsLoaded(true)
-    }
-    image.onerror = () => {
-      console.error('Failed to load image for WebGL processing')
     }
     image.src = imageSrc
 
@@ -607,38 +525,77 @@ export default function PublicProfile({
   const albumInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
-  const [user, setUser] = useState({
-    name: 'Hurry User',
-    uid: '',
-    displayAccountNumber: '100379620',
-    photo: '',
-    coverPhoto: '',
-    gender: '♂',
-    age: 24,
-    followers: 0,
-    bio: '',
-    location: 'India',
-    flag: '🇮🇳',
-    countryCode: 'IN',
-    // Tag assignments from owner panel
-    officialTag: false,
-    adminTag: false,
-    vipTag: false,
-    premiumTag: false,
+  // Instant Synchronous Lock state load to prevent Guest/blank flashing
+  const [user, setUser] = useState(() => {
+    if (typeof window === 'undefined') {
+      return {
+        name: '',
+        uid: '',
+        displayAccountNumber: '100379620',
+        photo: '',
+        coverPhoto: '',
+        gender: '♂',
+        age: 24,
+        followers: 0,
+        bio: '',
+        location: 'India',
+        flag: '🇮🇳',
+        countryCode: 'IN',
+        officialTag: false,
+        adminTag: false,
+        vipTag: false,
+        premiumTag: false,
+      }
+    }
+
+    const uid = localStorage.getItem('userUID') || localStorage.getItem('userPhone') || localStorage.getItem('userId') || ''
+    const localName = localStorage.getItem('userName')
+    const validName = isValidName(localName) ? localName! : ''
+    const photo = localStorage.getItem('userPhoto') || ''
+    const coverPhoto = localStorage.getItem('userCoverPhoto') || ''
+    const bio = localStorage.getItem('userBio') || ''
+    const country = localStorage.getItem('userCountry') || 'India'
+    const countryCode = localStorage.getItem('userCountryCode') || 'IN'
+    const age = localStorage.getItem('userAge') ? parseInt(localStorage.getItem('userAge')!) : 24
+    const gender = localStorage.getItem('userGender') || '♂'
+    const displayAccNum = localStorage.getItem('accountNumber') || (uid ? getOrCreateAccountNumber(uid) : '100379620')
+
+    return {
+      name: validName,
+      uid: uid,
+      displayAccountNumber: displayAccNum,
+      photo,
+      coverPhoto,
+      gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
+      age,
+      followers: 0,
+      bio,
+      location: country,
+      flag: '🇮🇳',
+      countryCode,
+      officialTag: false,
+      adminTag: false,
+      vipTag: false,
+      premiumTag: false,
+    }
   })
 
-  const [albumImages, setAlbumImages] = useState<string[]>([])
+  const [albumImages, setAlbumImages] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    const storedAlbum = localStorage.getItem('userAlbumImages')
+    return storedAlbum ? JSON.parse(storedAlbum) : []
+  })
 
   const [showEditSheet, setShowEditSheet] = useState(false)
-  const [editName, setEditName] = useState('')
-  const [editAge, setEditAge] = useState('')
-  const [editBio, setEditBio] = useState('')
+  const [editName, setEditName] = useState(user.name)
+  const [editAge, setEditAge] = useState(user.age.toString())
+  const [editBio, setEditBio] = useState(user.bio)
 
   const [editGender, setEditGender] = useState('')
   const [genderLocked, setGenderLocked] = useState(false)
 
-  const [editCountry, setEditCountry] = useState('India')
-  const [editCountryCode, setEditCountryCode] = useState('IN')
+  const [editCountry, setEditCountry] = useState(user.location)
+  const [editCountryCode, setEditCountryCode] = useState(user.countryCode)
   const [countryLocked, setCountryLocked] = useState(false)
 
   const [showBioInput, setShowBioInput] = useState(false)
@@ -717,7 +674,9 @@ export default function PublicProfile({
         const targetUid = targetUser.uid || targetUser.id || 'N/A'
 
         let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
-        let initialName = targetUser.name || 'User'
+        let initialName = targetUser.name || ''
+        if (!isValidName(initialName)) initialName = targetUid.substring(0, 8)
+
         let photo = targetUser.photo || targetUser.image || ''
         let coverPhoto = targetUser.coverPhoto || ''
         let bio = targetUser.bio || ''
@@ -737,12 +696,10 @@ export default function PublicProfile({
         let premiumTag = targetUser.premiumTag || false
 
         if (targetUid && targetUid !== 'N/A') {
-          // Check IndexedDB first for other user
           const cachedProfile = await loadProfileFromDB(targetUid);
-          if (cachedProfile) {
-            console.log('✅ Other user profile IndexedDB se mila:', cachedProfile);
+          if (cachedProfile && isValidName(cachedProfile.name)) {
             setUser({
-              name: cachedProfile.name || initialName,
+              name: cachedProfile.name,
               uid: targetUid,
               displayAccountNumber: cachedProfile.displayAccountNumber || displayAccNum,
               photo: cachedProfile.photo || photo,
@@ -773,8 +730,9 @@ export default function PublicProfile({
                 displayAccNum = data.accountId
                   ? String(data.accountId)
                   : data.displayAccountNumber || displayAccNum
+                
                 const docName = data.name || data.displayName || data.userName || data.fullName
-                const finalName = docName || initialName
+                const finalName = isValidName(docName) ? docName : (isValidName(initialName) ? initialName : targetUid.substring(0, 8))
 
                 photo = data.photo || data.photoURL || data.image || data.avatar || photo
                 coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
@@ -826,8 +784,6 @@ export default function PublicProfile({
 
                 setAlbumImages(album);
                 setUser(profileData);
-                
-                // Save to IndexedDB for future use
                 await saveProfileToDB(profileData);
               }
             })
@@ -840,15 +796,13 @@ export default function PublicProfile({
 
       // For current user
       const uid =
-        localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
+        localStorage.getItem('userUID') || localStorage.getItem('userPhone') || localStorage.getItem('userId') || 'N/A'
       
-      // Check IndexedDB first for current user
       if (uid !== 'N/A') {
         const cachedProfile = await loadProfileFromDB(uid);
-        if (cachedProfile && cachedProfile.name) {
-          console.log('✅ Current user profile IndexedDB se mila:', cachedProfile);
+        if (cachedProfile && isValidName(cachedProfile.name)) {
           setUser({
-            name: cachedProfile.name || 'Hurry User',
+            name: cachedProfile.name,
             uid: uid,
             displayAccountNumber: cachedProfile.displayAccountNumber || '',
             photo: cachedProfile.photo || '',
@@ -866,7 +820,7 @@ export default function PublicProfile({
             premiumTag: cachedProfile.premiumTag || false,
           });
           setAlbumImages(cachedProfile.albumImages || []);
-          setEditName(cachedProfile.name || '');
+          setEditName(cachedProfile.name);
           setEditAge(String(cachedProfile.age || '24'));
           setEditBio(cachedProfile.bio || '');
           setEditCountry(cachedProfile.location || 'India');
@@ -876,10 +830,12 @@ export default function PublicProfile({
       }
 
       let storedName = localStorage.getItem('userName') || ''
+      if (!isValidName(storedName)) storedName = ''
+
       let photo = localStorage.getItem('userPhoto') || ''
       let coverPhoto = localStorage.getItem('userCoverPhoto') || ''
       let storedBio = localStorage.getItem('userBio') || ''
-      let storedCountry = localStorage.getItem('userCountry') || '🇮🇳'
+      let storedCountry = localStorage.getItem('userCountry') || 'India'
       let storedCountryCode = localStorage.getItem('userCountryCode') || 'IN'
       let storedAge = localStorage.getItem('userAge') || '24'
       let storedGender =
@@ -908,8 +864,9 @@ export default function PublicProfile({
                 displayAccNum = String(data.accountId)
                 localStorage.setItem('accountNumber', displayAccNum)
               }
-              if (data.name || data.displayName || data.userName) {
-                storedName = data.name || data.displayName || data.userName
+              const docName = data.name || data.displayName || data.userName
+              if (isValidName(docName)) {
+                storedName = docName
                 localStorage.setItem('userName', storedName)
               }
               if (data.photo || data.photoURL || data.image) {
@@ -960,6 +917,10 @@ export default function PublicProfile({
                 displayAccNum = getOrCreateAccountNumber(uid)
               }
 
+              if (!isValidName(storedName)) {
+                storedName = displayAccNum
+              }
+
               const matchedCountry = COUNTRIES.find(
                 (c) =>
                   c.code === storedCountryCode ||
@@ -969,7 +930,7 @@ export default function PublicProfile({
 
               const profileData = {
                 uid: uid,
-                name: storedName || 'Hurry User',
+                name: storedName,
                 displayAccountNumber: displayAccNum,
                 photo,
                 coverPhoto,
@@ -988,11 +949,9 @@ export default function PublicProfile({
               };
 
               setUser(profileData);
-              
-              // Save to IndexedDB
               await saveProfileToDB(profileData);
 
-              setEditName(storedName || 'Hurry User')
+              setEditName(storedName)
               setEditAge(storedAge || '24')
               setEditBio(storedBio || '')
               setEditCountry(matchedCountry.name)
@@ -1142,7 +1101,8 @@ export default function PublicProfile({
   }
 
   const handleSaveEdit = async () => {
-    localStorage.setItem('userName', editName)
+    const finalNewName = isValidName(editName) ? editName : user.displayAccountNumber
+    localStorage.setItem('userName', finalNewName)
     if (editAge) localStorage.setItem('userAge', editAge)
     if (editBio) localStorage.setItem('userBio', editBio)
 
@@ -1159,7 +1119,7 @@ export default function PublicProfile({
 
     const updatedUser = {
       ...user,
-      name: editName,
+      name: finalNewName,
       age: parseInt(editAge) || user.age,
       bio: editBio,
       location: matchedCountry.name,
@@ -1170,9 +1130,9 @@ export default function PublicProfile({
     setUser(updatedUser);
 
     await saveToFirestore({
-      name: editName,
-      displayName: editName,
-      userName: editName,
+      name: finalNewName,
+      displayName: finalNewName,
+      userName: finalNewName,
       age: parseInt(editAge) || user.age,
       bio: editBio,
       about: editBio,
@@ -1182,7 +1142,6 @@ export default function PublicProfile({
       countryLocked: true,
     })
 
-    // Save to IndexedDB
     await saveProfileToDB({
       ...updatedUser,
       albumImages: albumImages,
@@ -1199,7 +1158,6 @@ export default function PublicProfile({
     setShowBioInput(false);
     await saveToFirestore({ bio: editBio, about: editBio });
     
-    // Save to IndexedDB
     await saveProfileToDB({
       ...updatedUser,
       albumImages: albumImages,
@@ -1224,14 +1182,21 @@ export default function PublicProfile({
   const getCurrentUserData = () => {
     const uid =
       typeof window !== 'undefined'
-        ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
+        ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || localStorage.getItem('userId') || 'N/A'
         : 'N/A'
     const name =
-      typeof window !== 'undefined' ? localStorage.getItem('userName') || 'Me' : 'Me'
+      typeof window !== 'undefined' ? localStorage.getItem('userName') || user.displayAccountNumber : user.displayAccountNumber
     const photo =
       typeof window !== 'undefined' ? localStorage.getItem('userPhoto') || '' : ''
     return { uid, name, photo }
   }
+
+  // Strict Name Resolution: No Guest allowed anywhere
+  const finalDisplayName = isValidName(user.name) 
+    ? user.name 
+    : (user.displayAccountNumber ? user.displayAccountNumber : 'User');
+
+  const avatarLetter = finalDisplayName ? finalDisplayName.charAt(0).toUpperCase() : '?';
 
   return (
     <div
@@ -1247,7 +1212,7 @@ export default function PublicProfile({
           <img src={user.photo} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white text-4xl font-bold">
-            {user.name.charAt(0).toUpperCase()}
+            {avatarLetter}
           </div>
         )}
 
@@ -1311,11 +1276,9 @@ export default function PublicProfile({
               {user.photo ? (
                 <img src={user.photo} alt="" className="w-full h-full object-cover" />
               ) : (
-                <img
-                  src={getDefaultAvatar(user.gender)}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
+                <div className="w-full h-full bg-gray-600 flex items-center justify-center text-4xl text-white font-bold">
+                  {avatarLetter}
+                </div>
               )}
             </div>
             
@@ -1342,12 +1305,11 @@ export default function PublicProfile({
       {/* Profile Info Details Section */}
       <div className="px-5 pt-5">
         <div className="flex flex-wrap items-center gap-0.5">
-          <h1 className="text-2xl font-bold text-black tracking-wide">{user.name}</h1>
+          <h1 className="text-2xl font-bold text-black tracking-wide">{finalDisplayName}</h1>
           <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
             {user.gender} {user.age}
           </span>
           
-          {/* Tags - ONLY show if assigned from Owner Panel */}
           {user.adminTag && (
             <GreenColorRemovalShader
               imageSrc="/1788021461820~2.jpg"
@@ -1607,11 +1569,9 @@ export default function PublicProfile({
                   {user.photo ? (
                     <img src={user.photo} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <img
-                      src={getDefaultAvatar(user.gender)}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xl text-white font-bold">
+                      {avatarLetter}
+                    </div>
                   )}
                 </div>
               </div>
@@ -1803,14 +1763,14 @@ export default function PublicProfile({
         </div>
       )}
 
-      {/* ChatScreen Overlay - Fixed z-index */}
+      {/* ChatScreen Overlay */}
       {isOtherUser && showChat && targetUser && (
         <div className="fixed inset-0 z-[100]">
           <ChatScreen
             currentUser={getCurrentUserData()}
             targetUser={{
               uid: targetUser.uid || targetUser.id || '',
-              name: targetUser.name || 'User',
+              name: isValidName(targetUser.name) ? targetUser.name! : (targetUser.displayAccountNumber || 'User'),
               photo: targetUser.photo || targetUser.image || '',
             }}
             onClose={() => setShowChat(false)}
@@ -1834,4 +1794,5 @@ export default function PublicProfile({
       `}</style>
     </div>
   )
-    }
+}
+
