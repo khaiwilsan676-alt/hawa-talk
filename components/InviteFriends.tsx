@@ -211,7 +211,7 @@ export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
           <ChromaKeyImage src="/1788100666322~2.jpg" alt="My gain" className="w-full object-contain pointer-events-none" />
 
           <div className="absolute inset-0 z-10">
-            {/* ROW 1: Invite Friends (Top moved down from 45px to 75px) */}
+            {/* ROW 1: Invite Friends */}
             <div className="absolute text-yellow-400 font-bold text-sm" style={{ top: '100px', left: '40px' }}>
               Invite Friends
             </div>
@@ -224,7 +224,7 @@ export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
               </div>
             </div>
 
-            {/* ROW 2: Friends Recharge (Top moved down from 105px to 135px) */}
+            {/* ROW 2: Friends Recharge */}
             <div className="absolute flex flex-col" style={{ top: '175px', left: '40px' }}>
               <span className="text-yellow-400 font-bold text-sm leading-tight">Friends Recharge</span>
               <span className="text-yellow-300 text-[10px] font-medium tracking-wider">&gt;500000 Coins</span>
@@ -238,7 +238,7 @@ export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
               </div>
             </div>
 
-            {/* ROW 3: Friends Send Gift (Top moved down from 165px to 195px) */}
+            {/* ROW 3: Friends Send Gift */}
             <div className="absolute flex flex-col" style={{ top: '255px', left: '40px' }}>
               <span className="text-yellow-400 font-bold text-sm leading-tight">Friends Send</span>
               <span className="text-yellow-400 font-bold text-sm leading-tight">Gift</span>
@@ -261,7 +261,7 @@ export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
           
           <div className="absolute inset-0 z-10">
             
-            {/* Top Center Items (Coin, 0, Claim) - Set to 28vh from bottom to move it Upar */}
+            {/* Top Center Items (Coin, 0, Claim) */}
             <div className="absolute flex flex-col items-center w-full" style={{ bottom: '31vh' }}>
               <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '50px', height: '50px' }} />
               <div className="text-yellow-400 font-bold text-3xl drop-shadow-md leading-none mt-1">0</div>
@@ -270,13 +270,13 @@ export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
               </button>
             </div>
 
-            {/* Bottom Left Items (0, Number Invitation) - Moved right to 80px */}
+            {/* Bottom Left Items (0, Number Invitation) */}
             <div className="absolute flex flex-col items-center" style={{ bottom: '9vh', left: '85px' }}>
               <div className="text-yellow-400 font-bold text-2xl drop-shadow-md">0</div>
               <div className="text-yellow-400 text-[10px] font-semibold text-center leading-tight mt-1">Number<br/>Invitation</div>
             </div>
 
-            {/* Bottom Right Items (Coin, 0, Total Coins Rewards) - Moved left to 80px, Icon size increased to 40px */}
+            {/* Bottom Right Items (Coin, 0, Total Coins Rewards) */}
             <div className="absolute flex flex-col items-center" style={{ bottom: '10vh', right: '80px' }}>
               <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '40px', height: '40px' }} />
               <div className="text-yellow-400 font-bold text-2xl drop-shadow-md leading-none mt-1">0</div>
@@ -298,14 +298,14 @@ export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
         <ChromaKeyImage src="/1788074191602~2.jpg" alt="Bottom Decor" className="w-[88%] max-w-[360px] md:max-w-md object-contain object-bottom pointer-events-auto" />
       </div>
 
-      {/* Back Icon - Fixed at Top Left */}
-      <div className="fixed top-0 left-0 z-[60] flex items-center p-4 pt-[max(12px,calc(env(safe-area-inset-top,0px)+8px))] pointer-events-auto">
+      {/* Back Icon - Fixed at Top Left Corner */}
+      <div className="fixed top-0 left-0 z-[60] flex items-center pl-0 pr-4 py-4 pt-[max(10px,calc(env(safe-area-inset-top,0px)))] pointer-events-auto">
         <button
           onClick={handleBack}
-          className="p-2 text-white hover:text-white/80 transition-colors cursor-pointer active:scale-95"
+          className="p-1 text-white hover:text-white/80 transition-colors cursor-pointer active:scale-95"
           aria-label="Back"
         >
-          <ArrowLeft size={24} />
+          <ArrowLeft size={28} />
         </button>
       </div>
 
@@ -344,5 +344,4 @@ export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
       </div>
     </div>
   )
-}
-
+            }
