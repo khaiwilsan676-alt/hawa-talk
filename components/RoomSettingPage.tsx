@@ -38,8 +38,6 @@ function MicModeImageCard({ count, selected }: { count: number; selected: boolea
         return '/IMG_20260812_015943.jpg'
       case 9:
         return '/IMG_20260812_015111.jpg'
-      case 10:
-        return '/IMG_20260812_020002.jpg'
       case 13:
         return '/IMG_20260812_020022.jpg'
       default:
@@ -120,7 +118,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
   const [roomPassword, setRoomPassword] = useState<string>(roomData?.roomPassword || '')
   const [selectedTheme, setSelectedTheme] = useState<string>(roomData?.theme || 'forest-night')
 
-  const micModes = [5, 9, 10, 13]
+  // Mic Mode 10 ko yaha se hata diya hai
+  const micModes = [5, 9, 13]
 
   const themes = [
     { id: 'forest-night', name: 'Forest Night', image: '/1784875884052~2.jpg' },
@@ -194,8 +193,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
 
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-gray-200 flex-shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 25px)' }}>
+      {/* Header - Top line removed and Android status bar padding fixed */}
+      <div className="flex items-center px-4 py-3 flex-shrink-0 bg-white" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 25px)' }}>
         <button
           onClick={onBack}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
@@ -314,8 +313,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
       {/* Theme Full Page */}
       {showThemePage && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col">
-          {/* Theme Page Header - Same padding as Room Setting */}
-          <div className="flex items-center px-4 py-3 border-b border-gray-200 flex-shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 26px)' }}>
+          {/* Theme Page Header - Top line removed */}
+          <div className="flex items-center px-4 py-3 flex-shrink-0 bg-white" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 26px)' }}>
             <button
               onClick={() => setShowThemePage(false)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -412,7 +411,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-6 animate-slide-up">
             <h3 className="text-lg font-bold text-gray-800 text-center mb-4">Select Mic Mode</h3>
 
-            {/* 3 cards per row grid layout */}
+            {/* Grid layout (Mic 10 removed) */}
             <div className="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto">
               {micModes.map((mode) => (
                 <button
@@ -454,4 +453,5 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
       `}</style>
     </div>
   )
-    }
+}
+
