@@ -1871,7 +1871,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 />
               </svg>
               <p className="text-sm">No rooms yet</p>
-              <p className="text-xs text-gray-400 mt-1">Create your room in Mine tab</p>
+              <p className="text-xs text-gray-400 mt-1">Create your room in Me tab</p>
             </div>
           </div>
         )}
@@ -2263,27 +2263,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
               }}
             >
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
-                <button
-                  type="button"
-                  onClick={handleHouseClick}
-                  className="flex items-center justify-center cursor-pointer"
-                  aria-label="Home"
-                >
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                    <path
-                      d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"
-                      stroke="#2D2D2D"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <rect x="9" y="14.5" width="3.5" height="6" rx="1.5" fill="#2D2D2D" />
-                    <rect x="14.2" y="11.5" width="3.5" height="9" rx="1.5" fill="#2D2D2D" />
-                    <rect x="19.5" y="14" width="3.5" height="6.5" rx="1.5" fill="#2D2D2D" />
-                  </svg>
-                </button>
-
-                <div className="flex items-center gap-8">
+                
+                {/* Left side: Tabs "Me" and "Popular" */}
+                <div className="flex items-center gap-6">
                   <button
                     type="button"
                     onClick={() => setActiveTab('mine')}
@@ -2293,7 +2275,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         : 'font-medium text-[#6E6E6E]'
                     }`}
                   >
-                    Mine
+                    Me
                     {activeTab === 'mine' && (
                       <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-[#1E1E1E] rounded-full block" />
                     )}
@@ -2315,17 +2297,41 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsSearchOpen(true)}
-                  className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-                  aria-label="Search"
-                >
-                  <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-                    <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
+                {/* Right side: Search and House icons */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                    aria-label="Search"
+                  >
+                    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+                      <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleHouseClick}
+                    className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                    aria-label="Home"
+                  >
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                      <path
+                        d="M16 3.5 C 14.5 3.5, 3 8, 3 13.5 L 3 21.5 C 3 25.5, 6 28.5, 10.5 28.5 H 21.5 C 26 28.5, 29 25.5, 29 21.5 L 29 13.5 C 29 8, 17.5 3.5, 16 3.5 Z"
+                        stroke="#2D2D2D"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <rect x="9" y="14.5" width="3.5" height="6" rx="1.5" fill="#2D2D2D" />
+                      <rect x="14.2" y="11.5" width="3.5" height="9" rx="1.5" fill="#2D2D2D" />
+                      <rect x="19.5" y="14" width="3.5" height="6.5" rx="1.5" fill="#2D2D2D" />
+                    </svg>
+                  </button>
+                </div>
+
               </div>
 
               {activeTab === 'popular' && (
@@ -2454,15 +2460,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && currentPage !== 'leaderboard' && ( // ✅ ADDED leaderboard
         <div 
-          className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom"
+          className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom bg-white"
           style={{
-            paddingBottom: 'max(env(safe-area-inset-bottom, 0px),8px)'
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)'
           }}
         >
-          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-3 w-full">
+          <div className="flex justify-around items-center bg-white border-t border-zinc-100 shadow-lg px-3 py-2 w-full">
             <button
               onClick={() => setCurrentPage('home')}
-              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+              className="flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 active:-rotate-6 origin-center"
             >
               <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
                 <path
@@ -2492,7 +2498,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
             <button
               onClick={() => setCurrentPage('message')}
-              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+              className="flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 active:-rotate-6 origin-center"
             >
               <div className="relative">
                 <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
@@ -2522,7 +2528,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
             <button
               onClick={() => setCurrentPage('me')}
-              className="flex flex-col items-center gap-1 transition-all active:scale-95"
+              className="flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 active:-rotate-6 origin-center"
             >
               <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
                 <path
@@ -2543,4 +2549,5 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-        }
+}
+
