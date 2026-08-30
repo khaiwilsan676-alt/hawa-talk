@@ -2283,33 +2283,31 @@ export default function HomePage({ onLogout }: HomePageProps) {
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
                 
                 {/* Left side: Tabs "Me" and "Popular" */}
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('mine')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
-                      activeTab === 'mine'
-                        ? 'font-bold text-[#1E1E1E]'
-                        : 'font-medium text-[#6E6E6E]'
-                    }`}
-                  >
-                    {t.mine}
-                    
-                  </button>
+<div className="flex items-center gap-3">
+  <button
+    type="button"
+    onClick={() => setActiveTab('mine')}
+    className={`font-bold text-lg tracking-[0.2px] transition-colors relative pb-1 ${
+      activeTab === 'mine'
+        ? 'font-extrabold text-[#1E1E1E]'
+        : 'text-[#6E6E6E]'
+    }`}
+  >
+    {t.mine}
+  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('popular')}
-                    className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
-                      activeTab === 'popular'
-                        ? 'font-bold text-[#1E1E1E]'
-                        : 'font-medium text-[#6E6E6E]'
-                    }`}
-                  >
-                    {t.popular}
-                  
-                  </button>
-                </div>
+  <button
+    type="button"
+    onClick={() => setActiveTab('popular')}
+    className={`font-bold text-lg tracking-[0.2px] transition-colors relative pb-1 ${
+      activeTab === 'popular'
+        ? 'font-extrabold text-[#1E1E1E]'
+        : 'text-[#6E6E6E]'
+    }`}
+  >
+    {t.popular}
+  </button>
+</div>
 
                 {/* Right side: Search and House icons */}
                 <div className="flex items-center gap-3">
