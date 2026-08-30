@@ -1799,8 +1799,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <div
                   key={room.accountId}
                   onClick={() => handleUserCardClick({
-                    id: room.id || room.accountId,
-                    accountId: room.accountId,
+                    id: room.id || room.Id,
+                    accountId: room.accountId || room.Id, 
                     name: room.name,
                     country: room.country,
                     image: room.image,
@@ -1840,30 +1840,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
               ))}
             </div>
           </div>
-        ) : (
-          <div className="px-4 mt-8">
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mx-auto mb-4 opacity-30">
-                <path
-                  d="M32 8C45.2 8 56 18.8 56 32C56 45.2 45.2 56 32 56C18.8 56 8 45.2 8 32C8 18.8 18.8 8 32 8Z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M32 20V32L38 38"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <p className="text-sm">No rooms yet</p>
-              <p className="text-xs text-gray-400 mt-1">Create your room in Me tab</p>
-            </div>
-          </div>
-        )}
-      </>
-    );
-  };
+        ) : null
+          
 
   // ============ MAIN RETURN ============
   return (
