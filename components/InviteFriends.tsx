@@ -299,10 +299,10 @@ export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
       </div>
 
       {/* Back Icon - Fixed at Top Left */}
-      <div className="fixed top-0 left-0 z-[60] flex items-center p-4 pt-[max(16px,calc(env(safe-area-inset-top,0px)+8px))] pointer-events-auto">
+      <div className="fixed top-0 left-0 z-[60] flex items-center p-4 pt-[max(12px,calc(env(safe-area-inset-top,0px)+8px))] pointer-events-auto">
         <button
           onClick={handleBack}
-          className="p-2 text-white hover:text-white/80 transition-colors cursor-pointer bg-black/30 backdrop-blur-md rounded-full border border-white/20 shadow-md active:scale-95"
+          className="p-2 text-white hover:text-white/80 transition-colors cursor-pointer active:scale-95"
           aria-label="Back"
         >
           <ArrowLeft size={24} />
