@@ -192,9 +192,11 @@ export const getOrCreateAccountNumber = (uid: string) => {
     return { fullAccNum: uid, displayAccNum: uid }
   }
 
-  const savedAcc = localStorage.getItem('accountNumber')
-  if (savedAcc) {
-    return { fullAccNum: savedAcc, displayAccNum: savedAcc }
+  if (typeof window !== 'undefined') {
+    const savedAcc = localStorage.getItem('accountNumber')
+    if (savedAcc) {
+      return { fullAccNum: savedAcc, displayAccNum: savedAcc }
+    }
   }
 
   let hash = 0
@@ -205,6 +207,9 @@ export const getOrCreateAccountNumber = (uid: string) => {
   const positiveHash = Math.abs(hash)
   const generated = String(10000000 + (positiveHash % 90000000))
   
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('accountNumber', generated)
+  }
   return { fullAccNum: generated, displayAccNum: generated }
 }
 
@@ -408,13 +413,26 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const t = getTranslation(appLang)
 
-  const [user, setUser] = useState({
-    name: "",
-    uid: "",
-    accountNumber: "",
-    displayAccountNumber: "",
-    phone: "",
-    photo: "",
+  // 1. Instant Synchronous Load: Pehle hi tick me locked data show hoga, kabhi blank nahi aayega
+  const [user, setUser] = useState(() => {
+    if (typeof window === 'undefined') {
+      return { name: "", uid: "", accountNumber: "", displayAccountNumber: "", phone: "", photo: "" }
+    }
+    const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || localStorage.getItem("userId") || ""
+    const localName = localStorage.getItem("userName")
+    const validName = isValidName(localName) ? localName! : ""
+    const acc = localStorage.getItem("accountNumber") || (uid ? getOrCreateAccountNumber(uid).fullAccNum : "")
+    const photo = localStorage.getItem("userPhoto") || ""
+    const phone = localStorage.getItem("userPhone") || ""
+
+    return {
+      name: validName,
+      uid: uid,
+      accountNumber: acc,
+      displayAccountNumber: acc,
+      phone: phone,
+      photo: photo,
+    }
   })
 
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
@@ -497,101 +515,82 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   };
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const lockUserDataPermanently = async () => {
       try {
         const uid = localStorage.getItem("userUID") || 
                     localStorage.getItem("userPhone") || 
                     localStorage.getItem("userId") || 
                     "";
 
-        // Local storage cleanup: faltu 'Guest' ya 'User' string permanently saaf
-        const localSavedName = localStorage.getItem("userName");
-        if (localSavedName && !isValidName(localSavedName)) {
-          localStorage.removeItem("userName");
-        }
+        if (!uid || uid === "N/A") return;
 
-        if (!uid || uid === "N/A") {
-          const validLocal = localStorage.getItem("userName");
-          setUser({
-            name: isValidName(validLocal) ? validLocal! : "",
-            uid: "",
-            accountNumber: "",
-            displayAccountNumber: "",
-            phone: "",
-            photo: "",
-          });
-          return;
-        }
-
-        // 1. Check IndexedDB First
+        // Step A: Check agar IndexedDB me locked record hai
         const cachedUser = await loadUserFromDB(uid);
-        if (cachedUser && (isValidName(cachedUser.name) || cachedUser.accountNumber)) {
-          setUser({
+        if (cachedUser && (isValidName(cachedUser.name) || cachedUser.accountNumber || cachedUser.photo)) {
+          const validCleanName = isValidName(cachedUser.name) ? cachedUser.name : (isValidName(localStorage.getItem("userName")) ? localStorage.getItem("userName")! : "");
+          const lockedData = {
             ...cachedUser,
-            name: isValidName(cachedUser.name) ? cachedUser.name : "",
-          });
-          return;
+            name: validCleanName,
+            accountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
+            displayAccountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
+          };
+          setUser(lockedData);
+          return; // IndexedDB se permanent lock ho chuka hai, Firebase par request nahi jayegi
         }
 
-        // 2. Sirf agar IndexedDB me nahi ho tabhi Firebase se fetch
+        // Step B: Sirf agar pehli bar install/data clear hua hai tab Firebase se 1 time read hoga
         try {
           const userDocRef = doc(db, "users", uid);
           const docSnap = await getDoc(userDocRef);
           
+          let resolvedName = "";
+          let photo = localStorage.getItem("userPhoto") || "";
+          let phone = localStorage.getItem("userPhone") || "";
+          let accNum = localStorage.getItem("accountNumber") || "";
+
           if (docSnap.exists()) {
             const firebaseData = docSnap.data();
-            
-            let accountNumber = firebaseData.accountId || localStorage.getItem("accountNumber") || "";
-            if (!accountNumber) {
-              const { fullAccNum } = getOrCreateAccountNumber(uid);
-              accountNumber = fullAccNum;
-            }
-
-            const cleanName = isValidName(firebaseData.name) 
-              ? firebaseData.name 
-              : (isValidName(localStorage.getItem("userName")) ? localStorage.getItem("userName")! : "");
-
-            const userData = {
-              name: cleanName,
-              uid: uid,
-              accountNumber: accountNumber,
-              displayAccountNumber: accountNumber,
-              phone: firebaseData.phone || localStorage.getItem("userPhone") || "",
-              photo: firebaseData.photo || localStorage.getItem("userPhoto") || "",
-            };
-            
-            await saveUserToDB(userData);
-            
-            if (isValidName(cleanName)) localStorage.setItem("userName", cleanName);
-            if (userData.accountNumber) localStorage.setItem("accountNumber", userData.accountNumber);
-            if (userData.photo) localStorage.setItem("userPhoto", userData.photo);
-            if (userData.phone) localStorage.setItem("userPhone", userData.phone);
-            
-            setUser(userData);
-          } else {
-            const localName = localStorage.getItem("userName");
-            const { fullAccNum } = getOrCreateAccountNumber(uid);
-            const fallbackUser = {
-              name: isValidName(localName) ? localName! : "",
-              uid: uid,
-              accountNumber: fullAccNum,
-              displayAccountNumber: fullAccNum,
-              phone: localStorage.getItem("userPhone") || "",
-              photo: localStorage.getItem("userPhoto") || "",
-            };
-            await saveUserToDB(fallbackUser);
-            setUser(fallbackUser);
+            if (isValidName(firebaseData.name)) resolvedName = firebaseData.name;
+            if (firebaseData.photo) photo = firebaseData.photo;
+            if (firebaseData.phone) phone = firebaseData.phone;
+            if (firebaseData.accountId) accNum = firebaseData.accountId;
           }
+
+          if (!resolvedName && isValidName(localStorage.getItem("userName"))) {
+            resolvedName = localStorage.getItem("userName")!;
+          }
+
+          if (!accNum) {
+            accNum = getOrCreateAccountNumber(uid).fullAccNum;
+          }
+
+          const finalLockedUser = {
+            name: resolvedName,
+            uid: uid,
+            accountNumber: accNum,
+            displayAccountNumber: accNum,
+            phone: phone,
+            photo: photo,
+          };
+
+          // Dono jagah permanently lock
+          await saveUserToDB(finalLockedUser);
+          if (resolvedName) localStorage.setItem("userName", resolvedName);
+          if (accNum) localStorage.setItem("accountNumber", accNum);
+          if (photo) localStorage.setItem("userPhoto", photo);
+          if (phone) localStorage.setItem("userPhone", phone);
+
+          setUser(finalLockedUser);
         } catch (firebaseError) {
-          console.warn('Firebase initial fetch error:', firebaseError);
+          console.warn('Firebase one-time read avoided/failed:', firebaseError);
         }
 
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error locking user data:', error);
       }
     };
 
-    fetchUserData();
+    lockUserDataPermanently();
   }, []);
 
   const handleCopyAccountNumber = () => {
@@ -603,7 +602,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // Early returns for pages
+  // Early returns
   if (showInviteFriends) return <InviteFriends onBack={() => setShowInviteFriends(false)} />
   if (showFamily) return <Family onBack={() => setShowFamily(false)} />
   if (showLevel) return <Level onBack={() => setShowLevel(false)} />
@@ -734,12 +733,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   if (currentView === 'settings') return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
   if (currentView === 'public_profile') return <PublicProfile onBack={() => switchView('me')} />
 
-  // Single truth for Name & Avatar: Zero "Guest" / Zero "User" garbage
-  const displayName = isValidName(user.name) 
+  // Strictly Locked Name / ID (No Guest / No User string)
+  const lockedNameDisplay = isValidName(user.name) 
     ? user.name 
-    : (user.displayAccountNumber ? user.displayAccountNumber : '');
+    : (user.displayAccountNumber ? user.displayAccountNumber : (user.uid ? user.uid.substring(0, 8) : ''));
 
-  const avatarFallbackLetter = displayName ? displayName.charAt(0).toUpperCase() : '';
+  const lockedAvatarLetter = lockedNameDisplay ? lockedNameDisplay.charAt(0).toUpperCase() : '';
 
   return (
     <div className="w-full min-h-screen bg-white pb-[8vh]">
@@ -765,11 +764,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 />
               ) : null}
               
-              {!user.photo && (
-                <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
-                  {avatarFallbackLetter}
-                </div>
-              )}
+              <div className={`w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm ${user.photo ? 'hidden' : ''}`}>
+                {lockedAvatarLetter}
+              </div>
               
               <div className="absolute inset-0 pointer-events-none">
                 <WhiteColorRemovalShader
@@ -790,7 +787,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
             <div className="flex flex-col">
               <h2 className="text-2xl font-bold text-gray-900 mb-0.5">
-                {displayName}
+                {lockedNameDisplay}
               </h2>
 
               <div className="flex items-center gap-1 mt-1">
@@ -802,18 +799,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       className="absolute inset-0 w-full h-full object-contain rounded-md"
                     />
                     <p className="relative text-white font-bold px-3 py-1.5 z-10 text-xs" style={{ paddingLeft: '30px' }}>
-                      {user.accountNumber}
+                      {user.accountNumber || user.displayAccountNumber}
                     </p>
                   </div>
                 ) : (
-                  user.displayAccountNumber && (
+                  (user.displayAccountNumber || user.accountNumber) && (
                     <p className="text-gray-700 text-xs font-semibold">
-                      ID: {user.displayAccountNumber}
+                      ID: {user.displayAccountNumber || user.accountNumber}
                     </p>
                   )
                 )}
 
-                {user.accountNumber && (
+                {(user.accountNumber || user.displayAccountNumber) && (
                   <button
                     onClick={handleCopyAccountNumber}
                     className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
