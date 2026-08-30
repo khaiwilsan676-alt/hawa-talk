@@ -1,217 +1,160 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
-import { ChevronRight, Copy, ArrowLeft } from 'lucide-react'
-import SettingPage from './settingpage'
-import PublicProfile from './PublicProfile'
-import HurrySupport from './HurrySupport'
-import LanguagePage from './LanguagePage'
-import { translations, getTranslation, LanguageCode } from '../lib/translations'
-import { db } from "../src/lib/firebase"
-import { doc, getDoc, collection, addDoc } from "firebase/firestore"
-import Wallet from './Wallet'
-import StorePage from './StorePage'
-import InviteFriends from './InviteFriends'
-import Family from './Family'
-import Level from './Level'
-import Medal from './Medal'
+import {
+  ChevronLeft,
+  Edit3,
+  MapPin,
+  Copy,
+  Camera,
+  ChevronRight,
+  X,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+} from 'lucide-react'
+import { db } from '../src/lib/firebase'
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 
-// ============ IndexedDB Functions for User Data ============
-const USER_DB_NAME = 'UserDataDB';
-const USER_STORE = 'userData';
-const FEEDBACK_STORE = 'feedbacks';
+// Import the WebRTC ChatScreen component
+import ChatScreen from './ChatScreen' // adjust path if necessary
 
-const openUserDB = (): Promise<IDBDatabase> => {
+// ============ IndexedDB Functions for Profile Data ============
+const PROFILE_DB_NAME = 'ProfileDataDB';
+const PROFILE_STORE = 'profileData';
+
+const openProfileDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(USER_DB_NAME, 1);
+    const request = indexedDB.open(PROFILE_DB_NAME, 1);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
 
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(USER_STORE)) {
-        const userStore = db.createObjectStore(USER_STORE, { keyPath: 'uid' });
-        userStore.createIndex('name', 'name', { unique: false });
-        userStore.createIndex('updatedAt', 'updatedAt', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(FEEDBACK_STORE)) {
-        const feedbackStore = db.createObjectStore(FEEDBACK_STORE, { keyPath: 'id', autoIncrement: true });
-        feedbackStore.createIndex('timestamp', 'timestamp', { unique: false });
+      if (!db.objectStoreNames.contains(PROFILE_STORE)) {
+        db.createObjectStore(PROFILE_STORE, { keyPath: 'uid' });
       }
     };
   });
 };
 
-const saveUserToDB = async (userData: any) => {
+// Save complete profile data to IndexedDB
+const saveProfileToDB = async (profileData: any) => {
   try {
-    const db = await openUserDB();
-    const transaction = db.transaction([USER_STORE], 'readwrite');
-    const store = transaction.objectStore(USER_STORE);
+    const db = await openProfileDB();
+    const transaction = db.transaction([PROFILE_STORE], 'readwrite');
+    const store = transaction.objectStore(PROFILE_STORE);
     
-    const completeUserData = {
-      ...userData,
+    const completeData = {
+      ...profileData,
       cachedAt: Date.now(),
-      updatedAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
     };
-    
+
     await new Promise<void>((resolve, reject) => {
-      const request = store.put(completeUserData);
+      const request = store.put(completeData);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
 
     db.close();
   } catch (error) {
-    console.error('❌ User save error:', error);
+    console.error('❌ Profile save error:', error);
   }
 };
 
-const loadUserFromDB = async (uid: string): Promise<any> => {
+// Load profile data from IndexedDB
+const loadProfileFromDB = async (uid: string): Promise<any> => {
   try {
-    const db = await openUserDB();
-    const transaction = db.transaction([USER_STORE], 'readonly');
-    const store = transaction.objectStore(USER_STORE);
+    const db = await openProfileDB();
+    const transaction = db.transaction([PROFILE_STORE], 'readonly');
+    const store = transaction.objectStore(PROFILE_STORE);
 
-    const userData = await new Promise<any>((resolve, reject) => {
+    const profileData = await new Promise<any>((resolve, reject) => {
       const request = store.get(uid);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
 
     db.close();
-    return userData || null;
+    return profileData || null;
   } catch (error) {
-    console.error('❌ User load error:', error);
+    console.error('❌ Profile load error:', error);
     return null;
   }
 };
 
-const saveFeedbackToDB = async (feedbackData: any) => {
-  try {
-    const db = await openUserDB();
-    const transaction = db.transaction([FEEDBACK_STORE], 'readwrite');
-    const store = transaction.objectStore(FEEDBACK_STORE);
-    
-    store.add({
-      ...feedbackData,
-      cachedAt: Date.now(),
-      synced: false,
-    });
-
-    db.close();
-  } catch (error) {
-    console.error('Feedback save error:', error);
-  }
-};
-
-interface MenuItem {
-  id: string
-  labelKey: keyof typeof translations['en']
-  src?: string
-  icon?: React.ReactNode
-  action?: string
-  badge?: string
+export interface TargetUser {
+  id?: string
+  uid?: string
+  name?: string
+  displayAccountNumber?: string
+  accountId?: string
+  photo?: string
+  image?: string
+  coverPhoto?: string
+  gender?: string
+  age?: number | string
+  followers?: number
+  bio?: string
+  location?: string
+  country?: string
+  countryCode?: string
+  flag?: string
+  officialTag?: boolean
+  adminTag?: boolean
+  vipTag?: boolean
+  premiumTag?: boolean
 }
 
-interface MePageProps {
-  onLogout?: () => void
-  onPublicProfileChange?: (isOpen: boolean) => void
+interface PublicProfileProps {
+  onBack?: () => void
+  onJoinRoom?: (roomId: string) => void
+  isOtherUser?: boolean
+  targetUser?: TargetUser | null
 }
 
-const menuItems: MenuItem[] = [
-  { id: '1', labelKey: 'inviteFriends', src: '/1784562849790.png' },
-  { id: '2', labelKey: 'family', src: '/IMG_20260720_142354.png' },
-  { id: '3', labelKey: 'level', src: '/IMG_20260720_211413.png' },
-  { id: '4', labelKey: 'medal', src: '/1784621763019.png' },
-  { id: '5', labelKey: 'store', src: '/IMG_20260720_142332.png' },
-  { id: '6', labelKey: 'bag', src: '/IMG_20260720_142227.png' }
+const COUNTRIES = [
+  { code: 'IN', name: 'India', flag: '🇮🇳' },
+  { code: 'US', name: 'United States', flag: '🇺🇸' },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
+  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
+  { code: 'PK', name: 'Pakistan', flag: '🇵🇰' },
+  { code: 'BD', name: 'Bangladesh', flag: '🇧🇩' },
+  { code: 'NP', name: 'Nepal', flag: '🇳🇵' },
+  { code: 'LK', name: 'Sri Lanka', flag: '🇱🇰' },
+  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
+  { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
+  { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
+  { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
+  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
+  { code: 'CN', name: 'China', flag: '🇨🇳' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+  { code: 'FR', name: 'France', flag: '🇫🇷' },
+  { code: 'IT', name: 'Italy', flag: '🇮🇹' },
+  { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
+  { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
+  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+  { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
+  { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
+  { code: 'RU', name: 'Russia', flag: '🇷🇺' },
+  { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
+  { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
 ]
 
-const bottomMenuItems: MenuItem[] = [
-  {
-    id: '7',
-    labelKey: 'languageSetting',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="2" y1="12" x2="22" y2="12"></line>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"></path>
-      </svg>
-    )
-  },
-  {
-    id: '8',
-    labelKey: 'settings',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2l8 4.67v9.33L12 22l-8-4.67V6.67L12 2z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-      </svg>
-    )
-  },
-  {
-    id: '9',
-    labelKey: 'customerService',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1E1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5.5 11 V8.5 C5.5 5 8.2 3 12 3 C15.8 3 18.5 5 18.5 8.5 V15.2 C18.5 18.5 16.2 21 12 21"/>
-        <path d="M3 10.2 V13.8 C3 13.8 3.5 15.2 4.2 15.2 H5.5 V9 H4.2 C3.5 9 3 9.5 3 10.2 Z"/>
-        <path d="M18.5 9 V15.2 H19.8 C20.5 15.2 21 14.6 21 13.8 V10.2 C21 9.4 20.5 9 19.8 9 H18.5"/>
-        <path d="M9.2 13.8 C9.2 15 10.3 16 12 16 C13.7 16 14.8 15 14.8 13.8"/>
-      </svg>
-    )
-  },
-  {
-    id: '10',
-    labelKey: 'helpFeedback',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
-    )
-  }
-]
+const SPECIAL_ACCOUNTS: { [key: string]: string } = {
+  HUSxSvQnabgU029dWYt1TUV04hd2: '100002',
+  ADqW31RGBMaosOzy0HiqexKSD7h1: '100003',
+}
 
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
-
-const FEEDBACK_TYPES = [
-  { id: 'app_bug', label: 'App Bug', icon: '🐛' },
-  { id: 'suggestion', label: 'Suggestion', icon: '💡' },
-  { id: 'recharge', label: 'Recharge', icon: '💰' },
-  { id: 'others', label: 'Others', icon: '📝' }
-]
-
-export const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid || uid === 'N/A') return { fullAccNum: '', displayAccNum: '' }
-
-  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
-    return { fullAccNum: uid, displayAccNum: uid }
-  }
-
-  if (typeof window !== 'undefined') {
-    const savedAcc = localStorage.getItem('accountNumber')
-    if (savedAcc) {
-      return { fullAccNum: savedAcc, displayAccNum: savedAcc }
-    }
-  }
-
-  let hash = 0
-  for (let i = 0; i < uid.length; i++) {
-    hash = (hash << 5) - hash + uid.charCodeAt(i)
-    hash |= 0
-  }
-  const positiveHash = Math.abs(hash)
-  const generated = String(10000000 + (positiveHash % 90000000))
-  
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('accountNumber', generated)
-  }
-  return { fullAccNum: generated, displayAccNum: generated }
-}
 
 const isValidName = (val?: string | null): boolean => {
   if (!val) return false;
@@ -219,6 +162,219 @@ const isValidName = (val?: string | null): boolean => {
   return clean !== '' && clean !== 'guest' && clean !== 'user' && clean !== 'null' && clean !== 'undefined';
 }
 
+const getDefaultAvatar = (gender: string): string => {
+  if (gender === '♀' || gender === 'female') {
+    return '/IMG_20260804_211013.jpg'
+  }
+  return '/IMG_20260804_211031.jpg'
+}
+
+const getOrCreateAccountNumber = (uid: string) => {
+  if (!uid || uid === 'N/A') return '100379620'
+
+  if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
+    return uid
+  }
+
+  if (SPECIAL_ACCOUNTS[uid]) {
+    return SPECIAL_ACCOUNTS[uid]
+  }
+
+  const storageKey = `user_account_number_${uid}`
+  let savedAccountNumber =
+    typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
+
+  if (!savedAccountNumber) {
+    let hash = 0
+    for (let i = 0; i < uid.length; i++) {
+      hash = (hash << 5) - hash + uid.charCodeAt(i)
+      hash |= 0
+    }
+    const positiveHash = Math.abs(hash)
+    savedAccountNumber = String(10000000 + (positiveHash % 90000000))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(storageKey, savedAccountNumber)
+    }
+  }
+
+  return savedAccountNumber
+}
+
+const compressImage = (
+  file: File,
+  maxWidth: number,
+  maxHeight: number,
+  quality: number
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (event) => {
+      const img = new Image()
+      img.src = event.target?.result as string
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height)
+            height = maxHeight
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = (error) => reject(error)
+    }
+    reader.onerror = (error) => reject(error)
+  })
+}
+
+// Green Color Removal Shader Component - For Official/Admin tags
+const GreenColorRemovalShader = ({ 
+  imageSrc, 
+  className = "",
+  style = {}
+}: { 
+  imageSrc: string
+  className?: string
+  style?: React.CSSProperties
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
+    if (!gl) return
+
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `
+
+    const fragmentShaderSource = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture;
+      void main() {
+        vec4 color = texture2D(u_texture, v_texCoord);
+        if (color.g > 0.25 && color.g > color.r * 1.3 && color.g > color.b * 1.3) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `
+
+    const compileShader = (type: number, source: string) => {
+      const shader = gl.createShader(type)
+      if (!shader) return null
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        gl.deleteShader(shader)
+        return null
+      }
+      return shader
+    }
+
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
+    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
+    if (!vertexShader || !fragmentShader) return
+
+    const program = gl.createProgram()
+    if (!program) return
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return
+
+    gl.useProgram(program)
+
+    const positionBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW)
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(positionLocation)
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]), gl.STATIC_DRAW)
+
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
+    gl.enableVertexAttribArray(texCoordLocation)
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+      canvas.width = image.width
+      canvas.height = image.height
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      setIsLoaded(true)
+    }
+    image.src = imageSrc
+
+    return () => {
+      gl.deleteProgram(program)
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      gl.deleteBuffer(positionBuffer)
+      gl.deleteBuffer(texCoordBuffer)
+      gl.deleteTexture(texture)
+    }
+  }, [imageSrc])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={className}
+      style={{
+        ...style,
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
+      }}
+    />
+  )
+}
+
+// WebGL Shader Component for removing white color (for avatar overlay)
 const WhiteColorRemovalShader = ({ 
   imageSrc, 
   threshold = 0.9,
@@ -359,614 +515,1105 @@ const WhiteColorRemovalShader = ({
   )
 }
 
-export default function MePage({ onLogout, onPublicProfileChange }: MePageProps) {
-  const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile' | 'customer_service' | 'language'>('me')
-  const [appLang, setAppLang] = useState<LanguageCode>('en')
-  
-  const [showFeedbackPage, setShowFeedbackPage] = useState(false)
-  const [showWallet, setShowWallet] = useState(false)
-  const [walletTab, setWalletTab] = useState<'coins' | 'diamond'>('coins')
-  const [showStore, setShowStore] = useState(false)
-  
-  const [showInviteFriends, setShowInviteFriends] = useState(false)
-  const [showFamily, setShowFamily] = useState(false)
-  const [showLevel, setShowLevel] = useState(false)
-  const [showMedal, setShowMedal] = useState(false)
-
-  useEffect(() => {
-    if (onPublicProfileChange) {
-      onPublicProfileChange(
-        currentView !== 'me' || 
-        showFeedbackPage || 
-        showWallet || 
-        showStore ||
-        showInviteFriends ||
-        showFamily ||
-        showLevel ||
-        showMedal
-      )
-    }
-  }, [showFeedbackPage, currentView, showWallet, showStore, showInviteFriends, showFamily, showLevel, showMedal])
-  
-  const [selectedType, setSelectedType] = useState<string>('')
-  const [problemDescription, setProblemDescription] = useState('')
-  const [contactInfo, setContactInfo] = useState('')
-  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
-  const [feedbackSuccess, setFeedbackSuccess] = useState(false)
-  const [feedbackError, setFeedbackError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const savedLang = localStorage.getItem('appLanguage') as LanguageCode
-    if (savedLang) {
-      setAppLang(savedLang)
-    }
-
-    const handleLangChange = (e: CustomEvent) => {
-      if (e.detail && e.detail.lang) {
-        setAppLang(e.detail.lang)
-      }
-    }
-
-    window.addEventListener('languageChange', handleLangChange as EventListener)
-    return () => window.removeEventListener('languageChange', handleLangChange as EventListener)
-  }, [])
-
-  const t = getTranslation(appLang)
+export default function PublicProfile({
+  onBack,
+  onJoinRoom,
+  isOtherUser = false,
+  targetUser = null,
+}: PublicProfileProps) {
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const albumInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   // Instant Synchronous Lock state load
   const [user, setUser] = useState(() => {
     if (typeof window === 'undefined') {
-      return { name: "", uid: "", accountNumber: "", displayAccountNumber: "", phone: "", photo: "" }
+      return {
+        name: '',
+        uid: '',
+        displayAccountNumber: '100379620',
+        photo: '',
+        coverPhoto: '',
+        gender: '♂',
+        age: 24,
+        followers: 0,
+        bio: '',
+        location: 'India',
+        flag: '🇮🇳',
+        countryCode: 'IN',
+        officialTag: false,
+        adminTag: false,
+        vipTag: false,
+        premiumTag: false,
+      }
     }
-    const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || localStorage.getItem("userId") || ""
-    const localName = localStorage.getItem("userName")
-    const validName = isValidName(localName) ? localName! : ""
-    const acc = localStorage.getItem("accountNumber") || (uid ? getOrCreateAccountNumber(uid).fullAccNum : "")
-    const photo = localStorage.getItem("userPhoto") || ""
-    const phone = localStorage.getItem("userPhone") || ""
+
+    const uid = localStorage.getItem('userUID') || localStorage.getItem('userPhone') || localStorage.getItem('userId') || ''
+    const localName = localStorage.getItem('userName')
+    const displayAccNum = localStorage.getItem('accountNumber') || (uid ? getOrCreateAccountNumber(uid) : '100379620')
+    const validName = isValidName(localName) ? localName! : displayAccNum
+    const photo = localStorage.getItem('userPhoto') || ''
+    const coverPhoto = localStorage.getItem('userCoverPhoto') || ''
+    const bio = localStorage.getItem('userBio') || ''
+    const country = localStorage.getItem('userCountry') || 'India'
+    const countryCode = localStorage.getItem('userCountryCode') || 'IN'
+    const age = localStorage.getItem('userAge') ? parseInt(localStorage.getItem('userAge')!) : 24
+    const gender = localStorage.getItem('userGender') || '♂'
 
     return {
       name: validName,
       uid: uid,
-      accountNumber: acc,
-      displayAccountNumber: acc,
-      phone: phone,
-      photo: photo,
+      displayAccountNumber: displayAccNum,
+      photo,
+      coverPhoto,
+      gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
+      age,
+      followers: 0,
+      bio,
+      location: country,
+      flag: '🇮🇳',
+      countryCode,
+      officialTag: false,
+      adminTag: false,
+      vipTag: false,
+      premiumTag: false,
     }
   })
 
-  const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
-    setCurrentView(view)
-    if (onPublicProfileChange) {
-      onPublicProfileChange(
-        view !== 'me' || 
-        showFeedbackPage || 
-        showWallet || 
-        showStore || 
-        showInviteFriends || 
-        showFamily || 
-        showLevel || 
-        showMedal
-      )
+  const [albumImages, setAlbumImages] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    const storedAlbum = localStorage.getItem('userAlbumImages')
+    return storedAlbum ? JSON.parse(storedAlbum) : []
+  })
+
+  const [showEditSheet, setShowEditSheet] = useState(false)
+  const [editName, setEditName] = useState(user.name)
+  const [editAge, setEditAge] = useState(user.age.toString())
+  const [editBio, setEditBio] = useState(user.bio)
+
+  const [editGender, setEditGender] = useState('')
+  const [genderLocked, setGenderLocked] = useState(false)
+
+  const [editCountry, setEditCountry] = useState(user.location)
+  const [editCountryCode, setEditCountryCode] = useState(user.countryCode)
+  const [countryLocked, setCountryLocked] = useState(false)
+
+  const [showBioInput, setShowBioInput] = useState(false)
+  const [activeTab, setActiveTab] = useState('profile')
+
+  const [fullImageView, setFullImageView] = useState<string | null>(null)
+
+  const [isFollowing, setIsFollowing] = useState(false)
+
+  const [showThreeDotMenu, setShowThreeDotMenu] = useState(false)
+
+  const [showChat, setShowChat] = useState(false)
+
+  const isSpecialAccount = SPECIAL_ACCOUNTS.hasOwnProperty(user.uid || '')
+
+  const saveToFirestore = async (updateData: Record<string, any>) => {
+    const currentUid =
+      user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone')
+    if (currentUid && currentUid !== 'N/A') {
+      try {
+        const userDocRef = doc(db, 'users', currentUid)
+        await setDoc(userDocRef, updateData, { merge: true })
+
+        const roomUpdateData = { ...updateData }
+        delete roomUpdateData.name
+        delete roomUpdateData.displayName
+        delete roomUpdateData.userName
+        delete roomUpdateData.image
+        delete roomUpdateData.photo
+        delete roomUpdateData.photoURL
+        delete roomUpdateData.coverPhoto
+        delete roomUpdateData.coverImage
+
+        if (Object.keys(roomUpdateData).length > 0) {
+          const globalRoomRef = doc(db, 'globalRooms', currentUid)
+          await setDoc(globalRoomRef, roomUpdateData, { merge: true })
+        }
+      } catch (err) {
+        console.error('Error saving data to Firestore collections:', err)
+      }
     }
   }
 
-  const handleFeedbackSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFeedbackError(null);
-
-    if (!selectedType) {
-      setFeedbackError("Please select a type of issue");
-      return;
-    }
-    if (!problemDescription.trim()) {
-      setFeedbackError("Please describe your problem");
-      return;
-    }
-    if (!contactInfo.trim()) {
-      setFeedbackError("Please enter your contact information");
-      return;
-    }
-
-    setFeedbackSubmitting(true);
-
-    const feedbackData = {
-      type: selectedType,
-      typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
-      description: problemDescription.trim(),
-      contactInfo: contactInfo.trim(),
-      createdAt: new Date().toISOString(),
-      timestamp: Date.now(),
-      status: 'pending'
-    };
-
-    try {
-      await addDoc(collection(db, "feedbacks"), feedbackData);
-      await saveFeedbackToDB(feedbackData);
-      
-      setFeedbackSuccess(true);
-      setSelectedType('');
-      setProblemDescription('');
-      setContactInfo('');
-      
-      setTimeout(() => {
-        setShowFeedbackPage(false);
-        setFeedbackSuccess(false);
-      }, 2000);
-
-    } catch (error) {
-      try {
-        await saveFeedbackToDB(feedbackData);
-        setFeedbackSuccess(true);
-        setSelectedType('');
-        setProblemDescription('');
-        setContactInfo('');
-        
-        setTimeout(() => {
-          setShowFeedbackPage(false);
-          setFeedbackSuccess(false);
-        }, 2000);
-      } catch (dbError) {
-        setFeedbackError("Failed to submit feedback. Please try again.");
-      }
-    } finally {
-      setFeedbackSubmitting(false);
+  // Save current user data to IndexedDB
+  const saveCurrentUserToDB = async () => {
+    const uid = user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone');
+    if (uid && uid !== 'N/A') {
+      const profileData = {
+        uid: uid,
+        name: user.name,
+        displayAccountNumber: user.displayAccountNumber,
+        photo: user.photo,
+        coverPhoto: user.coverPhoto,
+        gender: user.gender,
+        age: user.age,
+        followers: user.followers,
+        bio: user.bio,
+        location: user.location,
+        flag: user.flag,
+        countryCode: user.countryCode,
+        albumImages: albumImages,
+        officialTag: user.officialTag,
+        adminTag: user.adminTag,
+        vipTag: user.vipTag,
+        premiumTag: user.premiumTag,
+      };
+      await saveProfileToDB(profileData);
     }
   };
 
   useEffect(() => {
-    const lockUserDataPermanently = async () => {
-      try {
-        const uid = localStorage.getItem("userUID") || 
-                    localStorage.getItem("userPhone") || 
-                    localStorage.getItem("userId") || 
-                    "";
+    let unsubscribe: () => void
 
-        if (!uid || uid === "N/A") return;
+    const loadProfileData = async () => {
+      if (isOtherUser && targetUser) {
+        const targetUid = targetUser.uid || targetUser.id || 'N/A'
 
-        const cachedUser = await loadUserFromDB(uid);
-        if (cachedUser && (isValidName(cachedUser.name) || cachedUser.accountNumber || cachedUser.photo)) {
-          const validCleanName = isValidName(cachedUser.name) ? cachedUser.name : (isValidName(localStorage.getItem("userName")) ? localStorage.getItem("userName")! : "");
-          const lockedData = {
-            ...cachedUser,
-            name: validCleanName,
-            accountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
-            displayAccountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
-          };
-          setUser(lockedData);
-          return;
+        let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
+        let initialName = targetUser.name || ''
+        if (!isValidName(initialName)) initialName = targetUid.substring(0, 8)
+
+        let photo = targetUser.photo || targetUser.image || ''
+        let coverPhoto = targetUser.coverPhoto || ''
+        let bio = targetUser.bio || ''
+        let country = targetUser.country || targetUser.location || 'India'
+        let countryCode = targetUser.countryCode || 'IN'
+        let gender = targetUser.gender || '♂'
+        let age = targetUser.age
+          ? typeof targetUser.age === 'number'
+            ? targetUser.age
+            : parseInt(targetUser.age)
+          : 22
+        let followers = targetUser.followers || 0
+        let album: string[] = []
+        let officialTag = targetUser.officialTag || false
+        let adminTag = targetUser.adminTag || false
+        let vipTag = targetUser.vipTag || false
+        let premiumTag = targetUser.premiumTag || false
+
+        if (targetUid && targetUid !== 'N/A') {
+          const cachedProfile = await loadProfileFromDB(targetUid);
+          if (cachedProfile && isValidName(cachedProfile.name)) {
+            setUser({
+              name: cachedProfile.name,
+              uid: targetUid,
+              displayAccountNumber: cachedProfile.displayAccountNumber || displayAccNum,
+              photo: cachedProfile.photo || photo,
+              coverPhoto: cachedProfile.coverPhoto || coverPhoto,
+              gender: cachedProfile.gender || gender,
+              age: cachedProfile.age || age,
+              followers: cachedProfile.followers || followers,
+              bio: cachedProfile.bio || bio,
+              location: cachedProfile.location || country,
+              flag: cachedProfile.flag || '🇮🇳',
+              countryCode: cachedProfile.countryCode || countryCode,
+              officialTag: cachedProfile.officialTag || officialTag,
+              adminTag: cachedProfile.adminTag || adminTag,
+              vipTag: cachedProfile.vipTag || vipTag,
+              premiumTag: cachedProfile.premiumTag || premiumTag,
+            });
+            setAlbumImages(cachedProfile.albumImages || []);
+            return;
+          }
+
+          try {
+            const userDocRef = doc(db, 'users', targetUid)
+
+            unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
+              if (docSnap.exists()) {
+                const data = docSnap.data()
+
+                displayAccNum = data.accountId
+                  ? String(data.accountId)
+                  : data.displayAccountNumber || displayAccNum
+                
+                const docName = data.name || data.displayName || data.userName || data.fullName
+                const finalName = isValidName(docName) ? docName : (isValidName(initialName) ? initialName : targetUid.substring(0, 8))
+
+                photo = data.photo || data.photoURL || data.image || data.avatar || photo
+                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
+                bio = data.bio || data.about || bio
+                country = data.country || data.location || country
+                countryCode = data.countryCode || countryCode
+                gender = data.gender || gender
+                age = data.age ? parseInt(data.age) : age
+                followers = data.followers !== undefined ? data.followers : followers
+                officialTag = data.officialTag || officialTag
+                adminTag = data.adminTag || adminTag
+                vipTag = data.vipTag || vipTag
+                premiumTag = data.premiumTag || premiumTag
+
+                if (data.albumImages && Array.isArray(data.albumImages)) {
+                  album = data.albumImages
+                } else if (data.album && Array.isArray(data.album)) {
+                  album = data.album
+                }
+
+                if (!displayAccNum) {
+                  displayAccNum = getOrCreateAccountNumber(targetUid)
+                }
+
+                const matchedCountry = COUNTRIES.find(
+                  (c) =>
+                    c.code === countryCode || c.name === country || c.flag === country
+                ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
+
+                const profileData = {
+                  uid: targetUid,
+                  name: finalName,
+                  displayAccountNumber: displayAccNum,
+                  photo,
+                  coverPhoto,
+                  gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
+                  age,
+                  followers,
+                  bio,
+                  location: matchedCountry.name,
+                  flag: matchedCountry.flag,
+                  countryCode: matchedCountry.code,
+                  albumImages: album,
+                  officialTag,
+                  adminTag,
+                  vipTag,
+                  premiumTag,
+                };
+
+                setAlbumImages(album);
+                setUser(profileData);
+                await saveProfileToDB(profileData);
+              }
+            })
+          } catch (err) {
+            console.warn('Firestore fetch error for Target User:', err)
+          }
         }
-
-        try {
-          const userDocRef = doc(db, "users", uid);
-          const docSnap = await getDoc(userDocRef);
-          
-          let resolvedName = "";
-          let photo = localStorage.getItem("userPhoto") || "";
-          let phone = localStorage.getItem("userPhone") || "";
-          let accNum = localStorage.getItem("accountNumber") || "";
-
-          if (docSnap.exists()) {
-            const firebaseData = docSnap.data();
-            if (isValidName(firebaseData.name)) resolvedName = firebaseData.name;
-            if (firebaseData.photo) photo = firebaseData.photo;
-            if (firebaseData.phone) phone = firebaseData.phone;
-            if (firebaseData.accountId) accNum = firebaseData.accountId;
-          }
-
-          if (!resolvedName && isValidName(localStorage.getItem("userName"))) {
-            resolvedName = localStorage.getItem("userName")!;
-          }
-
-          if (!accNum) {
-            accNum = getOrCreateAccountNumber(uid).fullAccNum;
-          }
-
-          const finalLockedUser = {
-            name: resolvedName,
-            uid: uid,
-            accountNumber: accNum,
-            displayAccountNumber: accNum,
-            phone: phone,
-            photo: photo,
-          };
-
-          await saveUserToDB(finalLockedUser);
-          if (resolvedName) localStorage.setItem("userName", resolvedName);
-          if (accNum) localStorage.setItem("accountNumber", accNum);
-          if (photo) localStorage.setItem("userPhoto", photo);
-          if (phone) localStorage.setItem("userPhone", phone);
-
-          setUser(finalLockedUser);
-        } catch (firebaseError) {
-          console.warn('Firebase one-time read bypassed/failed:', firebaseError);
-        }
-
-      } catch (error) {
-        console.error('Error locking user data:', error);
+        return
       }
-    };
+    }
 
-    lockUserDataPermanently();
-  }, []);
+    loadProfileData()
 
-  const handleCopyAccountNumber = () => {
-    if (user.displayAccountNumber) {
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [isOtherUser, targetUser])
+
+  // Save to IndexedDB whenever user data changes
+  useEffect(() => {
+    if (user.uid && user.uid !== 'N/A' && !isOtherUser) {
+      saveCurrentUserToDB();
+    }
+  }, [user, albumImages]);
+
+  const handleCopyID = () => {
+    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
       navigator.clipboard.writeText(user.displayAccountNumber)
-      alert("ID Copied to clipboard!")
+      alert('ID Copied!')
     }
   }
 
-  const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
+  const handleOpenEditSheet = () => {
+    if (isOtherUser) return
+    setEditName(user.name)
+    setEditAge(user.age.toString())
+    setEditBio(user.bio)
+    setEditCountry(user.location || 'India')
+    setEditCountryCode(user.countryCode || 'IN')
+    setShowEditSheet(true)
+  }
 
-  // Early returns
-  if (showInviteFriends) return <InviteFriends onBack={() => setShowInviteFriends(false)} />
-  if (showFamily) return <Family onBack={() => setShowFamily(false)} />
-  if (showLevel) return <Level onBack={() => setShowLevel(false)} />
-  if (showMedal) return <Medal onBack={() => setShowMedal(false)} />
-  if (showWallet) return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
-  if (showStore) return <StorePage onBack={() => setShowStore(false)} />
+  const handleCloseEditSheet = () => {
+    setShowEditSheet(false)
+    setShowBioInput(false)
+  }
 
-  if (showFeedbackPage) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col pb-[8vh]">
-        <div className="flex items-center p-4 bg-white border-b border-gray-200">
-          <button
-            onClick={() => {
-              setShowFeedbackPage(false);
-              setFeedbackSuccess(false);
-              setFeedbackError(null);
-              setSelectedType('');
-              setProblemDescription('');
-              setContactInfo('');
-            }}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-          >
-            <ArrowLeft size={24} className="text-gray-700" />
+  const handleGenderSelect = async (gender: string) => {
+    if (genderLocked) return
+    setEditGender(gender)
+    setGenderLocked(true)
+    const formattedGender = gender === 'male' ? '♂' : '♀'
+    localStorage.setItem('userGender', gender)
+    localStorage.setItem('userGenderLocked', gender)
+    setUser((prev) => ({ ...prev, gender: formattedGender }))
+
+    await saveToFirestore({ gender: formattedGender })
+  }
+
+  const handleCountrySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (countryLocked) return
+    const selectedCountryName = e.target.value
+    const matchedCountry = COUNTRIES.find((c) => c.name === selectedCountryName)
+    setEditCountry(selectedCountryName)
+    if (matchedCountry) {
+      setEditCountryCode(matchedCountry.code)
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 300, 300, 0.7)
+        localStorage.setItem('userPhoto', compressedBase64)
+        setUser((prev) => ({ ...prev, photo: compressedBase64 }))
+
+        await saveToFirestore({
+          photo: compressedBase64,
+          image: compressedBase64,
+          photoURL: compressedBase64,
+        })
+      } catch (err) {
+        console.error('Avatar compression error:', err)
+      }
+    }
+  }
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file, 800, 400, 0.7)
+        localStorage.setItem('userCoverPhoto', compressedBase64)
+        setUser((prev) => ({ ...prev, coverPhoto: compressedBase64 }))
+
+        await saveToFirestore({
+          coverPhoto: compressedBase64,
+          coverImage: compressedBase64,
+        })
+      } catch (err) {
+        console.error('Cover compression error:', err)
+      }
+    }
+  }
+
+  const handleRemoveCoverPhoto = async () => {
+    localStorage.removeItem('userCoverPhoto')
+    setUser((prev) => ({ ...prev, coverPhoto: '' }))
+    await saveToFirestore({ coverPhoto: '', coverImage: '' })
+  }
+
+  const handleAlbumUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (albumImages.length >= 4) {
+        alert('You can only upload up to 4 images in the album.')
+        return
+      }
+      try {
+        const compressedBase64 = await compressImage(file, 600, 600, 0.7)
+        const updatedAlbum = [...albumImages, compressedBase64]
+        setAlbumImages(updatedAlbum)
+        localStorage.setItem('userAlbumImages', JSON.stringify(updatedAlbum))
+
+        await saveToFirestore({ albumImages: updatedAlbum, album: updatedAlbum })
+      } catch (err) {
+        console.error('Album image compression error:', err)
+      }
+    }
+  }
+
+  const handleRemoveAlbumImage = async (indexToRemove: number) => {
+    const updated = albumImages.filter((_, index) => index !== indexToRemove)
+    setAlbumImages(updated)
+    localStorage.setItem('userAlbumImages', JSON.stringify(updated))
+    await saveToFirestore({ albumImages: updated, album: updated })
+  }
+
+  const handleSaveEdit = async () => {
+    const finalNewName = isValidName(editName) ? editName : user.displayAccountNumber
+    localStorage.setItem('userName', finalNewName)
+    if (editAge) localStorage.setItem('userAge', editAge)
+    if (editBio) localStorage.setItem('userBio', editBio)
+
+    if (editCountry && editCountryCode) {
+      localStorage.setItem('userCountry', editCountry)
+      localStorage.setItem('userCountryCode', editCountryCode)
+      localStorage.setItem('userCountryLocked', 'true')
+      setCountryLocked(true)
+    }
+
+    const matchedCountry = COUNTRIES.find(
+      (c) => c.name === editCountry || c.code === editCountryCode
+    ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
+
+    const updatedUser = {
+      ...user,
+      name: finalNewName,
+      age: parseInt(editAge) || user.age,
+      bio: editBio,
+      location: matchedCountry.name,
+      flag: matchedCountry.flag,
+      countryCode: matchedCountry.code,
+    };
+
+    setUser(updatedUser);
+
+    await saveToFirestore({
+      name: finalNewName,
+      displayName: finalNewName,
+      userName: finalNewName,
+      age: parseInt(editAge) || user.age,
+      bio: editBio,
+      about: editBio,
+      country: matchedCountry.flag,
+      countryCode: matchedCountry.code,
+      location: matchedCountry.name,
+      countryLocked: true,
+    })
+
+    await saveProfileToDB({
+      ...updatedUser,
+      albumImages: albumImages,
+    });
+
+    setShowEditSheet(false)
+    setShowBioInput(false)
+  }
+
+  const handleBioSave = async () => {
+    localStorage.setItem('userBio', editBio)
+    const updatedUser = { ...user, bio: editBio };
+    setUser(updatedUser);
+    setShowBioInput(false);
+    await saveToFirestore({ bio: editBio, about: editBio });
+    
+    await saveProfileToDB({
+      ...updatedUser,
+      albumImages: albumImages,
+    });
+  }
+
+  const getDisplayID = () => {
+    return user.displayAccountNumber
+  }
+
+  const handleToggleFollow = () => {
+    setIsFollowing((prev) => {
+      const nextState = !prev
+      setUser((u) => ({
+        ...u,
+        followers: nextState ? u.followers + 1 : Math.max(0, u.followers - 1),
+      }))
+      return nextState
+    })
+  }
+
+  const getCurrentUserData = () => {
+    const uid =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || localStorage.getItem('userId') || 'N/A'
+        : 'N/A'
+    const name =
+      typeof window !== 'undefined' ? localStorage.getItem('userName') || user.displayAccountNumber : user.displayAccountNumber
+    const photo =
+      typeof window !== 'undefined' ? localStorage.getItem('userPhoto') || '' : ''
+    return { uid, name, photo }
+  }
+
+  const finalDisplayName = isValidName(user.name) 
+    ? user.name 
+    : (user.displayAccountNumber ? user.displayAccountNumber : 'User');
+
+  const avatarLetter = finalDisplayName ? finalDisplayName.charAt(0).toUpperCase() : '?';
+
+  return (
+    <div
+      className={`w-full bg-white min-h-screen text-gray-900 relative ${
+        isOtherUser ? 'pb-24' : 'pb-10'
+      }`}
+    >
+      {/* Cover Image & Header Section */}
+      <div className="relative w-full h-[340px] bg-gray-800">
+        {user.coverPhoto ? (
+          <img src={user.coverPhoto} alt="" className="w-full h-full object-cover" />
+        ) : user.photo ? (
+          <img src={user.photo} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white text-4xl font-bold">
+            {avatarLetter}
+          </div>
+        )}
+
+        <div className="absolute top-10 left-0 right-0 px-4 flex items-center justify-between z-10">
+          <button onClick={onBack} className="text-white">
+            <ChevronLeft size={28} />
           </button>
-          <h1 className="text-lg font-semibold text-gray-900 ml-3">{t.helpFeedback}</h1>
+
+          {isOtherUser ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
+                className="text-white"
+              >
+                <MoreHorizontal size={24} />
+              </button>
+
+              {showThreeDotMenu && (
+                <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg py-2 w-48 z-50">
+                  <button
+                    onClick={() => {
+                      setShowThreeDotMenu(false)
+                      alert('Report user')
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    Report
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowThreeDotMenu(false)
+                      alert('Block user')
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Block
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowThreeDotMenu(false)
+                      alert('Share profile')
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Share Profile
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button onClick={handleOpenEditSheet} className="text-white">
+              <Edit3 size={22} />
+            </button>
+          )}
         </div>
 
-        <div className="flex-1 p-4 overflow-y-auto">
-          <div className="max-w-md mx-auto">
-            {feedbackSuccess ? (
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-                <div className="text-4xl mb-4">✅</div>
-                <h2 className="text-xl font-bold text-green-700 mb-2">Thank You!</h2>
-                <p className="text-green-600">Your feedback has been submitted successfully.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleFeedbackSubmit} className="space-y-6">
-                <div>
-                  <h2 className="text-base font-semibold text-gray-800 mb-3">Type of Issue</h2>
-                  <div className="grid grid-cols-2 gap-3">
-                    {FEEDBACK_TYPES.map((type) => (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => setSelectedType(type.id)}
-                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                          selectedType === type.id
-                            ? 'border-blue-500 bg-blue-50 shadow-md'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="text-2xl mb-1">{type.icon}</div>
-                        <div className={`text-sm font-medium ${
-                          selectedType === type.id ? 'text-blue-700' : 'text-gray-700'
-                        }`}>
-                          {type.label}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+        {/* Avatar with WebGL Shader Overlay */}
+        <div className="absolute bottom-2 left-6 flex items-center">
+          <div className="relative w-24 h-24 rounded-full shadow-lg border-3 border-white bg-gray-700">
+            <div className="w-full h-full rounded-full overflow-hidden">
+              {user.photo ? (
+                <img src={user.photo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gray-600 flex items-center justify-center text-4xl text-white font-bold">
+                  {avatarLetter}
                 </div>
-
-                <div>
-                  <h2 className="text-base font-semibold text-gray-800 mb-3">Problem Description</h2>
-                  <div className="relative">
-                    <textarea
-                      value={problemDescription}
-                      onChange={(e) => {
-                        if (e.target.value.length <= 400) {
-                          setProblemDescription(e.target.value);
-                        }
-                      }}
-                      placeholder="Describe your issue or suggestion..."
-                      maxLength={400}
-                      rows={5}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white resize-none"
-                    />
-                    <div className="absolute bottom-3 right-3 text-xs text-gray-400">
-                      {problemDescription.length}/400
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h2 className="text-base font-semibold text-gray-800 mb-3">Contact Information</h2>
-                  <input
-                    type="text"
-                    value={contactInfo}
-                    onChange={(e) => setContactInfo(e.target.value)}
-                    placeholder="Enter your email, Gmail or App ID"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white"
-                  />
-                </div>
-
-                {feedbackError && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
-                    {feedbackError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={feedbackSubmitting}
-                  className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-2xl transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 text-base"
-                >
-                  {feedbackSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Submitting...
-                    </span>
-                  ) : (
-                    'Submit Feedback'
-                  )}
-                </button>
-              </form>
-            )}
+              )}
+            </div>
+            
+            {/* WebGL Overlay */}
+            <div className="absolute inset-0 pointer-events-none">
+              <WhiteColorRemovalShader
+                imageSrc="/1786867564769.png"
+                threshold={0.85}
+                className="w-full h-full"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%) scale(1.5)',
+                  width: '100%',
+                  height: '100%',
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
-    );
-  }
 
-  if (currentView === 'language') return <LanguagePage onBack={() => switchView('me')} />
-  if (currentView === 'customer_service') return <HurrySupport onBack={() => switchView('me')} />
-  if (currentView === 'settings') return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
-  if (currentView === 'public_profile') return <PublicProfile onBack={() => switchView('me')} />
+      {/* Profile Info Details Section */}
+      <div className="px-5 pt-5">
+        <div className="flex flex-wrap items-center gap-0.5">
+          <h1 className="text-2xl font-bold text-black tracking-wide">{finalDisplayName}</h1>
+          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
+            {user.gender} {user.age}
+          </span>
+          
+          {user.adminTag && (
+            <GreenColorRemovalShader
+              imageSrc="/1788021461820~2.jpg"
+              className="h-9 w-auto object-contain"
+            />
+          )}
+          
+          {user.officialTag && (
+            <GreenColorRemovalShader
+              imageSrc="/1788021468845~2.jpg"
+              className="h-9 w-auto object-contain"
+            />
+          )}
+          
+          {user.vipTag && (
+            <img src="/1785469775751.png" alt="VIP" className="h-7 w-auto object-contain" />
+          )}
+          
+          {user.premiumTag && (
+            <img src="/1785469365805.png" alt="Premium" className="h-7 w-auto object-contain" />
+          )}
+        </div>
 
-  const lockedNameDisplay = isValidName(user.name) 
-    ? user.name 
-    : (user.displayAccountNumber ? user.displayAccountNumber : (user.uid ? user.uid.substring(0, 8) : ''));
-
-  const lockedAvatarLetter = lockedNameDisplay ? lockedNameDisplay.charAt(0).toUpperCase() : '';
-
-  return (
-    <div className="w-full min-h-screen bg-white pb-[8vh]">
-      <div
-        className="px-4 pb-4 relative safe-top"
-        style={{
-          background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 24px) + 24px)'
-        }}
-      >
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="relative w-20 h-20 ml-3 shrink-0">
-              {user.photo ? (
-                <img
-                  src={user.photo}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
-                  alt="Profile"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
-              ) : null}
-              
-              <div className={`w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm ${user.photo ? 'hidden' : ''}`}>
-                {lockedAvatarLetter}
-              </div>
-              
-              <div className="absolute inset-0 pointer-events-none">
-                <WhiteColorRemovalShader
-                  imageSrc="/1786867564769.png"
-                  threshold={0.85}
-                  className="w-full h-full"
+        <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
+          <div className="flex items-center gap-1">
+            {isSpecialAccount ? (
+              <>
+                <span
+                  className="relative font-bold rounded text-white -ml-2.5"
                   style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%) scale(1.5)',
-                    width: '100%',
-                    height: '100%',
+                    backgroundImage: 'url(/1785137282040.png)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    minWidth: '90px',
+                    paddingLeft: '0px',
+                    paddingRight: '5px',
+                    paddingTop: '2px',
+                    paddingBottom: '2px',
                   }}
-                />
-              </div>
+                >
+                  <span className="relative text-xs" style={{ paddingLeft: '32px' }}>
+                    {user.displayAccountNumber}
+                  </span>
+                </span>
+                <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600">
+                  <Copy size={12} />
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-gray-500">ID:{getDisplayID()}</span>
+                <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600">
+                  <Copy size={12} />
+                </button>
+              </>
+            )}
+          </div>
+          <span className="text-gray-300">|</span>
+          <span className="text-gray-500">{user.followers} Fans</span>
+        </div>
+
+        <div className="mt-1 flex items-center gap-1 -ml-2">
+          <div className="relative inline-flex items-center justify-center ml-0.5">
+            <img src="/1785137410522.png" alt="" className="h-6 w-auto object-contain" />
+            <span
+              className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm"
+              style={{ paddingLeft: '10px' }}
+            >
+              Lv.1
+            </span>
+          </div>
+          <img src="/1785486414756.png" alt="" className="h-6 w-auto object-contain" />
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
+          <MapPin size={14} className="text-gray-400" />
+          <span className="text-base">{user.flag}</span>
+          <span className="text-gray-500">{user.location || 'India'}</span>
+        </div>
+
+        {/* Bio Section */}
+        <div className="flex items-start gap-2 mt-2">
+          <button
+            onClick={!isOtherUser ? handleOpenEditSheet : undefined}
+            className={`mt-0.5 shrink-0 ${isOtherUser ? 'text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            <Edit3 size={14} />
+          </button>
+          {user.bio ? (
+            <p className="text-xs text-gray-500 italic">{user.bio}</p>
+          ) : (
+            <p className="text-xs text-gray-400 italic">
+              {isOtherUser ? 'No bio added yet' : 'Add bio...'}
+            </p>
+          )}
+        </div>
+
+        <div className="flex gap-0 mt-4 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
+              activeTab === 'profile' ? 'text-blue-500' : 'text-gray-500'
+            }`}
+          >
+            Profile
+            {activeTab === 'profile' && (
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-blue-500 rounded-full"></div>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Content Tabs Section */}
+      <div className="px-5 mt-6 space-y-4">
+        <div>
+          <h3 className="text-sm font-bold text-gray-800 mb-2 flex justify-between items-center">
+            Albums
+            <span className="text-xs text-gray-400 font-normal">{albumImages.length}/4</span>
+          </h3>
+          {albumImages.length > 0 ? (
+            <div className="flex gap-2 overflow-x-auto">
+              {albumImages.map((img, index) => (
+                <div
+                  key={index}
+                  className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setFullImageView(img)}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full h-28 rounded-2xl overflow-hidden bg-gray-100">
+              <img
+                src="/IMG_20260726_225835.jpg"
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
+            <img src="/1785091443553.png" alt="" className="w-full h-full object-cover" />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
+            <img src="/1785091431545.png" alt="" className="w-full h-full object-cover" />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
+            <img src="/1785091457562.png" alt="" className="w-full h-full object-cover" />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
+          <div className="w-full h-28 rounded-2xl overflow-hidden">
+            <img src="/1785091520912.png" alt="" className="w-full h-full object-cover" />
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Action Bar for Other User */}
+      {isOtherUser && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md px-6 py-3.5 border-t border-gray-100 flex items-center justify-between gap-4 max-w-md mx-auto shadow-lg">
+          <button
+            onClick={handleToggleFollow}
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff5874] to-[#ff6b8b] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-pink-200"
+          >
+            <Heart className="w-6 h-6 fill-white stroke-none" />
+            <span>{isFollowing ? 'Following' : 'Follow'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowChat(true)}
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#1dc4e9] to-[#1de9b6] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-cyan-200"
+          >
+            <MessageCircle className="w-6 h-6 fill-white stroke-none" />
+            <span>Chat</span>
+          </button>
+        </div>
+      )}
+
+      {/* Full Image View Modal */}
+      {fullImageView && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setFullImageView(null)}
+        >
+          <button
+            onClick={() => setFullImageView(null)}
+            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+          >
+            <X size={24} />
+          </button>
+          <img
+            src={fullImageView}
+            alt=""
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* Edit Profile Bottom Sheet */}
+      {!isOtherUser && showEditSheet && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={handleCloseEditSheet}></div>
+
+          <div className="relative bg-white w-full max-w-md rounded-t-3xl animate-slide-up flex flex-col h-[70vh]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+              <button onClick={handleCloseEditSheet}>
+                <ChevronLeft size={24} className="text-gray-700" />
+              </button>
+              <h2 className="text-lg font-bold text-gray-900">Edit Information</h2>
+              <div className="w-6"></div>
             </div>
 
-            <div className="flex flex-col">
-              <h2 className="text-2xl font-bold text-gray-900 mb-0.5">
-                {lockedNameDisplay}
-              </h2>
+            <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1 pb-24">
+              <input
+                type="file"
+                ref={avatarInputRef}
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+              <input
+                type="file"
+                ref={albumInputRef}
+                accept="image/*"
+                onChange={handleAlbumUpload}
+                className="hidden"
+              />
+              <input
+                type="file"
+                ref={coverInputRef}
+                accept="image/*"
+                onChange={handleCoverUpload}
+                className="hidden"
+              />
 
-              <div className="flex items-center gap-1 mt-1">
-                {isSpecialUID ? (
-                  <div className="relative inline-block w-22">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Avatar</span>
+                <div
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 cursor-pointer"
+                >
+                  {user.photo ? (
+                    <img src={user.photo} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xl text-white font-bold">
+                      {avatarLetter}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Background Cover</span>
+                  <div className="flex items-center gap-2">
+                    {user.coverPhoto && (
+                      <button
+                        onClick={handleRemoveCoverPhoto}
+                        className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-xs font-semibold hover:bg-red-100 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                    <button
+                      onClick={() => coverInputRef.current?.click()}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
+                    >
+                      <Camera size={14} /> Add Photo
+                    </button>
+                  </div>
+                </div>
+                {user.coverPhoto && (
+                  <div className="w-full h-20 rounded-xl overflow-hidden border border-gray-200">
                     <img
-                      src="/1785138451098~2.jpg"
+                      src={user.coverPhoto}
                       alt=""
-                      className="absolute inset-0 w-full h-full object-contain rounded-md"
+                      className="w-full h-full object-cover"
                     />
-                    <p className="relative text-white font-bold px-3 py-1.5 z-10 text-xs" style={{ paddingLeft: '30px' }}>
-                      {user.accountNumber || user.displayAccountNumber}
-                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">
+                    Album Photos ({albumImages.length}/4)
+                  </span>
+                  {albumImages.length < 4 && (
+                    <button
+                      onClick={() => albumInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold flex items-center gap-1 hover:bg-blue-100 transition-colors"
+                    >
+                      <Camera size={14} /> Add Photo
+                    </button>
+                  )}
+                </div>
+
+                {albumImages.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    {albumImages.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative w-full h-16 rounded-xl overflow-hidden border border-gray-200 group"
+                      >
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => handleRemoveAlbumImage(idx)}
+                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Name</span>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
+                  placeholder="Enter name"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Age</span>
+                <input
+                  type="number"
+                  value={editAge}
+                  onChange={(e) => setEditAge(e.target.value)}
+                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
+                  placeholder="0"
+                  min="0"
+                  max="150"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Bio</span>
+                {showBioInput ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editBio}
+                      onChange={(e) => setEditBio(e.target.value)}
+                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-36"
+                      placeholder="Add bio"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleBioSave}
+                      className="text-xs text-blue-500 font-medium"
+                    >
+                      Save
+                    </button>
                   </div>
                 ) : (
-                  (user.displayAccountNumber || user.accountNumber) && (
-                    <p className="text-gray-700 text-xs font-semibold">
-                      ID: {user.displayAccountNumber || user.accountNumber}
-                    </p>
-                  )
-                )}
-
-                {(user.accountNumber || user.displayAccountNumber) && (
                   <button
-                    onClick={handleCopyAccountNumber}
-                    className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
-                    title="Copy ID"
+                    onClick={() => setShowBioInput(true)}
+                    className="flex items-center gap-1 text-sm text-gray-400"
                   >
-                    <Copy size={14} />
+                    <span className="max-w-[180px] truncate">
+                      {editBio || 'Add bio'}
+                    </span>
+                    <ChevronRight size={16} />
                   </button>
                 )}
               </div>
 
-              {user.phone && (
-                <p className="text-gray-600 text-xs mt-0.5 font-semibold">
-                  {user.phone}
-                </p>
-              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Country</span>
+                <select
+                  value={editCountry}
+                  onChange={handleCountrySelect}
+                  disabled={countryLocked}
+                  className={`text-sm text-right outline-none px-2 py-1 bg-transparent border-b w-48 ${
+                    countryLocked
+                      ? 'text-gray-400 border-transparent cursor-not-allowed'
+                      : 'text-gray-900 border-gray-200 focus:border-blue-500'
+                  }`}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.name}>
+                      {c.flag} {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Gender</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleGenderSelect('male')}
+                    disabled={genderLocked && editGender !== 'male'}
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      editGender === 'male'
+                        ? 'bg-blue-500 text-white'
+                        : genderLocked
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    ♂ Male
+                  </button>
+                  <button
+                    onClick={() => handleGenderSelect('female')}
+                    disabled={genderLocked && editGender !== 'female'}
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      editGender === 'female'
+                        ? 'bg-pink-500 text-white'
+                        : genderLocked
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    ♀ Female
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <button
-            onClick={() => switchView('public_profile')}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2 cursor-pointer"
-            title="View Public Profile"
-          >
-            <ChevronRight className="text-gray-700" size={24} />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">1</div>
-            <div className="text-xs text-gray-600 mt-1">{t.followers}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">0</div>
-            <div className="text-xs text-gray-600 mt-1">{t.following}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">1</div>
-            <div className="text-xs text-gray-600 mt-1">{t.visitors}</div>
-          </div>
-        </div>
-
-        <div className="flex gap-1 mt-4">
-          <div 
-            className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
-            onClick={() => {
-              setWalletTab('coins');
-              setShowWallet(true);
-            }}
-          >
-            <img
-              src="/1784480382765~2.jpg"
-              alt="Feature 1"
-              className="w-full h-14 object-cover"
-            />
-          </div>
-          <div 
-            className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
-            onClick={() => {
-              setWalletTab('diamond');
-              setShowWallet(true);
-            }}
-          >
-            <img
-              src="/1784480368941~2.jpg"
-              alt="Feature 2"
-              className="w-full h-14 object-cover"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 mt-0.5">
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-          {menuItems.map((item, index) => (
-            <div key={item.id}>
-              <div 
-                className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => {
-                  if (item.id === '1') setShowInviteFriends(true);
-                  else if (item.id === '2') setShowFamily(true);
-                  else if (item.id === '3') setShowLevel(true);
-                  else if (item.id === '4') setShowMedal(true);
-                  else if (item.id === '5') setShowStore(true);
-                }}
+            <div className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white border-t border-gray-100 shrink-0">
+              <button
+                onClick={handleSaveEdit}
+                className="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors"
               >
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                  <img
-                    src={item.src}
-                    alt={t[item.labelKey]}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{t[item.labelKey]}</p>
-                </div>
-                {item.action && (
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
-                )}
-                {item.badge && (
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
-                    {item.badge}
-                  </span>
-                )}
-                <ChevronRight size={20} className="text-gray-400" />
-              </div>
-              {index < menuItems.length - 1 && (
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
-              )}
+                Save Changes
+              </button>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="px-4 mt-4 mb-6">
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-          {bottomMenuItems.map((item, index) => (
-            <div
-              key={item.id}
-              onClick={() => {
-                if (item.id === '7') switchView('language')
-                if (item.id === '8') switchView('settings')
-                if (item.id === '9') switchView('customer_service')
-                if (item.id === '10') setShowFeedbackPage(true)
-              }}
-            >
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">
-                  {item.icon}
-                </div>
-
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{t[item.labelKey]}</p>
-                </div>
-                {item.action && (
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
-                )}
-                {item.badge && (
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
-                    {item.badge}
-                  </span>
-                )}
-                <ChevronRight size={20} className="text-gray-400" />
-              </div>
-              {index < bottomMenuItems.length - 1 && (
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
-              )}
-            </div>
-          ))}
+      {/* ChatScreen Overlay */}
+      {isOtherUser && showChat && targetUser && (
+        <div className="fixed inset-0 z-[100]">
+          <ChatScreen
+            currentUser={getCurrentUserData()}
+            targetUser={{
+              uid: targetUser.uid || targetUser.id || '',
+              name: isValidName(targetUser.name) ? targetUser.name! : (targetUser.displayAccountNumber || 'User'),
+              photo: targetUser.photo || targetUser.image || '',
+            }}
+            onClose={() => setShowChat(false)}
+            onJoinRoom={onJoinRoom}
+          />
         </div>
-      </div>
+      )}
 
-      <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">
-        <div className="text-center text-sm">
-          <div className="text-2xl mb-1"></div>
-          <div className="text-xs font-bold text-blue-800">Recharge</div>
-          <div className="text-xs font-bold text-blue-800">Event</div>
-        </div>
-      </div>
+      <style jsx>{`
+        @keyframes slideUp {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}</style>
     </div>
   )
 }
