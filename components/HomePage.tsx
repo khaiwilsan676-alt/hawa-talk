@@ -1840,11 +1840,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
               ))}
             </div>
           </div>
-        ) : null
+        ) : null}
+      </>
+      );
+  };
           
 
   // ============ MAIN RETURN ============
   return (
+        
     <div
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
