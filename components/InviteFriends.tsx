@@ -1,12 +1,76 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { 
   ArrowLeft, 
   Link2, 
   MoreHorizontal, 
   X 
 } from 'lucide-react'
+
+// WebShader / Chroma Key Component jo sirf green background remove karta hai
+const ChromaKeyImage = ({ 
+  src, 
+  alt, 
+  className = "", 
+  style = {} 
+}: { 
+  src: string; 
+  alt: string; 
+  className?: string; 
+  style?: React.CSSProperties 
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  useEffect(() => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = src
+
+    img.onload = () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      canvas.width = img.naturalWidth || img.width
+      canvas.height = img.naturalHeight || img.height
+
+      ctx.drawImage(img, 0, 0)
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const data = imgData.data
+
+      // Pixel by pixel green color removal
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+
+        const maxRB = Math.max(r, b)
+        const greenDifference = g - maxRB
+
+        if (greenDifference > 30 && g > 60) {
+          data[i + 3] = 0
+        } else if (greenDifference > 10 && g > 50) {
+          const factor = (greenDifference - 10) / 20
+          data[i + 3] = Math.round(data[i + 3] * (1 - factor))
+          data[i + 1] = maxRB
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0)
+    }
+  }, [src])
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className={className} 
+      style={style} 
+      aria-label={alt}
+    />
+  )
+}
 
 // Official WhatsApp SVG Logo
 const WhatsAppIcon = ({ size = 24, className = "" }: { size?: number; className?: string }) => (
@@ -42,7 +106,6 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
   const [copied, setCopied] = useState(false)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   
-  // Get user info from localStorage
   const userId = typeof window !== 'undefined' 
     ? (localStorage.getItem('userUID') || localStorage.getItem('accountNumber') || 'N/A')
     : 'N/A'
@@ -104,62 +167,44 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
 
   return (
     <div className="min-h-screen relative w-full h-full bg-[#4d0515] overflow-hidden select-none">
-      {/* WebShader SVG Filter to remove green colors strictly */}
-      <svg className="hidden">
-        <filter id="webshader-degreener">
-          <feColorMatrix
-            type="matrix"
-            values="
-              1.10  0.00  0.00  0  0
-              0.05  0.15  0.00  0  0
-              0.00  0.00  0.90  0  0
-              0     0     0     1  0"
-          />
-        </filter>
-      </svg>
-
-      {/* Top 40vh Background Image with WebShader */}
+      {/* Top 40vh Background Image */}
       <div className="absolute top-0 left-0 right-0 h-[40vh] z-0 pointer-events-none overflow-hidden">
-        <img
+        <ChromaKeyImage
           src="/IMG-20260821-WA0100.jpg"
           alt="Top Background"
-          style={{ filter: 'url(#webshader-degreener) saturate(1.15) contrast(1.1)' }}
           className="w-full h-full object-cover object-top"
         />
-        {/* Deep maroon gradient overlay for smooth blending */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4d0515]/40 to-[#4d0515]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4d0515]/30 to-[#4d0515]" />
       </div>
 
-      {/* Middle Ornament Image with WebShader */}
-      <div className="absolute top-[32vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 pointer-events-none flex justify-center opacity-90">
-        <img
+      {/* Middle Ornament Image */}
+      <div className="absolute top-[32vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 pointer-events-none flex justify-center">
+        <ChromaKeyImage
           src="/1788074201753~2.jpg"
           alt="Middle Ornament"
-          style={{ filter: 'url(#webshader-degreener)' }}
           className="w-full object-contain pointer-events-none"
         />
       </div>
 
-      {/* Clickable Fixed Bottom Image (Opens Red/White Sheet) */}
+      {/* Clickable Fixed Bottom Image */}
       <div 
         onClick={() => setIsSheetOpen(true)}
         className="fixed bottom-0 left-0 right-0 z-20 flex justify-center cursor-pointer active:scale-[0.98] transition-transform"
       >
-        <img
+        <ChromaKeyImage
           src="/1788074191602~2.jpg"
           alt="Bottom Decor"
-          style={{ filter: 'url(#webshader-degreener)' }}
           className="w-full max-w-md object-contain object-bottom pointer-events-auto"
         />
       </div>
 
-      {/* Header - ONLY Back Button Icon */}
+      {/* Header - ONLY Back Icon without any Card / Background */}
       <div className="relative z-30 flex items-center p-4">
         <button
           onClick={onBack}
-          className="p-2.5 bg-black/40 hover:bg-black/60 rounded-full transition-colors cursor-pointer text-white shadow-md backdrop-blur-sm"
+          className="p-1 text-white hover:text-white/80 transition-colors cursor-pointer bg-transparent border-0 outline-none shadow-none"
         >
-          <ArrowLeft size={22} />
+          <ArrowLeft size={28} />
         </button>
       </div>
 
@@ -171,7 +216,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         />
       )}
 
-      {/* Bottom Sheet: Exactly 20vh, Pure White, Zero Border/Line */}
+      {/* Bottom Sheet: Exactly 20vh, Pure White, Zero Line */}
       <div 
         className={`fixed bottom-0 left-0 right-0 h-[20vh] bg-white rounded-t-3xl z-50 transition-transform duration-300 ease-out shadow-2xl flex flex-col px-4 py-2 border-0 outline-none ${
           isSheetOpen ? 'translate-y-0' : 'translate-y-full'
@@ -190,12 +235,12 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
 
         {/* Action Buttons */}
         <div className="flex-1 grid grid-cols-4 gap-2 items-center justify-center text-center pb-2">
-          {/* WhatsApp Logo */}
+          {/* WhatsApp */}
           <button
             onClick={() => handleShare('whatsapp')}
             className="flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
           >
-            <div className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+            <div className="w-12 h-12 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
               <WhatsAppIcon size={24} />
             </div>
             <span className="text-[11px] font-medium text-gray-800">WhatsApp</span>
@@ -235,7 +280,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
           </button>
         </div>
 
-        {/* Feedback toast */}
+        {/* Copy Feedback */}
         {copied && (
           <div className="text-center text-[11px] text-blue-600 font-medium pb-1 animate-pulse">
             ✓ Link copied!
