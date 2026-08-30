@@ -23,6 +23,7 @@ import Leaderboard from './Leaderboard'
 import { generateStableId } from '../lib/hash'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import DailyCheckInModal from '../components/DailyCheckInModal'
+import InviteFriends from './InviteFriends'
 
 // ============ INDEXEDDB FUNCTIONS ============
 const DB_NAME = 'HurryAppDB';
@@ -355,8 +356,7 @@ interface GlobalRoom {
 
 // ============ CONSTANTS ============
 const BANNERS = [
-  { image: '/IMG-20260818-WA0000.jpg' },
-  { image: '/IMG-20260818-WA0001.jpg' }
+  { image: '/file-00000000a8b08211bd12c4102d0f9d77.png' }
 ]
 
 type Tab = 'mine' | 'popular'
@@ -536,6 +536,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const [followingRooms, setFollowingRooms] = useState<KeptRoomData[]>([])
 
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
+  const [isInviteFriendsOpen, setIsInviteFriendsOpen] = useState(false)
   const [currentSignInDay, setCurrentSignInDay] = useState(1)
 
   const [isDragging, setIsDragging] = useState(false)
@@ -594,7 +595,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => unsubscribe();
   }, [userUID]);
 
-  // ============ DYNAMIC OFFSET CALCULATION (Original) ============
+  // ============ DYNAMIC OFFSET CALCULATION ============
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     const isAndroidDevice = userAgent.includes('android');
@@ -1928,6 +1929,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
         }
       `}</style>
 
+      {/* Invite Friends Modal */}
+      {isInviteFriendsOpen && (
+        <div className="fixed inset-0 z-[200]">
+          <InviteFriends onClose={() => setIsInviteFriendsOpen(false)} />
+        </div>
+      )}
+
       {showRoomPasswordCard && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRoomPasswordCard(false)} />
@@ -2312,7 +2320,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <>
                   <div
                     ref={bannerRef}
-                    className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
+                    className="rounded-2xl relative overflow-hidden cursor-pointer select-none"
                     style={{
                       height: '100px',
                       width: '100%',
@@ -2321,6 +2329,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       justifyContent: 'center',
                       transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                       transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
+                    }}
+                    onClick={() => {
+                      if (Math.abs(swipeOffset) < 10) {
+                        setIsInviteFriendsOpen(true)
+                      }
                     }}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
@@ -2340,7 +2353,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       <img
                         src={BANNERS[currentBanner].image}
                         alt="Banner"
-                        className="w-full h-full object-cover rounded-2xl"
+                        className="w-full h-full object-cover rounded-2xl pointer-events-none"
                         draggable="false"
                       />
                     </div>
@@ -2535,4 +2548,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-}
+                                               }
