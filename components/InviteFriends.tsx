@@ -167,14 +167,14 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
 
   return (
     <div className="min-h-screen relative w-full h-full bg-[#4d0515] overflow-hidden select-none">
-      {/* Top 40vh Background Image */}
-      <div className="absolute top-0 left-0 right-0 h-[40vh] z-0 pointer-events-none overflow-hidden">
+      {/* Top 50vh Background Image - Sirf bottom se blend hota hai */}
+      <div className="absolute top-0 left-0 right-0 h-[50vh] z-0 pointer-events-none overflow-hidden">
         <ChromaKeyImage
           src="/IMG-20260821-WA0100.jpg"
           alt="Top Background"
           className="w-full h-full object-cover object-top"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4d0515]/30 to-[#4d0515]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#4d0515]" />
       </div>
 
       {/* Middle Ornament Image */}
@@ -186,7 +186,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         />
       </div>
 
-      {/* Clickable Fixed Bottom Image */}
+      {/* Clickable Fixed Bottom Image - Thoda sa chhota */}
       <div 
         onClick={() => setIsSheetOpen(true)}
         className="fixed bottom-0 left-0 right-0 z-20 flex justify-center cursor-pointer active:scale-[0.98] transition-transform"
@@ -194,7 +194,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         <ChromaKeyImage
           src="/1788074191602~2.jpg"
           alt="Bottom Decor"
-          className="w-full max-w-md object-contain object-bottom pointer-events-auto"
+          className="w-[88%] max-w-[360px] md:max-w-md object-contain object-bottom pointer-events-auto"
         />
       </div>
 
