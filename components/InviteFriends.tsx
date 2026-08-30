@@ -173,7 +173,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
       
       {/* Top Background Image */}
       <div className="absolute top-0 left-0 right-0 h-[50vh] z-0 pointer-events-none overflow-hidden">
-        <ChromaKeyImage src="/IMG-20260821-WA0100.jpg" alt="Top Background" className="w-full h-full object-cover object-top" />
+        <ChromaKeyImage src="/IMG-20260830-WA0076.jpg" alt="Top Background" className="w-full h-full object-cover object-top" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#4d0515]" />
       </div>
 
