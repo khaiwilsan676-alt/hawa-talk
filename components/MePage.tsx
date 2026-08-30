@@ -413,7 +413,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const t = getTranslation(appLang)
 
-  // 1. Instant Synchronous Load: Pehle hi tick me locked data show hoga, kabhi blank nahi aayega
+  // Instant Synchronous Lock state load
   const [user, setUser] = useState(() => {
     if (typeof window === 'undefined') {
       return { name: "", uid: "", accountNumber: "", displayAccountNumber: "", phone: "", photo: "" }
@@ -524,7 +524,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
         if (!uid || uid === "N/A") return;
 
-        // Step A: Check agar IndexedDB me locked record hai
         const cachedUser = await loadUserFromDB(uid);
         if (cachedUser && (isValidName(cachedUser.name) || cachedUser.accountNumber || cachedUser.photo)) {
           const validCleanName = isValidName(cachedUser.name) ? cachedUser.name : (isValidName(localStorage.getItem("userName")) ? localStorage.getItem("userName")! : "");
@@ -535,10 +534,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             displayAccountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
           };
           setUser(lockedData);
-          return; // IndexedDB se permanent lock ho chuka hai, Firebase par request nahi jayegi
+          return;
         }
 
-        // Step B: Sirf agar pehli bar install/data clear hua hai tab Firebase se 1 time read hoga
         try {
           const userDocRef = doc(db, "users", uid);
           const docSnap = await getDoc(userDocRef);
@@ -573,7 +571,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             photo: photo,
           };
 
-          // Dono jagah permanently lock
           await saveUserToDB(finalLockedUser);
           if (resolvedName) localStorage.setItem("userName", resolvedName);
           if (accNum) localStorage.setItem("accountNumber", accNum);
@@ -582,7 +579,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
           setUser(finalLockedUser);
         } catch (firebaseError) {
-          console.warn('Firebase one-time read avoided/failed:', firebaseError);
+          console.warn('Firebase one-time read bypassed/failed:', firebaseError);
         }
 
       } catch (error) {
@@ -733,7 +730,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   if (currentView === 'settings') return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
   if (currentView === 'public_profile') return <PublicProfile onBack={() => switchView('me')} />
 
-  // Strictly Locked Name / ID (No Guest / No User string)
   const lockedNameDisplay = isValidName(user.name) 
     ? user.name 
     : (user.displayAccountNumber ? user.displayAccountNumber : (user.uid ? user.uid.substring(0, 8) : ''));
@@ -974,4 +970,3 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     </div>
   )
 }
-
