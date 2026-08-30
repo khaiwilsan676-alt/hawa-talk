@@ -188,7 +188,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             {/* Friend's Invite Text */}
             <div 
               className="absolute text-yellow-400 font-bold text-sm drop-shadow-md"
-              style={{ bottom: '15px', left: '40px' }}
+              style={{ bottom: '15px', left: '30px' }}
             >
               Friend's Invite
             </div>
@@ -196,7 +196,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             {/* 0 Text */}
             <div 
               className="absolute text-yellow-400 font-bold text-sm drop-shadow-md"
-              style={{ bottom: '15px', right: '40px' }}
+              style={{ bottom: '15px', right: '30px' }}
             >
               0
             </div>
@@ -210,10 +210,10 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
 
           <div className="absolute inset-0 z-10">
             {/* ROW 1: Invite Friends (Top moved down from 45px to 75px) */}
-            <div className="absolute text-yellow-400 font-bold text-sm" style={{ top: '95px', left: '40px' }}>
+            <div className="absolute text-yellow-400 font-bold text-sm" style={{ top: '100px', left: '40px' }}>
               Invite Friends
             </div>
-            <div className="absolute flex items-center gap-1 cursor-pointer" style={{ top: '95px', right: '35px' }}>
+            <div className="absolute flex items-center gap-1 cursor-pointer" style={{ top: '100px', right: '35px' }}>
               <span className="text-yellow-400 text-xs font-semibold">Get</span>
               <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '20px', height: '20px' }} />
               <span className="text-yellow-400 text-sm font-bold">250000</span>
@@ -223,11 +223,11 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             </div>
 
             {/* ROW 2: Friends Recharge (Top moved down from 105px to 135px) */}
-            <div className="absolute flex flex-col" style={{ top: '155px', left: '40px' }}>
+            <div className="absolute flex flex-col" style={{ top: '175px', left: '40px' }}>
               <span className="text-yellow-400 font-bold text-sm leading-tight">Friends Recharge</span>
               <span className="text-yellow-300 text-[10px] font-medium tracking-wider">&gt;500000 Coins</span>
             </div>
-            <div className="absolute flex items-center gap-1 cursor-pointer" style={{ top: '155px', right: '35px' }}>
+            <div className="absolute flex items-center gap-1 cursor-pointer" style={{ top: '175px', right: '35px' }}>
               <span className="text-yellow-400 text-xs font-semibold">Get</span>
               <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '20px', height: '20px' }} />
               <span className="text-yellow-400 text-sm font-bold">250000</span>
@@ -237,11 +237,11 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             </div>
 
             {/* ROW 3: Friends Send Gift (Top moved down from 165px to 195px) */}
-            <div className="absolute flex flex-col" style={{ top: '215px', left: '40px' }}>
+            <div className="absolute flex flex-col" style={{ top: '240px', left: '40px' }}>
               <span className="text-yellow-400 font-bold text-sm leading-tight">Friends Send</span>
               <span className="text-yellow-400 font-bold text-sm leading-tight">Gift</span>
             </div>
-            <div className="absolute flex items-center gap-1 cursor-pointer" style={{ top: '215px', right: '35px' }}>
+            <div className="absolute flex items-center gap-1 cursor-pointer" style={{ top: '240px', right: '35px' }}>
               <span className="text-yellow-400 text-xs font-semibold">Get</span>
               <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '20px', height: '20px' }} />
               <span className="text-yellow-400 text-sm font-bold pr-1">6%</span>
@@ -260,8 +260,8 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
           <div className="absolute inset-0 z-10">
             
             {/* Top Center Items (Coin, 0, Claim) - Set to 28vh from bottom to move it Upar */}
-            <div className="absolute flex flex-col items-center w-full" style={{ bottom: '35vh' }}>
-              <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '40px', height: '40px' }} />
+            <div className="absolute flex flex-col items-center w-full" style={{ bottom: '30vh' }}>
+              <WhiteKeyImage src="/1786855398290.png" alt="coin" className="object-contain" style={{ width: '50px', height: '50px' }} />
               <div className="text-yellow-400 font-bold text-3xl drop-shadow-md leading-none mt-1">0</div>
               <button className="mt-3 bg-gradient-to-b from-yellow-300 to-yellow-500 text-[#451a03] font-extrabold text-sm rounded-full px-6 py-1.5 shadow-[0_4px_0_#92400e] active:shadow-[0_0px_0_#92400e] active:translate-y-1 transition-all cursor-pointer">
                 Claim
