@@ -3,19 +3,25 @@
 import React, { useState } from 'react'
 import { 
   ArrowLeft, 
-  Copy, 
-  Share2, 
-  Users, 
-  Gift, 
-  MessageCircle, 
-  Mail, 
   Link2, 
   MoreHorizontal, 
-  X,
-  Download
+  X 
 } from 'lucide-react'
 
-// Custom Facebook SVG component to prevent lucide-react build errors
+// Official WhatsApp SVG Logo
+const WhatsAppIcon = ({ size = 24, className = "" }: { size?: number; className?: string }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className={className}
+  >
+    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.4-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.77 2.7 4.29 3.79.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.1-.23-.17-.48-.29z"/>
+  </svg>
+)
+
+// Official Facebook SVG Logo
 const FacebookIcon = ({ size = 24, className = "" }: { size?: number; className?: string }) => (
   <svg 
     width={size} 
@@ -34,41 +40,20 @@ interface InviteFriendsProps {
 
 export default function InviteFriends({ onBack }: InviteFriendsProps) {
   const [copied, setCopied] = useState(false)
-  const [copiedType, setCopiedType] = useState<'code' | 'link' | null>(null)
-  
-  // State for Bottom 30vh Red Sheet
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   
   // Get user info from localStorage
   const userId = typeof window !== 'undefined' 
     ? (localStorage.getItem('userUID') || localStorage.getItem('accountNumber') || 'N/A')
     : 'N/A'
-  const userName = typeof window !== 'undefined'
-    ? (localStorage.getItem('userName') || 'User')
-    : 'User'
   
   const inviteCode = userId !== 'N/A' ? userId : 'WELCOME123'
   const inviteLink = `https://yourapp.com/invite/${inviteCode}`
 
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(inviteCode).then(() => {
-      setCopied(true)
-      setCopiedType('code')
-      setTimeout(() => {
-        setCopied(false)
-        setCopiedType(null)
-      }, 2000)
-    })
-  }
-
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink).then(() => {
       setCopied(true)
-      setCopiedType('link')
-      setTimeout(() => {
-        setCopied(false)
-        setCopiedType(null)
-      }, 2000)
+      setTimeout(() => setCopied(false), 2000)
     })
   }
 
@@ -79,25 +64,13 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
       case 'whatsapp':
         navigator.clipboard.writeText(inviteLink).then(() => {
           setCopied(true)
-          setCopiedType('link')
-          setTimeout(() => {
-            setCopied(false)
-            setCopiedType(null)
-          }, 2000)
+          setTimeout(() => setCopied(false), 2000)
         })
         window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank')
         break
 
       case 'facebook':
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(inviteLink)}`, '_blank')
-        break
-
-      case 'telegram':
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`, '_blank')
-        break
-
-      case 'email':
-        window.location.href = `mailto:?subject=Join me on this app!&body=${encodeURIComponent(shareText)}`
         break
 
       case 'copy':
@@ -129,257 +102,143 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
     }
   }
 
-  // Top list share options (No Green Colors)
-  const shareOptions = [
-    { id: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle size={24} />, color: 'bg-amber-600' },
-    { id: 'telegram', label: 'Telegram', icon: <Share2 size={24} />, color: 'bg-blue-500' },
-    { id: 'email', label: 'Email', icon: <Mail size={24} />, color: 'bg-red-500' },
-    { id: 'copy', label: 'Copy Link', icon: <Link2 size={24} />, color: 'bg-gray-600' },
-  ]
-
-  const rewards = [
-    { amount: '50', description: 'Coins for each friend who joins' },
-    { amount: '100', description: 'Bonus coins when 5 friends join' },
-    { amount: '500', description: 'Special reward for 10 friends' },
-  ]
-
   return (
-    <div className="min-h-screen relative flex flex-col bg-[#4d0515] overflow-hidden select-none">
-      {/* Top 40vh Image with bottom smooth fade into the maroon color */}
+    <div className="min-h-screen relative w-full h-full bg-[#4d0515] overflow-hidden select-none">
+      {/* WebShader SVG Filter to remove green colors strictly */}
+      <svg className="hidden">
+        <filter id="webshader-degreener">
+          <feColorMatrix
+            type="matrix"
+            values="
+              1.10  0.00  0.00  0  0
+              0.05  0.15  0.00  0  0
+              0.00  0.00  0.90  0  0
+              0     0     0     1  0"
+          />
+        </filter>
+      </svg>
+
+      {/* Top 40vh Background Image with WebShader */}
       <div className="absolute top-0 left-0 right-0 h-[40vh] z-0 pointer-events-none overflow-hidden">
         <img
           src="/IMG-20260821-WA0100.jpg"
           alt="Top Background"
+          style={{ filter: 'url(#webshader-degreener) saturate(1.15) contrast(1.1)' }}
           className="w-full h-full object-cover object-top"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4d0515]/50 to-[#4d0515]" />
+        {/* Deep maroon gradient overlay for smooth blending */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4d0515]/40 to-[#4d0515]" />
       </div>
 
-      {/* Middle Transition Image (1788074201753~2.jpg) */}
-      <div className="absolute top-[32vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 pointer-events-none flex justify-center opacity-85">
+      {/* Middle Ornament Image with WebShader */}
+      <div className="absolute top-[32vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 pointer-events-none flex justify-center opacity-90">
         <img
           src="/1788074201753~2.jpg"
-          alt="Middle Sheet Ornament"
+          alt="Middle Ornament"
+          style={{ filter: 'url(#webshader-degreener)' }}
           className="w-full object-contain pointer-events-none"
         />
       </div>
 
-      {/* Fixed Bottom Image (1788074191602~2.jpg) - Click opens Red Sheet */}
+      {/* Clickable Fixed Bottom Image (Opens Red/White Sheet) */}
       <div 
         onClick={() => setIsSheetOpen(true)}
-        className="fixed bottom-0 left-0 right-0 z-20 flex justify-center cursor-pointer active:scale-95 transition-transform"
+        className="fixed bottom-0 left-0 right-0 z-20 flex justify-center cursor-pointer active:scale-[0.98] transition-transform"
       >
         <img
           src="/1788074191602~2.jpg"
-          alt="Bottom Decor Clickable"
+          alt="Bottom Decor"
+          style={{ filter: 'url(#webshader-degreener)' }}
           className="w-full max-w-md object-contain object-bottom pointer-events-auto"
         />
       </div>
 
-      {/* Header */}
-      <div className="relative z-10 flex items-center p-4 bg-black/30 backdrop-blur-md border-b border-white/10">
+      {/* Header - ONLY Back Button Icon */}
+      <div className="relative z-30 flex items-center p-4">
         <button
           onClick={onBack}
-          className="p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer"
+          className="p-2.5 bg-black/40 hover:bg-black/60 rounded-full transition-colors cursor-pointer text-white shadow-md backdrop-blur-sm"
         >
-          <ArrowLeft size={24} className="text-white" />
+          <ArrowLeft size={22} />
         </button>
-        <h1 className="text-lg font-semibold text-white ml-3">Invite Friends</h1>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="relative z-10 flex-1 p-4 overflow-y-auto pb-36">
-        <div className="max-w-md mx-auto space-y-6">
-          {/* Hero Section */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white text-center shadow-xl backdrop-blur-sm">
-            <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold mb-2">Invite Friends & Earn Rewards!</h2>
-            <p className="text-sm opacity-90 mb-4">
-              Share your invite code with friends and earn exciting rewards when they join
-            </p>
-            
-            {/* Invite Code Display */}
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 mb-3">
-              <p className="text-xs opacity-80 mb-1">Your Invite Code</p>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl font-bold tracking-wider">{inviteCode}</span>
-                <button
-                  onClick={handleCopyCode}
-                  className="bg-white/30 hover:bg-white/40 rounded-lg p-2 transition-colors cursor-pointer"
-                >
-                  <Copy size={18} />
-                </button>
-              </div>
-              {copied && copiedType === 'code' && (
-                <div className="text-xs mt-2 text-amber-200 font-medium">✓ Code copied!</div>
-              )}
-            </div>
-
-            {/* Invite Link */}
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 mb-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={inviteLink}
-                  readOnly
-                  className="flex-1 bg-transparent text-xs outline-none"
-                />
-                <button
-                  onClick={handleCopyLink}
-                  className="bg-white/30 hover:bg-white/40 rounded-lg px-3 py-1.5 text-xs transition-colors cursor-pointer"
-                >
-                  Copy
-                </button>
-              </div>
-              {copied && copiedType === 'link' && (
-                <div className="text-xs mt-2 text-amber-200 font-medium">✓ Link copied!</div>
-              )}
-            </div>
-          </div>
-
-          {/* Share Options */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">Share Via</h3>
-            <div className="grid grid-cols-4 gap-3">
-              {shareOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => handleShare(option.id)}
-                  className="flex flex-col items-center gap-2 cursor-pointer group"
-                >
-                  <div className={`${option.color} w-14 h-14 rounded-full flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg`}>
-                    {option.icon}
-                  </div>
-                  <span className="text-xs text-gray-600">{option.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Rewards Section */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Gift size={20} className="text-purple-600" />
-              Rewards for You
-            </h3>
-            <div className="space-y-3">
-              {rewards.map((reward, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
-                    {reward.amount}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Coins</p>
-                    <p className="text-xs text-gray-600">{reward.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* How It Works */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Users size={20} className="text-blue-600" />
-              How It Works
-            </h3>
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">1</div>
-                <p className="text-sm text-gray-700">Share your invite code with friends</p>
-              </div>
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">2</div>
-                <p className="text-sm text-gray-700">Friends register using your code</p>
-              </div>
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">3</div>
-                <p className="text-sm text-gray-700">Earn coins and rewards automatically!</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Backdrop overlay for bottom sheet */}
+      {/* Backdrop overlay */}
       {isSheetOpen && (
         <div 
           onClick={() => setIsSheetOpen(false)}
-          className="fixed inset-0 bg-black/60 z-40 transition-opacity backdrop-blur-[2px]"
+          className="fixed inset-0 bg-black/50 z-40 transition-opacity backdrop-blur-[2px]"
         />
       )}
 
-      {/* Bottom 30vh RED Sheet */}
+      {/* Bottom Sheet: Exactly 20vh, Pure White, Zero Border/Line */}
       <div 
-        className={`fixed bottom-0 left-0 right-0 h-[30vh] bg-red-600 text-white rounded-t-3xl z-50 transition-transform duration-300 ease-out shadow-2xl flex flex-col p-4 ${
+        className={`fixed bottom-0 left-0 right-0 h-[20vh] bg-white rounded-t-3xl z-50 transition-transform duration-300 ease-out shadow-2xl flex flex-col px-4 py-2 border-0 outline-none ${
           isSheetOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
+        style={{ border: 'none' }}
       >
-        {/* Top Handle & Close Bar */}
-        <div className="flex items-center justify-between pb-2 border-b border-red-500/40">
-          <div className="w-10 h-1 bg-white/40 rounded-full mx-auto" />
+        {/* Close Button */}
+        <div className="flex justify-end pt-1 pr-1">
           <button 
             onClick={() => setIsSheetOpen(false)} 
-            className="absolute right-4 top-3 text-white/80 hover:text-white p-1 cursor-pointer"
+            className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer transition-colors"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Action Buttons in Red Sheet */}
-        <div className="flex-1 grid grid-cols-4 gap-2 items-center justify-center pt-3 text-center">
-          {/* WhatsApp */}
+        {/* Action Buttons */}
+        <div className="flex-1 grid grid-cols-4 gap-2 items-center justify-center text-center pb-2">
+          {/* WhatsApp Logo */}
           <button
             onClick={() => handleShare('whatsapp')}
-            className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
           >
-            <div className="w-13 h-13 rounded-full bg-white text-red-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <MessageCircle size={28} />
+            <div className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <WhatsAppIcon size={24} />
             </div>
-            <span className="text-xs font-semibold text-white">WhatsApp</span>
+            <span className="text-[11px] font-medium text-gray-800">WhatsApp</span>
           </button>
 
           {/* Facebook */}
           <button
             onClick={() => handleShare('facebook')}
-            className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
           >
-            <div className="w-13 h-13 rounded-full bg-[#1877F2] text-white flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <FacebookIcon size={24} />
+            <div className="w-12 h-12 rounded-full bg-[#1877F2] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <FacebookIcon size={22} />
             </div>
-            <span className="text-xs font-semibold text-white">Facebook</span>
+            <span className="text-[11px] font-medium text-gray-800">Facebook</span>
           </button>
 
-          {/* Link Icon */}
+          {/* Link Icon - Blue */}
           <button
             onClick={() => handleShare('copy')}
-            className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
           >
-            <div className="w-13 h-13 rounded-full bg-white/20 text-white border border-white/30 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <Link2 size={28} />
+            <div className="w-12 h-12 rounded-full bg-[#0088cc] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <Link2 size={22} />
             </div>
-            <span className="text-xs font-semibold text-white">Copy Link</span>
+            <span className="text-[11px] font-medium text-gray-800">Copy Link</span>
           </button>
 
-          {/* More Button (Save File / Share) */}
+          {/* More Button - Orange */}
           <button
             onClick={() => handleShare('more')}
-            className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
           >
-            <div className="w-13 h-13 rounded-full bg-white/20 text-white border border-white/30 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <MoreHorizontal size={28} />
+            <div className="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <MoreHorizontal size={22} />
             </div>
-            <span className="text-xs font-semibold text-white">More</span>
+            <span className="text-[11px] font-medium text-gray-800">More</span>
           </button>
         </div>
 
-        {/* Copy Feedback inside sheet */}
+        {/* Feedback toast */}
         {copied && (
-          <div className="text-center text-xs text-amber-200 font-medium pb-1 animate-pulse">
-            ✓ Link copied successfully!
+          <div className="text-center text-[11px] text-blue-600 font-medium pb-1 animate-pulse">
+            ✓ Link copied!
           </div>
         )}
       </div>
