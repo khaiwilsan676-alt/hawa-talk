@@ -1677,7 +1677,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       <>
         <div 
           ref={categoryCardsRef}
-          className="px-4 mt-2 relative z-10"
+          className="px-4 mt-0.5 relative z-10"
         >
           <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ 
             fontFamily: 'Nunito, Inter, sans-serif'
