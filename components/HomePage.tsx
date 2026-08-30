@@ -1525,10 +1525,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
             </div>
             <div className="flex flex-col">
               <h3 className="text-white font-bold text-xl leading-tight">
-                Embark Your Hurry Journey!
+                {t.createRoomTitle || 'Embark Your Hurry Journey!'}
               </h3>
               <p className="text-white/80 text-sm mt-1 font-medium">
-                Tap to create your room
+                {t.createRoomSubtitle || 'Tap to create your room'}
               </p>
             </div>
           </>
@@ -1552,7 +1552,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 {myRoom?.name || "My Room"}
               </h3>
               <p className="text-white/80 text-sm mt-1 font-medium">
-                Tap to enter your room
+                {t.enterRoomSubtitle || 'Tap to enter your room'}
               </p>
             </div>
           </>
@@ -1569,7 +1569,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          Following
+          {t.following}
           {activeMineTab === 'following' && (
             <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
           )}
@@ -1583,7 +1583,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          Recent
+          {t.recent}
           {activeMineTab === 'recent' && (
             <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
           )}
@@ -1799,8 +1799,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <div
                   key={room.accountId}
                   onClick={() => handleUserCardClick({
-                    id: room.id || room.Id,
-                    accountId: room.accountId || room.Id, 
+                    id: room.accountId || room.id,
+                    accountId: room.accountId || room.id,
                     name: room.name,
                     country: room.country,
                     image: room.image,
@@ -2252,7 +2252,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         : 'font-medium text-[#6E6E6E]'
                     }`}
                   >
-                    Me
+                    {t.mine}
                     
                   </button>
 
@@ -2265,7 +2265,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         : 'font-medium text-[#6E6E6E]'
                     }`}
                   >
-                    Popular
+                    {t.popular}
                   
                   </button>
                 </div>
