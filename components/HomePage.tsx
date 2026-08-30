@@ -42,6 +42,7 @@ const openDB = (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event) => {
       const db = request.result;
+      const oldVersion = event.oldVersion;
       
       if (!db.objectStoreNames.contains(ROOM_STORE)) {
         db.createObjectStore(ROOM_STORE, { keyPath: 'accountId' });
@@ -547,6 +548,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const circleRef = useRef<HTMLDivElement>(null)
 
   const [viewportHeight, setViewportHeight] = useState(0)
+  const [isAndroid, setIsAndroid] = useState(false)
+  const [categoryOffset, setCategoryOffset] = useState(0)
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const bannerContainerRef = useRef<HTMLDivElement>(null)
@@ -591,6 +594,43 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => unsubscribe();
   }, [userUID]);
 
+  // ============ DYNAMIC OFFSET CALCULATION (Original) ============
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isAndroidDevice = userAgent.includes('android');
+    setIsAndroid(isAndroidDevice);
+
+    const adjustOffset = () => {
+      const dotsEl = bannerDotsRef.current;
+      const cardsEl = categoryCardsRef.current;
+      if (!dotsEl || !cardsEl) return;
+
+      const dotsBottom = dotsEl.getBoundingClientRect().bottom;
+      const cardsTop = cardsEl.getBoundingClientRect().top;
+      const currentGap = cardsTop - dotsBottom;
+      const desiredGap = 1.5;
+
+      const deltaOffset = desiredGap - currentGap;
+      setCategoryOffset(prev => prev + deltaOffset);
+    };
+
+    const timeoutId = setTimeout(adjustOffset, 100);
+
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      setTimeout(adjustOffset, 50);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
+
   // ============ MOUNTED ============
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
@@ -607,6 +647,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setHeight()
     window.addEventListener('resize', setHeight)
     window.addEventListener('orientationchange', setHeight)
+    
+    const isAndroidDevice = navigator.userAgent.toLowerCase().includes('android');
+    if (isAndroidDevice) {
+      setTimeout(setHeight, 100);
+      setTimeout(setHeight, 300);
+    }
     
     return () => {
       window.removeEventListener('resize', setHeight)
@@ -718,7 +764,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           room.accountId !== 'null' &&
           room.accountId !== '' &&
           room.accountId !== null &&
-          room.name !== 'User' 
+          room.name !== 'User'
         );
         setGlobalRooms(validRooms);
       }
@@ -793,32 +839,41 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setUserPhoto(photo)
       setUserUID(uid)
 
-      if (uid) {
+      const roomCreated = localStorage.getItem('isRoomCreated')
+      const roomData = localStorage.getItem('myRoom')
+
+      if (roomCreated === 'true' && roomData) {
+        setIsRoomCreated(true)
         try {
-          const docRef = doc(db, "globalRooms", uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            let finalAccNum = storedAccNum || data.accountId;
-            if (!finalAccNum) {
-              const accObj = getOrCreateAccountNumber(uid);
-              finalAccNum = accObj.fullAccNum;
-            }
-            const updatedRoom = {
-              ...data,
-              id: uid,
-              accountId: finalAccNum
-            };
-            setIsRoomCreated(true);
-            setMyRoom(updatedRoom as UserCard);
-            localStorage.setItem('isRoomCreated', 'true');
-            localStorage.setItem('myRoom', JSON.stringify(updatedRoom));
-          } else {
-            setIsRoomCreated(false);
-            setMyRoom(null);
+          const parsed = JSON.parse(roomData)
+          let finalAccNum = storedAccNum || parsed.accountId;
+          if (!finalAccNum && uid) {
+            const accObj = getOrCreateAccountNumber(uid);
+            finalAccNum = accObj.fullAccNum;
           }
-        } catch (error) {
-          console.error("Error fetching room data on load", error);
+          const updatedRoom = {
+            ...parsed,
+            id: uid,
+            accountId: finalAccNum
+          };
+          setMyRoom(updatedRoom);
+          await saveRoomToDB(updatedRoom);
+        } catch (e) {
+          setIsRoomCreated(false)
+          setMyRoom(null)
+        }
+      } else {
+        setIsRoomCreated(false)
+        setMyRoom(null)
+        
+        if (storedAccNum) {
+          const indexedRoom = await loadRoomFromDB(storedAccNum);
+          if (indexedRoom) {
+            setIsRoomCreated(true);
+            setMyRoom(indexedRoom);
+            localStorage.setItem('isRoomCreated', 'true');
+            localStorage.setItem('myRoom', JSON.stringify(indexedRoom));
+          }
         }
       }
 
@@ -1185,27 +1240,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
       return;
     }
 
-    const roomRef = doc(db, "globalRooms", userUID);
-    const roomSnap = await getDoc(roomRef);
-    let finalName = "My Room";
-    let finalImage = userPhoto || '/default-avatar.png';
-    let isLocked = false;
-    let roomPassword = null;
-
-    if (roomSnap.exists()) {
-       const existingData = roomSnap.data();
-       finalName = existingData.name || finalName;
-       finalImage = existingData.image || finalImage;
-       isLocked = existingData.isLocked || false;
-       roomPassword = existingData.roomPassword || null;
-    }
+    const defaultRoomName = "My Room"
 
     const createdRoomCard: UserCard = {
       id: userUID,
       accountId: storedAccNum,
-      name: finalName,
+      name: defaultRoomName,
       country: localStorage.getItem('userCountry') || '🇮🇳',
-      image: finalImage
+      image: userPhoto || '/default-avatar.png'
     }
 
     localStorage.setItem('isRoomCreated', 'true')
@@ -1221,14 +1263,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
     const roomData = {
       id: userUID,
-      name: finalName,
+      name: defaultRoomName,
       country: localStorage.getItem("userCountry") || "🇮🇳",
       countryCode: localStorage.getItem("userCountryCode") || "IN",
-      image: finalImage,
+      image: userPhoto || '/default-avatar.png',
       accountId: storedAccNum,
       createdAt: Date.now(),
-      isLocked: isLocked,
-      roomPassword: roomPassword,
+      isLocked: false,
+      roomPassword: null,
       isExplicitlyCreated: true,
       createdFromMineTab: true
     };
@@ -1237,10 +1279,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
     await setDoc(doc(db, "users", userUID), {
       id: userUID,
-      name: finalName !== "My Room" ? finalName : (userName || "My Room"),
+      name: userName || defaultRoomName,
       country: localStorage.getItem("userCountry") || "🇮🇳",
       countryCode: localStorage.getItem("userCountryCode") || "IN",
-      image: finalImage,
+      image: userPhoto || '/default-avatar.png',
       accountId: storedAccNum,
       createdAt: Date.now(),
       isExplicitlyCreated: true
@@ -1459,7 +1501,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // ============ RENDER MINE TAB ============
   const renderMineTab = () => (
-    <div className="px-4 mt-4">
+    <div className="px-4 mt-6">
       <div
         onClick={handleCardClick}
         className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
@@ -1471,7 +1513,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         {!isRoomCreated ? (
           <>
             <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                 <path
                   d="M16 8V24M8 16H24"
                   stroke="white"
@@ -1521,24 +1563,30 @@ export default function HomePage({ onLogout }: HomePageProps) {
         <button
           type="button"
           onClick={() => setActiveMineTab('following')}
-          className={`relative pb-1.5 text-base transition-colors ${
+          className={`relative pb-1.5 text-xs font-medium transition-colors ${
             activeMineTab === 'following'
-              ? 'text-gray-900 font-bold'
-              : 'text-gray-400 font-medium hover:text-gray-600'
+              ? 'text-gray-900'
+              : 'text-gray-400 hover:text-gray-600'
           }`}
         >
           Following
+          {activeMineTab === 'following' && (
+            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
+          )}
         </button>
         <button
           type="button"
           onClick={() => setActiveMineTab('recent')}
-          className={`relative pb-1.5 text-base transition-colors ${
+          className={`relative pb-1.5 text-sm font-medium transition-colors ${
             activeMineTab === 'recent'
-              ? 'text-gray-900 font-bold'
-              : 'text-gray-400 font-medium hover:text-gray-600'
+              ? 'text-gray-900'
+              : 'text-gray-400 hover:text-gray-600'
           }`}
         >
           Recent
+          {activeMineTab === 'recent' && (
+            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
+          )}
         </button>
       </div>
 
@@ -1576,9 +1624,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm">🇮🇳</span>
+                      <span className="text-base">🇮🇳</span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-semibold text-sm truncate">
+                        <div className="text-white font-semibold text-xs truncate">
                           {room.name}
                         </div>
                       </div>
@@ -1642,9 +1690,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm">🇮🇳</span>
+                      <span className="text-base">🇮🇳</span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-semibold text-sm truncate">
+                        <div className="text-white font-semibold text-xs truncate">
                           {room.name}
                         </div>
                       </div>
@@ -1677,10 +1725,18 @@ export default function HomePage({ onLogout }: HomePageProps) {
       <>
         <div 
           ref={categoryCardsRef}
-          className="px-4 mt-0.5 relative z-10"
+          className="px-4" 
+          style={{ 
+            transform: `translateY(${categoryOffset}px)`,
+            marginBottom: `${categoryOffset}px`,
+            position: 'relative', 
+            zIndex: 10,
+            willChange: 'transform'
+          }}
         >
-          <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ 
-            fontFamily: 'Nunito, Inter, sans-serif'
+          <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
+            fontFamily: 'Nunito, Inter, sans-serif', 
+            marginBottom: '0px' 
           }}>
             {CATEGORY_CARDS.map((card, i) => (
               <div
@@ -1737,8 +1793,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
         
         {allRooms.length > 0 ? (
-          <div className="px-4 mt-4">
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
+            <div className="grid grid-cols-2 gap-1.5">
               {allRooms.map((room) => (
                 <div
                   key={room.accountId}
@@ -1752,7 +1808,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   })}
                   className="cursor-pointer group"
                 >
-                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 aspect-[4/5] min-h-[160px]"
+                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                    style={{ height: '170px' }}
                   >
                     <img
                       src={room.image}
@@ -1772,9 +1829,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   </div>
                   
                   <div className="mt-2 px-1">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs sm:text-sm">{room.country}</span>
-                      <span className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
+                    <div className="flex items-center gap-0.5">
+                      <span className="text-sm">{room.country}</span>
+                      <span className="font-semibold text-gray-900 text-sm truncate">
                         {room.name}
                       </span>
                     </div>
@@ -1800,7 +1857,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 />
               </svg>
               <p className="text-sm">No rooms yet</p>
-              <p className="text-xs text-gray-400 mt-1">Wait for users to join</p>
+              <p className="text-xs text-gray-400 mt-1">Create your room in Me tab</p>
             </div>
           </div>
         )}
@@ -1814,7 +1871,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white"
       style={{
         minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh',
-        paddingBottom: (isChatOpen || isPublicProfileActive || isSearchOpen || currentPage === 'leaderboard') ? '0px' : '96px',
+        paddingBottom: '0px',
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -2192,15 +2249,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
               ref={bannerContainerRef}
               className="w-full px-4 safe-top pt-2"
               style={{
-                height: 'auto',
-                minHeight: 'auto',
+                height: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
+                minHeight: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
                 background: activeTab === 'mine'
                   ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
                 paddingBottom: '12px'
               }}
             >
-              <div className="w-full flex justify-between items-center py-2 box-border mb-4">
+              <div className="w-full flex justify-between items-center py-1 box-border mb-4">
                 
                 {/* Left side: Tabs "Me" and "Popular" */}
                 <div className="flex items-center gap-3">
@@ -2209,11 +2266,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     onClick={() => setActiveTab('mine')}
                     className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
                       activeTab === 'mine'
-                        ? 'font-bold text-[#1E1E1E] text-lg'
-                        : 'font-medium text-[#6E6E6E] text-base'
+                        ? 'font-bold text-[#1E1E1E]'
+                        : 'font-medium text-[#6E6E6E]'
                     }`}
                   >
                     Me
+                    
                   </button>
 
                   <button
@@ -2221,11 +2279,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     onClick={() => setActiveTab('popular')}
                     className={`font-['Inter'] tracking-[0.2px] transition-colors relative pb-1 ${
                       activeTab === 'popular'
-                        ? 'font-bold text-[#1E1E1E] text-lg'
-                        : 'font-medium text-[#6E6E6E] text-base'
+                        ? 'font-bold text-[#1E1E1E]'
+                        : 'font-medium text-[#6E6E6E]'
                     }`}
                   >
                     Popular
+                  
                   </button>
                 </div>
 
@@ -2246,7 +2305,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <button
                     type="button"
                     onClick={handleHouseClick}
-                    className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                    className="flex items-center justify-center cursor-pointer"
                     aria-label="Home"
                   >
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -2272,8 +2331,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     ref={bannerRef}
                     className="rounded-2xl relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
                     style={{
-                      height: 'min(12vh, 100px)',
-                      minHeight: '80px',
+                      height: '100px',
                       width: '100%',
                       display: 'flex',
                       alignItems: 'center',
@@ -2309,7 +2367,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     ref={bannerDotsRef}
                     className="flex justify-center gap-1.5" 
                     style={{ 
-                      marginTop: '4px', 
+                      marginTop: '2px', 
                       marginBottom: '0px',
                       minHeight: '6px'
                     }}
@@ -2393,7 +2451,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       {!isChatOpen && currentPage !== 'room' && !isPublicProfileActive && !isSearchOpen && currentPage !== 'leaderboard' && (
         <div 
-          className="fixed bottom-0 left-0 right-0 flex justify-center z-30 safe-bottom bg-white"
+          className="fixed bottom-0 left-0 right-0 flex justify-center z-30 bg-white"
           style={{
             paddingBottom: 'env(safe-area-inset-bottom, 0px)'
           }}
@@ -2495,4 +2553,3 @@ export default function HomePage({ onLogout }: HomePageProps) {
     </div>
   )
 }
-
