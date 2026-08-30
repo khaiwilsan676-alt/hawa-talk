@@ -136,10 +136,12 @@ const FacebookIcon = ({ size = 24, className = "" }: { size?: number; className?
 )
 
 interface InviteFriendsProps {
-  onBack: () => void
+  onBack?: () => void
+  onClose?: () => void
 }
 
-export default function InviteFriends({ onBack }: InviteFriendsProps) {
+export default function InviteFriends({ onBack, onClose }: InviteFriendsProps) {
+  const handleBack = onBack || onClose || (() => {})
   const [copied, setCopied] = useState(false)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   
@@ -296,10 +298,14 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         <ChromaKeyImage src="/1788074191602~2.jpg" alt="Bottom Decor" className="w-[88%] max-w-[360px] md:max-w-md object-contain object-bottom pointer-events-auto" />
       </div>
 
-      {/* Back Icon */}
-      <div className="relative z-30 flex items-center p-4">
-        <button onClick={onBack} className="p-1 text-white hover:text-white/80 transition-colors cursor-pointer bg-transparent border-0 outline-none shadow-none">
-          <ArrowLeft size={28} />
+      {/* Back Icon - Fixed at Top Left */}
+      <div className="fixed top-0 left-0 z-[60] flex items-center p-4 pt-[max(16px,calc(env(safe-area-inset-top,0px)+8px))] pointer-events-auto">
+        <button
+          onClick={handleBack}
+          className="p-2 text-white hover:text-white/80 transition-colors cursor-pointer bg-black/30 backdrop-blur-md rounded-full border border-white/20 shadow-md active:scale-95"
+          aria-label="Back"
+        >
+          <ArrowLeft size={24} />
         </button>
       </div>
 
