@@ -356,7 +356,7 @@ interface GlobalRoom {
 
 // ============ CONSTANTS ============
 const BANNERS = [
-  { image: '/file_00000000a8b08211bd12c4102d0f9d77.png' },
+  { image: '/IMG-20260830-WA0081.jpg' },
   { image: '/IMG-20260818-WA0000.jpg' },
   { image: '/IMG-20260818-WA0001.jpg' }
 ]
