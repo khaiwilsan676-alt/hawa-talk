@@ -10,11 +10,23 @@ import {
   MessageCircle, 
   Mail, 
   Link2, 
-  Facebook, 
   MoreHorizontal, 
   X,
   Download
 } from 'lucide-react'
+
+// Custom Facebook SVG component to prevent lucide-react build errors
+const FacebookIcon = ({ size = 24, className = "" }: { size?: number; className?: string }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className={className}
+  >
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+)
 
 interface InviteFriendsProps {
   onBack: () => void
@@ -65,7 +77,6 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
     
     switch(platform) {
       case 'whatsapp':
-        // Link copy pehle and direct open WhatsApp
         navigator.clipboard.writeText(inviteLink).then(() => {
           setCopied(true)
           setCopiedType('link')
@@ -94,7 +105,6 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
         break
 
       case 'more':
-        // Native Share / Save file logic
         if (navigator.share) {
           navigator.share({
             title: 'Invite Code & Link',
@@ -102,7 +112,6 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             url: inviteLink,
           }).catch(() => {})
         } else {
-          // Fallback: Save text file download
           const blob = new Blob([shareText], { type: 'text/plain' })
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')
@@ -314,7 +323,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
           <div className="w-10 h-1 bg-white/40 rounded-full mx-auto" />
           <button 
             onClick={() => setIsSheetOpen(false)} 
-            className="absolute right-4 top-3 text-white/80 hover:text-white p-1"
+            className="absolute right-4 top-3 text-white/80 hover:text-white p-1 cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -339,7 +348,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
             className="flex flex-col items-center justify-center gap-2 group cursor-pointer"
           >
             <div className="w-13 h-13 rounded-full bg-[#1877F2] text-white flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <Facebook size={28} />
+              <FacebookIcon size={24} />
             </div>
             <span className="text-xs font-semibold text-white">Facebook</span>
           </button>
@@ -377,3 +386,4 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
     </div>
   )
 }
+
