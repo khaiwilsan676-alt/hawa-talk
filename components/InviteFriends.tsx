@@ -178,7 +178,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
       </div>
 
       {/* Middle Ornament Image */}
-      <div className="absolute top-[32vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 pointer-events-none flex justify-center">
+      <div className="absolute top-[42vh] left-1/2 -translate-x-1/2 w-full max-w-md z-0 pointer-events-none flex justify-center">
         <ChromaKeyImage
           src="/1788074201753~2.jpg"
           alt="Middle Ornament"
@@ -189,7 +189,7 @@ export default function InviteFriends({ onBack }: InviteFriendsProps) {
       {/* Clickable Fixed Bottom Image - Thoda sa chhota */}
       <div 
         onClick={() => setIsSheetOpen(true)}
-        className="fixed bottom-0 left-0 right-0 z-20 flex justify-center cursor-pointer active:scale-[0.98] transition-transform"
+        className="fixed bottom-0 left-0 right-0 z-20 flex justify-end pr-2 cursor-pointer active:scale-[0.98] transition-transform"
       >
         <ChromaKeyImage
           src="/1788074191602~2.jpg"
