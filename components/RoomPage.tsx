@@ -9,7 +9,7 @@ import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { db } from "../src/lib/firebase";
-import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, updateDoc, deleteField, collection } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, updateDoc, deleteField, collection, getDocs } from "firebase/firestore";
 import { 
   LiveKitRoom, 
   RoomAudioRenderer, 
@@ -137,6 +137,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 }
 
 function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFollowToggle }: RoomPageProps) {
+  // Yaha par bas ye ek isKeepingRef add kiya hai, jisse unmount par ID delete na ho
+  const isKeepingRef = useRef(false);
+
   const [showExitMenu, setShowExitMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
@@ -443,21 +446,39 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     });
   }, [micMode, roomId]);
 
+  // UPDATE ACTIVE USER COUNT IN FIRESTORE
   useEffect(() => {
     if (!db || userAccountId === "guest") return;
 
     const presenceDocRef = doc(db, presenceCollection, userAccountId);
+    const globalRoomRef = doc(db, "globalRooms", roomId);
+    
     const userData: RoomUser = {
       accountId: userAccountId,
       name: currentUser.name,
       image: currentUser.image
     };
 
+    const updateGlobalCount = async () => {
+      try {
+        const snap = await getDocs(collection(db, presenceCollection));
+        await setDoc(globalRoomRef, { activeUserCount: snap.docs.length }, { merge: true });
+      } catch (e) {
+        console.error("Error updating global room count:", e);
+      }
+    };
+
     setDoc(presenceDocRef, userData, { merge: true })
+      .then(updateGlobalCount)
       .catch(err => console.error("Error adding presence:", err));
 
     return () => {
-      deleteDoc(presenceDocRef).catch(err => console.error("Error removing presence:", err));
+      // Logic for keeping ID inside the room!
+      if (!isKeepingRef.current) {
+        deleteDoc(presenceDocRef)
+          .then(updateGlobalCount)
+          .catch(err => console.error("Error removing presence:", err));
+      }
     };
   }, [userAccountId, currentUser.name, currentUser.image, roomId]);
 
@@ -837,6 +858,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const handleExit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    // Jab completely Exit karna ho tabhi presence doc ID hategi
+    isKeepingRef.current = false;
     setShowExitMenu(false);
     localStorage.removeItem('keptRoom');
     setMessages([]);
@@ -847,6 +870,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const handleKeep = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    // Keep karne par yeh true ho jayega jisse DB se id nahi hatega 
+    isKeepingRef.current = true;
     const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || '' };
     localStorage.setItem('keptRoom', JSON.stringify(roomData));
     setShowExitMenu(false);
@@ -1134,6 +1159,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     window.addEventListener('mousemove', handleTouchMove);
     window.addEventListener('mouseup', handleTouchEnd);
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchmove', handleTouchMove);
     window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
@@ -1760,7 +1786,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           onMouseDown={handleTouchStart}
           onTouchStart={handleTouchStart}
           onClick={() => {
-            // Sirf click karne par maximize hoga, drag karne par nahi
             if (!hasMovedRef.current) {
               setMusicControllerState('full');
             }
@@ -2247,3 +2272,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
     </div>
   );
 }
+
