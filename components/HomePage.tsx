@@ -546,8 +546,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const circleRef = useRef<HTMLDivElement>(null)
 
   const [viewportHeight, setViewportHeight] = useState(0)
-  const [isAndroid, setIsAndroid] = useState(false)
-  const [categoryOffset, setCategoryOffset] = useState(0)
 
   const bannerRef = useRef<HTMLDivElement>(null)
   const bannerContainerRef = useRef<HTMLDivElement>(null)
@@ -592,43 +590,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return () => unsubscribe();
   }, [userUID]);
 
-  // ============ DYNAMIC OFFSET CALCULATION ============
-  useEffect(() => {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isAndroidDevice = userAgent.includes('android');
-    setIsAndroid(isAndroidDevice);
-
-    const adjustOffset = () => {
-      const dotsEl = bannerDotsRef.current;
-      const cardsEl = categoryCardsRef.current;
-      if (!dotsEl || !cardsEl) return;
-
-      const dotsBottom = dotsEl.getBoundingClientRect().bottom;
-      const cardsTop = cardsEl.getBoundingClientRect().top;
-      const currentGap = cardsTop - dotsBottom;
-      const desiredGap = 1.5;
-
-      const deltaOffset = desiredGap - currentGap;
-      setCategoryOffset(prev => prev + deltaOffset);
-    };
-
-    const timeoutId = setTimeout(adjustOffset, 100);
-
-    const handleResize = () => {
-      clearTimeout(timeoutId);
-      setTimeout(adjustOffset, 50);
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
-    };
-  }, []);
-
   // ============ MOUNTED ============
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
@@ -645,12 +606,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
     setHeight()
     window.addEventListener('resize', setHeight)
     window.addEventListener('orientationchange', setHeight)
-    
-    const isAndroidDevice = navigator.userAgent.toLowerCase().includes('android');
-    if (isAndroidDevice) {
-      setTimeout(setHeight, 100);
-      setTimeout(setHeight, 300);
-    }
     
     return () => {
       window.removeEventListener('resize', setHeight)
@@ -824,7 +779,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     return distance < 60
   }, [])
 
-  // ============ LOAD PROFILE (BUG FIX: Check DB first so room doesn't disappear) ============
+  // ============ LOAD PROFILE ============
   useEffect(() => {
     const loadProfile = async () => {
       const name = localStorage.getItem('userName') || ''
@@ -836,7 +791,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       setUserPhoto(photo)
       setUserUID(uid)
 
-      // BUG FIX: Check globalRooms to prevent room disappearance and DP override
       if (uid) {
         try {
           const docRef = doc(db, "globalRooms", uid);
@@ -1229,7 +1183,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       return;
     }
 
-    // BUG FIX: Fetch current room data if it exists so we don't override with Gmail default
     const roomRef = doc(db, "globalRooms", userUID);
     const roomSnap = await getDoc(roomRef);
     let finalName = "My Room";
@@ -1498,15 +1451,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
     room.name !== 'User' &&
     room.accountId !== 'undefined' &&
     room.accountId !== 'null' &&
-    room.accountId !== ''
+    room.accountId !== '' &&
+    room.activeUserCount >=1 
   )
 
   // ============ RENDER MINE TAB ============
   const renderMineTab = () => (
-    <div className="px-4 mt-6">
+    <div className="px-4 mt-4">
       <div
         onClick={handleCardClick}
-        className="rounded-2xl p-5 sm:p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-5 sm:mb-6"
+        className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
@@ -1514,7 +1468,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       >
         {!isRoomCreated ? (
           <>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
               <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
                 <path
                   d="M16 8V24M8 16H24"
@@ -1526,17 +1480,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
               </svg>
             </div>
             <div className="flex flex-col">
-              <h3 className="text-white font-bold text-lg sm:text-xl leading-tight">
+              <h3 className="text-white font-bold text-xl leading-tight">
                 Embark Your Hurry Journey!
               </h3>
-              <p className="text-white/80 text-xs sm:text-sm mt-1 font-medium">
+              <p className="text-white/80 text-sm mt-1 font-medium">
                 Tap to create your room
               </p>
             </div>
           </>
         ) : (
           <>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/50">
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/50">
               {myRoom?.image ? (
                 <img
                   src={myRoom.image}
@@ -1550,10 +1504,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
               )}
             </div>
             <div className="flex flex-col">
-              <h3 className="text-white font-bold text-lg sm:text-xl leading-tight">
+              <h3 className="text-white font-bold text-xl leading-tight">
                 {myRoom?.name || "My Room"}
               </h3>
-              <p className="text-white/80 text-xs sm:text-sm mt-1 font-medium">
+              <p className="text-white/80 text-sm mt-1 font-medium">
                 Tap to enter your room
               </p>
             </div>
@@ -1561,40 +1515,34 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
       </div>
 
-      <div className="flex gap-5 mb-4">
+      <div className="flex gap-4 mb-4">
         <button
           type="button"
           onClick={() => setActiveMineTab('following')}
-          className={`relative pb-1.5 text-sm sm:text-base transition-colors ${
+          className={`relative pb-1.5 text-base transition-colors ${
             activeMineTab === 'following'
               ? 'text-gray-900 font-bold'
               : 'text-gray-400 font-medium hover:text-gray-600'
           }`}
         >
           Following
-          {activeMineTab === 'following' && (
-            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
-          )}
         </button>
         <button
           type="button"
           onClick={() => setActiveMineTab('recent')}
-          className={`relative pb-1.5 text-sm sm:text-base transition-colors ${
+          className={`relative pb-1.5 text-base transition-colors ${
             activeMineTab === 'recent'
               ? 'text-gray-900 font-bold'
               : 'text-gray-400 font-medium hover:text-gray-600'
           }`}
         >
           Recent
-          {activeMineTab === 'recent' && (
-            <span className="absolute left-0 right-0 -bottom-0 h-0.5 bg-gray-900 rounded-full" />
-          )}
         </button>
       </div>
 
       {activeMineTab === 'following' && (
         followingRooms.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {followingRooms.map(room => {
               const user: UserCard = {
                 id: room.accountId,
@@ -1608,7 +1556,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <div
                   key={room.accountId}
                   onClick={() => handleUserCardClick(user)}
-                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 aspect-[4/5] min-h-[160px]"
+                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                  style={{ height: '180px' }}
                 >
                   <img
                     src={room.image}
@@ -1627,7 +1576,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm">🇮🇳</span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-semibold text-xs sm:text-sm truncate">
+                        <div className="text-white font-semibold text-sm truncate">
                           {room.name}
                         </div>
                       </div>
@@ -1659,7 +1608,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
       {activeMineTab === 'recent' && (
         recentRooms.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {recentRooms.map(room => {
               const user: UserCard = {
                 id: room.accountId,
@@ -1673,7 +1622,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <div
                   key={room.accountId}
                   onClick={() => handleUserCardClick(user)}
-                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 aspect-[4/5] min-h-[160px]"
+                  className="relative bg-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                  style={{ height: '180px' }}
                 >
                   <img
                     src={room.image}
@@ -1692,7 +1642,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm">🇮🇳</span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-semibold text-xs sm:text-sm truncate">
+                        <div className="text-white font-semibold text-sm truncate">
                           {room.name}
                         </div>
                       </div>
@@ -1725,18 +1675,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
       <>
         <div 
           ref={categoryCardsRef}
-          className="px-4" 
-          style={{ 
-            transform: `translateY(${categoryOffset}px)`,
-            marginBottom: `${categoryOffset}px`,
-            position: 'relative', 
-            zIndex: 10,
-            willChange: 'transform'
-          }}
+          className="px-4 mt-4 relative z-10"
         >
           <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ 
-            fontFamily: 'Nunito, Inter, sans-serif', 
-            marginBottom: '0px' 
+            fontFamily: 'Nunito, Inter, sans-serif'
           }}>
             {CATEGORY_CARDS.map((card, i) => (
               <div
@@ -1793,8 +1735,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
         </div>
         
         {allRooms.length > 0 ? (
-          <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="px-4 mt-4">
+            <div className="grid grid-cols-2 gap-1.5">
               {allRooms.map((room) => (
                 <div
                   key={room.accountId}
@@ -1808,7 +1750,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   })}
                   className="cursor-pointer group"
                 >
-                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 aspect-[4/5] min-h-[160px]"
+                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                    style={{ height: '170px' }}
                   >
                     <img
                       src={room.image}
@@ -1829,8 +1772,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   
                   <div className="mt-2 px-1">
                     <div className="flex items-center gap-1">
-                      <span className="text-xs sm:text-sm">{room.country}</span>
-                      <span className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
+                      <span className="text-sm">{room.country}</span>
+                      <span className="font-semibold text-gray-900 text-sm truncate">
                         {room.name}
                       </span>
                     </div>
@@ -2259,7 +2202,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
               <div className="w-full flex justify-between items-center py-2 box-border mb-4">
                 
                 {/* Left side: Tabs "Me" and "Popular" */}
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setActiveTab('mine')}
@@ -2286,7 +2229,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 </div>
 
                 {/* Right side: Search and House icons */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setIsSearchOpen(true)}
