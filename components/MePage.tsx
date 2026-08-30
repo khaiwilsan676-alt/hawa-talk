@@ -62,12 +62,6 @@ const saveUserToDB = async (userData: any) => {
     });
 
     db.close();
-    console.log('✅ User data IndexedDB mein save hua (PERMANENT):', {
-      name: completeUserData.name,
-      uid: completeUserData.uid,
-      hasPhoto: !!completeUserData.photo,
-      accountNumber: completeUserData.accountNumber
-    });
   } catch (error) {
     console.error('❌ User save error:', error);
   }
@@ -86,15 +80,6 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
     });
 
     db.close();
-    
-    if (userData) {
-      console.log('✅ IndexedDB se user data mila:', {
-        name: userData.name,
-        hasPhoto: !!userData.photo,
-        accountNumber: userData.accountNumber
-      });
-    }
-    
     return userData || null;
   } catch (error) {
     console.error('❌ User load error:', error);
@@ -115,7 +100,6 @@ const saveFeedbackToDB = async (feedbackData: any) => {
     });
 
     db.close();
-    console.log('Feedback IndexedDB mein save hua (offline)');
   } catch (error) {
     console.error('Feedback save error:', error);
   }
@@ -202,7 +186,7 @@ const FEEDBACK_TYPES = [
 ]
 
 export const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid || uid === 'N/A') return { fullAccNum: 'N/A', displayAccNum: 'N/A' }
+  if (!uid || uid === 'N/A') return { fullAccNum: '', displayAccNum: '' }
 
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return { fullAccNum: uid, displayAccNum: uid }
@@ -224,6 +208,12 @@ export const getOrCreateAccountNumber = (uid: string) => {
   return { fullAccNum: generated, displayAccNum: generated }
 }
 
+const isValidName = (val?: string | null): boolean => {
+  if (!val) return false;
+  const clean = val.trim().toLowerCase();
+  return clean !== '' && clean !== 'guest' && clean !== 'user' && clean !== 'null' && clean !== 'undefined';
+}
+
 const WhiteColorRemovalShader = ({ 
   imageSrc, 
   threshold = 0.9,
@@ -243,16 +233,12 @@ const WhiteColorRemovalShader = ({
     if (!canvas) return
 
     const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
-    if (!gl) {
-      console.warn('WebGL not supported')
-      return
-    }
+    if (!gl) return
 
     const vertexShaderSource = `
       attribute vec2 a_position;
       attribute vec2 a_texCoord;
       varying vec2 v_texCoord;
-      
       void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
         v_texCoord = a_texCoord;
@@ -261,19 +247,15 @@ const WhiteColorRemovalShader = ({
 
     const fragmentShaderSource = `
       precision mediump float;
-      
       varying vec2 v_texCoord;
       uniform sampler2D u_texture;
       uniform float u_threshold;
-      
       void main() {
         vec4 color = texture2D(u_texture, v_texCoord);
-        
         float maxColor = max(color.r, max(color.g, color.b));
         float minColor = min(color.r, min(color.g, color.b));
         float lightness = (maxColor + minColor) / 2.0;
         float saturation = maxColor - minColor;
-        
         if (lightness > u_threshold && saturation < 0.3) {
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
@@ -287,9 +269,7 @@ const WhiteColorRemovalShader = ({
       if (!shader) return null
       gl.shaderSource(shader, source)
       gl.compileShader(shader)
-      
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
         gl.deleteShader(shader)
         return null
       }
@@ -298,34 +278,20 @@ const WhiteColorRemovalShader = ({
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-    
     if (!vertexShader || !fragmentShader) return
 
     const program = gl.createProgram()
     if (!program) return
-    
     gl.attachShader(program, vertexShader)
     gl.attachShader(program, fragmentShader)
     gl.linkProgram(program)
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program))
-      return
-    }
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return
 
     gl.useProgram(program)
 
     const positionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    const positions = new Float32Array([
-      -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-      -1.0,  1.0,
-       1.0, -1.0,
-       1.0,  1.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW)
 
     const positionLocation = gl.getAttribLocation(program, 'a_position')
     gl.enableVertexAttribArray(positionLocation)
@@ -333,15 +299,7 @@ const WhiteColorRemovalShader = ({
 
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    const texCoords = new Float32Array([
-      0.0, 1.0,
-      1.0, 1.0,
-      0.0, 0.0,
-      0.0, 0.0,
-      1.0, 1.0,
-      1.0, 0.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]), gl.STATIC_DRAW)
 
     const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
     gl.enableVertexAttribArray(texCoordLocation)
@@ -349,12 +307,10 @@ const WhiteColorRemovalShader = ({
 
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
-    
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
@@ -363,22 +319,15 @@ const WhiteColorRemovalShader = ({
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      
       const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
       gl.uniform1f(thresholdLocation, threshold)
-      
       canvas.width = image.width
       canvas.height = image.height
       gl.viewport(0, 0, canvas.width, canvas.height)
-      
       gl.clearColor(0.0, 0.0, 0.0, 0.0)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
-      
       setIsLoaded(true)
-    }
-    image.onerror = () => {
-      console.error('Failed to load image for WebGL processing')
     }
     image.src = imageSrc
 
@@ -414,7 +363,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [walletTab, setWalletTab] = useState<'coins' | 'diamond'>('coins')
   const [showStore, setShowStore] = useState(false)
   
-  // New states for additional pages
   const [showInviteFriends, setShowInviteFriends] = useState(false)
   const [showFamily, setShowFamily] = useState(false)
   const [showLevel, setShowLevel] = useState(false)
@@ -476,10 +424,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         view !== 'me' || 
         showFeedbackPage || 
         showWallet || 
-        showStore ||
-        showInviteFriends ||
-        showFamily ||
-        showLevel ||
+        showStore || 
+        showInviteFriends || 
+        showFamily || 
+        showLevel || 
         showMedal
       )
     }
@@ -529,8 +477,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       }, 2000);
 
     } catch (error) {
-      console.error("Error submitting feedback:", error);
-      
       try {
         await saveFeedbackToDB(feedbackData);
         setFeedbackSuccess(true);
@@ -542,10 +488,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           setShowFeedbackPage(false);
           setFeedbackSuccess(false);
         }, 2000);
-        
-        console.log('Feedback saved offline in IndexedDB');
       } catch (dbError) {
-        console.error('Failed to save feedback offline:', dbError);
         setFeedbackError("Failed to submit feedback. Please try again.");
       }
     } finally {
@@ -560,12 +503,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     localStorage.getItem("userPhone") || 
                     localStorage.getItem("userId") || 
                     "";
-        
+
+        // Local storage cleanup: faltu 'Guest' ya 'User' string permanently saaf
+        const localSavedName = localStorage.getItem("userName");
+        if (localSavedName && !isValidName(localSavedName)) {
+          localStorage.removeItem("userName");
+        }
+
         if (!uid || uid === "N/A") {
-          const fallbackName = localStorage.getItem("userName");
+          const validLocal = localStorage.getItem("userName");
           setUser({
-            name: fallbackName && fallbackName !== "Guest" ? fallbackName : "",
-            uid: "N/A",
+            name: isValidName(validLocal) ? validLocal! : "",
+            uid: "",
             accountNumber: "",
             displayAccountNumber: "",
             phone: "",
@@ -574,18 +523,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           return;
         }
 
-        // 1. Check IndexedDB First (Permanent Offline / Saved Cache)
+        // 1. Check IndexedDB First
         const cachedUser = await loadUserFromDB(uid);
-        
-        if (cachedUser && cachedUser.name && cachedUser.name !== "Guest") {
-          console.log('✅ IndexedDB se permanent user data mil gaya, no Firebase query needed:', cachedUser.name);
-          setUser(cachedUser);
+        if (cachedUser && (isValidName(cachedUser.name) || cachedUser.accountNumber)) {
+          setUser({
+            ...cachedUser,
+            name: isValidName(cachedUser.name) ? cachedUser.name : "",
+          });
           return;
         }
 
-        // 2. Agar IndexedDB me user data nahi hai ya incomplete hai, toh Firebase se 1 baar fetch karo
+        // 2. Sirf agar IndexedDB me nahi ho tabhi Firebase se fetch
         try {
-          console.log('🔥 IndexedDB empty ya incomplete hai, Firebase se initial fetch kar rahe hain...');
           const userDocRef = doc(db, "users", uid);
           const docSnap = await getDoc(userDocRef);
           
@@ -597,13 +546,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               const { fullAccNum } = getOrCreateAccountNumber(uid);
               accountNumber = fullAccNum;
             }
-            
-            const resolvedName = firebaseData.name && firebaseData.name !== "Guest" 
+
+            const cleanName = isValidName(firebaseData.name) 
               ? firebaseData.name 
-              : (localStorage.getItem("userName") && localStorage.getItem("userName") !== "Guest" ? localStorage.getItem("userName")! : "");
+              : (isValidName(localStorage.getItem("userName")) ? localStorage.getItem("userName")! : "");
 
             const userData = {
-              name: resolvedName,
+              name: cleanName,
               uid: uid,
               accountNumber: accountNumber,
               displayAccountNumber: accountNumber,
@@ -611,10 +560,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               photo: firebaseData.photo || localStorage.getItem("userPhoto") || "",
             };
             
-            // IndexedDB me permanently save kar lo (taaki next time Firebase touch na ho)
             await saveUserToDB(userData);
             
-            if (userData.name) localStorage.setItem("userName", userData.name);
+            if (isValidName(cleanName)) localStorage.setItem("userName", cleanName);
             if (userData.accountNumber) localStorage.setItem("accountNumber", userData.accountNumber);
             if (userData.photo) localStorage.setItem("userPhoto", userData.photo);
             if (userData.phone) localStorage.setItem("userPhone", userData.phone);
@@ -624,7 +572,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             const localName = localStorage.getItem("userName");
             const { fullAccNum } = getOrCreateAccountNumber(uid);
             const fallbackUser = {
-              name: localName && localName !== "Guest" ? localName : "",
+              name: isValidName(localName) ? localName! : "",
               uid: uid,
               accountNumber: fullAccNum,
               displayAccountNumber: fullAccNum,
@@ -635,15 +583,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             setUser(fallbackUser);
           }
         } catch (firebaseError) {
-          console.warn('⚠️ Firebase initial fetch error:', firebaseError);
-          const localName = localStorage.getItem("userName");
-          if (localName && localName !== "Guest") {
-            setUser(prev => ({ ...prev, name: localName, uid }));
-          }
+          console.warn('Firebase initial fetch error:', firebaseError);
         }
 
       } catch (error) {
-        console.error('❌ Error in fetchUserData:', error);
+        console.error('Error fetching user data:', error);
       }
     };
 
@@ -651,7 +595,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   }, []);
 
   const handleCopyAccountNumber = () => {
-    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
+    if (user.displayAccountNumber) {
       navigator.clipboard.writeText(user.displayAccountNumber)
       alert("ID Copied to clipboard!")
     }
@@ -659,34 +603,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // Early returns for all pages
-  if (showInviteFriends) {
-    return <InviteFriends onBack={() => setShowInviteFriends(false)} />
-  }
-
-  if (showFamily) {
-    return <Family onBack={() => setShowFamily(false)} />
-  }
-
-  if (showLevel) {
-    return <Level onBack={() => setShowLevel(false)} />
-  }
-
-  if (showMedal) {
-    return <Medal onBack={() => setShowMedal(false)} />
-  }
-
-  if (showWallet) {
-    return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
-  }
-
-  if (showStore) {
-    return <StorePage onBack={() => setShowStore(false)} />
-  }
+  // Early returns for pages
+  if (showInviteFriends) return <InviteFriends onBack={() => setShowInviteFriends(false)} />
+  if (showFamily) return <Family onBack={() => setShowFamily(false)} />
+  if (showLevel) return <Level onBack={() => setShowLevel(false)} />
+  if (showMedal) return <Medal onBack={() => setShowMedal(false)} />
+  if (showWallet) return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
+  if (showStore) return <StorePage onBack={() => setShowStore(false)} />
 
   if (showFeedbackPage) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col pb-[5vh]">
+      <div className="min-h-screen bg-gray-50 flex flex-col pb-[8vh]">
         <div className="flex items-center p-4 bg-white border-b border-gray-200">
           <button
             onClick={() => {
@@ -802,24 +729,20 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     );
   }
 
-  if (currentView === 'language') {
-    return <LanguagePage onBack={() => switchView('me')} />
-  }
+  if (currentView === 'language') return <LanguagePage onBack={() => switchView('me')} />
+  if (currentView === 'customer_service') return <HurrySupport onBack={() => switchView('me')} />
+  if (currentView === 'settings') return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
+  if (currentView === 'public_profile') return <PublicProfile onBack={() => switchView('me')} />
 
-  if (currentView === 'customer_service') {
-    return <HurrySupport onBack={() => switchView('me')} />
-  }
+  // Single truth for Name & Avatar: Zero "Guest" / Zero "User" garbage
+  const displayName = isValidName(user.name) 
+    ? user.name 
+    : (user.displayAccountNumber ? user.displayAccountNumber : '');
 
-  if (currentView === 'settings') {
-    return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
-  }
-
-  if (currentView === 'public_profile') {
-    return <PublicProfile onBack={() => switchView('me')} />
-  }
+  const avatarFallbackLetter = displayName ? displayName.charAt(0).toUpperCase() : '';
 
   return (
-    <div className="w-full min-h-screen bg-white pb-[5vh]">
+    <div className="w-full min-h-screen bg-white pb-[8vh]">
       <div
         className="px-4 pb-4 relative safe-top"
         style={{
@@ -844,7 +767,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               
               {!user.photo && (
                 <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
-                  {user.name && user.name !== "Guest" ? user.name.charAt(0).toUpperCase() : "?"}
+                  {avatarFallbackLetter}
                 </div>
               )}
               
@@ -867,7 +790,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
             <div className="flex flex-col">
               <h2 className="text-2xl font-bold text-gray-900 mb-0.5">
-                {user.name && user.name !== "Guest" ? user.name : "User"}
+                {displayName}
               </h2>
 
               <div className="flex items-center gap-1 mt-1">
@@ -883,12 +806,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     </p>
                   </div>
                 ) : (
-                  <p className="text-gray-700 text-xs font-semibold">
-                    ID: {user.displayAccountNumber || "N/A"}
-                  </p>
+                  user.displayAccountNumber && (
+                    <p className="text-gray-700 text-xs font-semibold">
+                      ID: {user.displayAccountNumber}
+                    </p>
+                  )
                 )}
 
-                {user.accountNumber && user.accountNumber !== 'N/A' && (
+                {user.accountNumber && (
                   <button
                     onClick={handleCopyAccountNumber}
                     className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
@@ -968,17 +893,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               <div 
                 className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => {
-                  if (item.id === '1') {
-                    setShowInviteFriends(true);
-                  } else if (item.id === '2') {
-                    setShowFamily(true);
-                  } else if (item.id === '3') {
-                    setShowLevel(true);
-                  } else if (item.id === '4') {
-                    setShowMedal(true);
-                  } else if (item.id === '5') {
-                    setShowStore(true);
-                  }
+                  if (item.id === '1') setShowInviteFriends(true);
+                  else if (item.id === '2') setShowFamily(true);
+                  else if (item.id === '3') setShowLevel(true);
+                  else if (item.id === '4') setShowMedal(true);
+                  else if (item.id === '5') setShowStore(true);
                 }}
               >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
@@ -1058,3 +977,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     </div>
   )
 }
+
