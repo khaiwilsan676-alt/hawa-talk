@@ -356,7 +356,7 @@ interface GlobalRoom {
 
 // ============ CONSTANTS ============
 const BANNERS = [
-  { image: '/file-00000000a8b08211bd12c4102d0f9d77.png' },
+  { image: '/file_00000000a8b08211bd12c4102d0f9d77.png' },
   { image: '/IMG-20260818-WA0000.jpg' },
   { image: '/IMG-20260818-WA0001.jpg' }
 ]
@@ -998,6 +998,22 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }, 5000)
     return () => clearInterval(interval)
   }, [])
+
+  // ============ INVITE FRIENDS HISTORY BACK HANDLING ============
+  useEffect(() => {
+    if (!isInviteFriendsOpen) return
+
+    const handlePopState = () => {
+      setIsInviteFriendsOpen(false)
+    }
+
+    window.history.pushState({ inviteFriendsModal: true }, '')
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [isInviteFriendsOpen])
 
   // ============ SIGN IN DAY ============
   useEffect(() => {
@@ -1935,7 +1951,20 @@ export default function HomePage({ onLogout }: HomePageProps) {
       {/* Invite Friends Modal */}
       {isInviteFriendsOpen && (
         <div className="fixed inset-0 z-[200]">
-          <InviteFriends onClose={() => setIsInviteFriendsOpen(false)} />
+          <InviteFriends
+            onBack={() => {
+              setIsInviteFriendsOpen(false)
+              if (window.history.state?.inviteFriendsModal) {
+                window.history.back()
+              }
+            }}
+            onClose={() => {
+              setIsInviteFriendsOpen(false)
+              if (window.history.state?.inviteFriendsModal) {
+                window.history.back()
+              }
+            }}
+          />
         </div>
       )}
 
@@ -2335,7 +2364,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     }}
                     onClick={() => {
                       if (Math.abs(swipeOffset) < 10) {
-                        setIsInviteFriendsOpen(true)
+                        if (currentBanner === 0 || BANNERS[currentBanner]?.image.includes('file_00000000a8b08211bd12c4102d0f9d77')) {
+                          setIsInviteFriendsOpen(true)
+                        }
                       }
                     }}
                     onTouchStart={handleTouchStart}
