@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -1397,7 +1396,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={openChatInput}
-              className="bg-black/40 backdrop-blur-md border border-white/10 text-white font-semibold rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
+              className="bg-black/40 backdrop-blur-md border border-white/10 text-white font-semibold rounded-none hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
               style={{ fontSize: 'var(--footer-sayhi-text)', padding: 'var(--footer-sayhi-padding)' }}
             >
               Say Hi
@@ -1452,19 +1451,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         {showChatInput && (
           <div 
             ref={inputContainerRef} 
-            className="flex items-center gap-0 mb-2 -mx-3 sm:-mx-4"
+            className="fixed bottom-0 left-0 right-0 z-30 flex items-center w-full"
             style={{
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              zIndex: 30,
-              padding: '8px 12px',
-              background: 'rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(8px)',
+              paddingBottom: 'env(safe-area-inset-bottom)'
             }}
           >
-            <div className="flex-1 bg-white flex items-center px-3 py-2 shadow-lg w-full rounded-xl">
+            <div className="flex-1 bg-white flex items-center px-3 py-2 w-full rounded-none">
               <button onMouseDown={(e) => e.preventDefault()} onClick={handleImageClick} className="hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 cursor-pointer">
                 <svg viewBox="0 0 24 24" className="fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
@@ -1478,7 +1470,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 onKeyPress={handleKeyPress}
                 onFocus={handleInputFocus}
                 placeholder="Type a message..."
-                className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-2 py-1.5 outline-none border-none"
+                className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 px-2 py-1.5 outline-none border-none rounded-none"
                 style={{ fontSize: 'var(--footer-input-text)' }}
               />
               <button
@@ -2275,4 +2267,3 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
     </div>
   );
 }
-
