@@ -1396,7 +1396,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={openChatInput}
-              className="bg-black/40 backdrop-blur-md border border-white/10 text-white font-semibold rounded-none hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
+              className="bg-black/40 backdrop-blur-md border border-white/10 text-white font-semibold rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
               style={{ fontSize: 'var(--footer-sayhi-text)', padding: 'var(--footer-sayhi-padding)' }}
             >
               Say Hi
