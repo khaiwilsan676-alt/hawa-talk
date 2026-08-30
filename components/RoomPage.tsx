@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -2274,3 +2275,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
     </div>
   );
 }
+
