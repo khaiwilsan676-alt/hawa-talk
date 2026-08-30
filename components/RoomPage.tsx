@@ -156,6 +156,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
 
+  // Music Controller State (hidden | full | minimized)
   const [musicControllerState, setMusicControllerState] = useState<'hidden' | 'full' | 'minimized'>('hidden');
   const [currentTrack, setCurrentTrack] = useState<MusicTrack | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
@@ -166,6 +167,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [musicDuration, setMusicDuration] = useState(0);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Minimized Widget Drag & Drop Positions
   const [minimizedPos, setMinimizedPos] = useState<{ x: number; y: number }>({ x: 16, y: 120 });
   const isDraggingRef = useRef(false);
   const dragStartPos = useRef<{ startX: number; startY: number; initialX: number; initialY: number }>({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
@@ -444,6 +446,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     });
   }, [micMode, roomId]);
 
+  // UPDATE ACTIVE USER COUNT IN FIRESTORE
   useEffect(() => {
     if (!db || userAccountId === "guest") return;
 
@@ -470,6 +473,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       .catch(err => console.error("Error adding presence:", err));
 
     return () => {
+      // Logic for keeping ID inside the room!
       if (!isKeepingRef.current) {
         deleteDoc(presenceDocRef)
           .then(updateGlobalCount)
@@ -854,6 +858,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const handleExit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    // Jab completely Exit karna ho tabhi presence doc ID hategi
     isKeepingRef.current = false;
     setShowExitMenu(false);
     localStorage.removeItem('keptRoom');
@@ -865,6 +870,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const handleKeep = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    // Keep karne par yeh true ho jayega jisse DB se id nahi hatega 
     isKeepingRef.current = true;
     const keptAccId = roomOwner.accountId || (roomOwner.id ? generateStableId(roomOwner.id) : '');
     const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: keptAccId };
@@ -1107,6 +1113,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // --- BOUNDARY-PROTECTED DRAG & DROP FOR MINIMIZED MUSIC CONTROLLER ---
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
     isDraggingRef.current = true;
     hasMovedRef.current = false;
@@ -1138,6 +1145,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     const maxX = window.innerWidth - widgetWidth - 8;
     const maxY = window.innerHeight - widgetHeight - 65;
 
+    // Strict Boundary Lock (Screen ke bahar nahi jayega)
     const newX = Math.min(Math.max(8, dragStartPos.current.initialX + deltaX), maxX);
     const newY = Math.min(Math.max(60, dragStartPos.current.initialY + deltaY), maxY);
 
@@ -1694,20 +1702,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {showSeatSheet && selectedSeat !== null && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
-          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-3 animate-slide-up max-h-[35vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-3 animate-slide-up max-h-[30vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="space-y-1">
               {!isSelectedSeatTakenByOther && !isSelectedSeatMySeat && (
                 <button onClick={handleTakeSeat} disabled={selectedSeatData?.isLocked && !selectedSeatData?.isOccupied} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Take Mic</button>
               )}
               {isSelectedSeatMySeat && <button onClick={handleLeaveSeat} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Leave Seat</button>}
               
-              {/* Added Mute / Unmute Option in Seat Sheet */}
-              {(isSelectedSeatMySeat || isRoomOwner) && selectedSeatData?.isOccupied && (
-                <button onClick={handleToggleMute} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
-                  {selectedSeatData?.isMuted ? 'Unmute Mic' : 'Mute Mic'}
-                </button>
-              )}
-
+              {/* Always show Mute/Unmute seat button in the sheet */}
+              <button onClick={handleToggleMute} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+                {selectedSeatData?.isMuted ? 'Unmute Seat' : 'Mute Seat'}
+              </button>
+              
               <button onClick={handleToggleLock} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">{selectedSeatData?.isLocked ? 'Unlock Mic' : 'Lock Mic'}</button>
               <button onClick={handleInvite} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Invite</button>
             </div>
@@ -1771,6 +1777,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         />
       )}
 
+      {/* Music Controller - MINIMIZED STATE (Clamped Drag & Drop Floating Widget) */}
       {musicControllerState === 'minimized' && currentTrack && (
         <div
           className="fixed z-[45] cursor-grab active:cursor-grabbing flex items-center gap-2 bg-black/85 backdrop-blur-md border border-white/20 rounded-full pl-2 pr-3 py-1.5 shadow-2xl transition-transform active:scale-95 select-none touch-none"
@@ -1786,6 +1793,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             }
           }}
         >
+          {/* Rotating Music Disc */}
           <div className={`w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 ${isMusicPlaying ? 'music-minimize-icon' : ''}`}>
             <svg viewBox="0 0 24 24" className="fill-white" style={{ width: '14px', height: '14px' }}>
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
@@ -1797,6 +1805,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             <p className="text-blue-400 text-[8px] leading-tight mt-0.5">{isMusicPlaying ? 'Playing' : 'Paused'}</p>
           </div>
 
+          {/* Quick Play/Pause in Minimized view */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -1818,6 +1827,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
+      {/* Music Controller - FULL SIZE (With Minimize & Close Buttons) */}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
         <div 
           className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm px-3"
@@ -1833,6 +1843,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}
           >
+            {/* Minimize Button (Top-Left) */}
             <button
               onClick={() => setMusicControllerState('minimized')}
               className="absolute top-1.5 left-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
@@ -1844,6 +1855,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </svg>
             </button>
 
+            {/* Close Button (Top-Right) */}
             <button
               onClick={handleCloseMusicController}
               className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
@@ -1930,6 +1942,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
+      {/* Global Theme styles */}
       <style jsx global>{`
         :root {
           --seat-size: 56px;
@@ -2017,6 +2030,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
+// SeatItem Component - Fully Unclipped (160% Frame + 125% Overlap GIF without clipping)
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -2050,22 +2064,24 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 
   return (
     <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      {/* Left Side: Styled Card wrapping the 500K icon and text */}
+      {/* 500K Badge on Seat 1 - Chota Sa Card Design */}
       {seatNumber === 1 && (
         <div 
-          className="absolute pointer-events-none hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-xl bg-black/40 backdrop-blur-md border border-white/20 shadow-lg"
+          className="absolute pointer-events-none hidden sm:flex bg-black/40 backdrop-blur-md border border-white/20 px-2 py-1 rounded-full shadow-lg"
           style={{
-            left: '-120px',
-            top: '-26px',
+            left: '-100px', // Adjusted position for new card look
+            top: '-15px',
             transform: 'none',
             zIndex: 40,
+            alignItems: 'center',
+            gap: '6px',
           }}
         >
           <div 
-            className="relative overflow-visible flex items-center justify-center"
+            className="relative overflow-visible"
             style={{
-              width: '20px',
-              height: '20px',
+              width: 'calc(var(--seat-size) * 0.33)',
+              height: 'calc(var(--seat-size) * 0.33)',
               flexShrink: 0,
             }}
           >
@@ -2085,11 +2101,12 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           </div>
           
           <span 
-            className="font-bold whitespace-nowrap text-[11px]"
+            className="font-bold whitespace-nowrap"
             style={{
               color: '#FFD700',
               textShadow: '0 0 4px rgba(255,215,0,0.8), 0 0 8px rgba(255,215,0,0.5)',
               letterSpacing: '0.2px',
+              fontSize: 'calc(var(--seat-size) * 0.15)',
             }}
           >
             500K
@@ -2097,12 +2114,12 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Right Side: Updated image with green color removed */}
+      {/* Right side badge on Seat 1 */}
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none"
           style={{
-            right: '-110px',
+            right: '-130px',
             top: '-30px',
             transform: 'none',
             zIndex: 40,
@@ -2119,9 +2136,9 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             }}
           >
             <WhiteColorRemovalShader
-              imageSrc="/IMG_20260830_153625.png"
-              threshold={0.80}
-              removeColor="green"
+              imageSrc="/1787162568668.png"
+              threshold={0.85}
+              removeColor="white"
               className="w-full h-full"
               style={{
                 width: '100%',
@@ -2152,7 +2169,9 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             </div>
           ) : isOccupied && user ? (
             <>
+              {/* UNCLIPPED AVATAR CONTAINER */}
               <div className="relative w-full h-full rounded-full overflow-visible flex items-center justify-center">
+                {/* 1. Base User Avatar */}
                 <img
                   src={user.image || "/default-avatar.png"}
                   alt={user.name}
@@ -2163,6 +2182,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   style={{ zIndex: 1 }}
                 />
 
+                {/* 2. LARGE OVERLAPPING GIF (Uncut, 125% size) */}
                 {gif && (
                   <div 
                     className="absolute pointer-events-none overflow-visible flex items-center justify-center"
@@ -2188,6 +2208,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   </div>
                 )}
 
+                {/* 3. 160% Avatar Frame (Uncut, overflow-visible) */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
@@ -2219,9 +2240,9 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                 </div>
               </div>
 
-              {/* Bottom-Right Red Circle Mute Icon */}
+              {/* Mute Badge For Occupied Seat */}
               {isMuted && (
-                <div className="absolute -right-1 -bottom-1 rounded-full flex items-center justify-center shadow-md pointer-events-none z-30 bg-red-500" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
+                <div className="absolute -right-2 -bottom-2 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
@@ -2232,8 +2253,9 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                 <g fill="none" stroke="#94a7be" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"><path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" /><path d="M 50 74 L 50 86" /><path d="M 38 90 L 62 90" /></g>
                 <g fill="#94a7be" stroke="#5a6d89" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" transform="translate(0, 6)"><path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" /></g>
               </svg>
+              {/* Mute Badge For Empty Seat */}
               {isMuted && (
-                <div className="absolute -right-2 -bottom-2 rounded-full bg-red-500 flex items-center justify-center shadow-md" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
+                <div className="absolute -right-2 -bottom-2 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
@@ -2252,4 +2274,3 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
     </div>
   );
 }
-
