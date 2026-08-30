@@ -349,6 +349,7 @@ interface GlobalRoom {
   isLocked?: boolean
   roomPassword?: string
   isExplicitlyCreated?: boolean
+  activeUserCount?: number;
 }
 
 // ============ CONSTANTS ============
@@ -717,7 +718,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           room.accountId !== 'null' &&
           room.accountId !== '' &&
           room.accountId !== null &&
-          room.name !== 'User'
+          room.name !== 'User' 
         );
         setGlobalRooms(validRooms);
       }
@@ -735,7 +736,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
           createdAt: data.createdAt || Date.now(),
           isLocked: data.isLocked || false,
           roomPassword: data.roomPassword || null,
-          isExplicitlyCreated: data.isExplicitlyCreated || false
+          isExplicitlyCreated: data.isExplicitlyCreated || false,
+          activeUserCount: data.activeUserCount || 0
         } as GlobalRoom;
       });
       
@@ -1165,7 +1167,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }
 
-  // ============ CREATE ROOM (BUG FIX: Preserves custom DB settings) ============
+  // ============ CREATE ROOM ============
   const handleCardClick = async () => {
     setEnteredFromKept(false);
 
@@ -1452,7 +1454,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     room.accountId !== 'undefined' &&
     room.accountId !== 'null' &&
     room.accountId !== '' &&
-    room.activeUserCount >=1 
+    room.activeUserCount && room.activeUserCount >= 1 
   )
 
   // ============ RENDER MINE TAB ============
@@ -1675,7 +1677,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       <>
         <div 
           ref={categoryCardsRef}
-          className="px-4 mt-4 relative z-10"
+          className="px-4 mt-2 relative z-10"
         >
           <div className="flex flex-row justify-between items-center gap-2 select-none" style={{ 
             fontFamily: 'Nunito, Inter, sans-serif'
@@ -1736,7 +1738,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         
         {allRooms.length > 0 ? (
           <div className="px-4 mt-4">
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {allRooms.map((room) => (
                 <div
                   key={room.accountId}
@@ -1750,8 +1752,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   })}
                   className="cursor-pointer group"
                 >
-                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                    style={{ height: '170px' }}
+                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95 aspect-[4/5] min-h-[160px]"
                   >
                     <img
                       src={room.image}
@@ -1772,8 +1773,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   
                   <div className="mt-2 px-1">
                     <div className="flex items-center gap-1">
-                      <span className="text-sm">{room.country}</span>
-                      <span className="font-semibold text-gray-900 text-sm truncate">
+                      <span className="text-xs sm:text-sm">{room.country}</span>
+                      <span className="font-semibold text-gray-900 text-xs sm:text-sm truncate">
                         {room.name}
                       </span>
                     </div>
@@ -1799,7 +1800,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 />
               </svg>
               <p className="text-sm">No rooms yet</p>
-              <p className="text-xs text-gray-400 mt-1">Create your room in Me tab</p>
+              <p className="text-xs text-gray-400 mt-1">Wait for users to join</p>
             </div>
           </div>
         )}
@@ -2184,15 +2185,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
           <div
             className="w-full bg-white"
             style={{
-              minHeight: viewportHeight ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
+              minHeight: viewportHeight ? `calc(var(--vh, 1vh) * 100)` : '100vh'
             }}
           >
             <div
               ref={bannerContainerRef}
-              className="w-full px-4 safe-top"
+              className="w-full px-4 safe-top pt-2"
               style={{
-                height: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
-                minHeight: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
+                height: 'auto',
+                minHeight: 'auto',
                 background: activeTab === 'mine'
                   ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
