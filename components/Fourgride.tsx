@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Wildparty from './Wildparty';
-import Fruitparty from './Fruitparty';
 
 interface FourgrideProps {
   onClose: () => void;
@@ -269,7 +267,7 @@ export default function Fourgride({
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">Play Tools</h2>
+            <h2 className="text-lg font-bold text-gray-800">Tools</h2>
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full">
               <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2.5]">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -365,13 +363,13 @@ export default function Fourgride({
               <span className="text-[10px] text-gray-700 mt-1">Music</span>
             </div>
 
-            {/* 6. Speaker - always on */}
+            {/* 6. Speaker - OFF state (no toggle) */}
             <div className="flex flex-col items-center">
               <img src="/IMG_20260814_110628.png" alt="Speaker" className="w-12 h-12 object-contain" />
               <div className="flex items-center mt-1 space-x-1">
                 <span className="text-[10px] text-gray-700 whitespace-nowrap">Speaker</span>
-                <div className="w-6 h-4 rounded-full bg-blue-500 flex items-center">
-                  <div className="w-3 h-3 bg-white rounded-full transform translate-x-[10px]" />
+                <div className="w-6 h-4 rounded-full bg-gray-300 flex items-center">
+                  <div className="w-3 h-3 bg-white rounded-full transform translate-x-0.5" />
                 </div>
               </div>
             </div>
@@ -399,12 +397,13 @@ export default function Fourgride({
             </div>
           </div>
 
-          {/* Bottom Section - Only Lucky Bag and PK Battle */}
+          {/* Bottom Section - Play Tools with Lucky Bag and PK Battle */}
           <div className="mt-2">
             <div className="flex items-center mb-2">
               <h3 className="text-sm font-semibold text-gray-800">Play Tools</h3>
             </div>
-            <div className="flex justify-around">
+            <div className="grid grid-cols-4 gap-4">
+              {/* Lucky Bag - Column 1 */}
               <div className="flex flex-col items-center">
                 <button
                   onClick={() => console.log('Lucky Bag')}
@@ -415,6 +414,7 @@ export default function Fourgride({
                 <span className="text-[10px] text-gray-700 mt-1">Lucky bag</span>
               </div>
 
+              {/* PK Battle - Column 2 */}
               <div className="flex flex-col items-center">
                 <button
                   onClick={() => console.log('PK Battle')}
@@ -424,6 +424,10 @@ export default function Fourgride({
                 </button>
                 <span className="text-[10px] text-gray-700 mt-1">Pk Battle</span>
               </div>
+
+              {/* Empty columns 3 and 4 */}
+              <div className="flex flex-col items-center"></div>
+              <div className="flex flex-col items-center"></div>
             </div>
           </div>
 
@@ -565,4 +569,4 @@ export default function Fourgride({
       />
     </>
   );
-        }
+  }
