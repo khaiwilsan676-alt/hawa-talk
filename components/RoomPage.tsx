@@ -7,6 +7,8 @@ import RoomSettingPage, { RoomSettingsData } from './RoomSettingPage';
 import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
+import Wildparty from './Wildparty';
+import Fruitparty from './Fruitparty';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { generateStableId } from '../lib/hash';
 import { getRoom, updateRoom, getRoomMembers, joinRoom, leaveRoom, sendRoomMessage, getRoomMessages } from "../src/lib/googleSheets";
@@ -154,6 +156,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [copied, setCopied] = useState(false);
   const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
 
+  // Game Sheet States
+  const [showGameSheet, setShowGameSheet] = useState(false);
+  const [showWildParty, setShowWildParty] = useState(false);
+  const [showFruitParty, setShowFruitParty] = useState(false);
+
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
 
@@ -176,7 +183,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
-  const [fourgrideDefaultTab, setFourgrideDefaultTab] = useState<'tools' | 'games'>('tools');
 
   useEffect(() => {
     const name = localStorage.getItem('userName') || 'User';
@@ -1386,15 +1392,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <div 
         className="absolute cursor-pointer z-20"
         style={{
-          bottom: 'calc(var(--footer-btn-size) + 42px)',
-          right: '20px',
-          width: 'calc(var(--footer-btn-size) * 0.85)',
-          height: 'calc(var(--footer-btn-size) * 0.85)',
+          bottom: 'calc(var(--footer-btn-size) + 52px)',
+          right: '10px',
+          width: 'calc(var(--footer-btn-size) * 1.1)',
+          height: 'calc(var(--footer-btn-size) * 1.1)',
         }}
         onClick={(e) => {
           e.stopPropagation();
-          setFourgrideDefaultTab('games');
-          setShowFourGride(true);
+          setShowGameSheet(true);
         }}
       >
         <WhiteColorRemovalShader
@@ -1693,9 +1698,61 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               };
             };
           }}
-          defaultTab={fourgrideDefaultTab}
         />
       )}
+
+      {/* GAME SHEET - Directly in RoomPage */}
+{showGameSheet && (
+  <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div className="absolute inset-0 bg-black/30" onClick={() => setShowGameSheet(false)} />
+    <div
+      className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 pt-4 pb-6 animate-slide-up"
+      style={{ height: '30vh' }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-gray-800">Games</h2>
+        <button onClick={() => setShowGameSheet(false)} className="p-1 hover:bg-gray-100 rounded-full">
+          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2.5]">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Games Grid - Sirf 2 Games */}
+      <div className="grid grid-cols-4 gap-4">
+        {/* 1. Wild party */}
+        <div className="flex flex-col items-center">
+          <button 
+            onClick={() => {
+              setShowGameSheet(false);
+              setShowWildParty(true);
+            }} 
+            className="transition-transform hover:scale-105"
+          >
+            <img src="/1787338085121.png" alt="Wild party" className="w-12 h-12 object-contain" />
+          </button>
+          <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Wild party</span>
+        </div>
+
+        {/* 2. Fruit party */}
+        <div className="flex flex-col items-center">
+          <button 
+            onClick={() => {
+              setShowGameSheet(false);
+              setShowFruitParty(true);
+            }} 
+            className="transition-transform hover:scale-105"
+          >
+            <img src="/IMG_20260824_232321.png" alt="Fruit party" className="w-12 h-12 object-contain" />
+          </button>
+          <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Fruit party</span>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Music Controller - MINIMIZED STATE (Clamped Drag & Drop Floating Widget) */}
       {musicControllerState === 'minimized' && currentTrack && (
@@ -2167,4 +2224,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-            }
+                                                                                           }
