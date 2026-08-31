@@ -180,8 +180,8 @@ export default function Wallet({ onBack }: WalletProps) {
         userSelect: 'none',
         WebkitTouchCallout: 'none',
         background: activeTab === 'wallet' 
-          ? 'linear-gradient(180deg, #FFEAB5 0%, #FFFDF9 35%, #FFFDF9 100%)'
-          : 'linear-gradient(180deg, #FFD1DC 0%, #FFFDF9 35%, #FFFDF9 100%)',
+          ? 'linear-gradient(180deg, #F3C663 0%, #FFFDF9 35%, #FFFDF9 100%)'
+          : 'linear-gradient(180deg, #F97394 0%, #FFFDF9 35%, #FFFDF9 100%)',
       }}
     >
       <style>{`
@@ -196,7 +196,7 @@ export default function Wallet({ onBack }: WalletProps) {
       <div className="w-full relative flex-shrink-0 flex items-center justify-between px-4 z-20 h-12">
         <button
           onClick={onBack}
-          className="w-8 h-8 flex items-center justify-center active:scale-90 transition-all text-gray-800"
+          className="w-8 h-8 flex items-center justify-center active:scale-90 transition-all text-gray-900"
           aria-label="Back"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -204,12 +204,12 @@ export default function Wallet({ onBack }: WalletProps) {
           </svg>
         </button>
 
-        <h1 className="text-base font-bold text-gray-900 tracking-tight">
+        <h1 className="text-base font-bold text-gray-950 tracking-tight">
           Wallet
         </h1>
 
         <button
-          className="w-8 h-8 flex items-center justify-center active:scale-90 transition-all text-gray-800"
+          className="w-8 h-8 flex items-center justify-center active:scale-90 transition-all text-gray-900"
           aria-label="History"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -228,13 +228,13 @@ export default function Wallet({ onBack }: WalletProps) {
           <button
             onClick={() => setActiveTab('wallet')}
             className={`text-sm font-semibold transition-all ${
-              activeTab === 'wallet' ? 'text-gray-900' : 'text-gray-400'
+              activeTab === 'wallet' ? 'text-gray-950 font-bold' : 'text-gray-600'
             }`}
           >
             Coins
           </button>
           {activeTab === 'wallet' && (
-            <div className="w-3 h-0.5 bg-gray-900 rounded-full mt-1" />
+            <div className="w-3 h-0.5 bg-gray-950 rounded-full mt-1" />
           )}
         </div>
 
@@ -242,13 +242,13 @@ export default function Wallet({ onBack }: WalletProps) {
           <button
             onClick={() => setActiveTab('diamonds')}
             className={`text-sm font-semibold transition-all ${
-              activeTab === 'diamonds' ? 'text-gray-900' : 'text-gray-400'
+              activeTab === 'diamonds' ? 'text-gray-950 font-bold' : 'text-gray-600'
             }`}
           >
             Diamonds
           </button>
           {activeTab === 'diamonds' && (
-            <div className="w-3 h-0.5 bg-gray-900 rounded-full mt-1" />
+            <div className="w-3 h-0.5 bg-gray-950 rounded-full mt-1" />
           )}
         </div>
       </div>
@@ -258,9 +258,9 @@ export default function Wallet({ onBack }: WalletProps) {
         {activeTab === 'wallet' ? (
           /* ================= COINS TAB ================= */
           <div className="flex flex-col space-y-4">
-            {/* Current Balance Banner - Darker & Higher */}
+            {/* Current Balance Banner - Less Rounded (rounded-xl) */}
             <div
-              className="rounded-2xl p-5 relative mt-8 flex flex-col justify-center"
+              className="rounded-xl p-5 relative mt-8 flex flex-col justify-center"
               style={{
                 background: 'linear-gradient(135deg, #FFD166 0%, #E09F3E 100%)',
                 boxShadow: '0 6px 20px rgba(224, 159, 62, 0.35)',
@@ -329,9 +329,9 @@ export default function Wallet({ onBack }: WalletProps) {
           /* ================= DIAMONDS TAB ================= */
           <div className="flex flex-col justify-between min-h-[calc(100vh-140px)]">
             <div className="space-y-4">
-              {/* Current Diamonds Banner - Darker & Higher */}
+              {/* Current Diamonds Banner - Less Rounded (rounded-xl) */}
               <div
-                className="rounded-2xl p-5 relative mt-8 flex flex-col justify-center"
+                className="rounded-xl p-5 relative mt-8 flex flex-col justify-center"
                 style={{
                   background: 'linear-gradient(135deg, #FF70A6 0%, #D90429 100%)',
                   boxShadow: '0 6px 20px rgba(217, 4, 41, 0.35)',
@@ -356,7 +356,7 @@ export default function Wallet({ onBack }: WalletProps) {
 
               {/* Exchange Section Box */}
               <div
-                className="rounded-2xl p-4"
+                className="rounded-xl p-4"
                 style={{
                   background: 'linear-gradient(180deg, #FFF0F3 0%, #FFFFFF 100%)',
                   border: '1px solid #FFE4E8',
