@@ -830,7 +830,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       });
     };
 
-    // Requested seat layouts: 5, 8, 12
     if (micMode === 5) {
       return (
         <>
@@ -839,31 +838,30 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </>
       );
     }
-    if (micMode === 8 || micMode === 10) { // Mapping 10 fallback gracefully just in case
+    if (micMode === 10) {
       return (
         <>
-          <div className="flex justify-center">{renderSeatItems([1])}</div>
-          <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
-          <div className="flex justify-around items-center px-0 w-3/4 mx-auto">{renderSeatItems([6,7,8])}</div>
+          <div className="flex justify-center gap-2 sm:gap-4">{renderSeatItems([1,2])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([3,4,5,6])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([7,8,9,10])}</div>
         </>
       );
     }
-    if (micMode === 12 || micMode === 13) { // Mapping 13 fallback gracefully
+    if (micMode === 13) {
       return (
         <>
           <div className="flex justify-center">{renderSeatItems([1])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([6,7,8,9])}</div>
-          <div className="flex justify-around items-center px-0 w-3/4 mx-auto">{renderSeatItems([10,11,12])}</div>
+          <div className="flex justify-around items-center px-0">{renderSeatItems([10,11,12,13])}</div>
         </>
       );
     }
-    
-    // Default fallback
     return (
       <>
         <div className="flex justify-center">{renderSeatItems([1])}</div>
         <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
+        <div className="flex justify-around items-center px-0">{renderSeatItems([6,7,8,9])}</div>
       </>
     );
   };
@@ -1090,21 +1088,19 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <div className="relative z-10 flex flex-col h-full px-3 sm:px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }} onClick={(e) => e.stopPropagation()}>
 
-        {/* Updated Top Header */}
-        <div className="relative w-full h-[60px] flex-shrink-0 z-10">
-          
-          {/* Left side Card (Host info) - Stick to left corner, Transparent White type without blur */}
-          <div className="absolute -left-3 sm:-left-4 top-0 bg-white/15 border border-l-0 border-white/30 rounded-r-full p-1 pr-4 flex items-center gap-2 sm:gap-3 cursor-pointer shadow-lg hover:bg-white/25 transition-colors"
-               onClick={(e) => { e.stopPropagation(); setRoomInfoTab('profile'); setShowRoomInfo(true); }}>
+        {/* Top Header */}
+        <div className="flex justify-between items-center text-white flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
-              className="rounded-full overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer"
+              onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
+              className="rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer hover:border-white/50 transition-colors"
               style={{ width: 'var(--header-room-img-size)', height: 'var(--header-room-img-size)' }}
             >
               <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" draggable={false} />
             </button>
-            <div className="text-left py-0.5">
+            <div className="text-left">
               <div className="flex items-center gap-1 sm:gap-2">
-                <h2 className="font-bold leading-tight truncate max-w-[100px] text-white shadow-sm" style={{ fontSize: 'var(--header-room-name-size)' }}>{displayRoomName}</h2>
+                <h2 className="font-bold" style={{ fontSize: 'var(--header-room-name-size)' }}>{displayRoomName}</h2>
                 {!isRoomOwner && (
                   <button
                     onClick={(e) => {
@@ -1114,7 +1110,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       if (onFollowToggle) onFollowToggle(roomId, newFollow);
                     }}
                     className="rounded-full flex items-center justify-center transition-all cursor-pointer bg-blue-500 shadow-md hover:bg-blue-600"
-                    style={{ width: 'var(--header-follow-btn-size)', height: 'var(--header-follow-btn-size)', border: 'none' }}
+                    style={{ 
+                      width: 'var(--header-follow-btn-size)', 
+                      height: 'var(--header-follow-btn-size)',
+                      border: 'none',
+                    }}
                     title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                   >
                     {isFollowed ? (
@@ -1129,45 +1129,46 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   </button>
                 )}
               </div>
-              <p className="text-white/80 leading-tight drop-shadow-md" style={{ fontSize: 'var(--header-id-size)' }}>ID: {roomOwner.accountId || roomOwner.id || ''}</p>
+              <p className="text-gray-300" style={{ fontSize: 'var(--header-id-size)' }}>ID: {roomOwner.accountId || roomOwner.id || ''}</p>
             </div>
           </div>
 
-          {/* Right side Icons (Settings Removed, Power/Share exist) */}
-          <div className="absolute -right-3 sm:-right-4 top-0 flex flex-col items-end pr-3 sm:pr-4">
-            <div className="flex items-center gap-1.5 mt-1">
-              <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer flex items-center justify-center" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+          <div className="flex items-center gap-1.5">
+            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 cursor-pointer hover:bg-black/60 transition-colors" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
+              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
+                <circle cx="9" cy="7" r="4" />
+                <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
+                <line x1="18" y1="8" x2="21" y2="8" /><line x1="18" y1="12" x2="21" y2="12" /><line x1="18" y1="16" x2="20" y2="16" />
+              </svg>
+              <span className="text-white font-semibold leading-none" style={{ fontSize: 'var(--header-count-size)' }}>{liveUserCount}</span>
+            </button>
+
+            {isRoomOwner && (
+              <button onClick={openSettings} aria-label="Settings" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer flex items-center justify-center" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
                 <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                  <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
+                  <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
+                  <circle cx="12" cy="12" r="2.8" />
                 </svg>
               </button>
+            )}
 
-              <button onClick={openExitMenu} aria-label="Power" className="bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
-                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
-                  <path d="M12 4v8" /><path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
-                </svg>
-              </button>
-            </div>
+            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer flex items-center justify-center" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
+                <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
+              </svg>
+            </button>
+
+            <button onClick={openExitMenu} aria-label="Power" className="bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
+                <path d="M12 4v8" /><path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
+              </svg>
+            </button>
           </div>
-
-          {/* User Pill - Right edge se chipka hua, icons ke theek neeche, count pehle phir icon */}
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }}
-            className="absolute -right-3 sm:-right-4 top-[40px] flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-l-full border border-r-0 border-white/10 cursor-pointer hover:bg-black/60 transition-colors shadow-lg pl-3 pr-2 py-0.5"
-            style={{ height: '22px' }}
-          >
-            <span className="text-white font-semibold leading-none" style={{ fontSize: 'var(--header-count-size)' }}>{liveUserCount}</span>
-            <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: '12px', height: '12px' }}>
-              <circle cx="9" cy="7" r="4" />
-              <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
-              <line x1="18" y1="8" x2="21" y2="8" /><line x1="18" y1="12" x2="21" y2="12" /><line x1="18" y1="16" x2="20" y2="16" />
-            </svg>
-          </button>
         </div>
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-8 sm:pt-6">
+          <div className="flex-shrink-0 flex flex-col gap-2 pt-13 sm:pt-10">
             {renderSeats()}
           </div>
 
@@ -1421,25 +1422,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Update Room Info Sheet to include Settings Icon on top left */}
       {showRoomInfo && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 pt-5 pb-2 flex items-center justify-center relative">
-              {/* Added Room Settings Icon here */}
-              {isRoomOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowRoomInfo(false); openSettings(e); }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
-                  aria-label="Settings"
-                >
-                  <svg viewBox="0 0 24 24" className="fill-none stroke-gray-700 stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: '20px', height: '20px' }}>
-                    <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
-                    <circle cx="12" cy="12" r="2.8" />
-                  </svg>
-                </button>
-              )}
+            <div className="px-4 pt-5 pb-2 flex items-center justify-center">
               <h2 className="text-base font-bold text-gray-800">Room Information</h2>
             </div>
             <div className="flex border-b border-gray-200 px-4">
@@ -1602,6 +1589,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               )}
               {isSelectedSeatMySeat && <button onClick={handleLeaveSeat} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Leave Seat</button>}
               
+              {/* Always show Mute/Unmute seat button in the sheet */}
               <button onClick={handleToggleMute} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
                 {selectedSeatData?.isMuted ? 'Unmute Seat' : 'Mute Seat'}
               </button>
@@ -1834,7 +1822,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Global Theme styles with Android Compact Adjustments */}
+      {/* Global Theme styles */}
       <style jsx global>{`
         :root {
           --seat-size: 56px;
@@ -1874,16 +1862,29 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-volume-width: 28px;
         }
 
-        /* Android Compact Screen Adjustments (max-width: 400px) */
-        @media (max-width: 400px) {
+        /* Android Responsive Queries for Compact View */
+        @media (max-width: 480px) {
           :root {
-            --seat-size: 50px;
+            --seat-size: 48px;
             --header-btn-size: 28px;
             --header-icon-size: 18px;
             --header-room-img-size: 32px;
             --header-room-name-size: 14px;
             --footer-btn-size: 36px;
             --footer-icon-size: 22px;
+            --msg-avatar-size: 20px;
+            --msg-text-size: 11px;
+            --announcement-text-size: 11px;
+            --music-controller-bottom: 9vh;
+          }
+        }
+        
+        @media (max-width: 375px) {
+          :root {
+            --seat-size: 44px;
+            --header-btn-size: 26px;
+            --footer-btn-size: 32px;
+            --footer-icon-size: 20px;
           }
         }
 
@@ -2016,45 +2017,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           >
             500K
           </span>
-        </div>
-      )}
-
-      {/* Right side badge on Seat 1 */}
-      {seatNumber === 1 && (
-        <div 
-          className="absolute pointer-events-none"
-          style={{
-            right: '-130px',
-            top: '-30px',
-            transform: 'none',
-            zIndex: 40,
-          }}
-        >
-          <div 
-            className="relative overflow-visible"
-            style={{
-              width: 'calc(var(--seat-size) * 0.83)',
-              height: 'calc(var(--seat-size) * 0.83)',
-              backgroundColor: 'transparent',
-              border: 'none',
-              boxShadow: 'none',
-            }}
-          >
-            <WhiteColorRemovalShader
-              imageSrc="/1787162568668.png"
-              threshold={0.85}
-              removeColor="white"
-              className="w-full h-full"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                maxWidth: 'none',
-                maxHeight: 'none',
-                pointerEvents: 'none',
-              }}
-            />
-          </div>
         </div>
       )}
 
