@@ -180,8 +180,8 @@ export default function Wallet({ onBack }: WalletProps) {
         userSelect: 'none',
         WebkitTouchCallout: 'none',
         background: activeTab === 'wallet' 
-          ? 'linear-gradient(180deg, #FFF6E0 0%, #FFFFFF 25%, #FFFFFF 100%)'
-          : 'linear-gradient(180deg, #FFE4E8 0%, #FFFFFF 25%, #FFFFFF 100%)',
+          ? 'linear-gradient(180deg, #FFEAB5 0%, #FFFDF9 35%, #FFFDF9 100%)'
+          : 'linear-gradient(180deg, #FFD1DC 0%, #FFFDF9 35%, #FFFDF9 100%)',
       }}
     >
       <style>{`
@@ -264,7 +264,7 @@ export default function Wallet({ onBack }: WalletProps) {
               style={{
                 background: 'linear-gradient(135deg, #FFE5B4 0%, #F5C065 100%)',
                 boxShadow: '0 4px 15px rgba(245, 192, 101, 0.25)',
-                minHeight: '85px',
+                minHeight: '95px',
               }}
             >
               {/* Half Overflow Coin Image */}
@@ -296,7 +296,7 @@ export default function Wallet({ onBack }: WalletProps) {
               >
                 {/* Top left small bonus tag */}
                 <div className="absolute -top-2 left-2 z-10 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-extrabold rounded shadow-xs flex items-center gap-0.5">
-                  +20,000 <span className="text-[8px]">🪙</span>
+                  +20,000 <span className="text-[8px]"></span>
                 </div>
 
                 {/* Center Coin Image */}
@@ -335,7 +335,7 @@ export default function Wallet({ onBack }: WalletProps) {
                 style={{
                   background: 'linear-gradient(135deg, #FFD1DC 0%, #FF8DA1 100%)',
                   boxShadow: '0 4px 15px rgba(255, 141, 161, 0.25)',
-                  minHeight: '85px',
+                  minHeight: '95px',
                 }}
               >
                 {/* Half Overflow Diamond Image */}
@@ -354,15 +354,16 @@ export default function Wallet({ onBack }: WalletProps) {
                 </p>
               </div>
 
-              {/* Exchange Section Box */}
+              {/* Exchange Section Box (Exact match to screenshot pinkish-white gradient card) */}
               <div
-                className="rounded-2xl p-3.5 bg-white"
+                className="rounded-2xl p-4"
                 style={{
-                  border: '1px solid #FCE4EC',
-                  boxShadow: '0 1px 6px rgba(0,0,0,0.02)',
+                  background: 'linear-gradient(180deg, #FFF0F3 0%, #FFFFFF 100%)',
+                  border: '1px solid #FFE4E8',
+                  boxShadow: '0 2px 10px rgba(255, 182, 193, 0.15)',
                 }}
               >
-                <div className="flex justify-between items-center mb-2.5">
+                <div className="flex justify-between items-center mb-3">
                   <h3 className="text-xs font-bold text-gray-800">Exchange</h3>
                   <div className="text-[11px] font-semibold text-gray-500 flex items-center gap-1">
                     <span>100 =</span>
@@ -377,8 +378,9 @@ export default function Wallet({ onBack }: WalletProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 bg-gray-50/70 p-2 rounded-xl border border-gray-100">
-                  <div className="flex-1 flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
+                  {/* Left Diamond Input Box */}
+                  <div className="flex-1 bg-gray-50/80 rounded-xl p-2.5 flex items-center gap-2 border border-pink-100 shadow-inner">
                     <div className="w-4 h-4 flex-shrink-0">
                       <WhiteColorRemovalShader
                         imageSrc="/1787321690452.png"
@@ -390,21 +392,24 @@ export default function Wallet({ onBack }: WalletProps) {
                       type="number"
                       value={diamonds}
                       onChange={(e) => handleDiamondChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs placeholder:text-gray-300"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs placeholder:text-gray-400"
                       placeholder="Input multiple"
                     />
+                    <span className="text-[11px] font-bold text-gray-400">x100</span>
                   </div>
-                  <span className="text-[11px] font-bold text-gray-400">x100</span>
+
                   <span className="text-gray-300 font-bold">=</span>
-                  <div className="w-16 flex items-center justify-end gap-1">
+
+                  {/* Right Coin Output Box */}
+                  <div className="flex-1 bg-gray-50/80 rounded-xl p-2.5 flex items-center justify-between border border-gray-200 shadow-inner">
                     <input
                       type="number"
                       value={coins}
                       onChange={(e) => handleCoinChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs text-right placeholder:text-gray-300"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs text-right placeholder:text-gray-400"
                       placeholder="Coins"
                     />
-                    <div className="w-3.5 h-3.5 flex-shrink-0">
+                    <div className="w-4 h-4 flex-shrink-0 ml-1.5">
                       <WhiteColorRemovalShader
                         imageSrc="/1786855398290.png"
                         className="w-full h-full object-contain"
