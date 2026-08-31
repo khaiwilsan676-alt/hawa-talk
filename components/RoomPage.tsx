@@ -9,8 +9,7 @@ import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { generateStableId } from '../lib/hash';
-import { db } from "../src/lib/firebase";
-import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, updateDoc, deleteField, collection, getDocs } from "firebase/firestore";
+import { getRoom, updateRoom, getRoomMembers, joinRoom, leaveRoom, sendRoomMessage, getRoomMessages } from "../src/lib/googleSheets";
 import { 
   LiveKitRoom, 
   RoomAudioRenderer, 
@@ -301,29 +300,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   useEffect(() => {
     const fetchRoomData = async () => {
-      if (roomId && db) {
+      if (roomId) {
         try {
-          const snap = await getDoc(doc(db, "globalRooms", roomId));
-          if (snap.exists()) {
-            const data = snap.data();
-            setRoomName(data.name || "");
-            setRoomAnnouncement(data.announcement || "");
-            setRoomImage(data.image || roomOwner.image);
-            if (data.micMode && data.micMode !== micMode) {
-              setMicMode(data.micMode);
+          const res = await getRoom(roomId);
+          const data = res && (res.room || res.data || res);
+          if (data) {
+            setRoomName(data['Room Name'] || data.name || "");
+            setRoomAnnouncement(data.message || data.announcement || "");
+            setRoomImage(data['Room dp'] || data.image || roomOwner.image);
+            if (data['Mic Mode'] || data.micMode) {
+              setMicMode(data['Mic Mode'] || data.micMode);
             }
             if (data.theme && THEME_BACKGROUNDS[data.theme]) {
               setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
             } else {
               setBackgroundImage('/1784533036732~2.jpg');
             }
-            const followerIds: string[] = data.followers || [];
-            const followersList: RoomUser[] = followerIds.map((id: string) => ({
-              accountId: id,
-              name: `User ${id.slice(0, 5)}`,
-              image: ''
-            }));
-            setRoomFollowers(followersList);
           }
         } catch (err) {
           console.error("Error loading room data:", err);
@@ -358,144 +350,90 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   }, [roomId]);
 
   useEffect(() => {
-    if (!db) return;
+    if (!roomId) return;
 
-    const unsubPresence = onSnapshot(collection(db, presenceCollection), (snapshot) => {
-      const users = snapshot.docs.map(d => d.data() as RoomUser);
-      setRoomUsers(users);
-    }, (error) => {
-      console.error("Presence listener error:", error);
-    });
+    let isMounted = true;
 
-    const messagesQuery = query(collection(db, messagesCollection), orderBy('timestamp', 'asc'));
-    const unsubMessages = onSnapshot(messagesQuery, (snapshot) => {
-      const msgs = snapshot.docs
-        .map(d => {
-          const data = d.data();
-          return {
-            id: d.id,
-            text: data.text || '',
-            sender: data.sender || 'Unknown',
-            senderImage: data.senderImage || '/default-avatar.png',
-            senderAccountId: data.senderAccountId || '',
-            timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : data.timestamp || Date.now(),
-            type: data.type || 'message',
-            imageUrl: data.imageUrl || undefined
-          } as Message;
-        })
-        .filter(msg => {
-          if (clearedAtRef.current && msg.timestamp <= clearedAtRef.current) return false;
-          if (msg.timestamp < joinedAtRef.current) return false;
-          return true;
-        });
-      setMessages(msgs);
-    }, (error) => {
-      console.error("Messages listener error:", error);
-    });
-
-    return () => {
-      unsubPresence();
-      unsubMessages();
-    };
-  }, [roomId]);
-
-  useEffect(() => {
-    if (!db) return;
-
-    const unsubSeats = onSnapshot(collection(db, seatsCollection), (snapshot) => {
-      const seatMap = new Map<number, Seat>();
-      const now = Date.now();
-
-      snapshot.docs.forEach(docSnap => {
-        const data = docSnap.data() as Seat;
-        let activeGif = data.gif;
-
-        if (activeGif && (now - activeGif.timestamp > 3500)) {
-          activeGif = undefined;
+    const fetchRoomState = async () => {
+      try {
+        const membersData = await getRoomMembers(roomId);
+        if (isMounted && Array.isArray(membersData)) {
+          const users: RoomUser[] = membersData.map((m: any) => ({
+            accountId: m.userId || m.appLongId || m.accountId || '',
+            name: m.name || m.userName || 'User',
+            image: m.dp || m.avatar || m.image || '/default-avatar.png'
+          }));
+          setRoomUsers(users);
         }
 
-        seatMap.set(data.number, {
-          number: data.number,
-          isOccupied: data.isOccupied || false,
-          isLocked: data.isLocked || false,
-          isMuted: data.isMuted || false,
-          isSpeaking: data.isSpeaking || false,
-          user: data.isOccupied && data.user ? data.user : undefined,
-          gif: activeGif
-        });
-      });
-
-      const initialSeats = getInitialSeats(micMode);
-      const mergedSeats = initialSeats.map(seat => {
-        const syncedSeat = seatMap.get(seat.number);
-        return syncedSeat ? { ...seat, ...syncedSeat } : seat;
-      });
-      setSeats(mergedSeats);
-    }, (error) => {
-      console.error("Seats listener error:", error);
-    });
-
-    return () => unsubSeats();
-  }, [roomId, micMode]);
-
-  useEffect(() => {
-    if (!db) return;
-    const initialSeats = getInitialSeats(micMode);
-    initialSeats.forEach(seat => {
-      setDoc(doc(db, seatsCollection, String(seat.number)), seat, { merge: true });
-    });
-  }, [micMode, roomId]);
-
-  // UPDATE ACTIVE USER COUNT IN FIRESTORE
-  useEffect(() => {
-    if (!db || userAccountId === "guest") return;
-
-    const presenceDocRef = doc(db, presenceCollection, userAccountId);
-    const globalRoomRef = doc(db, "globalRooms", roomId);
-    
-    const userData: RoomUser = {
-      accountId: userAccountId,
-      name: currentUser.name,
-      image: currentUser.image
-    };
-
-    const updateGlobalCount = async () => {
-      try {
-        const snap = await getDocs(collection(db, presenceCollection));
-        await setDoc(globalRoomRef, { activeUserCount: snap.docs.length }, { merge: true });
-      } catch (e) {
-        console.error("Error updating global room count:", e);
+        const roomMsgs = await getRoomMessages(roomId);
+        if (isMounted && Array.isArray(roomMsgs)) {
+          const msgs = roomMsgs
+            .map((data: any) => ({
+              id: String(data.id || data.timestamp || Date.now()),
+              text: data.text || data.chat || '',
+              sender: data.senderName || data.name || 'Unknown',
+              senderImage: data.senderAvatar || data.dp || '/default-avatar.png',
+              senderAccountId: data.senderId || '',
+              timestamp: Number(data.createdAt || data.timestamp || Date.now()),
+              type: data.type || 'message',
+              imageUrl: data.imageUrl || undefined
+            } as Message))
+            .filter(msg => {
+              if (clearedAtRef.current && msg.timestamp <= clearedAtRef.current) return false;
+              if (msg.timestamp < joinedAtRef.current) return false;
+              return true;
+            });
+          setMessages(msgs);
+        }
+      } catch (err) {
+        console.error("Error polling room state:", err);
       }
     };
 
-    setDoc(presenceDocRef, userData, { merge: true })
-      .then(updateGlobalCount)
-      .catch(err => console.error("Error adding presence:", err));
+    fetchRoomState();
+    const interval = setInterval(fetchRoomState, 4000);
 
     return () => {
-      // Logic for keeping ID inside the room!
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [roomId]);
+
+  // ROOM MEMBER PRESENCE IN GOOGLE SHEETS
+  useEffect(() => {
+    if (userAccountId === "guest" || !roomId) return;
+
+    joinRoom({
+      roomId,
+      userId: userAccountId,
+      name: currentUser.name,
+      dp: currentUser.image,
+      membership: 'member'
+    });
+
+    return () => {
       if (!isKeepingRef.current) {
-        deleteDoc(presenceDocRef)
-          .then(updateGlobalCount)
-          .catch(err => console.error("Error removing presence:", err));
+        leaveRoom(roomId, userAccountId);
       }
     };
   }, [userAccountId, currentUser.name, currentUser.image, roomId]);
 
   const sendMessageToFirestore = async (text: string, imageUrl?: string, type: 'message' | 'join' | 'leave' = 'message') => {
-    if (!db) return;
+    if (!roomId) return;
     try {
-      await addDoc(collection(db, messagesCollection), {
+      await sendRoomMessage({
+        roomId,
+        senderId: userAccountId,
+        senderName: currentUser.name,
+        senderAvatar: currentUser.image,
         text,
-        sender: currentUser.name,
-        senderImage: currentUser.image,
-        senderAccountId: userAccountId,
-        timestamp: serverTimestamp(),
         type,
-        imageUrl: imageUrl || null
+        imageUrl: imageUrl || null,
+        createdAt: Date.now()
       });
     } catch (err) {
-      console.error("Error sending message:", err);
+      console.error("Error sending room message:", err);
     }
   };
 
@@ -595,7 +533,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null || !db) return;
+    if (selectedSeat === null) return;
     
     try {
       const targetSeat = seats.find(s => s.number === selectedSeat);
@@ -626,22 +564,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       });
 
       setSeats(updatedSeats);
-
-      const updatePromises = updatedSeats.map(seat => {
-        const seatDocRef = doc(db, seatsCollection, String(seat.number));
-        return setDoc(seatDocRef, {
-          number: seat.number,
-          isOccupied: seat.isOccupied,
-          isLocked: seat.isLocked || false,
-          isMuted: seat.isMuted || false,
-          isSpeaking: seat.isSpeaking || false,
-          user: seat.isOccupied && seat.user ? seat.user : null,
-          gif: null
-        }, { merge: true });
-      });
-
-      await Promise.all(updatePromises);
-
       setShowSeatSheet(false);
       setSelectedSeat(null);
     } catch (err) {
@@ -654,7 +576,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null || !db) return;
+    if (selectedSeat === null) return;
     
     try {
       const updatedSeats = seats.map(s => {
@@ -665,17 +587,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       });
       
       setSeats(updatedSeats);
-      
-      const seatDocRef = doc(db, seatsCollection, String(selectedSeat));
-      await setDoc(seatDocRef, {
-        number: selectedSeat,
-        isOccupied: false,
-        user: null,
-        isSpeaking: false,
-        isMuted: false,
-        gif: null
-      }, { merge: true });
-
       setShowSeatSheet(false);
       setSelectedSeat(null);
     } catch (err) {
@@ -684,7 +595,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   };
 
   const handleLeaveUserSeat = async (accountId: string) => {
-    if (!db) return;
     const targetSeat = seats.find(s => s.isOccupied && s.user?.accountId === accountId);
     if (!targetSeat) return;
 
@@ -694,21 +604,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         : seat
     );
     setSeats(updatedSeats);
-
-    const seatDocRef = doc(db, seatsCollection, String(targetSeat.number));
-    await setDoc(seatDocRef, {
-      number: targetSeat.number,
-      isOccupied: false,
-      user: null,
-      isSpeaking: false,
-      isMuted: false,
-      gif: null
-    }, { merge: true });
   };
 
   const handleBottomMicToggle = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!currentUserSeat || !db) return;
+    if (!currentUserSeat) return;
 
     const newMuteState = !currentUserSeat.isMuted;
     const updatedSeats = seats.map(seat => 
@@ -718,8 +618,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     );
     
     setSeats(updatedSeats);
-    const seatDocRef = doc(db, seatsCollection, String(currentUserSeat.number));
-    await updateDoc(seatDocRef, { isMuted: newMuteState });
   };
 
   const handleToggleMute = async (e?: React.MouseEvent) => {
@@ -727,7 +625,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null || !db) return;
+    if (selectedSeat === null) return;
     
     const target = seats.find(s => s.number === selectedSeat);
     if (!target) return;
@@ -735,9 +633,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     const newMuteState = !target.isMuted;
     const updatedSeats = seats.map(s => s.number === selectedSeat ? { ...s, isMuted: newMuteState } : s);
     setSeats(updatedSeats);
-
-    const seatDocRef = doc(db, seatsCollection, String(selectedSeat));
-    await updateDoc(seatDocRef, { isMuted: newMuteState });
 
     setShowSeatSheet(false);
     setSelectedSeat(null);
@@ -748,7 +643,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedSeat === null || !db) return;
+    if (selectedSeat === null) return;
 
     const target = seats.find(s => s.number === selectedSeat);
     if (!target) return;
@@ -756,9 +651,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     const newLockState = !target.isLocked;
     const updatedSeats = seats.map(s => s.number === selectedSeat ? { ...s, isLocked: newLockState } : s);
     setSeats(updatedSeats);
-
-    const seatDocRef = doc(db, seatsCollection, String(selectedSeat));
-    await updateDoc(seatDocRef, { isLocked: newLockState });
 
     setShowSeatSheet(false);
     setSelectedSeat(null);
@@ -843,16 +735,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     if (data.isLocked !== undefined) setIsLocked(data.isLocked);
     if (data.roomPassword !== undefined) setRoomPassword(data.roomPassword);
 
-    if (roomId && db) {
-      await setDoc(doc(db, "globalRooms", roomId), {
-        name: data.roomName,
-        image: data.roomImage,
-        announcement: data.announcement,
+    if (roomId) {
+      await updateRoom({
+        roomId,
+        id: roomId,
+        roomName: data.roomName,
+        roomDp: data.roomImage,
+        message: data.announcement,
         micMode: data.micMode,
         theme: data.theme,
         isLocked: data.isLocked,
         roomPassword: data.roomPassword,
-      }, { merge: true });
+      });
     }
   };
 
@@ -881,33 +775,24 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   };
 
   const handleSeatEmoji = async (emojiData: any) => {
-    if (!hasSeat || !currentUserSeat || !db) return;
+    if (!hasSeat || !currentUserSeat) return;
     
     const sendTimestamp = Date.now();
     const seatNum = currentUserSeat.number;
-    const seatDocRef = doc(db, seatsCollection, String(seatNum));
 
-    await updateDoc(seatDocRef, {
+    setSeats(prev => prev.map(s => s.number === seatNum ? {
+      ...s,
       gif: {
         src: emojiData.src,
         timestamp: sendTimestamp,
       }
-    });
+    } : s));
 
-    setTimeout(async () => {
-      try {
-        const snap = await getDoc(seatDocRef);
-        if (snap.exists()) {
-          const currentData = snap.data();
-          if (currentData.gif && currentData.gif.timestamp === sendTimestamp) {
-            await updateDoc(seatDocRef, {
-              gif: deleteField()
-            });
-          }
-        }
-      } catch (err) {
-        console.error("Error clearing GIF from seat:", err);
-      }
+    setTimeout(() => {
+      setSeats(prev => prev.map(s => s.number === seatNum ? {
+        ...s,
+        gif: undefined
+      } : s));
     }, 3500);
   };
 

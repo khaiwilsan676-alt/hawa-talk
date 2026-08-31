@@ -8,8 +8,8 @@ import {
   createUserWithEmailAndPassword 
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
-import { auth, provider, db } from "../src/lib/firebase";
-import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { auth } from "../src/lib/firebase";
+import { getUser, saveUser, updateUser, saveFeedback } from "../src/lib/googleSheets";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void
@@ -91,32 +91,23 @@ export const getOrCreateAccountNumber = (uid: string) => {
 }
 
 // HELPER: Sync and Lock User Profile in Firestore
-const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
+const syncUserToGoogleSheet = async (uid: string, name: string, email: string, photo: string) => {
   try {
     let finalAccountId = ""
     let existingName = ""
     let existingImage = ""
     let existingBio = ""
+    let existingCountry = ""
 
-    const userDocRef = doc(db, "users", uid)
-    const userDocSnap = await getDoc(userDocRef)
+    const res = await getUser(uid)
+    const existingUser = res && (res.user || res.data || res)
 
-    const isExistingUser = userDocSnap.exists()
-
-    if (isExistingUser) {
-      const data = userDocSnap.data()
-      if (data.accountId) {
-        finalAccountId = String(data.accountId)
-      }
-      if (data.name) {
-        existingName = data.name
-      }
-      if (data.image || data.photo || data.photoURL) {
-        existingImage = data.image || data.photo || data.photoURL
-      }
-      if (data.bio) {
-        existingBio = data.bio
-      }
+    if (existingUser && (existingUser.id || existingUser.AppLongId || existingUser['App long ID'] || existingUser.email || existingUser.Name || existingUser.name)) {
+      finalAccountId = String(existingUser.accountId || existingUser.accountNumber || existingUser['Account Number'] || '')
+      existingName = existingUser.name || existingUser.Name || ''
+      existingImage = existingUser.image || existingUser.avatar || existingUser.Avtar || existingUser.photo || ''
+      existingBio = existingUser.bio || existingUser.Bio || ''
+      existingCountry = existingUser.country || existingUser.Country || ''
     }
 
     if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
@@ -126,33 +117,30 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     }
 
     const finalName = existingName || name || email.split('@')[0] || 'User'
-
-    const finalImage = isExistingUser
-      ? (existingImage || '/default-avatar.png')
-      : (photo || '/default-avatar.png')
+    const finalImage = existingImage || photo || '/default-avatar.png'
+    const finalCountry = existingCountry || '🇮🇳'
 
     const userData: any = {
       id: uid,
+      appLongId: uid,
       name: finalName,
       email: email,
-      country: userDocSnap.exists() && userDocSnap.data().country ? userDocSnap.data().country : '🇮🇳',
+      country: finalCountry,
       image: finalImage,
+      avatar: finalImage,
       accountId: finalAccountId,
-      createdAt: userDocSnap.exists() && userDocSnap.data().createdAt ? userDocSnap.data().createdAt : Date.now()
+      accountNumber: finalAccountId,
+      bio: existingBio || ''
     }
 
-    if (existingBio) {
-      userData.bio = existingBio;
-    }
-
-    await setDoc(doc(db, "users", uid), userData, { merge: true })
+    await saveUser(userData)
 
     localStorage.setItem("accountNumber", finalAccountId)
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
 
     return { accountId: finalAccountId, name: finalName, image: finalImage }
   } catch (err) {
-    console.error("Error syncing user to Firestore:", err)
+    console.error("Error syncing user to Google Sheets:", err)
     return { accountId: getOrCreateAccountNumber(uid), name: name || email.split('@')[0] || 'User', image: photo || '/default-avatar.png' }
   }
 }
@@ -160,12 +148,11 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
 // HELPER: Check if user is new (hasn't selected gender yet)
 const checkIfNewUser = async (uid: string): Promise<boolean> => {
   try {
-    const userDocRef = doc(db, "users", uid)
-    const userDocSnap = await getDoc(userDocRef)
-    
-    if (userDocSnap.exists()) {
-      const userData = userDocSnap.data()
-      return !userData.gender
+    const res = await getUser(uid)
+    const userData = res && (res.user || res.data || res)
+    if (userData && (userData.id || userData.AppLongId || userData['App long ID'] || userData.Name || userData.name)) {
+      const gender = userData.gender || userData.Gender
+      return !gender
     }
     return true
   } catch (error) {
@@ -333,23 +320,23 @@ function CountrySelectionPage({
 
       if (userData?.id || userData?.uid) {
         const userId = userData.id || userData.uid
-        const userRef = doc(db, "users", userId)
         
         const userDocData = {
           id: userId,
+          appLongId: userId,
           name: defaultData.name,
           image: defaultData.image,
+          avatar: defaultData.image,
           gender: selectedGender,
           country: countryFlag,
           countryCode: selectedCountry,
           email: userData.email || '',
           accountId: localStorage.getItem("accountNumber") || getOrCreateAccountNumber(userId),
-          updatedAt: Date.now(),
-          isNewUser: false,
+          accountNumber: localStorage.getItem("accountNumber") || getOrCreateAccountNumber(userId),
           setupComplete: true
         }
 
-        await setDoc(userRef, userDocData, { merge: true })
+        await updateUser(userDocData)
 
         localStorage.setItem("userName", defaultData.name)
         localStorage.setItem("userPhoto", defaultData.image)
@@ -515,16 +502,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         setPendingUserData(userData)
         setShowGenderPage(true)
       } else {
-        const userDocRef = doc(db, "users", userId)
-        const userDocSnap = await getDoc(userDocRef)
-        
-        if (userDocSnap.exists()) {
-          const existingData = userDocSnap.data()
-          if (existingData.name) localStorage.setItem("userName", existingData.name)
-          if (existingData.image) localStorage.setItem("userPhoto", existingData.image)
-          if (existingData.gender) localStorage.setItem("userGender", existingData.gender)
-          if (existingData.country) localStorage.setItem("userCountry", existingData.country)
-          if (existingData.countryCode) localStorage.setItem("userCountryCode", existingData.countryCode)
+        const res = await getUser(userId)
+        const existingData = res && (res.user || res.data || res)
+        if (existingData) {
+          const name = existingData.name || existingData.Name
+          const avatar = existingData.avatar || existingData.Avtar || existingData.image || existingData.photo
+          const gender = existingData.gender || existingData.Gender
+          const country = existingData.country || existingData.Country
+          const countryCode = existingData.countryCode
+          if (name) localStorage.setItem("userName", name)
+          if (avatar) localStorage.setItem("userPhoto", avatar)
+          if (gender) localStorage.setItem("userGender", gender)
+          if (country) localStorage.setItem("userCountry", country)
+          if (countryCode) localStorage.setItem("userCountryCode", countryCode)
         }
         
         if (onLoginSuccess) {
@@ -563,7 +553,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const userPhoto = user.photoUrl || "/default-avatar.png";
       const userUID = user.uid;
 
-      const syncResult = await syncUserToFirestore(
+      const syncResult = await syncUserToGoogleSheet(
         userUID,
         userName,
         userEmail,
@@ -600,16 +590,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   const checkOfficialCredentials = async (emailStr: string, passwordStr: string) => {
     try {
-      const docRef = doc(db, "adminSettings", "credentials");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists() && docSnap.data().officialCredentials) {
-        const credentials = docSnap.data().officialCredentials;
-        const matched = credentials.find(
-          (cred: any) => cred.email === emailStr && cred.password === passwordStr
-        );
-        if (matched) return matched;
-      }
-
       const savedCredentials = localStorage.getItem('officialCredentials');
       if (savedCredentials) {
         const credentials = JSON.parse(savedCredentials);
@@ -640,20 +620,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const officialCred = await checkOfficialCredentials(email, password);
       
       if (officialCred) {
-        try {
-          const sessionRef = doc(db, "adminSettings", `sessions_${officialCred.id}`);
-          await setDoc(sessionRef, {
-            isLoggedIn: true,
-            lastLogin: Date.now()
-          }, { merge: true });
-        } catch (err) {
-          console.error("Error updating session status:", err);
-        }
-
         const userName = `${officialCred.type.toUpperCase()} - ${officialCred.id}`
         const officialID = officialCred.id
 
-        const syncResult = await syncUserToFirestore(officialID, userName, officialCred.email, "")
+        const syncResult = await syncUserToGoogleSheet(officialID, userName, officialCred.email, "")
 
         const userData = {
           id: officialID,
@@ -689,7 +659,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         const userPhoto = user.photoURL || "/default-avatar.png"
         const userUID = user.uid
 
-        const syncResult = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
+        const syncResult = await syncUserToGoogleSheet(userUID, userName, userEmail, userPhoto)
 
         localStorage.setItem("userName", syncResult.name);
         localStorage.setItem("userEmail", userEmail);
@@ -708,16 +678,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         if (signInError.code === 'auth/user-not-found' || 
             signInError.code === 'auth/invalid-credential' ||
             signInError.code === 'auth/wrong-password') {
-          
-          const usersRef = collection(db, "users");
-          const q = query(usersRef, where("email", "==", email));
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-            setAuthError("Account found but needs re-verification. Please sign up to link your account.");
-          } else {
-            setAuthError("No account found with this email. Please sign up first.");
-          }
+          setAuthError("Invalid email or password. Please try again or sign up.");
         } else {
           throw signInError;
         }
@@ -773,7 +734,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      const syncResult = await syncUserToFirestore(
+      const syncResult = await syncUserToGoogleSheet(
         user.uid,
         email.split('@')[0],
         email,
@@ -838,6 +799,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
     try {
       const feedbackData = {
+        userId: localStorage.getItem("userUID") || contactInfo.trim(),
+        name: localStorage.getItem("userName") || '',
         type: selectedType,
         typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
         description: problemDescription.trim(),
@@ -847,7 +810,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         status: 'pending'
       };
 
-      await addDoc(collection(db, "feedbacks"), feedbackData);
+      await saveFeedback(feedbackData);
       
       setFeedbackSuccess(true);
       setSelectedType('');
