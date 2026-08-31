@@ -10,6 +10,7 @@ import {
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { auth } from "../src/lib/firebase";
 import { getUser, saveUser, updateUser, saveFeedback } from "../src/lib/googleSheets";
+import { auth, googleProvider as provider } from "../src/lib/firebase";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void

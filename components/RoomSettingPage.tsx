@@ -1,8 +1,6 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { db } from "../src/lib/supabase"
-import { doc, setDoc } from "../src/lib/supabase"
 
 export interface RoomSettingsData {
   roomImage: string;

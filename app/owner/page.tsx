@@ -175,6 +175,203 @@ export default function OwnerPage() {
       setTagError('Error searching user. Please try again.');
     } finally {
       setTagSearching(false);
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star, MessageSquare, Trash2, RefreshCw, Bot, ChevronDown, ChevronUp } from "lucide-react";
+
+
+export default function OwnerPanel() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsLoggedIn(localStorage.getItem('ownerPanelLoggedIn') === 'true');
+    }
+  }, []);
+  
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeView, setActiveView] = useState("official_id");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
+
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginKey, setLoginKey] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  // Feedback States
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
+
+  // AI Chat States
+  const [aiChats, setAiChats] = useState<any[]>([]);
+  const [loadingAiChats, setLoadingAiChats] = useState(false);
+  const [expandedChats, setExpandedChats] = useState<Record<string, boolean>>({});
+
+  const getDefaultIdsData = () => ({
+    "100002": { email: "", password: "" },
+    "100003": { email: "", password: "" },
+    "500001": { email: "", password: "" },
+    "500002": { email: "", password: "" },
+    "500003": { email: "", password: "" },
+    "500004": { email: "", password: "" },
+    "500005": { email: "", password: "" },
+    "700001": { email: "", password: "" },
+    "700002": { email: "", password: "" },
+    "700003": { email: "", password: "" },
+  });
+
+  const [idsData, setIdsData] = useState<Record<string, any>>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ownerPanelCredentials");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return getDefaultIdsData();
+  });
+
+  const focusedField = useRef<string | null>(null);
+  const isDirtied = useRef(false);
+  const isLoadedFromGoogleSheet = useRef(false);
+
+  // ===============================
+  // GOOGLE SHEET DATABASE
+  // ===============================
+
+  const loadOwnerCredentials = async () => {
+    try {
+      const { getOwnerCredentials } = await import("@/src/lib/googleSheet");
+      const result = await getOwnerCredentials();
+
+      if (result?.success && result?.credentials) {
+        const mergedData = getDefaultIdsData();
+
+        Object.keys(mergedData).forEach((id) => {
+          if (result.credentials[id]) {
+            mergedData[id] = {
+              email: result.credentials[id].email || "",
+              password: result.credentials[id].password || "",
+            };
+          }
+        });
+
+        setIdsData(mergedData);
+        localStorage.setItem(
+          "ownerPanelCredentials",
+          JSON.stringify(mergedData)
+        );
+      }
+
+      isLoadedFromGoogleSheet.current = true;
+    } catch (error) {
+      console.error("Google Sheet credentials error:", error);
+      isLoadedFromGoogleSheet.current = true;
+    }
+  };
+
+  useEffect(() => {
+    loadOwnerCredentials();
+  }, []);
+
+  // Track online status
+  const [onlineStatus, setOnlineStatus] =
+    useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        const { getSession } = await import("@/src/lib/googleSheet");
+
+        const result: Record<string, boolean> = {};
+
+        for (const id of Object.keys(idsData)) {
+          try {
+            const response = await getSession(id);
+            result[id] = response?.session?.isLoggedIn === true;
+          } catch {
+            result[id] = false;
+          }
+        }
+
+        setOnlineStatus(result);
+      } catch (error) {
+        console.error("Google Sheet session error:", error);
+      }
+    };
+
+    if (Object.keys(idsData).length > 0) {
+      loadSessions();
+    }
+  }, [idsData]);
+
+  // Load Feedbacks
+  const loadFeedbacks = async () => {
+    setLoadingFeedbacks(true);
+
+    try {
+      const { getFeedbacks } = await import("@/src/lib/googleSheet");
+      const result = await getFeedbacks();
+
+      if (result?.success) {
+        const list = Array.isArray(result.feedbacks)
+          ? result.feedbacks
+          : [];
+
+        setFeedbacks(list);
+      }
+    } catch (error) {
+      console.error("Error loading feedbacks:", error);
+    } finally {
+      setLoadingFeedbacks(false);
+    }
+  };
+
+  // Load AI Chats
+  const loadAiChats = async () => {
+    setLoadingAiChats(true);
+
+    try {
+      const { getAiChats } = await import("@/src/lib/googleSheet");
+      const result = await getAiChats();
+
+      if (result?.success) {
+        const list = Array.isArray(result.aiChats)
+          ? result.aiChats
+          : [];
+
+        setAiChats(list);
+      }
+    } catch (error) {
+      console.error("Error loading AI chats:", error);
+    } finally {
+      setLoadingAiChats(false);
+    }
+  };
+
+  // Auto-delete feedbacks older than 48 hours
+  useEffect(() => {
+    if (activeView !== "moderator") return;
+
+    loadFeedbacks();
+
+    const interval = setInterval(() => {
+      loadFeedbacks();
+    }, 600000);
+
+    return () => clearInterval(interval);
+  }, [activeView]);
+
+  // Load feedbacks / AI chats when switching views
+  useEffect(() => {
+    if (activeView === "moderator") {
+      loadFeedbacks();
+    } else if (activeView === "hawa_ai") {
+      loadAiChats();
     }
   };
 
@@ -202,6 +399,131 @@ export default function OwnerPage() {
     setTagAssigning(true);
     setTagError('');
     setTagSuccess('');
+  const handleSave = useCallback(
+    async (customData?: Record<string, any>) => {
+      try {
+        const targetData = customData || idsData;
+
+        const credentials: any[] = [];
+
+        Object.entries(targetData).forEach(
+          ([id, data]: [string, any]) => {
+            const email = (data.email || "").trim();
+            const password = (data.password || "").trim();
+
+            if (email && password) {
+              credentials.push({
+                id,
+                email,
+                password,
+                type: id.startsWith("5")
+                  ? "official"
+                  : id.startsWith("7")
+                    ? "admin"
+                    : "special",
+              });
+            }
+          }
+        );
+
+        const { saveOwnerCredentials } =
+          await import("@/src/lib/googleSheet");
+
+        const result = await saveOwnerCredentials({
+          ownerPanelCredentials: targetData,
+          officialCredentials: credentials,
+        });
+
+        if (!result?.success) {
+          throw new Error(
+            result?.error || "Google Sheet save failed"
+          );
+        }
+
+        localStorage.setItem(
+          "ownerPanelCredentials",
+          JSON.stringify(targetData)
+        );
+
+        localStorage.setItem(
+          "officialCredentials",
+          JSON.stringify(credentials)
+        );
+
+        setSaveMessage("Credentials saved!");
+
+        setTimeout(() => setSaveMessage(""), 3000);
+      } catch (error) {
+        console.error("Error saving credentials:", error);
+        setSaveMessage("Error saving credentials!");
+
+        setTimeout(() => setSaveMessage(""), 3000);
+      }
+    },
+    [idsData]
+  );
+
+  const handleChange = (
+    id: string,
+    field: string,
+    value: string
+  ) => {
+    isDirtied.current = true;
+
+    setIdsData((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleIDLogout = async (id: string) => {
+    try {
+      const { updateSession } =
+        await import("@/src/lib/googleSheet");
+
+      await updateSession(id, {
+        isLoggedIn: false,
+        forceLogoutTimestamp: Date.now(),
+      });
+
+      const loggedInSessions = JSON.parse(
+        localStorage.getItem("loggedInSessions") || "{}"
+      );
+
+      delete loggedInSessions[id];
+
+      localStorage.setItem(
+        "loggedInSessions",
+        JSON.stringify(loggedInSessions)
+      );
+
+      localStorage.removeItem(`session_${id}`);
+      localStorage.removeItem(`user_data_${id}`);
+      localStorage.setItem(
+        `forceLogout_${id}`,
+        Date.now().toString()
+      );
+
+      setOnlineStatus((prev) => ({
+        ...prev,
+        [id]: false,
+      }));
+
+      setSaveMessage(
+        `ID ${id} logged out successfully!`
+      );
+
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error(
+        `Error logging out ID ${id}:`,
+        error
+      );
+    }
+  };
 
     try {
       const tagUpdate = {
@@ -288,6 +610,127 @@ export default function OwnerPage() {
             </span>
           </div>
         </div>
+      const { updateSession } =
+        await import("@/src/lib/googleSheet");
+
+      await Promise.all(
+        ids.map((id) =>
+          updateSession(id, {
+            isLoggedIn: false,
+            forceLogoutTimestamp: Date.now(),
+          })
+        )
+      );
+
+      const loggedInSessions = JSON.parse(
+        localStorage.getItem("loggedInSessions") || "{}"
+      );
+
+      ids.forEach((id) => {
+        delete loggedInSessions[id];
+
+        localStorage.removeItem(`session_${id}`);
+        localStorage.removeItem(`user_data_${id}`);
+
+        localStorage.setItem(
+          `forceLogout_${id}`,
+          Date.now().toString()
+        );
+      });
+
+      localStorage.setItem(
+        "loggedInSessions",
+        JSON.stringify(loggedInSessions)
+      );
+
+      setOnlineStatus((prev) => {
+        const next = { ...prev };
+
+        ids.forEach((id) => {
+          next[id] = false;
+        });
+
+        return next;
+      });
+
+      setSaveMessage(
+        "Selected IDs logged out successfully!"
+      );
+
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error("Error logging out group:", error);
+    }
+  };
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getTimeRemaining = (timestamp: number) => {
+    const now = Date.now();
+    const fortyEightHours = 48 * 60 * 60 * 1000;
+    const expiryTime = timestamp + fortyEightHours;
+    const remaining = expiryTime - now;
+
+    if (remaining <= 0) return "Expired";
+
+    const hours = Math.floor(
+      remaining / (60 * 60 * 1000)
+    );
+
+    const minutes = Math.floor(
+      (remaining % (60 * 60 * 1000)) /
+        (60 * 1000)
+    );
+
+    return `${hours}h ${minutes}m remaining`;
+  };
+
+  const handleDeleteFeedback = async (
+    feedbackId: string
+  ) => {
+    try {
+      const { deleteFeedback } =
+        await import("@/src/lib/googleSheet");
+
+      const result = await deleteFeedback(feedbackId);
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error || "Delete failed"
+        );
+      }
+
+      setFeedbacks((prev) =>
+        prev.filter((f) => f.id !== feedbackId)
+      );
+
+      setSaveMessage("Feedback deleted!");
+
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error(
+        "Error deleting feedback:",
+        error
+      );
+    }
+  };
+
+  const toggleChatExpansion = (chatId: string) => {
+    setExpandedChats((prev) => ({
+      ...prev,
+      [chatId]: !prev[chatId],
+    }));
+  };
 
         {/* Tag Assignment Section */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
@@ -313,6 +756,8 @@ export default function OwnerPage() {
               onClick={handleTagUserSearch}
               disabled={tagSearching}
               className="px-6 py-3 bg-blue-600 text-white font-bold text-xs rounded-2xl shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              onClick={() => window.location.href = "/"}
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition cursor-pointer mt-2"
             >
               {tagSearching ? (
                 <>

@@ -10,6 +10,8 @@ import Fourgride from './Fourgride';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { generateStableId } from '../lib/hash';
 import { getRoom, updateRoom, getRoomMembers, joinRoom, leaveRoom, sendRoomMessage, getRoomMessages } from "../src/lib/googleSheets";
+
+// LiveKit imports for Voice Audio - Fixed imports
 import { 
   LiveKitRoom, 
   RoomAudioRenderer, 

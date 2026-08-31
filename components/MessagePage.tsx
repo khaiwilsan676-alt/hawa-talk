@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { getMessages, getUser } from '../src/lib/googleSheets';
+
 import ChatScreen from './ChatScreen';
 
 // ============ Simple IndexedDB Functions ============
