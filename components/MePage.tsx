@@ -650,9 +650,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
         // Step 3: Google Sheets API se user sync
         try {
-          const res = await getUsers();
-          const usersList = res.users || res.data || (Array.isArray(res) ? res : []);
-          const sheetUser = usersList.find((u: any) => String(u.id) === uid || String(u.uid) === uid || String(u.accountId) === uid);
+          let sheetUser: any = null;
+          try {
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
+            const res: any = await Promise.race([getUsers(), timeoutPromise]);
+            if (res) {
+              const usersList = res.users || res.data || (Array.isArray(res) ? res : []);
+              sheetUser = usersList.find((u: any) => String(u.id) === uid || String(u.uid) === uid || String(u.accountId) === uid);
+            }
+          } catch (e) {
+            console.warn('Google Sheets getUsers timed out or failed, using local/cached user:', e);
+          }
 
           if (sheetUser) {
             let accountNumber = sheetUser.accountId ||
