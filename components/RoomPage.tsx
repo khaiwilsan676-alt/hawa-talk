@@ -1392,7 +1392,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <div 
         className="absolute cursor-pointer z-20"
         style={{
-          bottom: 'calc(var(--footer-btn-size) + 52px)',
+          bottom: 'calc(var(--footer-btn-size) + 38px)',
           right: '10px',
           width: 'calc(var(--footer-btn-size) * 1.1)',
           height: 'calc(var(--footer-btn-size) * 1.1)',
@@ -1701,13 +1701,13 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         />
       )}
 
-      {/* GAME SHEET - Directly in RoomPage */}
+       {/* GAME SHEET - Directly in RoomPage */}
 {showGameSheet && (
   <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
     <div className="absolute inset-0 bg-black/30" onClick={() => setShowGameSheet(false)} />
     <div
       className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 pt-4 pb-6 animate-slide-up"
-      style={{ height: '30vh' }}
+      style={{ height: '20vh' }}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-4">
@@ -1727,7 +1727,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           <button 
             onClick={() => {
               setShowGameSheet(false);
-              setShowWildParty(true);
+              setShowWildParty(true);   // <-- Wildparty open
             }} 
             className="transition-transform hover:scale-105"
           >
@@ -1741,7 +1741,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           <button 
             onClick={() => {
               setShowGameSheet(false);
-              setShowFruitParty(true);
+              setShowFruitParty(true);   // <-- Fruitparty open
             }} 
             className="transition-transform hover:scale-105"
           >
@@ -1752,6 +1752,16 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       </div>
     </div>
   </div>
+)}
+
+{/* Wildparty Overlay */}
+{showWildParty && (
+  <Wildparty onClose={() => setShowWildParty(false)} />  // <-- Wildparty component
+)}
+
+{/* Fruitparty Overlay */}
+{showFruitParty && (
+  <Fruitparty onClose={() => setShowFruitParty(false)} />  // <-- Fruitparty component
 )}
 
       {/* Music Controller - MINIMIZED STATE (Clamped Drag & Drop Floating Widget) */}
