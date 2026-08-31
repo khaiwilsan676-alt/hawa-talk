@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { db } from "../src/lib/supabase"
-import { doc, setDoc } from "../src/lib/supabase"
+import { updateSession } from "../src/lib/googleSheet"
 import { getTranslation, LanguageCode } from '../lib/translations'
 
 interface SettingPageProps {
@@ -54,13 +53,12 @@ export default function SettingPage({
     const isOfficialOrAdmin = OFFICIAL_IDS.includes(uid || '') || ADMIN_IDS.includes(uid || '')
     
     if (isOfficialOrAdmin && uid) {
-      // Update firestore session to false
+      // Update session to false via Google Sheets API
       try {
-        const docRef = doc(db, "adminSettings", `sessions_${uid}`);
-        await setDoc(docRef, {
+        await updateSession(uid, {
           isLoggedIn: false,
-          forceLogoutTimestamp: Date.now() // Record force logout to disconnect everywhere
-        }, { merge: true });
+          forceLogoutTimestamp: Date.now()
+        });
       } catch (error) {
         console.error("Error updating logout status:", error);
       }

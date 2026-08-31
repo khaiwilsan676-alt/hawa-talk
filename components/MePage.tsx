@@ -495,7 +495,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     try {
-      await addDoc(collection(db, "feedbacks"), feedbackData);
       // Google Sheets API mein save karo
       await saveFeedback(feedbackData);
       
@@ -536,7 +535,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   };
 
   useEffect(() => {
-    const lockUserDataPermanently = async () => {
     const fetchUserData = async () => {
       try {
         const uid = localStorage.getItem("userUID") || 
@@ -601,77 +599,13 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
           setUser(finalLockedUser);
         } catch (sheetError) {
-          console.warn('Google Sheets one-time read bypassed/failed:', sheetError);
-        // Step 3: Google Sheets API se user sync
-        try {
-          let sheetUser: any = null;
-          try {
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
-            const res: any = await Promise.race([getUsers(), timeoutPromise]);
-            if (res) {
-              const usersList = res.users || res.data || (Array.isArray(res) ? res : []);
-              sheetUser = usersList.find((u: any) => String(u.id) === uid || String(u.uid) === uid || String(u.accountId) === uid);
-            }
-          } catch (e) {
-            console.warn('Google Sheets getUsers timed out or failed, using local/cached user:', e);
-          }
-
-          if (sheetUser) {
-            let accountNumber = sheetUser.accountId ||
-                               cachedUser?.accountNumber ||
-                               localStorage.getItem("accountNumber") ||
-                               "";
-            
-            if (!accountNumber) {
-              const { fullAccNum } = getOrCreateAccountNumber(uid);
-              accountNumber = fullAccNum;
-            }
-
-            const updatedUserData = {
-              name: sheetUser.name || cachedUser?.name || localStorage.getItem("userName") || "",
-              uid: uid,
-              accountNumber: accountNumber,
-              displayAccountNumber: accountNumber,
-              phone: sheetUser.phone || cachedUser?.phone || localStorage.getItem("userPhone") || "",
-              photo: sheetUser.image || sheetUser.photo || cachedUser?.photo || localStorage.getItem("userPhoto") || "",
-            };
-
-            await saveUserToDB(updatedUserData);
-
-            if (updatedUserData.name) localStorage.setItem("userName", updatedUserData.name);
-            if (updatedUserData.accountNumber) localStorage.setItem("accountNumber", updatedUserData.accountNumber);
-            if (updatedUserData.photo) localStorage.setItem("userPhoto", updatedUserData.photo);
-            if (updatedUserData.phone) localStorage.setItem("userPhone", updatedUserData.phone);
-
-            setUser(updatedUserData);
-          } else if (!cachedUser) {
-            let accountNumber = localStorage.getItem("accountNumber") || "";
-            if (!accountNumber) {
-              const { fullAccNum } = getOrCreateAccountNumber(uid);
-              accountNumber = fullAccNum;
-            }
-            const fallbackUser = {
-              name: localStorage.getItem("userName") || "User",
-              uid: uid,
-              accountNumber: accountNumber,
-              displayAccountNumber: accountNumber,
-              phone: localStorage.getItem("userPhone") || "",
-              photo: localStorage.getItem("userPhoto") || "",
-            };
-            await saveUserToDB(fallbackUser);
-            setUser(fallbackUser);
-          }
-        } catch (sheetError) {
-          console.warn('⚠️ Google Sheets user fetch error:', sheetError);
+          console.warn('Google Sheets user fetch error:', sheetError);
         }
-
       } catch (error) {
         console.error('Error locking user data:', error);
       }
     };
 
-    lockUserDataPermanently();
-  }, []);
     fetchUserData();
   }, []); // Only run once when component mounts
 
