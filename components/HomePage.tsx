@@ -1,5 +1,6 @@
 'use client'
 
+import { getRooms, saveRoom, saveUser } from '../src/lib/googleSheet'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import MessagePage from './MessagePage'
 import MePage from './MePage';
@@ -357,42 +358,11 @@ async function fetchSearchResults(queryRaw: string, globalRooms: GlobalRoom[]): 
     }
   })
 
-  try {
-    const userDocRef = doc(db, "users", queryRaw)
-    const userDocSnap = await getDoc(userDocRef)
-    if (userDocSnap.exists()) {
-      addResult(userDocSnap.id, userDocSnap.data())
+  globalRooms.forEach((r) => {
+    if (String(r.id).toLowerCase().includes(queryLower)) {
+      addResult(r.id, r)
     }
-  } catch (e) {
-    console.warn("Direct doc search skipped:", e)
-  }
-
-  try {
-    const usersRef = collection(db, "users")
-    const qRange = query(
-      usersRef,
-      where("accountId", ">=", queryRaw),
-      where("accountId", "<=", queryRaw + '\uf8ff')
-    )
-    const snapRange = await getDocs(qRange)
-    snapRange.docs.forEach((d) => addResult(d.id, d.data()))
-  } catch (err) {
-    console.warn("Users query error:", err)
-  }
-
-  try {
-    const roomsRef = collection(db, "globalRooms")
-    const qRooms = query(
-      roomsRef,
-      where("accountId", ">=", queryRaw),
-      where("accountId", "<=", queryRaw + '\uf8ff')
-    )
-    const snapRooms = await getDocs(qRooms)
-    snapRooms.docs.forEach((d) => addResult(d.id, d.data()))
-  } catch (err) {
-    console.warn("globalRooms query error:", err)
-  }
-
+  })
   foundList.sort((a, b) => {
     const aExact = String(a.accountId).toLowerCase() === queryLower || a.id.toLowerCase() === queryLower
     const bExact = String(b.accountId).toLowerCase() === queryLower || b.id.toLowerCase() === queryLower
@@ -490,28 +460,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   // ============ UNREAD COUNT ============
   useEffect(() => {
     if (!userUID || userUID === 'N/A') return;
-
-    const conversationsRef = collection(db, 'conversations');
-    const q = query(
-      conversationsRef,
-      where('participants', 'array-contains', userUID)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      let count = 0;
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data();
-        const clearedAt = data.clearedAtRef?.[userUID] || 0;
-        const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" ? data.lastTimestamp.toMillis() : (data.lastTimestamp || 0);
-        if (lastTimestamp >= clearedAt) {
-          const unread = data.unreadCounts?.[userUID] || 0;
-          count += unread;
-        }
-      });
-      setTotalUnreadCount(count);
-    });
-
-    return () => unsubscribe();
+    // Unread count calculated locally or from storage if needed
   }, [userUID]);
 
   // ============ MOUNTED ============
@@ -647,43 +596,21 @@ export default function HomePage({ onLogout }: HomePageProps) {
       }
     });
 
-    // Firebase se sync (background)
-    const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
-      const rooms = snapshot.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          name: data.name || 'User',
-          country: data.country || '🇮🇳',
-          image: data.image || '/default-avatar.png',
-          accountId: data.accountId || d.id,
-          createdAt: data.createdAt || Date.now(),
-          isLocked: data.isLocked || false,
-          roomPassword: data.roomPassword || null,
-          isExplicitlyCreated: data.isExplicitlyCreated || false
-        } as GlobalRoom;
-      });
-      
-      console.log('🔥 Firebase rooms synced:', rooms.length, rooms);
-      
-      // Filter only explicitly created rooms
-      const validRooms = rooms.filter(room => 
-        room.name !== 'User' &&
-        room.name !== 'Hurry Room' &&
-        room.accountId !== 'undefined' &&
-        room.accountId !== 'null' &&
-        room.accountId !== ''
-      );
-      
-      setGlobalRooms(validRooms);
-      
-      // IndexedDB mein save karo
-      validRooms.forEach(room => {
-        saveRoomToDB(room);
-      });
-    });
-    
-    return () => unsub();
+    // Google Sheets API se sync (background)
+    getRooms().then((res: any) => {
+      if (res && res.rooms && Array.isArray(res.rooms)) {
+        const validRooms = res.rooms.filter((room: any) =>
+          room &&
+          room.name !== 'User' &&
+          room.name !== 'Hurry Room' &&
+          room.accountId !== 'undefined' &&
+          room.accountId !== 'null' &&
+          room.accountId !== ''
+        );
+        setGlobalRooms(validRooms);
+        validRooms.forEach((room: any) => saveRoomToDB(room));
+      }
+    }).catch(err => console.warn('Error fetching rooms from Google Sheets:', err));
   }, []);
 
   // ============ DRAG CIRCLE INITIAL POSITION ============
@@ -1133,18 +1060,21 @@ export default function HomePage({ onLogout }: HomePageProps) {
         isExplicitlyCreated: true // IMPORTANT: Mark as explicitly created
       };
 
-      await setDoc(doc(db, "globalRooms", userUID), roomData, { merge: true });
-
-      await setDoc(doc(db, "users", userUID), {
-        id: userUID,
-        name: userName || defaultRoomName,
-        country: localStorage.getItem("userCountry") || "🇮🇳",
-        countryCode: localStorage.getItem("userCountryCode") || "IN",
-        image: userPhoto || '/default-avatar.png',
-        accountId: storedAccNum,
-        createdAt: Date.now(),
-        isExplicitlyCreated: true
-      }, { merge: true });
+      try {
+        await saveRoom(roomData);
+        await saveUser({
+          id: userUID,
+          name: userName || defaultRoomName,
+          country: localStorage.getItem("userCountry") || "🇮🇳",
+          countryCode: localStorage.getItem("userCountryCode") || "IN",
+          image: userPhoto || '/default-avatar.png',
+          accountId: storedAccNum,
+          createdAt: Date.now(),
+          isExplicitlyCreated: true
+        });
+      } catch (e) {
+        console.warn('Error saving room/user to Google Sheets:', e);
+      }
 
       // Update local state immediately
       setGlobalRooms(prev => {
@@ -1167,20 +1097,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
     const rawAccNum = localStorage.getItem('accountNumber') || getOrCreateAccountNumber(userUID)
     const currentAccountId = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
 
-    try {
-      const docRef = doc(db, "globalRooms", user.accountId || user.id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.isLocked && data.accountId !== currentAccountId) {
-          setSelectedLockedRoom(user)
-          setShowRoomPasswordCard(true)
-          setEnteredRoomPassword('')
-          return
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to fetch lock status:", e);
+    const foundRoom = globalRooms.find(r => (r.accountId && r.accountId === user.accountId) || r.id === user.id || r.id === user.accountId);
+    if (foundRoom && foundRoom.isLocked && foundRoom.accountId !== currentAccountId) {
+      setSelectedLockedRoom(user)
+      setShowRoomPasswordCard(true)
+      setEnteredRoomPassword('')
+      return
     }
 
     setEnteredFromKept(false)
@@ -1195,29 +1117,22 @@ export default function HomePage({ onLogout }: HomePageProps) {
   // ============ ROOM PASSWORD SUBMIT ============
   const handleRoomPasswordSubmit = async () => {
     if (!selectedLockedRoom) return;
-    try {
-      const docRef = doc(db, "globalRooms", selectedLockedRoom.id || selectedLockedRoom.accountId || '');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.isLocked && data.roomPassword === enteredRoomPassword) {
-          setShowRoomPasswordCard(false)
-          setEnteredFromKept(false)
-          addToRecent({ name: selectedLockedRoom.name, image: selectedLockedRoom.image, accountId: selectedLockedRoom.accountId || selectedLockedRoom.id, isLocked: true })
-          setSelectedUser(selectedLockedRoom)
-          setCurrentPage('room')
-          if (isSearchOpen) {
-            setIsSearchOpen(false)
-          }
-        } else {
-          alert('Incorrect Password')
+    const foundRoom = globalRooms.find(r => r.id === selectedLockedRoom.id || (r.accountId && r.accountId === selectedLockedRoom.accountId));
+    if (foundRoom) {
+      if (foundRoom.isLocked && foundRoom.roomPassword === enteredRoomPassword) {
+        setShowRoomPasswordCard(false)
+        setEnteredFromKept(false)
+        addToRecent({ name: selectedLockedRoom.name, image: selectedLockedRoom.image, accountId: selectedLockedRoom.accountId || selectedLockedRoom.id, isLocked: true })
+        setSelectedUser(selectedLockedRoom)
+        setCurrentPage('room')
+        if (isSearchOpen) {
+          setIsSearchOpen(false)
         }
       } else {
-        alert('Room not found')
+        alert('Incorrect Password')
       }
-    } catch (e) {
-      console.error(e);
-      alert('Error verifying password')
+    } else {
+      alert('Room not found')
     }
   }
 
@@ -1251,22 +1166,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // ============ JOIN ROOM FROM CHAT ============
   const handleJoinRoomFromChat = async (roomId: string) => {
-    try {
-      const roomDoc = await getDoc(doc(db, 'globalRooms', roomId));
-      if (roomDoc.exists()) {
-        const roomData = roomDoc.data();
-        handleUserCardClick({
-          id: roomData.id || roomId,
-          accountId: roomData.accountId || roomId,
-          name: roomData.name,
-          country: roomData.country || '🇮🇳',
-          image: roomData.image || '/default-avatar.png'
-        });
-      } else {
-        console.error('Room not found');
-      }
-    } catch (error) {
-      console.error('Error fetching room data:', error);
+    const foundRoom = globalRooms.find(r => r.id === roomId || r.accountId === roomId);
+    if (foundRoom) {
+      handleUserCardClick({
+        id: foundRoom.id || roomId,
+        accountId: foundRoom.accountId || roomId,
+        name: foundRoom.name,
+        country: foundRoom.country || '🇮🇳',
+        image: foundRoom.image || '/default-avatar.png'
+      });
+    } else {
+      console.error('Room not found');
     }
   };
 
