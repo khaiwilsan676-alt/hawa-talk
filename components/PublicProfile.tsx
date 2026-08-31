@@ -13,8 +13,7 @@ import {
   MessageCircle,
   MoreHorizontal,
 } from 'lucide-react'
-import { db } from '../src/lib/firebase'
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
+
 
 // Import the WebRTC ChatScreen component
 import ChatScreen from './ChatScreen' // adjust path if necessary

@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Send } from "lucide-react";
-import { db } from "../src/lib/supabase";
-import { collection, addDoc, setDoc, doc, deleteDoc, query, where, getDocs } from "../src/lib/supabase";
 
 interface HurrySupportProps {
   onBack?: () => void;

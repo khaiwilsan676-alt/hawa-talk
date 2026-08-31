@@ -2,21 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send, ImageIcon, MoreHorizontal, LogIn, Trash2, Flag, Ban, X, Check, Copy } from 'lucide-react';
-import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  addDoc,
-  serverTimestamp,
-  doc,
-  setDoc,
-  updateDoc,
-  getDoc,
-  deleteDoc,
-  writeBatch,
-} from 'firebase/firestore';
-import { db } from '../src/lib/firebase';
 
 // ============ IndexedDB Functions for Messages ============
 const MESSAGES_DB_NAME = 'ChatMessagesDB';

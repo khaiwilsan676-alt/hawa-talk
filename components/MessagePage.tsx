@@ -3,17 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 import Image from 'next/image';
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  orderBy,
-  doc,
-  updateDoc,
-  getDoc,
-} from 'firebase/firestore';
-import { db } from '../src/lib/firebase';
+
 import ChatScreen from './ChatScreen';
 
 // ============ Simple IndexedDB Functions ============

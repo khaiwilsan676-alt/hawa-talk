@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Menu, X, Shield, Lock, Mail, Save, Eye, EyeOff, Key, LogOut, Star, MessageSquare, Trash2, RefreshCw, Bot, ChevronDown, ChevronUp } from "lucide-react";
 
-import { supabase, db, doc, onSnapshot, query, collection, orderBy, getDocs, deleteDoc, setDoc } from '../../src/lib/supabase';
 
 export default function OwnerPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -61,103 +60,94 @@ export default function OwnerPanel() {
 
   const focusedField = useRef<string | null>(null);
   const isDirtied = useRef(false);
-  const isLoadedFromFirestore = useRef(false);
-  const lastTypingTime = useRef<number>(0);
+  const isLoadedFromGoogleSheet = useRef(false);
 
-  // Load from firestore (Real-time sync)
-  useEffect(() => {
-    const docRef = doc(db, "adminSettings", "credentials");
-    const unsubscribe = onSnapshot(
-      docRef,
-      (docSnap: any) => {
-        if (isDirtied.current) {
-          // User has unsaved local changes!
-          // DO NOT OVERWRITE THEIR TYPING!
-          isLoadedFromFirestore.current = true;
-          return;
-        }
+  // ===============================
+  // GOOGLE SHEET DATABASE
+  // ===============================
 
-        if (docSnap.exists()) {
-          const serverData = docSnap.data().ownerPanelCredentials || {};
-          const mergedData = getDefaultIdsData();
-          
-          Object.keys(getDefaultIdsData()).forEach(id => {
-            if (serverData[id]) {
-              mergedData[id as keyof typeof mergedData] = {
-                email: serverData[id].email || "",
-                password: serverData[id].password || ""
-              };
-            }
-          });
+  const loadOwnerCredentials = async () => {
+    try {
+      const { getOwnerCredentials } = await import("@/src/lib/googleSheet");
+      const result = await getOwnerCredentials();
 
-          setIdsData(currentData => {
-            const finalData = JSON.parse(JSON.stringify(mergedData));
+      if (result?.success && result?.credentials) {
+        const mergedData = getDefaultIdsData();
 
-            if (focusedField.current) {
-              const [focusedId, focusedKey] = focusedField.current.split('-');
-              if (finalData[focusedId] && currentData[focusedId]) {
-                finalData[focusedId][focusedKey] = currentData[focusedId][focusedKey];
-              }
-            }
+        Object.keys(mergedData).forEach((id) => {
+          if (result.credentials[id]) {
+            mergedData[id] = {
+              email: result.credentials[id].email || "",
+              password: result.credentials[id].password || "",
+            };
+          }
+        });
 
-            if (JSON.stringify(currentData) === JSON.stringify(finalData)) {
-              return currentData;
-            }
-
-            isLoadedFromFirestore.current = true;
-            
-            localStorage.setItem("ownerPanelCredentials", JSON.stringify(finalData));
-            return finalData;
-          });
-        }
-      },
-      (error: any) => {
-        console.error("Error fetching credentials:", error);
-        isLoadedFromFirestore.current = true;
+        setIdsData(mergedData);
+        localStorage.setItem(
+          "ownerPanelCredentials",
+          JSON.stringify(mergedData)
+        );
       }
-    );
 
-    return () => unsubscribe();
+      isLoadedFromGoogleSheet.current = true;
+    } catch (error) {
+      console.error("Google Sheet credentials error:", error);
+      isLoadedFromGoogleSheet.current = true;
+    }
+  };
+
+  useEffect(() => {
+    loadOwnerCredentials();
   }, []);
 
   // Track online status
-  const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
+  const [onlineStatus, setOnlineStatus] =
+    useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const unsubscribes = Object.keys(idsData).map(id => {
-      const docRef = doc(db, "adminSettings", `sessions_${id}`);
-      return onSnapshot(docRef, (docSnap: any) => {
-        if (docSnap.exists()) {
-          setOnlineStatus(prev => ({
-            ...prev,
-            [id]: docSnap.data().isLoggedIn === true
-          }));
-        } else {
-          setOnlineStatus(prev => ({
-            ...prev,
-            [id]: false
-          }));
-        }
-      });
-    });
+    const loadSessions = async () => {
+      try {
+        const { getSession } = await import("@/src/lib/googleSheet");
 
-    return () => {
-      unsubscribes.forEach(unsub => unsub());
+        const result: Record<string, boolean> = {};
+
+        for (const id of Object.keys(idsData)) {
+          try {
+            const response = await getSession(id);
+            result[id] = response?.session?.isLoggedIn === true;
+          } catch {
+            result[id] = false;
+          }
+        }
+
+        setOnlineStatus(result);
+      } catch (error) {
+        console.error("Google Sheet session error:", error);
+      }
     };
+
+    if (Object.keys(idsData).length > 0) {
+      loadSessions();
+    }
   }, [idsData]);
 
   // Load Feedbacks
   const loadFeedbacks = async () => {
     setLoadingFeedbacks(true);
+
     try {
-      const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
-      const querySnapshot: any = await getDocs(q);
-      const feedbackList: any[] = [];
-      querySnapshot.forEach((doc: any) => {
-        feedbackList.push({ id: doc.id, ...doc.data() });
-      });
-      setFeedbacks(feedbackList);
-    } catch (error: any) {
+      const { getFeedbacks } = await import("@/src/lib/googleSheet");
+      const result = await getFeedbacks();
+
+      if (result?.success) {
+        const list = Array.isArray(result.feedbacks)
+          ? result.feedbacks
+          : [];
+
+        setFeedbacks(list);
+      }
+    } catch (error) {
       console.error("Error loading feedbacks:", error);
     } finally {
       setLoadingFeedbacks(false);
@@ -167,15 +157,19 @@ export default function OwnerPanel() {
   // Load AI Chats
   const loadAiChats = async () => {
     setLoadingAiChats(true);
+
     try {
-      const q = query(collection(db, "aiChats"), orderBy("timestamp", "desc"));
-      const querySnapshot: any = await getDocs(q);
-      const chatList: any[] = [];
-      querySnapshot.forEach((doc: any) => {
-        chatList.push({ id: doc.id, ...doc.data() });
-      });
-      setAiChats(chatList);
-    } catch (error: any) {
+      const { getAiChats } = await import("@/src/lib/googleSheet");
+      const result = await getAiChats();
+
+      if (result?.success) {
+        const list = Array.isArray(result.aiChats)
+          ? result.aiChats
+          : [];
+
+        setAiChats(list);
+      }
+    } catch (error) {
       console.error("Error loading AI chats:", error);
     } finally {
       setLoadingAiChats(false);
@@ -184,49 +178,18 @@ export default function OwnerPanel() {
 
   // Auto-delete feedbacks older than 48 hours
   useEffect(() => {
-    const checkAndDeleteOldFeedbacks = async () => {
-      try {
-        const q = query(collection(db, "feedbacks"));
-        const querySnapshot: any = await getDocs(q);
-        const now = Date.now();
-        const fortyEightHours = 48 * 60 * 60 * 1000;
+    if (activeView !== "moderator") return;
 
-        const deletePromises: Promise<void>[] = [];
-
-        querySnapshot.forEach((document: any) => {
-          const data = document.data();
-          const feedbackTime = data.timestamp || 0;
-          
-          if (now - feedbackTime > fortyEightHours) {
-            const p = deleteDoc(doc(db, "feedbacks", document.id)).then(() => {
-              console.log(`Deleted old feedback: ${document.id}`);
-            });
-            deletePromises.push(p);
-          }
-        });
-
-        await Promise.all(deletePromises);
-
-        loadFeedbacks();
-      } catch (error: any) {
-        console.error("Error cleaning up old feedbacks:", error);
-      }
-    };
-
-    if (activeView === "moderator") {
-      checkAndDeleteOldFeedbacks();
-    }
+    loadFeedbacks();
 
     const interval = setInterval(() => {
-      if (activeView === "moderator") {
-        checkAndDeleteOldFeedbacks();
-      }
+      loadFeedbacks();
     }, 600000);
 
     return () => clearInterval(interval);
   }, [activeView]);
 
-  // Load feedbacks/aiChats when switching views
+  // Load feedbacks / AI chats when switching views
   useEffect(() => {
     if (activeView === "moderator") {
       loadFeedbacks();
@@ -235,190 +198,253 @@ export default function OwnerPanel() {
     }
   }, [activeView]);
 
-  const handleLogin = () => {
-    if (loginUsername === "HAWA.IN" && loginPassword === "HAWA.OWNER/CEO" && loginKey === "25/7/2026") {
-      setIsLoggedIn(true);
-      setLoginError("");
-      localStorage.setItem('ownerPanelLoggedIn', 'true');
-    } else {
-      setLoginError("Invalid credentials. Please try again.");
-    }
-  };
+  const handleSave = useCallback(
+    async (customData?: Record<string, any>) => {
+      try {
+        const targetData = customData || idsData;
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem('ownerPanelLoggedIn');
-    setLoginUsername("");
-    setLoginPassword("");
-    setLoginKey("");
-  };
+        const credentials: any[] = [];
 
-  // FIRESTORE SAVE & SYNC FUNCTION
-  const handleSave = useCallback(async (customData?: Record<string, any>) => {
-    isDirtied.current = false;
-    try {
-      const targetData = customData || idsData;
-      const credentials: any[] = [];
-      
-      Object.entries(targetData).forEach(([id, data]: [string, any]) => {
-        const email = (data.email || "").trim();
-        const password = (data.password || "").trim();
-        if (email && password) {
-          credentials.push({
-            id: id,
-            email: email,
-            password: password,
-            type: id.startsWith('5') ? 'official' : id.startsWith('7') ? 'admin' : 'special'
-          });
+        Object.entries(targetData).forEach(
+          ([id, data]: [string, any]) => {
+            const email = (data.email || "").trim();
+            const password = (data.password || "").trim();
+
+            if (email && password) {
+              credentials.push({
+                id,
+                email,
+                password,
+                type: id.startsWith("5")
+                  ? "official"
+                  : id.startsWith("7")
+                    ? "admin"
+                    : "special",
+              });
+            }
+          }
+        );
+
+        const { saveOwnerCredentials } =
+          await import("@/src/lib/googleSheet");
+
+        const result = await saveOwnerCredentials({
+          ownerPanelCredentials: targetData,
+          officialCredentials: credentials,
+        });
+
+        if (!result?.success) {
+          throw new Error(
+            result?.error || "Google Sheet save failed"
+          );
         }
-      });
 
-      const docRef = doc(db, "adminSettings", "credentials");
-      await setDoc(docRef, {
-        ownerPanelCredentials: targetData,
-        officialCredentials: credentials
-      }, { merge: true });
+        localStorage.setItem(
+          "ownerPanelCredentials",
+          JSON.stringify(targetData)
+        );
 
-      localStorage.setItem('ownerPanelCredentials', JSON.stringify(targetData));
-      localStorage.setItem('officialCredentials', JSON.stringify(credentials));
+        localStorage.setItem(
+          "officialCredentials",
+          JSON.stringify(credentials)
+        );
 
-      setSaveMessage("Credentials saved!");
-      setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error: any) {
-      console.error("Error saving credentials:", error);
-      setSaveMessage("Error saving credentials!");
-      setTimeout(() => setSaveMessage(""), 3000);
-    }
-  }, [idsData]);
+        setSaveMessage("Credentials saved!");
 
-  useEffect(() => {
-    if (!isDirtied.current) {
-      return;
-    }
+        setTimeout(() => setSaveMessage(""), 3000);
+      } catch (error) {
+        console.error("Error saving credentials:", error);
+        setSaveMessage("Error saving credentials!");
 
-    if (!isLoadedFromFirestore.current) {
-      return;
-    }
+        setTimeout(() => setSaveMessage(""), 3000);
+      }
+    },
+    [idsData]
+  );
 
-    const timeoutId = setTimeout(() => {
-      isDirtied.current = false;
-      handleSave();
-      isDirtied.current = false; // Mark as saved!
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
-  }, [idsData, handleSave]);
-
-  const handleChange = (id: string, field: string, value: string) => {
+  const handleChange = (
+    id: string,
+    field: string,
+    value: string
+  ) => {
     isDirtied.current = true;
+
     setIdsData((prev) => ({
       ...prev,
-      [id]: { ...prev[id], [field]: value },
+      [id]: {
+        ...prev[id],
+        [field]: value,
+      },
     }));
   };
 
   const handleIDLogout = async (id: string) => {
     try {
-      const docRef = doc(db, "adminSettings", `sessions_${id}`);
-      await setDoc(docRef, {
+      const { updateSession } =
+        await import("@/src/lib/googleSheet");
+
+      await updateSession(id, {
         isLoggedIn: false,
-        forceLogoutTimestamp: Date.now()
-      }, { merge: true });
-
-      const loggedInSessions = JSON.parse(localStorage.getItem('loggedInSessions') || '{}')
-      delete loggedInSessions[id]
-      localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions))
-      localStorage.removeItem(`session_${id}`)
-      localStorage.removeItem(`user_data_${id}`)
-      localStorage.setItem(`forceLogout_${id}`, Date.now().toString())
-
-      setSaveMessage(`ID ${id} logged out successfully!`)
-      setTimeout(() => setSaveMessage(""), 3000)
-    } catch (error: any) {
-      console.error(`Error logging out ID ${id}:`, error);
-    }
-  }
-
-  const handleLogoutGroup = async (ids: string[]) => {
-    try {
-      await Promise.all(
-        ids.map(async (id) => {
-          const docRef = doc(db, "adminSettings", `sessions_${id}`);
-          await setDoc(
-            docRef,
-            {
-              isLoggedIn: false,
-              forceLogoutTimestamp: Date.now(),
-            },
-            { merge: true }
-          );
-        })
-      );
+        forceLogoutTimestamp: Date.now(),
+      });
 
       const loggedInSessions = JSON.parse(
         localStorage.getItem("loggedInSessions") || "{}"
       );
-      for (const id of ids) {
-        delete loggedInSessions[id];
-        localStorage.removeItem(`session_${id}`);
-        localStorage.removeItem(`user_data_${id}`);
-        localStorage.setItem(`forceLogout_${id}`, Date.now().toString());
-      }
+
+      delete loggedInSessions[id];
+
       localStorage.setItem(
         "loggedInSessions",
         JSON.stringify(loggedInSessions)
       );
 
-      setSaveMessage(`Selected IDs logged out successfully!`);
+      localStorage.removeItem(`session_${id}`);
+      localStorage.removeItem(`user_data_${id}`);
+      localStorage.setItem(
+        `forceLogout_${id}`,
+        Date.now().toString()
+      );
+
+      setOnlineStatus((prev) => ({
+        ...prev,
+        [id]: false,
+      }));
+
+      setSaveMessage(
+        `ID ${id} logged out successfully!`
+      );
+
       setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error: any) {
-      console.error(`Error logging out group:`, error);
+    } catch (error) {
+      console.error(
+        `Error logging out ID ${id}:`,
+        error
+      );
     }
   };
 
-  // Format timestamp to readable date
+  const handleLogoutGroup = async (ids: string[]) => {
+    try {
+      const { updateSession } =
+        await import("@/src/lib/googleSheet");
+
+      await Promise.all(
+        ids.map((id) =>
+          updateSession(id, {
+            isLoggedIn: false,
+            forceLogoutTimestamp: Date.now(),
+          })
+        )
+      );
+
+      const loggedInSessions = JSON.parse(
+        localStorage.getItem("loggedInSessions") || "{}"
+      );
+
+      ids.forEach((id) => {
+        delete loggedInSessions[id];
+
+        localStorage.removeItem(`session_${id}`);
+        localStorage.removeItem(`user_data_${id}`);
+
+        localStorage.setItem(
+          `forceLogout_${id}`,
+          Date.now().toString()
+        );
+      });
+
+      localStorage.setItem(
+        "loggedInSessions",
+        JSON.stringify(loggedInSessions)
+      );
+
+      setOnlineStatus((prev) => {
+        const next = { ...prev };
+
+        ids.forEach((id) => {
+          next[id] = false;
+        });
+
+        return next;
+      });
+
+      setSaveMessage(
+        "Selected IDs logged out successfully!"
+      );
+
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error("Error logging out group:", error);
+    }
+  };
+
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
-    return date.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  // Calculate time remaining
   const getTimeRemaining = (timestamp: number) => {
     const now = Date.now();
     const fortyEightHours = 48 * 60 * 60 * 1000;
     const expiryTime = timestamp + fortyEightHours;
     const remaining = expiryTime - now;
 
-    if (remaining <= 0) return 'Expired';
+    if (remaining <= 0) return "Expired";
 
-    const hours = Math.floor(remaining / (60 * 60 * 1000));
-    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+    const hours = Math.floor(
+      remaining / (60 * 60 * 1000)
+    );
+
+    const minutes = Math.floor(
+      (remaining % (60 * 60 * 1000)) /
+        (60 * 1000)
+    );
+
     return `${hours}h ${minutes}m remaining`;
   };
 
-  // Delete single feedback
-  const handleDeleteFeedback = async (feedbackId: string) => {
+  const handleDeleteFeedback = async (
+    feedbackId: string
+  ) => {
     try {
-      await deleteDoc(doc(db, "feedbacks", feedbackId));
-      setFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
+      const { deleteFeedback } =
+        await import("@/src/lib/googleSheet");
+
+      const result = await deleteFeedback(feedbackId);
+
+      if (!result?.success) {
+        throw new Error(
+          result?.error || "Delete failed"
+        );
+      }
+
+      setFeedbacks((prev) =>
+        prev.filter((f) => f.id !== feedbackId)
+      );
+
       setSaveMessage("Feedback deleted!");
+
       setTimeout(() => setSaveMessage(""), 3000);
-    } catch (error: any) {
-      console.error("Error deleting feedback:", error);
+    } catch (error) {
+      console.error(
+        "Error deleting feedback:",
+        error
+      );
     }
   };
 
-  // Toggle chat expansion
   const toggleChatExpansion = (chatId: string) => {
-    setExpandedChats(prev => ({
+    setExpandedChats((prev) => ({
       ...prev,
-      [chatId]: !prev[chatId]
+      [chatId]: !prev[chatId],
     }));
   };
 
@@ -478,7 +504,7 @@ export default function OwnerPanel() {
             )}
 
             <button
-              onClick={handleLogin}
+              onClick={() => window.location.href = "/"}
               className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition cursor-pointer mt-2"
             >
               Sign In

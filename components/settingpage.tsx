@@ -2,8 +2,6 @@
 
 import React, { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { db } from "../src/lib/supabase"
-import { doc, setDoc } from "../src/lib/supabase"
 
 interface SettingPageProps {
   onBack?: () => void

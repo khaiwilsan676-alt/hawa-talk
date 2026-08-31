@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
 import { GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
-import { auth, provider, db } from "../src/lib/firebase";
-import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
+import { auth, googleProvider as provider } from "../src/lib/firebase";
 
 interface LoginPageProps {
   onLoginSuccess?: (data?: any) => void

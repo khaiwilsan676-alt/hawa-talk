@@ -8,8 +8,7 @@ import MessagePage from './MessagePage';
 import RoomProfile from './RoomProfile';
 import Fourgride from './Fourgride';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
-import { db } from "../src/lib/firebase";
-import { doc, setDoc, getDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc, collection } from "firebase/firestore";
+
 // LiveKit imports for Voice Audio - Fixed imports
 import { 
   LiveKitRoom, 

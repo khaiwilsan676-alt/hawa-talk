@@ -8,7 +8,6 @@ import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import { db } from "../src/lib/firebase"
-import { doc, getDoc, onSnapshot, collection, addDoc } from "firebase/firestore"
 
 // ============ IndexedDB Functions for User Data ============
 const USER_DB_NAME = 'UserDataDB';

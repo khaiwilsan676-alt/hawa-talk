@@ -1,19 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { db } from "../src/lib/firebase"
-import {
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  where,
-  getDocs,
-  getDoc
-} from "firebase/firestore"
-
 import MessagePage from './MessagePage'
 import MePage from './MePage';
 import { getOrCreateAccountNumber } from './MePage'
