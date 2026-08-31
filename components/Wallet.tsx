@@ -144,8 +144,8 @@ interface WalletProps {
 export default function Wallet({ onBack }: WalletProps) {
   const [mounted, setMounted] = useState(false)
   const [activeTab, setActiveTab] = useState<'wallet' | 'diamonds'>('wallet')
-  const [diamonds, setDiamonds] = useState('100')
-  const [coins, setCoins] = useState('33')
+  const [diamonds, setDiamonds] = useState('')
+  const [coins, setCoins] = useState('')
   const [selectedPercentage, setSelectedPercentage] = useState('100%')
 
   useEffect(() => {
@@ -169,24 +169,19 @@ export default function Wallet({ onBack }: WalletProps) {
 
   const handlePercentageSelect = (pct: string) => {
     setSelectedPercentage(pct)
-    const numPct = parseInt(pct)
-    // Example logic for percentage selection on diamonds balance (assuming max 4719 or general input)
-    const baseVal = 1000 * (numPct / 100)
-    setDiamonds(baseVal.toString())
-    handleDiamondChange(baseVal.toString())
   }
 
   return (
     <div
-      className="fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col pt-[env(safe-area-inset-top,12px)] pb-[env(safe-area-inset-bottom,12px)] bg-white transition-all duration-500"
+      className="fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col pt-[env(safe-area-inset-top,12px)] pb-[env(safe-area-inset-bottom,12px)] transition-all duration-300"
       style={{
         touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
         WebkitTouchCallout: 'none',
         background: activeTab === 'wallet' 
-          ? 'linear-gradient(180deg, #FFE4B5 0%, #FFF5EE 20%, #FFFFFF 35%, #FFFFFF 100%)'
-          : 'linear-gradient(180deg, #FFC0CB 0%, #FFE4E1 20%, #FFFFFF 35%, #FFFFFF 100%)',
+          ? 'linear-gradient(180deg, #FFF6E0 0%, #FFFFFF 25%, #FFFFFF 100%)'
+          : 'linear-gradient(180deg, #FFE4E8 0%, #FFFFFF 25%, #FFFFFF 100%)',
       }}
     >
       <style>{`
@@ -195,61 +190,29 @@ export default function Wallet({ onBack }: WalletProps) {
           -ms-text-size-adjust: 100%;
           touch-action: manipulation;
         }
-        @keyframes slideDown {
-          0% { transform: translateY(-100%); opacity: 0; }
-          100% { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes fadeInUp {
-          0% { transform: translateY(20px); opacity: 0; }
-          100% { transform: translateY(0); opacity: 1; }
-        }
       `}</style>
 
       {/* TOP HEADER */}
-      <div
-        className="w-full relative flex-shrink-0 flex items-center justify-between px-4 z-20"
-        style={{
-          height: '56px',
-          animation: mounted ? 'slideDown 0.4s ease-out' : 'none',
-        }}
-      >
+      <div className="w-full relative flex-shrink-0 flex items-center justify-between px-4 z-20 h-12">
         <button
           onClick={onBack}
-          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0 bg-transparent text-gray-800"
+          className="w-8 h-8 flex items-center justify-center active:scale-90 transition-all text-gray-800"
           aria-label="Back"
         >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
 
-        <h1 className="text-lg font-bold text-gray-900">
+        <h1 className="text-base font-bold text-gray-900 tracking-tight">
           Wallet
         </h1>
 
         <button
-          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0 bg-transparent text-gray-800"
+          className="w-8 h-8 flex items-center justify-center active:scale-90 transition-all text-gray-800"
           aria-label="History"
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
             <line x1="16" y1="13" x2="8" y2="13" />
@@ -259,141 +222,151 @@ export default function Wallet({ onBack }: WalletProps) {
         </button>
       </div>
 
-      {/* TAB BUTTONS */}
+      {/* TABS (Coins / Diamonds) */}
       <div className="flex justify-center gap-12 py-1 flex-shrink-0 z-20">
-        <button
-          onClick={() => setActiveTab('wallet')}
-          className={`relative pb-2 text-sm font-semibold transition-all ${
-            activeTab === 'wallet' ? 'text-gray-900' : 'text-gray-400'
-          }`}
-        >
-          Coins
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => setActiveTab('wallet')}
+            className={`text-sm font-semibold transition-all ${
+              activeTab === 'wallet' ? 'text-gray-900' : 'text-gray-400'
+            }`}
+          >
+            Coins
+          </button>
           {activeTab === 'wallet' && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 bg-gray-900 rounded-full" />
+            <div className="w-3 h-0.5 bg-gray-900 rounded-full mt-1" />
           )}
-        </button>
-        <button
-          onClick={() => setActiveTab('diamonds')}
-          className={`relative pb-2 text-sm font-semibold transition-all ${
-            activeTab === 'diamonds' ? 'text-gray-900' : 'text-gray-400'
-          }`}
-        >
-          Diamonds
+        </div>
+
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => setActiveTab('diamonds')}
+            className={`text-sm font-semibold transition-all ${
+              activeTab === 'diamonds' ? 'text-gray-900' : 'text-gray-400'
+            }`}
+          >
+            Diamonds
+          </button>
           {activeTab === 'diamonds' && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 bg-gray-900 rounded-full" />
+            <div className="w-3 h-0.5 bg-gray-900 rounded-full mt-1" />
           )}
-        </button>
+        </div>
       </div>
 
       {/* SCROLLABLE BODY */}
-      <div
-        className="flex-1 overflow-y-auto px-4 pt-3 pb-6 relative"
-        style={{
-          background: 'transparent',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
-        {/* COINS TAB CONTENT */}
-        {activeTab === 'wallet' && (
-          <div className="flex flex-col min-h-full justify-between space-y-4" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div className="space-y-4">
-              {/* CURRENT BALANCE BANNER WITH OVERFLOW IMAGE */}
+      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-6 relative">
+        {activeTab === 'wallet' ? (
+          /* ================= COINS TAB ================= */
+          <div className="flex flex-col space-y-4">
+            {/* Current Balance Banner */}
+            <div
+              className="rounded-2xl p-4 relative mt-7 flex flex-col justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #FFE5B4 0%, #F5C065 100%)',
+                boxShadow: '0 4px 15px rgba(245, 192, 101, 0.25)',
+                minHeight: '85px',
+              }}
+            >
+              {/* Half Overflow Coin Image */}
+              <div className="absolute -top-7 right-3 w-24 h-24 pointer-events-none z-20 drop-shadow-md">
+                <WhiteColorRemovalShader
+                  imageSrc="/1786855398290.png"
+                  className="w-full h-full object-contain"
+                  threshold={0.88}
+                />
+              </div>
+              <span className="text-[11px] font-bold text-amber-900/70 uppercase tracking-wider mb-0.5">
+                current balance
+              </span>
+              <p className="text-2xl font-black text-amber-950 tracking-tight">
+                1,077,472
+              </p>
+            </div>
+
+            {/* Product Card Container */}
+            <div className="pt-1">
               <div
-                className="rounded-2xl p-4 relative mt-6 flex flex-col justify-center"
+                className="rounded-xl p-3 relative flex flex-col items-center"
                 style={{
-                  background: 'linear-gradient(135deg, #FFE4B5 0%, #FFD700 100%)',
-                  boxShadow: '0 4px 20px rgba(255, 165, 0, 0.15)',
-                  minHeight: '90px',
+                  background: '#FFFDF9',
+                  border: '1px solid #FDF0D5',
+                  width: '145px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
                 }}
               >
-                {/* Overflow Coin Image matching 1000183565.jpg */}
-                <div className="absolute -top-7 right-4 w-24 h-24 pointer-events-none z-20 drop-shadow-lg">
+                {/* Top left small bonus tag */}
+                <div className="absolute -top-2 left-2 z-10 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-extrabold rounded shadow-xs flex items-center gap-0.5">
+                  +20,000 <span className="text-[8px]">🪙</span>
+                </div>
+
+                {/* Center Coin Image */}
+                <div className="w-12 h-12 my-2 flex items-center justify-center">
                   <WhiteColorRemovalShader
                     imageSrc="/1786855398290.png"
                     className="w-full h-full object-contain"
                     threshold={0.88}
                   />
                 </div>
-                <h2 className="text-xs font-semibold text-amber-900/70 uppercase tracking-wider mb-1">current balance</h2>
-                <p className="text-3xl font-black text-amber-950">1,077,472</p>
-              </div>
 
-              {/* COIN ITEM CARD */}
-              <div className="relative pt-2">
-                <div
-                  className="rounded-2xl p-4 relative flex flex-col items-center justify-between"
-                  style={{
-                    background: '#FFFDF5',
-                    border: '1px solid #FDF0D5',
-                    width: '140px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                  }}
-                >
-                  <div className="absolute -top-2.5 left-3 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-md shadow-xs">
-                    +20,000 
-                  </div>
-                  
-                  <div className="w-14 h-14 my-2 flex items-center justify-center">
-                    <WhiteColorRemovalShader
-                      imageSrc="/1786855398290.png"
-                      className="w-full h-full object-contain"
-                      threshold={0.88}
-                    />
-                  </div>
+                {/* First Recharge Tag */}
+                <span className="px-2 py-0.5 bg-red-400 text-white text-[9px] font-bold rounded-full mb-2">
+                  First Recharge
+                </span>
 
-                  <span className="px-2 py-0.5 bg-red-400 text-white text-[9px] font-bold rounded-full mb-2">
-                    First Recharge
-                  </span>
+                {/* Coin Value */}
+                <span className="text-gray-900 font-extrabold text-sm mb-3">
+                  1,000,000
+                </span>
 
-                  <span className="text-gray-900 font-extrabold text-sm mb-3">1,000,000</span>
-
-                  <button className="w-full py-2 bg-amber-300 hover:bg-amber-400 font-bold text-amber-950 active:scale-95 transition-transform text-xs rounded-xl shadow-xs">
-                    USD 1
-                  </button>
-                </div>
+                {/* USD Button */}
+                <button className="w-full py-2 bg-amber-300 hover:bg-amber-400 font-bold text-amber-950 text-xs rounded-lg shadow-xs active:scale-95 transition-transform">
+                  USD 1
+                </button>
               </div>
             </div>
           </div>
-        )}
-
-        {/* DIAMONDS TAB CONTENT */}
-        {activeTab === 'diamonds' && (
-          <div className="flex flex-col min-h-full justify-between space-y-4" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
+        ) : (
+          /* ================= DIAMONDS TAB ================= */
+          <div className="flex flex-col justify-between min-h-[calc(100vh-140px)]">
             <div className="space-y-4">
-              {/* CURRENT DIAMONDS BANNER WITH OVERFLOW IMAGE */}
+              {/* Current Diamonds Banner */}
               <div
-                className="rounded-2xl p-4 relative mt-6 flex flex-col justify-center"
+                className="rounded-2xl p-4 relative mt-7 flex flex-col justify-center"
                 style={{
-                  background: 'linear-gradient(135deg, #FFC0CB 0%, #FF69B4 100%)',
-                  boxShadow: '0 4px 20px rgba(255, 105, 180, 0.15)',
-                  minHeight: '90px',
+                  background: 'linear-gradient(135deg, #FFD1DC 0%, #FF8DA1 100%)',
+                  boxShadow: '0 4px 15px rgba(255, 141, 161, 0.25)',
+                  minHeight: '85px',
                 }}
               >
-                {/* Overflow Diamond Image matching 1000183569.jpg */}
-                <div className="absolute -top-8 right-2 w-24 h-24 pointer-events-none z-20 drop-shadow-lg">
+                {/* Half Overflow Diamond Image */}
+                <div className="absolute -top-8 right-2 w-24 h-24 pointer-events-none z-20 drop-shadow-md">
                   <WhiteColorRemovalShader
                     imageSrc="/1787321690452.png"
                     className="w-full h-full object-contain"
                     threshold={0.88}
                   />
                 </div>
-                <h2 className="text-xs font-semibold text-pink-950/70 uppercase tracking-wider mb-1">current diamonds</h2>
-                <p className="text-3xl font-black text-pink-950">0</p>
+                <span className="text-[11px] font-bold text-pink-950/70 uppercase tracking-wider mb-0.5">
+                  current diamonds
+                </span>
+                <p className="text-2xl font-black text-pink-950 tracking-tight">
+                  0
+                </p>
               </div>
 
-              {/* EXCHANGE BOX */}
+              {/* Exchange Section Box */}
               <div
-                className="rounded-2xl p-4 bg-white/80 backdrop-blur-sm"
+                className="rounded-2xl p-3.5 bg-white"
                 style={{
-                  border: '1px solid #FFE4E1',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                  border: '1px solid #FCE4EC',
+                  boxShadow: '0 1px 6px rgba(0,0,0,0.02)',
                 }}
               >
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-bold text-gray-800">Exchange</h3>
-                  <div className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                <div className="flex justify-between items-center mb-2.5">
+                  <h3 className="text-xs font-bold text-gray-800">Exchange</h3>
+                  <div className="text-[11px] font-semibold text-gray-500 flex items-center gap-1">
                     <span>100 =</span>
-                    <div className="w-4 h-4 inline-block align-middle">
+                    <div className="w-3.5 h-3.5 inline-block align-middle">
                       <WhiteColorRemovalShader
                         imageSrc="/1786855398290.png"
                         className="w-full h-full object-contain"
@@ -404,9 +377,9 @@ export default function Wallet({ onBack }: WalletProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 bg-gray-50/80 p-2 rounded-xl border border-gray-100">
-                  <div className="flex-1 flex items-center gap-2">
-                    <div className="w-5 h-5 flex-shrink-0">
+                <div className="flex items-center gap-2 bg-gray-50/70 p-2 rounded-xl border border-gray-100">
+                  <div className="flex-1 flex items-center gap-1.5">
+                    <div className="w-4 h-4 flex-shrink-0">
                       <WhiteColorRemovalShader
                         imageSrc="/1787321690452.png"
                         className="w-full h-full object-contain"
@@ -417,21 +390,21 @@ export default function Wallet({ onBack }: WalletProps) {
                       type="number"
                       value={diamonds}
                       onChange={(e) => handleDiamondChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs placeholder:text-gray-300"
                       placeholder="Input multiple"
                     />
                   </div>
-                  <span className="text-xs font-bold text-gray-400">x100</span>
-                  <div className="text-gray-300 font-bold">=</div>
+                  <span className="text-[11px] font-bold text-gray-400">x100</span>
+                  <span className="text-gray-300 font-bold">=</span>
                   <div className="w-16 flex items-center justify-end gap-1">
                     <input
                       type="number"
                       value={coins}
                       onChange={(e) => handleCoinChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs text-right"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs text-right placeholder:text-gray-300"
                       placeholder="Coins"
                     />
-                    <div className="w-4 h-4 flex-shrink-0">
+                    <div className="w-3.5 h-3.5 flex-shrink-0">
                       <WhiteColorRemovalShader
                         imageSrc="/1786855398290.png"
                         className="w-full h-full object-contain"
@@ -442,17 +415,17 @@ export default function Wallet({ onBack }: WalletProps) {
                 </div>
               </div>
 
-              {/* EXCHANGE RATE PERCENTAGE BUTTONS */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-gray-600">exchange rate</h4>
-                <div className="grid grid-cols-3 gap-2.5">
+              {/* Exchange Rate Percentages */}
+              <div className="space-y-2 pt-1">
+                <h4 className="text-[11px] font-bold text-gray-500">exchange rate</h4>
+                <div className="grid grid-cols-3 gap-2">
                   {['20%', '40%', '60%', '80%', '100%'].map((pct) => (
                     <button
                       key={pct}
                       onClick={() => handlePercentageSelect(pct)}
                       className={`py-2 rounded-xl text-xs font-bold transition-all border ${
                         selectedPercentage === pct
-                          ? 'bg-cyan-400 text-white border-cyan-400 shadow-sm'
+                          ? 'bg-cyan-400 text-white border-cyan-400 shadow-xs'
                           : 'bg-white text-cyan-500 border-cyan-200'
                       }`}
                     >
@@ -463,10 +436,10 @@ export default function Wallet({ onBack }: WalletProps) {
               </div>
             </div>
 
-            {/* BOTTOM EXCHANGE BUTTON */}
-            <div className="pt-4">
+            {/* Bottom Exchange Button */}
+            <div className="pt-6 pb-2">
               <button
-                className="w-full py-3 rounded-xl font-bold text-white bg-pink-300 active:scale-95 transition-transform text-sm shadow-xs"
+                className="w-full py-3 rounded-xl font-bold text-white bg-pink-300 text-sm shadow-xs active:scale-95 transition-transform"
               >
                 Exchange
               </button>
