@@ -1934,20 +1934,20 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         :root {
           --seat-size: 56px;
           --seat-side-offset: -90px;
-          --header-btn-size: 32px;
+          --header-btn-size: 38px;
           --header-btn-padding: 4px 8px;
-          --header-icon-size: 20px;
-          --header-room-img-size: 36px;
+          --header-icon-size: 24px;
+          --header-room-img-size: 40px;
           --header-room-name-size: 16px;
           --header-id-size: 10px;
           --header-follow-btn-size: 20px;
           --header-follow-icon-size: 12px;
           --header-count-size: 10px;
-          --footer-btn-size: 40px;
-          --footer-icon-size: 25px;
+          --footer-btn-size: 46px;
+          --footer-icon-size: 28px;
           --footer-sayhi-text: 12px;
           --footer-sayhi-padding: 8px 16px;
-          --footer-input-text: 14px;
+          --footer-input-text: 12px;
           --announcement-padding: 12px;
           --announcement-radius: 8px;
           --announcement-text-size: 13px;
@@ -1973,12 +1973,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         @media (max-width: 400px) {
           :root {
             --seat-size: 51px;
-            --header-btn-size: 28px;
-            --header-icon-size: 18px;
+            --header-btn-size: 30px;
+            --header-icon-size: 19px;
             --header-room-img-size: 32px;
             --header-room-name-size: 14px;
-            --footer-btn-size: 36px;
-            --footer-icon-size: 22px;
+            --footer-btn-size: 38px;
+            --footer-icon-size: 23px;
           }
         }
 
