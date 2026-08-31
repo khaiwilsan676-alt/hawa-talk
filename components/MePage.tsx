@@ -7,6 +7,7 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
+import { saveFeedback, getUsers } from '../src/lib/googleSheet'
 
 // ============ IndexedDB Functions for User Data ============
 const USER_DB_NAME = 'UserDataDB';
@@ -568,8 +569,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     try {
-      // Firebase mein save karo
-      await addDoc(collection(db, "feedbacks"), feedbackData);
+      // Google Sheets API mein save karo
+      await saveFeedback(feedbackData);
       
       // IndexedDB mein bhi save karo (backup)
       await saveFeedbackToDB(feedbackData);
@@ -586,9 +587,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       }, 2000);
 
     } catch (error) {
-      console.error("Error submitting feedback:", error);
+      console.error("Error submitting feedback to Google Sheets:", error);
       
-      // Agar Firebase fail ho jaye to IndexedDB mein save karo (offline mode)
+      // Agar API fail ho jaye to IndexedDB mein save karo (offline mode)
       try {
         await saveFeedbackToDB(feedbackData);
         setFeedbackSuccess(true);
@@ -612,8 +613,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   };
 
   useEffect(() => {
-    let unsubscribe: (() => void) | null = null;
-
     const fetchUserData = async () => {
       try {
         // Step 1: Get UID from localStorage
@@ -649,108 +648,59 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           setUser(cachedUser);
         }
 
-        // Step 3: Firebase se real-time sync (background mein)
+        // Step 3: Google Sheets API se user sync
         try {
-          const userDocRef = doc(db, "users", uid);
-          
-          // Real-time listener for Firebase updates
-          unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
-            if (docSnap.exists()) {
-              const firebaseData = docSnap.data();
-              console.log('🔥 Firebase se new data mila:', {
-                name: firebaseData.name,
-                hasPhoto: !!firebaseData.photo
-              });
-              
-              // Account number set karo
-              let accountNumber = firebaseData.accountId || 
-                                 cachedUser?.accountNumber || 
-                                 localStorage.getItem("accountNumber") || 
-                                 "";
-              
-              if (!accountNumber) {
-                const { fullAccNum } = getOrCreateAccountNumber(uid);
-                accountNumber = fullAccNum;
-              }
-              
-              const updatedUserData = {
-                name: firebaseData.name || cachedUser?.name || "",
-                uid: uid,
-                accountNumber: accountNumber,
-                displayAccountNumber: accountNumber,
-                phone: firebaseData.phone || cachedUser?.phone || "",
-                photo: firebaseData.photo || cachedUser?.photo || "",
-              };
-              
-              // Check if data changed
-              const hasChanged = JSON.stringify(updatedUserData) !== JSON.stringify(cachedUser);
-              
-              if (hasChanged) {
-                console.log('🔄 Firebase mein naya data hai, IndexedDB update kar rahe hai');
-                
-                // IndexedDB mein update karo
-                await saveUserToDB(updatedUserData);
-                
-                // localStorage update karo
-                if (updatedUserData.name) localStorage.setItem("userName", updatedUserData.name);
-                if (updatedUserData.accountNumber) localStorage.setItem("accountNumber", updatedUserData.accountNumber);
-                if (updatedUserData.photo) localStorage.setItem("userPhoto", updatedUserData.photo);
-                if (updatedUserData.phone) localStorage.setItem("userPhone", updatedUserData.phone);
-                
-                // UI update karo
-                setUser(updatedUserData);
-              } else {
-                console.log('✅ Firebase aur IndexedDB ka data same hai');
-              }
-            } else {
-              console.log('⚠️ Firebase mein user document nahi hai');
-            }
-          }, (error) => {
-            console.error('❌ Firebase listener error:', error);
-          });
-          
-        } catch (firebaseError) {
-          console.warn('⚠️ Firebase sync error:', firebaseError);
-        }
+          const res = await getUsers();
+          const usersList = res.users || res.data || (Array.isArray(res) ? res : []);
+          const sheetUser = usersList.find((u: any) => String(u.id) === uid || String(u.uid) === uid || String(u.accountId) === uid);
 
-        // Step 4: Agar IndexedDB mein data nahi tha, to Firebase se fetch karo
-        if (!cachedUser) {
-          try {
-            const userDocRef = doc(db, "users", uid);
-            const docSnap = await getDoc(userDocRef);
+          if (sheetUser) {
+            let accountNumber = sheetUser.accountId ||
+                               cachedUser?.accountNumber ||
+                               localStorage.getItem("accountNumber") ||
+                               "";
             
-            if (docSnap.exists()) {
-              const firebaseData = docSnap.data();
-              console.log('✅ Firebase se initial data mila:', firebaseData);
-              
-              let accountNumber = firebaseData.accountId || localStorage.getItem("accountNumber") || "";
-              if (!accountNumber) {
-                const { fullAccNum } = getOrCreateAccountNumber(uid);
-                accountNumber = fullAccNum;
-              }
-              
-              const userData = {
-                name: firebaseData.name || localStorage.getItem("userName") || "",
-                uid: uid,
-                accountNumber: accountNumber,
-                displayAccountNumber: accountNumber,
-                phone: firebaseData.phone || localStorage.getItem("userPhone") || "",
-                photo: firebaseData.photo || localStorage.getItem("userPhoto") || "",
-              };
-              
-              // IndexedDB mein save karo (PERMANENT)
-              await saveUserToDB(userData);
-              
-              // localStorage update karo
-              if (userData.name) localStorage.setItem("userName", userData.name);
-              if (userData.accountNumber) localStorage.setItem("accountNumber", userData.accountNumber);
-              if (userData.photo) localStorage.setItem("userPhoto", userData.photo);
-              
-              setUser(userData);
+            if (!accountNumber) {
+              const { fullAccNum } = getOrCreateAccountNumber(uid);
+              accountNumber = fullAccNum;
             }
-          } catch (error) {
-            console.warn('⚠️ Firebase initial fetch error:', error);
+
+            const updatedUserData = {
+              name: sheetUser.name || cachedUser?.name || localStorage.getItem("userName") || "",
+              uid: uid,
+              accountNumber: accountNumber,
+              displayAccountNumber: accountNumber,
+              phone: sheetUser.phone || cachedUser?.phone || localStorage.getItem("userPhone") || "",
+              photo: sheetUser.image || sheetUser.photo || cachedUser?.photo || localStorage.getItem("userPhoto") || "",
+            };
+
+            await saveUserToDB(updatedUserData);
+
+            if (updatedUserData.name) localStorage.setItem("userName", updatedUserData.name);
+            if (updatedUserData.accountNumber) localStorage.setItem("accountNumber", updatedUserData.accountNumber);
+            if (updatedUserData.photo) localStorage.setItem("userPhoto", updatedUserData.photo);
+            if (updatedUserData.phone) localStorage.setItem("userPhone", updatedUserData.phone);
+
+            setUser(updatedUserData);
+          } else if (!cachedUser) {
+            let accountNumber = localStorage.getItem("accountNumber") || "";
+            if (!accountNumber) {
+              const { fullAccNum } = getOrCreateAccountNumber(uid);
+              accountNumber = fullAccNum;
+            }
+            const fallbackUser = {
+              name: localStorage.getItem("userName") || "User",
+              uid: uid,
+              accountNumber: accountNumber,
+              displayAccountNumber: accountNumber,
+              phone: localStorage.getItem("userPhone") || "",
+              photo: localStorage.getItem("userPhoto") || "",
+            };
+            await saveUserToDB(fallbackUser);
+            setUser(fallbackUser);
           }
+        } catch (sheetError) {
+          console.warn('⚠️ Google Sheets user fetch error:', sheetError);
         }
 
       } catch (error) {
@@ -759,13 +709,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     fetchUserData();
-
-    // Cleanup function
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
   }, []); // Only run once when component mounts
 
   const handleCopyAccountNumber = () => {

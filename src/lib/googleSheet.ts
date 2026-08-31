@@ -132,6 +132,10 @@ export function getFeedbacks() {
   return request("GET", "feedbacks");
 }
 
+export function saveFeedback(data: Record<string, any>) {
+  return request("POST", "saveFeedback", data);
+}
+
 export function deleteFeedback(id: string) {
   return request("POST", "deleteFeedback", {
     id,
