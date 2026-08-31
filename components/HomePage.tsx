@@ -1,6 +1,5 @@
 'use client'
 
-import { getRooms, saveRoom, saveUser } from '../src/lib/googleSheet'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getRooms, getRoom, createRoom, getMessages, saveUser } from "../src/lib/googleSheets"
 
@@ -1290,62 +1289,30 @@ export default function HomePage({ onLogout }: HomePageProps) {
       isExplicitlyCreated: true,
       createdFromMineTab: true
     };
-      // Save to Firebase - Add explicit creation flag
-      const roomData = {
+
+    try {
+      await createRoom({
+        roomId: userUID,
         id: userUID,
-        name: defaultRoomName,
+        roomName: userName || defaultRoomName,
+        roomDp: userPhoto || '/default-avatar.png',
         country: localStorage.getItem("userCountry") || "🇮🇳",
-        countryCode: localStorage.getItem("userCountryCode") || "IN",
-        image: userPhoto || '/default-avatar.png',
-        accountId: storedAccNum,
-        createdAt: Date.now(),
-        isLocked: false,
-        roomPassword: null,
-        isExplicitlyCreated: true // IMPORTANT: Mark as explicitly created
-      };
-
-      try {
-        await saveRoom(roomData);
-        await saveUser({
-          id: userUID,
-          name: userName || defaultRoomName,
-          country: localStorage.getItem("userCountry") || "🇮🇳",
-          countryCode: localStorage.getItem("userCountryCode") || "IN",
-          image: userPhoto || '/default-avatar.png',
-          accountId: storedAccNum,
-          createdAt: Date.now(),
-          isExplicitlyCreated: true
-        });
-      } catch (e) {
-        console.warn('Error saving room/user to Google Sheets:', e);
-      }
-
-      // Update local state immediately
-      setGlobalRooms(prev => {
-        const filtered = prev.filter(r => r.accountId !== storedAccNum);
-        return [...filtered, roomData as unknown as GlobalRoom];
+        roomAdmin: storedAccNum,
+        message: `${userName || defaultRoomName}'s Room Notice`,
+        theme: 'default'
       });
+
+      await saveUser({
+        id: userUID,
+        appLongId: userUID,
+        name: userName || defaultRoomName,
+        country: localStorage.getItem("userCountry") || "🇮🇳",
+        image: userPhoto || '/default-avatar.png',
+        accountId: storedAccNum
+      });
+    } catch (e) {
+      console.warn('Error saving room/user to Google Sheets:', e);
     }
-
-    await createRoom({
-      roomId: userUID,
-      id: userUID,
-      roomName: userName || defaultRoomName,
-      roomDp: userPhoto || '/default-avatar.png',
-      country: localStorage.getItem("userCountry") || "🇮🇳",
-      roomAdmin: storedAccNum,
-      message: `${userName || defaultRoomName}'s Room Notice`,
-      theme: 'default'
-    });
-
-    await saveUser({
-      id: userUID,
-      appLongId: userUID,
-      name: userName || defaultRoomName,
-      country: localStorage.getItem("userCountry") || "🇮🇳",
-      image: userPhoto || '/default-avatar.png',
-      accountId: storedAccNum
-    });
 
     setGlobalRooms(prev => {
       const filtered = prev.filter(r => r.accountId !== storedAccNum);
@@ -1385,12 +1352,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
       }
     } catch (e) {
       console.warn("Failed to fetch lock status:", e);
-    const foundRoom = globalRooms.find(r => (r.accountId && r.accountId === user.accountId) || r.id === user.id || r.id === user.accountId);
-    if (foundRoom && foundRoom.isLocked && foundRoom.accountId !== currentAccountId) {
-      setSelectedLockedRoom(user)
-      setShowRoomPasswordCard(true)
-      setEnteredRoomPassword('')
-      return
+      const foundRoom = globalRooms.find(r => (r.accountId && r.accountId === user.accountId) || r.id === user.id || r.id === user.accountId);
+      if (foundRoom && foundRoom.isLocked && foundRoom.accountId !== currentAccountId) {
+        setSelectedLockedRoom(user)
+        setShowRoomPasswordCard(true)
+        setEnteredRoomPassword('')
+        return
+      }
     }
 
     setEnteredFromKept(false)
@@ -1418,8 +1386,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
           if (isSearchOpen) {
             setIsSearchOpen(false)
           }
-        } else {
+          return;
+        } else if (roomData.isLocked) {
           alert('Incorrect Password')
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Error verifying password via API:", e);
+    }
+
     const foundRoom = globalRooms.find(r => r.id === selectedLockedRoom.id || (r.accountId && r.accountId === selectedLockedRoom.accountId));
     if (foundRoom) {
       if (foundRoom.isLocked && foundRoom.roomPassword === enteredRoomPassword) {
@@ -1480,11 +1456,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
           country: roomData.Country || roomData.country || '🇮🇳',
           image: roomData['Room dp'] || roomData.image || '/default-avatar.png'
         });
-      } else {
-        console.error('Room not found');
+        return;
       }
     } catch (error) {
       console.error('Error fetching room data:', error);
+    }
+
     const foundRoom = globalRooms.find(r => r.id === roomId || r.accountId === roomId);
     if (foundRoom) {
       handleUserCardClick({
@@ -2642,4 +2619,4 @@ export default function HomePage({ onLogout }: HomePageProps) {
       )}
     </div>
   )
-                                               }
+}
