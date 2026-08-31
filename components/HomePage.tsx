@@ -596,21 +596,28 @@ export default function HomePage({ onLogout }: HomePageProps) {
       }
     });
 
-    // Google Sheets API se sync (background)
-    getRooms().then((res: any) => {
-      if (res && res.rooms && Array.isArray(res.rooms)) {
-        const validRooms = res.rooms.filter((room: any) =>
-          room &&
-          room.name !== 'User' &&
-          room.name !== 'Hurry Room' &&
-          room.accountId !== 'undefined' &&
-          room.accountId !== 'null' &&
-          room.accountId !== ''
-        );
-        setGlobalRooms(validRooms);
-        validRooms.forEach((room: any) => saveRoomToDB(room));
+    // Google Sheets API se sync (background) with 3s timeout
+    const fetchRoomsWithTimeout = async () => {
+      try {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
+        const res: any = await Promise.race([getRooms(), timeoutPromise]);
+        if (res && res.rooms && Array.isArray(res.rooms)) {
+          const validRooms = res.rooms.filter((room: any) =>
+            room &&
+            room.name !== 'User' &&
+            room.name !== 'Hurry Room' &&
+            room.accountId !== 'undefined' &&
+            room.accountId !== 'null' &&
+            room.accountId !== ''
+          );
+          setGlobalRooms(validRooms);
+          validRooms.forEach((room: any) => saveRoomToDB(room));
+        }
+      } catch (err) {
+        console.warn('Error/timeout fetching rooms from Google Sheets:', err);
       }
-    }).catch(err => console.warn('Error fetching rooms from Google Sheets:', err));
+    };
+    fetchRoomsWithTimeout();
   }, []);
 
   // ============ DRAG CIRCLE INITIAL POSITION ============
