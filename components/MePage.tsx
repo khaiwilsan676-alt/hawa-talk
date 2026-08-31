@@ -174,6 +174,13 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
+const FEEDBACK_TYPES = [
+  { id: 'app_bug', label: 'App Bug', icon: '🐛' },
+  { id: 'suggestion', label: 'Suggestion', icon: '💡' },
+  { id: 'recharge', label: 'Recharge', icon: '💰' },
+  { id: 'others', label: 'Others', icon: '❓' }
+]
+
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
@@ -970,17 +977,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               )}
             </div>
           ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-      <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">
-        <div className="text-center text-sm">
-          <div className="text-2xl mb-1"></div>
-          <div className="text-xs font-bold text-blue-800">Recharge</div>
-          <div className="text-xs font-bold text-blue-800">Event</div>
         </div>
       </div>
     </div>
