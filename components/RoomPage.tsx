@@ -1088,7 +1088,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <div className="relative z-10 flex flex-col h-full px-3 sm:px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }} onClick={(e) => e.stopPropagation()}>
 
-        {/* Top Header */}
+        {/* ORIGINAL Top Header Restored */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -1168,7 +1168,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-13 sm:pt-10">
+          <div className="flex-shrink-0 flex flex-col gap-2 pt-8 sm:pt-6">
             {renderSeats()}
           </div>
 
@@ -1422,6 +1422,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
+      {/* ORIGINAL Room Info Sheet Layout Restored */}
       {showRoomInfo && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
@@ -1589,7 +1590,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               )}
               {isSelectedSeatMySeat && <button onClick={handleLeaveSeat} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">Leave Seat</button>}
               
-              {/* Always show Mute/Unmute seat button in the sheet */}
               <button onClick={handleToggleMute} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
                 {selectedSeatData?.isMuted ? 'Unmute Seat' : 'Mute Seat'}
               </button>
@@ -1822,7 +1822,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Global Theme styles */}
+      {/* Global Theme styles with Android Compact Adjustments retained */}
       <style jsx global>{`
         :root {
           --seat-size: 56px;
@@ -1862,29 +1862,16 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-volume-width: 28px;
         }
 
-        /* Android Responsive Queries for Compact View */
-        @media (max-width: 480px) {
+        /* Android Compact Screen Adjustments (max-width: 400px) */
+        @media (max-width: 400px) {
           :root {
-            --seat-size: 48px;
+            --seat-size: 50px;
             --header-btn-size: 28px;
             --header-icon-size: 18px;
             --header-room-img-size: 32px;
             --header-room-name-size: 14px;
             --footer-btn-size: 36px;
             --footer-icon-size: 22px;
-            --msg-avatar-size: 20px;
-            --msg-text-size: 11px;
-            --announcement-text-size: 11px;
-            --music-controller-bottom: 9vh;
-          }
-        }
-        
-        @media (max-width: 375px) {
-          :root {
-            --seat-size: 44px;
-            --header-btn-size: 26px;
-            --footer-btn-size: 32px;
-            --footer-icon-size: 20px;
           }
         }
 
@@ -2020,6 +2007,45 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
+      {/* Right side badge on Seat 1 */}
+      {seatNumber === 1 && (
+        <div 
+          className="absolute pointer-events-none"
+          style={{
+            right: '-130px',
+            top: '-30px',
+            transform: 'none',
+            zIndex: 40,
+          }}
+        >
+          <div 
+            className="relative overflow-visible"
+            style={{
+              width: 'calc(var(--seat-size) * 0.83)',
+              height: 'calc(var(--seat-size) * 0.83)',
+              backgroundColor: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
+            }}
+          >
+            <WhiteColorRemovalShader
+              imageSrc="/1787162568668.png"
+              threshold={0.85}
+              removeColor="white"
+              className="w-full h-full"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                maxWidth: 'none',
+                maxHeight: 'none',
+                pointerEvents: 'none',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Main Seat Circle - Overflow Visible */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
@@ -2141,4 +2167,3 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
     </div>
   );
 }
-
