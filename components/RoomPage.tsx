@@ -1288,7 +1288,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             >
               Say Hi
             </button>
-            <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
               {hasSeat && (
                 <button onClick={handleBottomMicToggle} className="bg-black/30 backdrop-blur-md rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   {currentUserSeat?.isMuted ? (
@@ -1307,9 +1307,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </button>
-              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover" draggable={false} />
-              </button>
+              
+              {/* Message Box Menu Pehle Aa Gaya */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
                 aria-label="Message Box Menu"
@@ -1318,6 +1317,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               >
                 <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
                   <rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" />
+                </svg>
+              </button>
+
+              {/* Gift Icon Ab Baad Mein Aayega */}
+              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover" draggable={false} />
+              </button>
+              
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
+                aria-label="Apps Menu"
+                className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
+              >
+                <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                  <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
                 </svg>
               </button>
               <button
@@ -1600,6 +1615,19 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
       )}
+      
+
+      {fullImageModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
+          <div className="relative max-w-full max-h-full">
+            <img src={fullImageModal} alt="Full preview" className="max-w-full max-h-[85vh] object-contain rounded-lg" />
+            <button onClick={() => setFullImageModal(null)} className="absolute -top-8 right-0 text-white bg-white/20 rounded-full p-1.5 hover:bg-white/40">
+              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5]" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {showMessageSheet && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
@@ -1612,17 +1640,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             <div className="h-full overflow-y-auto">
               <MessagePage sharedRoomData={{ roomId: roomId, roomName: roomOwner.name, roomImage: roomOwner.image }} />
             </div>
-          </div>
-        </div>
-      )}
-
-      {fullImageModal && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
-          <div className="relative max-w-full max-h-full">
-            <img src={fullImageModal} alt="Full preview" className="max-w-full max-h-[85vh] object-contain rounded-lg" />
-            <button onClick={() => setFullImageModal(null)} className="absolute -top-8 right-0 text-white bg-white/20 rounded-full p-1.5 hover:bg-white/40">
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5]" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
           </div>
         </div>
       )}
@@ -1864,7 +1881,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         /* Android Compact Screen Adjustments (max-width: 400px) */
         @media (max-width: 400px) {
           :root {
-            --seat-size: 52px;
+            --seat-size: 51px;
             --header-btn-size: 28px;
             --header-icon-size: 18px;
             --header-room-img-size: 32px;
@@ -2006,44 +2023,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-           {/* Right side badge on Seat 1 */}
-      {seatNumber === 1 && (
-        <div 
-          className="absolute pointer-events-none"
-          style={{
-            right: '-130px',
-            top: '-30px',
-            transform: 'none',
-            zIndex: 40,
-          }}
-        >
-          <div 
-            className="relative overflow-visible"
-            style={{
-              width: 'calc(var(--seat-size) * 0.83)',
-              height: 'calc(var(--seat-size) * 0.83)',
-              backgroundColor: 'transparent',
-              border: 'none',
-              boxShadow: 'none',
-            }}
-          >
-            <WhiteColorRemovalShader
-              imageSrc="/1787162568668.png"
-              threshold={0.85}
-              removeColor="white"
-              className="w-full h-full"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                maxWidth: 'none',
-                maxHeight: 'none',
-                pointerEvents: 'none',
-              }}
-            />
-          </div>
-        </div>
-      )}
       
       {/* Main Seat Circle - Overflow Visible */}
       <div className="relative overflow-visible">
