@@ -1350,6 +1350,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
       console.warn("Failed to fetch lock status:", e);
     }
 
+    // Ensure entering a new room from popular/recent/search tabs clears kept room state
+    if (keptRoom) {
+      localStorage.removeItem('keptRoom')
+      setKeptRoom(null)
+    }
     setEnteredFromKept(false)
     addToRecent({ name: user.name, image: user.image, accountId: user.accountId || user.id, isLocked: user.isLocked })
     setSelectedUser(user)
