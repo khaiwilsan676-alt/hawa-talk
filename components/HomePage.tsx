@@ -1,18 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { db } from "../src/lib/firebase"
-import {
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  where,
-  getDocs,
-  getDoc
-} from "firebase/firestore"
+import { getRooms, getRoom, createRoom, getMessages, saveUser } from "../src/lib/googleSheets"
 
 import MessagePage from './MessagePage'
 import MePage from './MePage';
@@ -575,27 +564,28 @@ export default function HomePage({ onLogout }: HomePageProps) {
   useEffect(() => {
     if (!userUID || userUID === 'N/A') return;
 
-    const conversationsRef = collection(db, 'conversations');
-    const q = query(
-      conversationsRef,
-      where('participants', 'array-contains', userUID)
-    );
+    let isMounted = true;
+    const fetchUnread = async () => {
+      const messages = await getMessages(userUID);
+      if (!isMounted) return;
+      if (Array.isArray(messages)) {
+        let count = 0;
+        messages.forEach((msg: any) => {
+          if (msg.receiverId === userUID && msg.isUnread) {
+            count++;
+          }
+        });
+        setTotalUnreadCount(count);
+      }
+    };
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      let count = 0;
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data();
-        const clearedAt = data.clearedAtRef?.[userUID] || 0;
-        const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function" ? data.lastTimestamp.toMillis() : (data.lastTimestamp || 0);
-        if (lastTimestamp >= clearedAt) {
-          const unread = data.unreadCounts?.[userUID] || 0;
-          count += unread;
-        }
-      });
-      setTotalUnreadCount(count);
-    });
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [userUID]);
 
   // ============ DYNAMIC OFFSET CALCULATION ============
@@ -757,10 +747,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
     }
   }, [])
 
-  // ============ GLOBAL ROOMS SYNC ============
+  // ============ GLOBAL ROOMS FETCHING ============
   useEffect(() => {
+    let isMounted = true;
     loadGlobalRoomsFromDB().then(cachedRooms => {
-      if (cachedRooms.length > 0) {
+      if (cachedRooms.length > 0 && isMounted) {
         const validRooms = cachedRooms.filter(room => 
           room && 
           room.name &&
@@ -774,38 +765,49 @@ export default function HomePage({ onLogout }: HomePageProps) {
       }
     });
 
-    const unsub = onSnapshot(collection(db, "globalRooms"), (snapshot) => {
-      const rooms = snapshot.docs.map((d) => {
-        const data = d.data();
-        const accId = data.accountId || generateStableId(d.id);
-        return {
-          id: d.id,
-          name: data.name || 'User',
-          country: data.country || '🇮🇳',
-          image: data.image || '/default-avatar.png',
-          accountId: accId,
-          createdAt: data.createdAt || Date.now(),
-          isLocked: data.isLocked || false,
-          roomPassword: data.roomPassword || null,
-          isExplicitlyCreated: data.isExplicitlyCreated || false,
-          activeUserCount: data.activeUserCount || 0
-        } as GlobalRoom;
-      });
-      
-      const validRooms = rooms.filter(room => 
-        room.accountId !== 'undefined' &&
-        room.accountId !== 'null' &&
-        room.accountId !== '' &&
-        room.accountId !== null &&
-        room.name &&
-        room.name !== 'User'
-      );
-      
-      setGlobalRooms(validRooms);
-      saveGlobalRoomsToDB(validRooms);
-    });
-    
-    return () => unsub();
+    const loadRooms = async () => {
+      const rawRooms = await getRooms();
+      if (!isMounted) return;
+      if (Array.isArray(rawRooms)) {
+        const rooms: GlobalRoom[] = rawRooms.map((data: any) => {
+          const roomId = String(data.ID || data.id || data.roomId || '');
+          const accId = String(data['Room Admin'] || data.accountId || generateStableId(roomId));
+          return {
+            id: roomId,
+            name: data['Room Name'] || data.name || 'User',
+            country: data.Country || data.country || '🇮🇳',
+            image: data['Room dp'] || data.image || '/default-avatar.png',
+            accountId: accId,
+            createdAt: data.createdAt || Date.now(),
+            isLocked: Boolean(data.isLocked),
+            roomPassword: data.roomPassword || null,
+            isExplicitlyCreated: true,
+            activeUserCount: Number(data.activeUserCount || 0)
+          };
+        });
+
+        const validRooms = rooms.filter(room =>
+          room.id &&
+          room.accountId !== 'undefined' &&
+          room.accountId !== 'null' &&
+          room.accountId !== '' &&
+          room.accountId !== null &&
+          room.name &&
+          room.name !== 'User'
+        );
+
+        setGlobalRooms(validRooms);
+        saveGlobalRoomsToDB(validRooms);
+      }
+    };
+
+    loadRooms();
+    const interval = setInterval(loadRooms, 12000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // ============ DRAG CIRCLE INITIAL POSITION ============
@@ -1296,18 +1298,25 @@ export default function HomePage({ onLogout }: HomePageProps) {
       createdFromMineTab: true
     };
 
-    await setDoc(doc(db, "globalRooms", userUID), roomData, { merge: true });
-
-    await setDoc(doc(db, "users", userUID), {
+    await createRoom({
+      roomId: userUID,
       id: userUID,
+      roomName: userName || defaultRoomName,
+      roomDp: userPhoto || '/default-avatar.png',
+      country: localStorage.getItem("userCountry") || "🇮🇳",
+      roomAdmin: storedAccNum,
+      message: `${userName || defaultRoomName}'s Room Notice`,
+      theme: 'default'
+    });
+
+    await saveUser({
+      id: userUID,
+      appLongId: userUID,
       name: userName || defaultRoomName,
       country: localStorage.getItem("userCountry") || "🇮🇳",
-      countryCode: localStorage.getItem("userCountryCode") || "IN",
       image: userPhoto || '/default-avatar.png',
-      accountId: storedAccNum,
-      createdAt: Date.now(),
-      isExplicitlyCreated: true
-    }, { merge: true });
+      accountId: storedAccNum
+    });
 
     setGlobalRooms(prev => {
       const filtered = prev.filter(r => r.accountId !== storedAccNum);
@@ -1335,11 +1344,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
     const currentAccountId = typeof rawAccNum === 'string' ? rawAccNum : (rawAccNum as any).fullAccNum
 
     try {
-      const docRef = doc(db, "globalRooms", user.accountId || user.id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.isLocked && data.accountId !== currentAccountId) {
+      const res = await getRoom(user.id || user.accountId || '');
+      const roomData = res && (res.room || res.data || res);
+      if (roomData) {
+        if (roomData.isLocked && (roomData['Room Admin'] || roomData.accountId) !== currentAccountId) {
           setSelectedLockedRoom(user)
           setShowRoomPasswordCard(true)
           setEnteredRoomPassword('')
@@ -1350,11 +1358,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       console.warn("Failed to fetch lock status:", e);
     }
 
-    // Ensure entering a new room from popular/recent/search tabs clears kept room state
-    if (keptRoom) {
-      localStorage.removeItem('keptRoom')
-      setKeptRoom(null)
-    }
     setEnteredFromKept(false)
     addToRecent({ name: user.name, image: user.image, accountId: user.accountId || user.id, isLocked: user.isLocked })
     setSelectedUser(user)
@@ -1368,11 +1371,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const handleRoomPasswordSubmit = async () => {
     if (!selectedLockedRoom) return;
     try {
-      const docRef = doc(db, "globalRooms", selectedLockedRoom.id || selectedLockedRoom.accountId || '');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.isLocked && data.roomPassword === enteredRoomPassword) {
+      const res = await getRoom(selectedLockedRoom.id || selectedLockedRoom.accountId || '');
+      const roomData = res && (res.room || res.data || res);
+      if (roomData) {
+        if (roomData.isLocked && roomData.roomPassword === enteredRoomPassword) {
           setShowRoomPasswordCard(false)
           setEnteredFromKept(false)
           addToRecent({ name: selectedLockedRoom.name, image: selectedLockedRoom.image, accountId: selectedLockedRoom.accountId || selectedLockedRoom.id, isLocked: true })
@@ -1424,15 +1426,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
   // ============ JOIN ROOM FROM CHAT ============
   const handleJoinRoomFromChat = async (roomId: string) => {
     try {
-      const roomDoc = await getDoc(doc(db, 'globalRooms', roomId));
-      if (roomDoc.exists()) {
-        const roomData = roomDoc.data();
+      const res = await getRoom(roomId);
+      const roomData = res && (res.room || res.data || res);
+      if (roomData) {
         handleUserCardClick({
-          id: roomData.id || roomId,
-          accountId: roomData.accountId || roomId,
-          name: roomData.name,
-          country: roomData.country || '🇮🇳',
-          image: roomData.image || '/default-avatar.png'
+          id: roomData.ID || roomData.id || roomId,
+          accountId: roomData['Room Admin'] || roomData.accountId || roomId,
+          name: roomData['Room Name'] || roomData.name || 'User',
+          country: roomData.Country || roomData.country || '🇮🇳',
+          image: roomData['Room dp'] || roomData.image || '/default-avatar.png'
         });
       } else {
         console.error('Room not found');

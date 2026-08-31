@@ -22,6 +22,7 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
   const [userId, setUserId] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [chatDocId, setChatDocId] = useState<string>("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatLoadedRef = useRef(false);
 

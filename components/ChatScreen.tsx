@@ -2,21 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send, ImageIcon, MoreHorizontal, LogIn, Trash2, Flag, Ban, X, Check, Copy } from 'lucide-react';
-import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  addDoc,
-  serverTimestamp,
-  doc,
-  setDoc,
-  updateDoc,
-  getDoc,
-  deleteDoc,
-  writeBatch,
-} from 'firebase/firestore';
-import { db } from '../src/lib/firebase';
+import { sendMessage, getMessages } from '../src/lib/googleSheets';
 
 // ============ IndexedDB Functions for Messages ============
 const MESSAGES_DB_NAME = 'ChatMessagesDB';
@@ -200,108 +186,73 @@ export default function ChatScreen({
     loadCachedMessages();
   }, [chatId]);
 
-  // ========== Firestore messages listener ==========
+  // ========== Google Sheets messages polling ==========
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    let isMounted = true;
 
-    let unsubMessages: (() => void) | null = null;
+    const fetchRemoteMessages = async () => {
+      try {
+        const rawMsgs = await getMessages(currentUser.uid, targetUser.uid);
+        if (!isMounted || !Array.isArray(rawMsgs)) return;
 
-    const chatDocRef = doc(db, 'chats', chatId);
-    const unsubChatDoc = onSnapshot(chatDocRef, (docSnap) => {
-      const chatData = docSnap.data();
-      const clearedAt = chatData?.clearedAtRef?.[currentUser.uid] || 0;
+        const loadedMessages: Message[] = rawMsgs
+          .map((data: any) => {
+            const senderId = data.senderId || data.USER_A_ID || data.userAId;
+            const isMe = senderId === currentUser.uid;
+            return {
+              id: String(data.id || data.timestamp || data.createdAt || Date.now()),
+              text: data.chat || data.text || '',
+              sender: (isMe ? 'me' : 'other') as 'me' | 'other',
+              timestamp: Number(data.createdAt || data.timestamp || Date.now()),
+              type: data.type || 'message',
+              imageUrl: data.imageUrl || undefined,
+              roomData: data.roomData || undefined,
+              replyTo: data.replyTo || null,
+            };
+          });
 
-      const messagesRef = collection(db, 'chats', chatId, 'messages');
-      const q = query(messagesRef, orderBy('timestamp', 'asc'));
+        loadedMessages.sort((a, b) => a.timestamp - b.timestamp);
 
-      if (unsubMessages) {
-        unsubMessages();
-      }
-
-      unsubMessages = onSnapshot(
-        q,
-        async (snapshot) => {
-          const loadedMessages: Message[] = snapshot.docs
-            .map((doc) => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                text: data.text || '',
-                sender: (data.senderUid === currentUser.uid ? 'me' : 'other') as 'me' | 'other',
-                timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
-                type: data.type || 'message',
-                imageUrl: data.imageUrl || undefined,
-                roomData: data.roomData || undefined,
-                replyTo: data.replyTo || null,
-              };
-            })
-            .filter((msg) => msg.timestamp > clearedAt);
-
+        if (isMounted) {
           setMessages(loadedMessages);
           setConnected(true);
-          
-          // Messages ko IndexedDB mein save karo
           await saveMessagesToDB(chatId, loadedMessages);
-        },
-        (error) => {
-          console.error('Firestore listener error:', error);
-          setConnected(false);
         }
-      );
-    });
-
-    return () => {
-      unsubChatDoc();
-      if (unsubMessages) {
-        unsubMessages();
+      } catch (error) {
+        console.error('Error fetching messages from Google Sheets:', error);
+        setConnected(false);
       }
     };
-  }, [chatId, currentUser.uid]);
+
+    fetchRemoteMessages();
+    const interval = setInterval(fetchRemoteMessages, 4000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [chatId, currentUser.uid, targetUser.uid]);
 
   // ========== Auto-send room invite if sharedRoomData provided ==========
   useEffect(() => {
-    if (sharedRoomData && connected && lastSentInviteRoomIdRef.current !== sharedRoomData.roomId) {
+    if (sharedRoomData && lastSentInviteRoomIdRef.current !== sharedRoomData.roomId) {
       lastSentInviteRoomIdRef.current = sharedRoomData.roomId;
       sendRoomInvite(sharedRoomData);
     }
-  }, [sharedRoomData, connected]);
-
-  // ========== Helper: update conversation document ==========
-  const updateConversation = async (messageText: string) => {
-    const convoRef = doc(db, 'conversations', chatId);
-    await setDoc(
-      convoRef,
-      {
-        participants: [currentUser.uid, targetUser.uid],
-        participantsData: [
-          { uid: currentUser.uid, name: currentUser.name, photo: currentUser.photo },
-          { uid: targetUser.uid, name: targetUser.name, photo: targetUser.photo },
-        ],
-        lastMessage: messageText,
-        lastTimestamp: serverTimestamp(),
-        lastSenderUid: currentUser.uid,
-      },
-      { merge: true }
-    );
-  };
+  }, [sharedRoomData]);
 
   // ========== Send room invite ==========
   const sendRoomInvite = async (roomData: { roomId: string; roomName: string; roomImage: string }) => {
     try {
-      const messagesRef = collection(db, 'chats', chatId, 'messages');
-      await addDoc(messagesRef, {
-        text: `Joins our Party Room: ${roomData.roomName}`,
-        senderUid: currentUser.uid,
-        timestamp: serverTimestamp(),
+      await sendMessage({
+        senderId: currentUser.uid,
+        receiverId: targetUser.uid,
+        chat: `Joins our Party Room: ${roomData.roomName}`,
+        dp: currentUser.photo,
+        name: currentUser.name,
         type: 'room_invite',
-        roomData: {
-          roomId: roomData.roomId,
-          roomName: roomData.roomName,
-          roomImage: roomData.roomImage,
-        },
+        roomData
       });
-
-      await updateConversation(`Room invite: ${roomData.roomName}`);
     } catch (error) {
       console.error('Error sending room invite:', error);
     }
