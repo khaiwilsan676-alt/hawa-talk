@@ -28,7 +28,7 @@ interface RoomSettingPageProps {
   onSave?: (data: Partial<RoomSettingsData>) => void
 }
 
-// ---------- Mic mode image card component ----------
+// ---------- Mic mode image card component (for bottom sheet only) ----------
 function MicModeImageCard({ count, selected }: { count: number; selected: boolean }) {
   const getModeImage = (count: number) => {
     switch(count) {
@@ -36,8 +36,6 @@ function MicModeImageCard({ count, selected }: { count: number; selected: boolea
         return '/IMG_20260812_015943.jpg'
       case 9:
         return '/IMG_20260812_015111.jpg'
-      case 10:
-        return '/IMG_20260812_020002.jpg'
       case 13:
         return '/IMG_20260812_020022.jpg'
       default:
@@ -51,38 +49,6 @@ function MicModeImageCard({ count, selected }: { count: number; selected: boolea
         src={getModeImage(count)} 
         alt={`Mic mode ${count}`}
         className="w-full h-auto object-contain"
-      />
-      {/* Mode count badge */}
-      <div className="absolute bottom-1 right-1 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded-full">
-        {count}
-      </div>
-    </div>
-  )
-}
-
-// Main preview for settings page
-function MainMicModePreview({ count }: { count: number }) {
-  const getModeImage = (count: number) => {
-    switch(count) {
-      case 5:
-        return '/IMG_20260812_015943.jpg'
-      case 9:
-        return '/IMG_20260812_015111.jpg'
-      case 10:
-        return '/IMG_20260812_020002.jpg'
-      case 13:
-        return '/IMG_20260812_020022.jpg'
-      default:
-        return '/IMG_20260812_015111.jpg'
-    }
-  }
-
-  return (
-    <div className="w-12 h-12 rounded-lg overflow-hidden">
-      <img 
-        src={getModeImage(count)} 
-        alt={`Mic mode ${count}`}
-        className="w-full h-full object-contain"
       />
     </div>
   )
@@ -150,11 +116,12 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
   const [roomPassword, setRoomPassword] = useState<string>(roomData?.roomPassword || '')
   const [selectedTheme, setSelectedTheme] = useState<string>(roomData?.theme || 'forest-night')
 
-  const micModes = [5, 9, 10, 13]
+  // Mic Mode 10 ko yaha se hata diya hai
+  const micModes = [5, 9, 13]
 
   const themes = [
     { id: 'forest-night', name: 'Forest Night', image: '/1784875884052~2.jpg' },
-    { id: 'mood-light', name: 'Mood Light', image: '/1784533036732~2.jpg' }
+    { id: 'mood-light', name: 'Moon Light', image: '/1784533036732~2.jpg' }
   ]
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,8 +191,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
 
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
+      {/* Header - Top line removed and Android status bar padding fixed */}
+      <div className="flex items-center px-4 py-3 flex-shrink-0 bg-white" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 25px)' }}>
         <button
           onClick={onBack}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
@@ -237,7 +204,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
         <h1 className="flex-1 text-center text-lg font-bold text-gray-800">Room Setting</h1>
         <button
           onClick={handleSave}
-          className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-full"
+          className="px-4 py-1.5 text-blue-500 hover:text-blue-600 text-sm font-semibold transition-colors"
         >
           Save
         </button>
@@ -324,7 +291,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           </button>
         </div>
 
-        {/* 7. Mic Mode – shows image preview */}
+        {/* 7. Mic Mode – shows number only */}
         <div className="mb-5">
           <div className="flex items-center justify-between px-1">
             <label className="text-sm font-medium text-gray-600">Mic Mode</label>
@@ -332,7 +299,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
               onClick={() => setShowMicModeSheet(true)}
               className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-lg"
             >
-              <MainMicModePreview count={selectedMicMode} />
+              <span className="text-sm font-semibold text-gray-800">Mic {selectedMicMode}</span>
               <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-gray-400 stroke-[2]">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -344,8 +311,8 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
       {/* Theme Full Page */}
       {showThemePage && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col">
-          {/* Theme Page Header */}
-          <div className="flex items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
+          {/* Theme Page Header - Top line removed */}
+          <div className="flex items-center px-4 py-3 flex-shrink-0 bg-white" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 26px)' }}>
             <button
               onClick={() => setShowThemePage(false)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -358,7 +325,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
             <div className="w-10"></div>
           </div>
 
-          {/* Theme Content */}
+          {/* Theme Content - 2 columns with full height images */}
           <div className="flex-1 overflow-y-auto px-4 py-6">
             <div className="grid grid-cols-2 gap-4">
               {themes.map((theme) => (
@@ -368,20 +335,20 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
                     setSelectedTheme(theme.id)
                     setShowThemePage(false)
                   }}
-                  className={`flex flex-col items-center p-3 rounded-xl transition-all ${
+                  className={`flex flex-col rounded-xl overflow-hidden transition-all ${
                     selectedTheme === theme.id
-                      ? 'bg-blue-50 ring-2 ring-blue-400'
-                      : 'bg-gray-50 hover:bg-gray-100'
+                      ? 'ring-2 ring-blue-400 ring-offset-2'
+                      : 'hover:opacity-90'
                   }`}
                 >
-                  <div className="w-full aspect-square rounded-lg overflow-hidden mb-2">
+                  <div className="w-full h-64 rounded-xl overflow-hidden">
                     <img 
                       src={theme.image} 
                       alt={theme.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-700">{theme.name}</span>
+                  <span className="text-sm font-medium text-gray-700 mt-2 mb-1 text-center">{theme.name}</span>
                 </button>
               ))}
             </div>
@@ -442,7 +409,7 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-6 animate-slide-up">
             <h3 className="text-lg font-bold text-gray-800 text-center mb-4">Select Mic Mode</h3>
 
-            {/* 3 cards per row grid layout */}
+            {/* Grid layout (Mic 10 removed) */}
             <div className="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto">
               {micModes.map((mode) => (
                 <button
@@ -451,13 +418,14 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
                     setSelectedMicMode(mode)
                     setShowMicModeSheet(false)
                   }}
-                  className={`rounded-xl overflow-hidden transition-all ${
+                  className={`flex flex-col items-center rounded-xl overflow-hidden transition-all ${
                     selectedMicMode === mode
                       ? 'ring-2 ring-blue-400 ring-offset-1'
                       : 'hover:opacity-90'
                   }`}
                 >
                   <MicModeImageCard count={mode} selected={selectedMicMode === mode} />
+                  <span className="text-sm font-medium text-gray-700 mt-2 mb-1">Mic {mode}</span>
                 </button>
               ))}
             </div>
@@ -484,3 +452,4 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
     </div>
   )
 }
+

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 import Image from 'next/image';
+import { getMessages, getUser } from '../src/lib/googleSheets';
 
 import ChatScreen from './ChatScreen';
 
@@ -142,79 +143,69 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
     loadData();
   }, [currentUserUid]);
 
-  // Firebase se sirf naya data aane par save karo
+  // Google Sheets fetching
   useEffect(() => {
-    if (!currentUserUid || currentUserUid === 'N/A') {
-      return;
-    }
+    if (!currentUserUid || currentUserUid === 'N/A') return;
 
-    const conversationsRef = collection(db, 'conversations');
-    const q = query(
-      conversationsRef,
-      where('participants', 'array-contains', currentUserUid),
-      orderBy('lastTimestamp', 'desc')
-    );
+    let isMounted = true;
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
+    const fetchConversations = async () => {
       try {
-        const chats: ChatPreview[] = [];
-        const seenUids = new Set<string>();
+        const msgs = await getMessages(currentUserUid);
+        if (!isMounted || !Array.isArray(msgs)) return;
 
-        for (const docSnapshot of snapshot.docs) {
-          const data = docSnapshot.data();
-          const participantsData = data.participantsData || [];
-          let otherUser = participantsData.find((p: any) => p.uid !== currentUserUid);
+        const convoMap = new Map<string, ChatPreview>();
 
-          const lastTimestamp = typeof data.lastTimestamp?.toMillis === "function"
-            ? data.lastTimestamp.toMillis()
-            : (data.lastTimestamp || 0);
+        for (const msg of msgs) {
+          const senderId = msg.senderId || msg.USER_A_ID || msg.userAId;
+          const receiverId = msg.receiverId || msg.USER_B_ID || msg.userBId;
+          const text = msg.chat || msg.text || '';
+          const time = Number(msg.createdAt || msg.timestamp || Date.now());
 
-          if (!otherUser || seenUids.has(otherUser.uid) || lastTimestamp === 0) {
-            continue;
+          const otherUid = senderId === currentUserUid ? receiverId : senderId;
+          if (!otherUid || otherUid === currentUserUid) continue;
+
+          const ids = [currentUserUid, otherUid].sort();
+          const chatId = `${ids[0]}_${ids[1]}`;
+
+          const existing = convoMap.get(chatId);
+          if (!existing || time > existing.lastTimestamp) {
+            let otherName = msg.name || msg.senderName || 'User';
+            let otherDp = msg.dp || msg.avatar || '/default-avatar.png';
+
+            convoMap.set(chatId, {
+              chatId,
+              otherUser: {
+                uid: otherUid,
+                name: otherName,
+                photo: otherDp
+              },
+              lastMessage: text,
+              lastTimestamp: time,
+              unreadCount: 0
+            });
           }
-
-          seenUids.add(otherUser.uid);
-
-          try {
-            const userDocRef = doc(db, 'users', otherUser.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-              const userData = userDocSnap.data();
-              otherUser = {
-                uid: otherUser.uid,
-                name: userData.name || userData.displayName || otherUser.name || 'User',
-                photo: userData.photoURL || userData.photo || userData.image || otherUser.photo || '',
-              };
-            }
-          } catch (error) {
-            console.error('Error fetching user data:', error);
-          }
-
-          chats.push({
-            chatId: docSnapshot.id,
-            otherUser: {
-              uid: otherUser.uid,
-              name: otherUser.name,
-              photo: otherUser.photo || '',
-            },
-            lastMessage: data.lastMessage || '',
-            lastTimestamp: lastTimestamp,
-            unreadCount: data.unreadCounts?.[currentUserUid] || 0,
-          });
         }
 
+        const chats = Array.from(convoMap.values());
         chats.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
-        
-        // Sirf IndexedDB mein save karo, screen update nahi karo
-        await saveToDB(chats);
-        console.log('Firebase se naya data IndexedDB mein save hua');
-        
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    });
 
-    return () => unsubscribe();
+        if (isMounted) {
+          setConversations(chats);
+          await saveToDB(chats);
+        }
+      } catch (error) {
+        console.error('Error fetching conversations from Google Sheets:', error);
+      }
+    };
+
+    fetchConversations();
+    const interval = setInterval(fetchConversations, 10000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [currentUserUid]);
 
   // ---------- Helpers ----------

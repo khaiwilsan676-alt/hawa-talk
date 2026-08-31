@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { 
   Copy, 
   AlertTriangle,
@@ -10,6 +10,179 @@ import {
   Mic
 } from 'lucide-react'
 import WhiteColorRemovalShader from './WhiteColorRemovalShader'
+import { getUser } from '../src/lib/googleSheets'
+
+// ============ Green Color Removal Shader Component ============
+const GreenColorRemovalShader = ({ 
+  imageSrc, 
+  className = "",
+  style = {}
+}: { 
+  imageSrc: string
+  className?: string
+  style?: React.CSSProperties
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
+    if (!gl) {
+      console.warn('WebGL not supported')
+      return
+    }
+
+    const vertexShaderSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `
+
+    const fragmentShaderSource = `
+      precision mediump float;
+
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture;
+
+      void main() {
+        vec4 color = texture2D(u_texture, v_texCoord);
+
+        // Detect green background (high green, low red and blue)
+        if (color.g > 0.25 && color.g > color.r * 1.3 && color.g > color.b * 1.3) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); // Make transparent
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `
+
+    const compileShader = (type: number, source: string) => {
+      const shader = gl.createShader(type)
+      if (!shader) return null
+      gl.shaderSource(shader, source)
+      gl.compileShader(shader)
+
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
+        gl.deleteShader(shader)
+        return null
+      }
+      return shader
+    }
+
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
+    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
+
+    if (!vertexShader || !fragmentShader) return
+
+    const program = gl.createProgram()
+    if (!program) return
+
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program))
+      return
+    }
+
+    gl.useProgram(program)
+
+    const positionBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    const positions = new Float32Array([
+      -1.0, -1.0,
+       1.0, -1.0,
+      -1.0,  1.0,
+      -1.0,  1.0,
+       1.0, -1.0,
+       1.0,  1.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(positionLocation)
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texCoordBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+    const texCoords = new Float32Array([
+      0.0, 1.0,
+      1.0, 1.0,
+      0.0, 0.0,
+      0.0, 0.0,
+      1.0, 1.0,
+      1.0, 0.0,
+    ])
+    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
+    gl.enableVertexAttribArray(texCoordLocation)
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
+
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+
+      canvas.width = image.width
+      canvas.height = image.height
+      gl.viewport(0, 0, canvas.width, canvas.height)
+
+      gl.clearColor(0.0, 0.0, 0.0, 0.0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+      setIsLoaded(true)
+    }
+    image.onerror = () => {
+      console.error('Failed to load image for WebGL processing')
+    }
+    image.src = imageSrc
+
+    return () => {
+      gl.deleteProgram(program)
+      gl.deleteShader(vertexShader)
+      gl.deleteShader(fragmentShader)
+      gl.deleteBuffer(positionBuffer)
+      gl.deleteBuffer(texCoordBuffer)
+      gl.deleteTexture(texture)
+    }
+  }, [imageSrc])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={className}
+      style={{
+        ...style,
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
+      }}
+    />
+  )
+}
 
 interface RoomProfileProps {
   user: {
@@ -44,11 +217,11 @@ interface RoomProfileProps {
   onKickOut?: () => void
 }
 
-export default function RoomProfile({ 
-  user, 
+export default function RoomProfile({
+  user,
   isCurrentUser = false,
   isRoomOwner = false,
-  onClose, 
+  onClose,
   onCopyId,
   onLeaveSeat,
   onMention,
@@ -73,6 +246,79 @@ export default function RoomProfile({
   const isMuted = user.isMuted || false
   const isLocked = user.isLocked || false
 
+  // Tag states
+  const [tags, setTags] = useState({
+    adminTag: false,
+    officialTag: false,
+    vipTag: false,
+    premiumTag: false,
+  })
+
+  // Fetch tags from Firestore
+  useEffect(() => {
+    const uid = user.uid || user.id || user.accountId
+    if (!uid || uid === 'N/A' || uid === 'User') return
+
+    let unsubscribe: (() => void) | undefined
+
+    const fetchTags = async () => {
+      try {
+        const userDocRef = doc(db, 'users', uid)
+        unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data()
+            setTags({
+              adminTag: data.adminTag || false,
+              officialTag: data.officialTag || false,
+              vipTag: data.vipTag || false,
+              premiumTag: data.premiumTag || false,
+            })
+          } else {
+            // Try globalRooms if not in users
+            const globalRoomRef = doc(db, 'globalRooms', uid)
+            const unsub2 = onSnapshot(globalRoomRef, (roomSnap) => {
+              if (roomSnap.exists()) {
+                const data = roomSnap.data()
+                setTags({
+                  adminTag: data.adminTag || false,
+                  officialTag: data.officialTag || false,
+                  vipTag: data.vipTag || false,
+                  premiumTag: data.premiumTag || false,
+                })
+              } else {
+                // Default to false
+                setTags({
+                  adminTag: false,
+                  officialTag: false,
+                  vipTag: false,
+                  premiumTag: false,
+                })
+              }
+            })
+            return () => unsub2()
+          }
+        })
+      } catch (err) {
+        console.warn('Error fetching tags in RoomProfile:', err)
+        setTags({
+          adminTag: false,
+          officialTag: false,
+          vipTag: false,
+          premiumTag: false,
+        })
+      }
+    }
+
+    fetchTags()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [user.uid, user.id, user.accountId])
+
+  // Check if any tags are assigned
+  const hasAnyTag = tags.adminTag || tags.officialTag || tags.vipTag || tags.premiumTag
+
   // Get user ID correctly
   const getUserId = () => {
     const possibleIds = [
@@ -80,9 +326,9 @@ export default function RoomProfile({
       user.id,
       user.uid,
     ]
-    
+
     const id = possibleIds.find(val => val && val.trim() !== '')
-    
+
     return id || 'User'
   }
 
@@ -142,17 +388,17 @@ export default function RoomProfile({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       {/* Transparent Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-transparent"
         onClick={onClose}
       />
-      
+
       {/* Bottom Sheet - Dynamic height based on content */}
       <div 
         className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up"
-        style={{ 
-          height: getSheetHeight(), 
-          minHeight: getSheetHeight(), 
+        style={{
+          height: getSheetHeight(),
+          minHeight: getSheetHeight(),
           maxHeight: getSheetHeight(),
           overflow: 'visible'
         }}
@@ -161,8 +407,8 @@ export default function RoomProfile({
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-30">
           <div className="relative w-22 h-22">
             {/* Base Avatar */}
-            <img 
-              src={displayImage} 
+            <img
+              src={displayImage}
               alt={displayName}
               className="w-full h-full object-cover rounded-full border-4 border-white shadow-xl bg-gray-100"
               style={{
@@ -173,9 +419,9 @@ export default function RoomProfile({
                 (e.target as HTMLImageElement).src = '/default-avatar.png'
               }}
             />
-            
+
             {/* WebGL Shader Overlay - Size increased */}
-            <div 
+            <div
               className="absolute pointer-events-none"
               style={{
                 top: '50%',
@@ -235,20 +481,43 @@ export default function RoomProfile({
               </span>
             </div>
 
-            {/* Row 2: Tags */}
-            <div className="flex items-center justify-center gap-0.5 mt-1.5 w-auto flex-wrap">
-              <img src="/1785131462125.png" alt="" className="h-8 w-auto object-contain" />
-              <img src="/1785131792693.png" alt="" className="h-8 w-auto object-contain" />
-              <img src="/1785469775751.png" alt="" className="h-6 w-auto object-contain" />
-              <img src="/1785469365805.png" alt="" className="h-6 w-auto object-contain" />
-            </div>
+            {/* Row 2: Tags - ONLY show if assigned from Owner Panel */}
+            {hasAnyTag && (
+              <div className="flex items-center justify-center gap-0.5 mt-1.5 w-auto flex-wrap">
+                {/* Admin Tag with Green Removal */}
+                {tags.adminTag && (
+                  <GreenColorRemovalShader
+                    imageSrc="/1788021461820~2.jpg"
+                    className="h-8 w-auto object-contain"
+                  />
+                )}
+
+                {/* Official Tag with Green Removal */}
+                {tags.officialTag && (
+                  <GreenColorRemovalShader
+                    imageSrc="/1788021468845~2.jpg"
+                    className="h-8 w-auto object-contain"
+                  />
+                )}
+
+                {/* VIP Tag */}
+                {tags.vipTag && (
+                  <img src="/1785469775751.png" alt="VIP" className="h-6 w-auto object-contain" />
+                )}
+
+                {/* Premium Tag */}
+                {tags.premiumTag && (
+                  <img src="/1785469365805.png" alt="Premium" className="h-6 w-auto object-contain" />
+                )}
+              </div>
+            )}
 
             {/* Row 3: Level Badge + Additional Image */}
             <div className="flex items-center justify-center gap-0.5 mt-1.5">
               <div className="relative inline-flex items-center">
-                <img 
-                  src="/1785137410522.png" 
-                  alt="Level" 
+                <img
+                  src="/1785137410522.png"
+                  alt="Level"
                   className="h-6 w-auto object-contain"
                 />
                 <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm pl-2">
@@ -336,9 +605,9 @@ export default function RoomProfile({
                   className="flex items-center gap-1.5 group active:scale-95 transition-all"
                   aria-label="Additional action"
                 >
-                  <img 
-                    src="/file_000000008e508208b1353ae33e2abef9.png" 
-                    alt="Action" 
+                  <img
+                    src="/file_000000008e508208b1353ae33e2abef9.png"
+                    alt="Action"
                     className="w-8 h-8 object-contain rounded-full group-hover:scale-110 transition-transform"
                   />
                 </button>
@@ -347,28 +616,28 @@ export default function RoomProfile({
               {/* Moderation row - Only for room owner viewing other users */}
               {showModerationRow && (
                 <div className="flex items-center justify-around w-full py-1 text-gray-500 text-sm font-medium">
-                  <button 
+                  <button
                     onClick={onMute}
                     className="hover:text-gray-800 transition-colors py-0.5 px-2"
                   >
                     {isMuted ? 'Unmute' : 'Mute'}
                   </button>
                   <span className="text-gray-300">|</span>
-                  <button 
+                  <button
                     onClick={onLeaveSeat}
                     className="hover:text-gray-800 transition-colors py-0.5 px-2"
                   >
                     Leave
                   </button>
                   <span className="text-gray-300">|</span>
-                  <button 
+                  <button
                     onClick={onLock}
                     className="hover:text-gray-800 transition-colors py-0.5 px-2"
                   >
                     {isLocked ? 'Unlock' : 'Lock'}
                   </button>
                   <span className="text-gray-300">|</span>
-                  <button 
+                  <button
                     onClick={onKickOut}
                     className="hover:text-red-600 transition-colors py-0.5 px-2"
                   >
@@ -398,4 +667,4 @@ export default function RoomProfile({
       `}</style>
     </div>
   )
-        }
+    }

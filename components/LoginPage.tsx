@@ -2,8 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User } from 'lucide-react'
-import { GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
+import { 
+  GoogleAuthProvider, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword 
+} from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
+import { auth } from "../src/lib/firebase";
+import { getUser, saveUser, updateUser, saveFeedback } from "../src/lib/googleSheets";
 import { auth, googleProvider as provider } from "../src/lib/firebase";
 
 interface LoginPageProps {
@@ -86,32 +92,23 @@ export const getOrCreateAccountNumber = (uid: string) => {
 }
 
 // HELPER: Sync and Lock User Profile in Firestore
-const syncUserToFirestore = async (uid: string, name: string, email: string, photo: string) => {
+const syncUserToGoogleSheet = async (uid: string, name: string, email: string, photo: string) => {
   try {
     let finalAccountId = ""
     let existingName = ""
     let existingImage = ""
     let existingBio = ""
+    let existingCountry = ""
 
-    const userDocRef = doc(db, "users", uid)
-    const userDocSnap = await getDoc(userDocRef)
+    const res = await getUser(uid)
+    const existingUser = res && (res.user || res.data || res)
 
-    const isExistingUser = userDocSnap.exists()
-
-    if (isExistingUser) {
-      const data = userDocSnap.data()
-      if (data.accountId) {
-        finalAccountId = String(data.accountId)
-      }
-      if (data.name) {
-        existingName = data.name
-      }
-      if (data.image || data.photo || data.photoURL) {
-        existingImage = data.image || data.photo || data.photoURL
-      }
-      if (data.bio) {
-        existingBio = data.bio
-      }
+    if (existingUser && (existingUser.id || existingUser.AppLongId || existingUser['App long ID'] || existingUser.email || existingUser.Name || existingUser.name)) {
+      finalAccountId = String(existingUser.accountId || existingUser.accountNumber || existingUser['Account Number'] || '')
+      existingName = existingUser.name || existingUser.Name || ''
+      existingImage = existingUser.image || existingUser.avatar || existingUser.Avtar || existingUser.photo || ''
+      existingBio = existingUser.bio || existingUser.Bio || ''
+      existingCountry = existingUser.country || existingUser.Country || ''
     }
 
     if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid) || SPECIAL_ACCOUNTS[uid]) {
@@ -121,33 +118,30 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
     }
 
     const finalName = existingName || name || email.split('@')[0] || 'User'
-
-    // Gmail fallback DP is only for new users. Existing users retain their DP (or default).
-    const finalImage = isExistingUser
-      ? (existingImage || '/default-avatar.png')
-      : (photo || '/default-avatar.png')
+    const finalImage = existingImage || photo || '/default-avatar.png'
+    const finalCountry = existingCountry || '🇮🇳'
 
     const userData: any = {
       id: uid,
+      appLongId: uid,
       name: finalName,
-      country: userDocSnap.exists() && userDocSnap.data().country ? userDocSnap.data().country : '🇮🇳',
+      email: email,
+      country: finalCountry,
       image: finalImage,
+      avatar: finalImage,
       accountId: finalAccountId,
-      createdAt: userDocSnap.exists() && userDocSnap.data().createdAt ? userDocSnap.data().createdAt : Date.now()
+      accountNumber: finalAccountId,
+      bio: existingBio || ''
     }
 
-    if (existingBio) {
-      userData.bio = existingBio;
-    }
-
-    await setDoc(doc(db, "users", uid), userData, { merge: true })
+    await saveUser(userData)
 
     localStorage.setItem("accountNumber", finalAccountId)
     localStorage.setItem(`user_account_number_${uid}`, finalAccountId)
 
     return { accountId: finalAccountId, name: finalName, image: finalImage }
   } catch (err) {
-    console.error("Error syncing user to Firestore:", err)
+    console.error("Error syncing user to Google Sheets:", err)
     return { accountId: getOrCreateAccountNumber(uid), name: name || email.split('@')[0] || 'User', image: photo || '/default-avatar.png' }
   }
 }
@@ -155,25 +149,21 @@ const syncUserToFirestore = async (uid: string, name: string, email: string, pho
 // HELPER: Check if user is new (hasn't selected gender yet)
 const checkIfNewUser = async (uid: string): Promise<boolean> => {
   try {
-    const userDocRef = doc(db, "users", uid)
-    const userDocSnap = await getDoc(userDocRef)
-    
-    if (userDocSnap.exists()) {
-      const userData = userDocSnap.data()
-      // If gender field exists, user has already completed setup
-      return !userData.gender
+    const res = await getUser(uid)
+    const userData = res && (res.user || res.data || res)
+    if (userData && (userData.id || userData.AppLongId || userData['App long ID'] || userData.Name || userData.name)) {
+      const gender = userData.gender || userData.Gender
+      return !gender
     }
-    // No document exists = new user
     return true
   } catch (error) {
     console.error("Error checking if new user:", error)
-    // Check localStorage as fallback
     const localGender = localStorage.getItem("userGender")
     return !localGender
   }
 }
 
-// Gender Selection Page Component (Cards stacked vertically)
+// Gender Selection Page Component
 function GenderSelectionPage({ 
   userData, 
   onContinue 
@@ -185,15 +175,12 @@ function GenderSelectionPage({
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Simple Header */}
       <div className="px-4 pt-12 pb-6">
         <h1 className="text-2xl font-bold text-gray-900 text-center">Welcome! 🎉</h1>
         <p className="text-sm text-gray-500 text-center mt-2">Select your gender to get started</p>
       </div>
 
-      {/* Gender Cards - Stacked Vertically */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 gap-4">
-        {/* Female Card - 1st Row */}
         <button
           onClick={() => setSelectedGender('female')}
           className={`relative w-full max-w-xs transition-all duration-300 transform ${
@@ -236,7 +223,6 @@ function GenderSelectionPage({
           </div>
         </button>
 
-        {/* Male Card - 2nd Row */}
         <button
           onClick={() => setSelectedGender('male')}
           className={`relative w-full max-w-xs transition-all duration-300 transform ${
@@ -280,7 +266,6 @@ function GenderSelectionPage({
         </button>
       </div>
 
-      {/* Next Button */}
       <div className="px-4 pb-8 pt-4">
         <button
           onClick={() => selectedGender && onContinue(selectedGender)}
@@ -320,7 +305,6 @@ function CountrySelectionPage({
     setIsSubmitting(true)
     
     try {
-      // Default data based on gender
       const defaultData = selectedGender === 'female' 
         ? {
             name: 'Barrey',
@@ -335,26 +319,25 @@ function CountrySelectionPage({
 
       const countryFlag = COUNTRIES.find(c => c.code === selectedCountry)?.flag || '🇮🇳'
 
-      // Update user data in Firebase
       if (userData?.id || userData?.uid) {
         const userId = userData.id || userData.uid
-        const userRef = doc(db, "users", userId)
         
         const userDocData = {
           id: userId,
+          appLongId: userId,
           name: defaultData.name,
           image: defaultData.image,
+          avatar: defaultData.image,
           gender: selectedGender,
           country: countryFlag,
           countryCode: selectedCountry,
           email: userData.email || '',
           accountId: localStorage.getItem("accountNumber") || getOrCreateAccountNumber(userId),
-          updatedAt: Date.now(),
-          isNewUser: false,
+          accountNumber: localStorage.getItem("accountNumber") || getOrCreateAccountNumber(userId),
           setupComplete: true
         }
 
-        await setDoc(userRef, userDocData, { merge: true })
+        await updateUser(userDocData)
 
         localStorage.setItem("userName", defaultData.name)
         localStorage.setItem("userPhoto", defaultData.image)
@@ -378,7 +361,6 @@ function CountrySelectionPage({
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Header with back button */}
       <div className="flex items-center p-4">
         <button
           onClick={() => window.history.back()}
@@ -388,14 +370,12 @@ function CountrySelectionPage({
         </button>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col px-4">
         <div className="text-center mb-8 pt-4">
           <h1 className="text-2xl font-bold text-gray-900">Select Your Country</h1>
           <p className="text-sm text-gray-500 mt-2">Choose your location to continue</p>
         </div>
 
-        {/* Country Selector */}
         <div className="max-w-sm mx-auto w-full mb-8">
           <button
             onClick={() => setShowCountryPicker(!showCountryPicker)}
@@ -410,7 +390,6 @@ function CountrySelectionPage({
             </svg>
           </button>
 
-          {/* Country Dropdown */}
           {showCountryPicker && (
             <div className="mt-2 border-2 border-gray-200 rounded-2xl bg-white max-h-64 overflow-y-auto shadow-xl z-50">
               {COUNTRIES.map((country) => (
@@ -437,7 +416,6 @@ function CountrySelectionPage({
         </div>
       </div>
 
-      {/* Let's Go Button */}
       <div className="px-4 pb-8">
         <div className="max-w-sm mx-auto">
           <button
@@ -471,6 +449,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showLoginPage, setShowLoginPage] = useState(false)
+  const [showSignUpPage, setShowSignUpPage] = useState(false)
   const [showFeedbackPage, setShowFeedbackPage] = useState(false)
   const [showGenderPage, setShowGenderPage] = useState(false)
   const [showCountryPage, setShowCountryPage] = useState(false)
@@ -478,8 +457,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [pendingUserData, setPendingUserData] = useState<any>(null)
   const [pendingGender, setPendingGender] = useState<string>('')
   const [checkingNewUser, setCheckingNewUser] = useState(false)
-  
-  const [showGoogleSheet, setShowGoogleSheet] = useState(false)
 
   // Feedback States
   const [selectedType, setSelectedType] = useState<string>('')
@@ -495,10 +472,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     video.src = '/VID_20260804_011114_027_bsl.mp4';
     video.preload = 'auto';
   }, []);
-
-  const handleGoogleClick = () => {
-    setShowGoogleSheet(true);
-  };
 
   const handleGenderContinue = (gender: string) => {
     setPendingGender(gender)
@@ -517,7 +490,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     const userId = userData?.id || userData?.uid
     
     if (!userId) {
-      // No user ID, just proceed
       if (onLoginSuccess) onLoginSuccess(userData)
       return
     }
@@ -525,36 +497,33 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setCheckingNewUser(true)
     
     try {
-      // Check if this is a new user (first time login)
       const isNew = await checkIfNewUser(userId)
       
       if (isNew) {
-        // New user - show gender selection page
         setPendingUserData(userData)
         setShowGenderPage(true)
       } else {
-        // Returning user - get existing data from Firebase
-        const userDocRef = doc(db, "users", userId)
-        const userDocSnap = await getDoc(userDocRef)
-        
-        if (userDocSnap.exists()) {
-          const existingData = userDocSnap.data()
-          // Update localStorage with existing data
-          if (existingData.name) localStorage.setItem("userName", existingData.name)
-          if (existingData.image) localStorage.setItem("userPhoto", existingData.image)
-          if (existingData.gender) localStorage.setItem("userGender", existingData.gender)
-          if (existingData.country) localStorage.setItem("userCountry", existingData.country)
-          if (existingData.countryCode) localStorage.setItem("userCountryCode", existingData.countryCode)
+        const res = await getUser(userId)
+        const existingData = res && (res.user || res.data || res)
+        if (existingData) {
+          const name = existingData.name || existingData.Name
+          const avatar = existingData.avatar || existingData.Avtar || existingData.image || existingData.photo
+          const gender = existingData.gender || existingData.Gender
+          const country = existingData.country || existingData.Country
+          const countryCode = existingData.countryCode
+          if (name) localStorage.setItem("userName", name)
+          if (avatar) localStorage.setItem("userPhoto", avatar)
+          if (gender) localStorage.setItem("userGender", gender)
+          if (country) localStorage.setItem("userCountry", country)
+          if (countryCode) localStorage.setItem("userCountryCode", countryCode)
         }
         
-        // Proceed directly to app
         if (onLoginSuccess) {
           onLoginSuccess(userData)
         }
       }
     } catch (error) {
       console.error("Error checking new user status:", error)
-      // Fallback: check localStorage
       const localGender = localStorage.getItem("userGender")
       if (!localGender) {
         setPendingUserData(userData)
@@ -567,14 +536,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   }
 
-  const handleActualGmailLogin = async () => {
-    setShowGoogleSheet(false);
+  // Direct Google Login - No sheet
+  const handleGoogleLogin = async () => {
     setLoading(true);
     setAuthError(null);
 
     try {
       const result = await FirebaseAuthentication.signInWithGoogle();
-
       const user = result.user;
 
       if (!user?.uid) {
@@ -586,7 +554,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       const userPhoto = user.photoUrl || "/default-avatar.png";
       const userUID = user.uid;
 
-      const syncResult = await syncUserToFirestore(
+      const syncResult = await syncUserToGoogleSheet(
         userUID,
         userName,
         userEmail,
@@ -608,16 +576,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       });
 
     } catch (error: any) {
-      console.error("Native Google login error:", error);
-
+      console.error("Google login error:", error);
       let errorMessage = "Google sign-in failed. Please try again.";
-
       if (error?.message?.toLowerCase().includes("cancel")) {
         errorMessage = "Google sign-in was cancelled.";
       } else if (error?.message) {
         errorMessage = error.message;
       }
-
       setAuthError(errorMessage);
     } finally {
       setLoading(false);
@@ -626,16 +591,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   const checkOfficialCredentials = async (emailStr: string, passwordStr: string) => {
     try {
-      const docRef = doc(db, "adminSettings", "credentials");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists() && docSnap.data().officialCredentials) {
-        const credentials = docSnap.data().officialCredentials;
-        const matched = credentials.find(
-          (cred: any) => cred.email === emailStr && cred.password === passwordStr
-        );
-        if (matched) return matched;
-      }
-
       const savedCredentials = localStorage.getItem('officialCredentials');
       if (savedCredentials) {
         const credentials = JSON.parse(savedCredentials);
@@ -662,23 +617,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
 
     try {
+      // Check official credentials first
       const officialCred = await checkOfficialCredentials(email, password);
       
       if (officialCred) {
-        try {
-          const sessionRef = doc(db, "adminSettings", `sessions_${officialCred.id}`);
-          await setDoc(sessionRef, {
-            isLoggedIn: true,
-            lastLogin: Date.now()
-          }, { merge: true });
-        } catch (err) {
-          console.error("Error updating session status:", err);
-        }
-
         const userName = `${officialCred.type.toUpperCase()} - ${officialCred.id}`
         const officialID = officialCred.id
 
-        const syncResult = await syncUserToFirestore(officialID, userName, officialCred.email, "")
+        const syncResult = await syncUserToGoogleSheet(officialID, userName, officialCred.email, "")
 
         const userData = {
           id: officialID,
@@ -698,7 +644,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         loggedInSessions[officialID] = true
         localStorage.setItem('loggedInSessions', JSON.stringify(loggedInSessions));
 
-        // Official accounts skip gender selection
         if (onLoginSuccess) {
           onLoginSuccess(userData);
         }
@@ -706,37 +651,124 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return;
       }
 
-      let userCredential;
-      userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Try Firebase Auth login
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const userName = user.displayName || email.split('@')[0]
+        const userEmail = user.email || ""
+        const userPhoto = user.photoURL || "/default-avatar.png"
+        const userUID = user.uid
 
-      const user = userCredential.user;
-      const userName = user.displayName || email.split('@')[0]
-      const userEmail = user.email || ""
-      const userPhoto = user.photoURL || "/default-avatar.png"
-      const userUID = user.uid
+        const syncResult = await syncUserToGoogleSheet(userUID, userName, userEmail, userPhoto)
 
-      const syncResult = await syncUserToFirestore(userUID, userName, userEmail, userPhoto)
+        localStorage.setItem("userName", syncResult.name);
+        localStorage.setItem("userEmail", userEmail);
+        localStorage.setItem("userPhoto", syncResult.image);
+        localStorage.setItem("userUID", userUID);
+        localStorage.setItem("accountNumber", syncResult.accountId);
 
-      localStorage.setItem("userName", syncResult.name);
-      localStorage.setItem("userEmail", userEmail);
-      localStorage.setItem("userPhoto", syncResult.image);
-      localStorage.setItem("userUID", userUID);
-      localStorage.setItem("accountNumber", syncResult.accountId);
+        await processLoginSuccess(user);
+      } catch (signInError: any) {
+        console.error('Sign in error details:', {
+          code: signInError.code,
+          message: signInError.message,
+          email: email
+        });
 
-      await processLoginSuccess(user);
+        if (signInError.code === 'auth/user-not-found' || 
+            signInError.code === 'auth/invalid-credential' ||
+            signInError.code === 'auth/wrong-password') {
+          setAuthError("Invalid email or password. Please try again or sign up.");
+        } else {
+          throw signInError;
+        }
+      }
     } catch (error: any) {
       console.error('Auth error:', error);
       let errorMessage = "Authentication failed. Please check your credentials.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "An account already exists with this email address.";
-      } else if (error.code === 'auth/invalid-credential') {
-        errorMessage = "Invalid email or password.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password should be at least 6 characters.";
-      } else if (error.message) {
-        errorMessage = error.message;
+      
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = "Invalid email format.";
+          break;
+        case 'auth/user-disabled':
+          errorMessage = "This account has been disabled.";
+          break;
+        case 'auth/user-not-found':
+          errorMessage = "No account found with this email. Please sign up.";
+          break;
+        case 'auth/wrong-password':
+          errorMessage = "Incorrect password. Please try again.";
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = "Invalid email or password.";
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = "Too many failed attempts. Please try again later.";
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = "Network error. Please check your internet connection.";
+          break;
+        default:
+          errorMessage = error.message || "Authentication failed.";
       }
+      
       setAuthError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    
+    if (!email || !password || password.length < 6) {
+      setAuthError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      const syncResult = await syncUserToGoogleSheet(
+        user.uid,
+        email.split('@')[0],
+        email,
+        "/default-avatar.png"
+      );
+      
+      localStorage.setItem("userName", syncResult.name);
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userPhoto", syncResult.image);
+      localStorage.setItem("userUID", user.uid);
+      localStorage.setItem("accountNumber", syncResult.accountId);
+      
+      await processLoginSuccess(user);
+      
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          setAuthError("An account already exists with this email. Please login instead.");
+          break;
+        case 'auth/invalid-email':
+          setAuthError("Invalid email format.");
+          break;
+        case 'auth/operation-not-allowed':
+          setAuthError("Email/password sign up is not enabled. Please contact support.");
+          break;
+        case 'auth/weak-password':
+          setAuthError("Password should be at least 6 characters.");
+          break;
+        default:
+          setAuthError(error.message || "Failed to create account.");
+      }
     } finally {
       setLoading(false);
     }
@@ -768,6 +800,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
     try {
       const feedbackData = {
+        userId: localStorage.getItem("userUID") || contactInfo.trim(),
+        name: localStorage.getItem("userName") || '',
         type: selectedType,
         typeLabel: FEEDBACK_TYPES.find(t => t.id === selectedType)?.label || selectedType,
         description: problemDescription.trim(),
@@ -777,7 +811,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         status: 'pending'
       };
 
-      await addDoc(collection(db, "feedbacks"), feedbackData);
+      await saveFeedback(feedbackData);
       
       setFeedbackSuccess(true);
       setSelectedType('');
@@ -1099,23 +1133,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   </div>
                 </div>
 
-                <div className="text-center">
-                  <p className="text-sm text-white/70">
-                    Do you have account?{' '}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEmail('');
-                        setPassword('');
-                        setAuthError(null);
-                      }}
-                      className="text-blue-300 hover:text-blue-200 font-semibold cursor-pointer"
-                    >
-                      Sign In
-                    </button>
-                  </p>
-                </div>
-
                 <button
                   type="submit"
                   disabled={loading || !email || !password || !isValidEmail(email)}
@@ -1133,6 +1150,164 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     'Login'
                   )}
                 </button>
+
+                <div className="text-center">
+                  <p className="text-sm text-white/70">
+                    Don't have an account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowLoginPage(false);
+                        setShowSignUpPage(true);
+                        setEmail('');
+                        setPassword('');
+                        setAuthError(null);
+                      }}
+                      className="text-blue-300 hover:text-blue-200 font-semibold cursor-pointer"
+                    >
+                      Sign Up
+                    </button>
+                  </p>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Sign Up Page
+  if (showSignUpPage) {
+    return (
+      <div className="min-h-screen relative flex flex-col bg-gray-900">
+        <video 
+          autoPlay 
+          loop 
+          playsInline
+          preload="auto"
+          poster="/video-thumbnail.jpg"
+          onLoadedData={() => setVideoLoaded(true)}
+          className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <source src="/VID_20260804_011114_027_bsl.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        <div className="absolute inset-0 bg-black/40 z-0"></div>
+
+        <div className="relative z-10 flex flex-col min-h-screen">
+          <div className="flex items-center p-4">
+            <button
+              onClick={() => {
+                setShowSignUpPage(false);
+                setShowLoginPage(true);
+                setEmail('');
+                setPassword('');
+                setAuthError(null);
+              }}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+            >
+              <ArrowLeft size={24} className="text-white" />
+            </button>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center justify-start px-6 pt-8">
+            <div className="w-full max-w-sm">
+              <div className="text-center mb-6">
+                <img 
+                  src="/logo.png" 
+                  alt="Hurry"
+                  className="w-16 h-16 rounded-2xl mx-auto mb-3 drop-shadow-lg" 
+                />
+                <h1 className="text-2xl font-bold text-white">Create Account</h1>
+                <p className="text-white/70 text-sm mt-1">Sign up to get started</p>
+              </div>
+
+              <form onSubmit={handleSignUp} className="space-y-4">
+                {authError && (
+                  <div className="bg-red-500/20 backdrop-blur-md border border-red-300/30 text-white px-4 py-3 rounded-xl text-sm">
+                    {authError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    E-mail Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl focus:outline-none focus:border-white/50 transition-colors text-white placeholder-white/50"
+                    required
+                  />
+                  {email && !isValidEmail(email) && (
+                    <p className="text-xs text-red-300 mt-1">Please enter a valid email</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password (min 6 characters)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl focus:outline-none focus:border-white/50 transition-colors text-white placeholder-white/50 pr-12"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/60 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !email || !password || !isValidEmail(email)}
+                  className="w-full bg-white text-blue-600 font-semibold py-3 rounded-xl transition-all hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-black/20 text-base"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Creating Account...
+                    </span>
+                  ) : (
+                    'Sign Up'
+                  )}
+                </button>
+
+                <div className="text-center">
+                  <p className="text-sm text-white/70">
+                    Already have an account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSignUpPage(false);
+                        setShowLoginPage(true);
+                        setEmail('');
+                        setPassword('');
+                        setAuthError(null);
+                      }}
+                      className="text-blue-300 hover:text-blue-200 font-semibold cursor-pointer"
+                    >
+                      Login
+                    </button>
+                  </p>
+                </div>
               </form>
             </div>
           </div>
@@ -1162,7 +1337,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
       <div className="relative z-10 w-full flex flex-col items-center justify-between min-h-screen">
         
-        <div className="w-full flex justify-end pt-4">
+        <div className="w-full flex justify-end pt-8 pr-2">
           <button 
             onClick={() => setShowFeedbackPage(true)}
             className="text-sm font-medium text-white/90 hover:text-white transition-all cursor-pointer"
@@ -1171,7 +1346,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </button>
         </div>
 
-        <div className="flex flex-col items-center" style={{ marginTop: '5vh' }}>
+        <div className="flex flex-col items-center" style={{ marginTop: '10vh' }}>
           <div className="mb-0.5">
             <img 
               src="/logo.png" 
@@ -1182,32 +1357,41 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-lg">Hurry</h1>
         </div>
 
-        <div style={{ marginTop: '23vh' }}></div>
+        <div style={{ marginTop: '18vh' }}></div>
 
-        <div className="w-full max-w-sm space-y-3 mb-6">
+        <div className="w-full flex flex-col items-center gap-4 mb-6">
           <button
-            onClick={handleGoogleClick}
+            onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full bg-white/90 backdrop-blur-md rounded-2xl p-3.5 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-70 bg-white/90 backdrop-blur-md rounded-full p-3.5 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               boxShadow: '0 4px 0 #e0e0e0, 0 6px 20px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.05), inset 0 2px 4px rgba(255,255,255,0.8)',
               background: 'linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)',
             }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            <span className="font-semibold text-gray-800 text-base">
-              Continue with Google
-            </span>
+            {loading ? (
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <>
+                <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span className="font-semibold text-gray-800 text-base">
+                  Continue with Google
+                </span>
+              </>
+            )}
           </button>
 
           <button
             onClick={() => setShowLoginPage(true)}
-            className="w-full rounded-2xl p-3.5 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer text-white"
+            className="w-70 rounded-full p-3.5 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer text-white"
             style={{
               boxShadow: '0 4px 0 #1d4ed8, 0 6px 20px rgba(37,99,235,0.4), inset 0 -2px 4px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.2)',
               background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
@@ -1235,57 +1419,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </p>
         </div>
       </div>
-
-      {showGoogleSheet && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50 transition-all">
-          <div className="w-full max-w-md h-[40vh] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl p-6 flex flex-col justify-between border-t border-white animate-in slide-in-from-bottom duration-300">
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => setShowGoogleSheet(false)}
-                    className="p-1 rounded-full hover:bg-gray-100 text-gray-500 cursor-pointer"
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                    <h3 className="font-bold text-gray-800 text-lg">Choose an account</h3>
-                  </div>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 mb-3">to continue to Hurry</p>
-
-              <div className="space-y-2 overflow-y-auto max-h-[16vh]">
-                <div
-                  onClick={handleActualGmailLogin}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 border border-gray-100 transition-all cursor-pointer shadow-sm bg-white"
-                >
-                  <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-inner">
-                    G
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-800">Continue with Google Account</p>
-                    <p className="text-xs text-gray-500">Tap to pick your account</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={handleActualGmailLogin}
-              className="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-sm transition-all hover:bg-blue-700 shadow-md cursor-pointer flex items-center justify-center gap-2"
-            >
-              Sign in with Google Account
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
-      }
+  }

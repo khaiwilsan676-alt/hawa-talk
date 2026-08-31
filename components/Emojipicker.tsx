@@ -1,84 +1,176 @@
 "use client";
 
-import React, { useState } from "react";
-import { Smile, Send } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
 
-export default function EmojiPicker({ onClose, onSelectEmoji }: { onClose: () => void, onSelectEmoji: (e: any) => void }) {
-  const [selectedEmoji, setSelectedEmoji] = useState("😊");
+interface EmojiPickerProps {
+  onClose?: () => void;
+  onSelectEmoji?: (emoji: { id: string; name: string; src: string }) => void;
+}
 
-  // Frequently used emojis
-  const emojis = [
-    "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣",
-    "🥹", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍",
-    "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝",
-    "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🥸", "🤩",
-    "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁",
-    "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭",
-    "😮‍💨", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵",
-    "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔"
-  ];
+function PausedGifItem({
+  src,
+  name,
+  onClick,
+}: {
+  src: string;
+  name: string;
+  onClick: () => void;
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = encodeURI(src);
+
+    img.onload = () => {
+      if (!isMounted || !canvasRef.current) return;
+      const canvas = canvasRef.current;
+      canvas.width = 120;
+      canvas.height = 120;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+    };
+
+    return () => {
+      isMounted = false;
+    };
+  }, [src]);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col justify-end bg-black/50 backdrop-blur-xs">
-      {/* 40vh Black Sheet Container */}
-      <div className="h-[40vh] w-full bg-black text-white flex flex-col justify-between rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3 pb-3">
-        
-        {/* 1. TOP HEADING */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
-          <div className="flex items-center gap-2">
-            <Smile className="w-5 h-5 text-yellow-400" />
-            <h2 className="text-base font-bold tracking-wide text-white">Emojis</h2>
-          </div>
-          {/* Close button (optional) */}
-          {onClose && (
-            <button 
-              onClick={onClose}
-              className="text-gray-400 hover:text-white text-xs px-2 py-1 rounded-md bg-white/5"
-            >
-              ✕
-            </button>
-          )}
-        </div>
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setIsPlaying(true)}
+      onMouseLeave={() => setIsPlaying(false)}
+      onTouchStart={() => setIsPlaying(true)}
+      onTouchEnd={() => setIsPlaying(false)}
+      className="w-full flex flex-col items-center justify-center gap-1.5 p-1 transition-transform active:scale-90 bg-transparent border-0 outline-none"
+    >
+      <div className="w-12 h-12 flex items-center justify-center relative">
+        <canvas
+          ref={canvasRef}
+          className={`w-full h-full object-contain pointer-events-none ${
+            isPlaying ? "hidden" : "block"
+          }`}
+        />
+        {isPlaying && (
+          <img
+            src={encodeURI(src)}
+            alt={name}
+            className="w-full h-full object-contain pointer-events-none select-none"
+          />
+        )}
+      </div>
+      <span className="text-[11px] font-medium text-white/90 text-center tracking-tight truncate w-full drop-shadow">
+        {name}
+      </span>
+    </button>
+  );
+}
 
-        {/* 2. EMOJI GRID AREA */}
-        <div className="flex-1 overflow-y-auto py-3 grid grid-cols-8 gap-2 place-items-center scrollbar-none">
-          {emojis.map((emoji, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setSelectedEmoji(emoji);
-                if (onSelectEmoji) onSelectEmoji(emoji);
-              }}
-              className={`text-2xl p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center ${
-                selectedEmoji === emoji
-                  ? "bg-blue-600/30 border border-blue-500 scale-110"
-                  : "hover:bg-white/10 border border-transparent"
-              }`}
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
+export default function EmojiPicker({ onClose, onSelectEmoji }: EmojiPickerProps) {
+  const [activeTab, setActiveTab] = useState<"emojis" | "premium">("emojis");
 
-        {/* 3. BOTTOM SEND BAR */}
-        <div className="flex items-center justify-between border-t border-white/10 pt-2">
-          <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full">
-            <span className="text-xs text-gray-400">Selected:</span>
-            <span className="text-lg">{selectedEmoji}</span>
-          </div>
+  const gifStickers = [
+    { id: "laugh", name: "Laugh", src: "/512.gif" },
+    { id: "sad", name: "Sad", src: "/512 (6).gif" },
+    { id: "love", name: "Sleep", src: "/512 (3).gif" },
+    { id: "thinking", name: "Thinking", src: "/512 (2).gif" },
+    { id: "party", name: "Party", src: "/512 (16).gif" },
+    { id: "loving", name: "Loving", src: "/512 (15).gif" },
+    { id: "smart", name: "Smart", src: "/512 (13).gif" },
+    { id: "irritating", name: "Irritating", src: "/512 (12).gif" },
+    { id: "rolling", name: "Rolling", src: "/512 (10).gif" },
+    { id: "unamused", name: "Unamused", src: "/512 (11).gif" },
+    { id: "pleading", name: "Pleading", src: "/512 (4).gif" },
+    { id: "hug", name: "Hug", src: "/512 (8).gif" },
+    { id: "kiss", name: "Kiss-R", src: "/512 (14).gif" },
+    { id: "Angery", name: " Angery", src: "/512 (1).gif" }, 
+  ];
 
-          {/* Send Button */}
+  const handleGifClick = (gif: { id: string; name: string; src: string }) => {
+    if (onSelectEmoji) {
+      onSelectEmoji(gif);
+    }
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-transparent pointer-events-none">
+      {/* Outside click area */}
+      <div 
+        className="flex-1 w-full pointer-events-auto" 
+        onClick={onClose} 
+        aria-hidden="true" 
+      />
+
+      {/* Bottom Sheet Modal */}
+      <div 
+        className="h-[42vh] w-full text-white flex flex-col justify-between rounded-none shadow-2xl px-4 pt-3 pb-4 pointer-events-auto relative overflow-hidden bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/1787514857468~2.jpg')",
+          backgroundColor: "#121212",
+        }}
+      >
+        <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+
+        {/* TOP MIDDLE TAB BAR ONLY (No bottom border line) */}
+        <div className="relative z-10 flex items-center justify-center gap-8 pb-2 flex-shrink-0">
           <button
-            onClick={() => console.log("Sent Emoji:", selectedEmoji)}
-            className="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs px-5 py-2 rounded-full shadow-lg shadow-blue-600/30 transition-all flex items-center gap-1.5"
+            type="button"
+            onClick={() => setActiveTab("emojis")}
+            className={`relative pb-1.5 text-sm font-bold transition-all ${
+              activeTab === "emojis" ? "text-white scale-105" : "text-white/60 hover:text-white/80"
+            }`}
           >
-            <span>Send</span>
-            <Send className="w-3.5 h-3.5" />
+            Emojis
+            {activeTab === "emojis" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full transition-all" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("premium")}
+            className={`relative pb-1.5 text-sm font-bold transition-all ${
+              activeTab === "premium" ? "text-white scale-105" : "text-white/60 hover:text-white/80"
+            }`}
+          >
+            Premium
+            {activeTab === "premium" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full transition-all" />
+            )}
           </button>
         </div>
 
+        {/* Content Body */}
+        <div className="relative z-10 flex-1 overflow-y-auto py-3 scrollbar-none">
+          {activeTab === "emojis" ? (
+            <div className="grid grid-cols-4 gap-y-4 gap-x-2 place-items-center">
+              {gifStickers.map((gif) => (
+                <PausedGifItem
+                  key={gif.id}
+                  src={gif.src}
+                  name={gif.name}
+                  onClick={() => handleGifClick(gif)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-white/70 text-xs font-semibold">
+              Premium Emojis Coming Soon
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-'use client' 
+'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ChevronRight, Copy, ArrowLeft } from 'lucide-react'
@@ -7,6 +7,13 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
+import { getUser, saveUser } from "../src/lib/googleSheets"
+import Wallet from './Wallet'
+import StorePage from './StorePage'
+import InviteFriends from './InviteFriends'
+import Family from './Family'
+import Level from './Level'
+import Medal from './Medal'
 import { saveFeedback, getUsers } from '../src/lib/googleSheet'
 
 // ============ IndexedDB Functions for User Data ============
@@ -25,7 +32,6 @@ const openUserDB = (): Promise<IDBDatabase> => {
       const db = request.result;
       if (!db.objectStoreNames.contains(USER_STORE)) {
         const userStore = db.createObjectStore(USER_STORE, { keyPath: 'uid' });
-        // Indexes for faster queries
         userStore.createIndex('name', 'name', { unique: false });
         userStore.createIndex('updatedAt', 'updatedAt', { unique: false });
       }
@@ -37,7 +43,6 @@ const openUserDB = (): Promise<IDBDatabase> => {
   });
 };
 
-// User data save karo IndexedDB mein (PERMANENT - with image and all data)
 const saveUserToDB = async (userData: any) => {
   try {
     const db = await openUserDB();
@@ -57,18 +62,11 @@ const saveUserToDB = async (userData: any) => {
     });
 
     db.close();
-    console.log('✅ User data IndexedDB mein save hua (PERMANENT):', {
-      name: completeUserData.name,
-      uid: completeUserData.uid,
-      hasPhoto: !!completeUserData.photo,
-      accountNumber: completeUserData.accountNumber
-    });
   } catch (error) {
     console.error('❌ User save error:', error);
   }
 };
 
-// User data load karo IndexedDB se (PERMANENT - no expiry)
 const loadUserFromDB = async (uid: string): Promise<any> => {
   try {
     const db = await openUserDB();
@@ -82,15 +80,6 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
     });
 
     db.close();
-    
-    if (userData) {
-      console.log('✅ IndexedDB se user data mila:', {
-        name: userData.name,
-        hasPhoto: !!userData.photo,
-        accountNumber: userData.accountNumber
-      });
-    }
-    
     return userData || null;
   } catch (error) {
     console.error('❌ User load error:', error);
@@ -98,48 +87,6 @@ const loadUserFromDB = async (uid: string): Promise<any> => {
   }
 };
 
-// All users data load karo (for debugging)
-const getAllUsersFromDB = async (): Promise<any[]> => {
-  try {
-    const db = await openUserDB();
-    const transaction = db.transaction([USER_STORE], 'readonly');
-    const store = transaction.objectStore(USER_STORE);
-
-    const allUsers = await new Promise<any[]>((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-
-    db.close();
-    return allUsers;
-  } catch (error) {
-    console.error('Get all users error:', error);
-    return [];
-  }
-};
-
-// Delete user from IndexedDB (only when app is deleted)
-const deleteUserFromDB = async (uid: string) => {
-  try {
-    const db = await openUserDB();
-    const transaction = db.transaction([USER_STORE], 'readwrite');
-    const store = transaction.objectStore(USER_STORE);
-    
-    await new Promise<void>((resolve, reject) => {
-      const request = store.delete(uid);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-
-    db.close();
-    console.log('🗑️ User data IndexedDB se delete hua');
-  } catch (error) {
-    console.error('Delete user error:', error);
-  }
-};
-
-// Feedback functions (unchanged)
 const saveFeedbackToDB = async (feedbackData: any) => {
   try {
     const db = await openUserDB();
@@ -153,29 +100,8 @@ const saveFeedbackToDB = async (feedbackData: any) => {
     });
 
     db.close();
-    console.log('Feedback IndexedDB mein save hua (offline)');
   } catch (error) {
     console.error('Feedback save error:', error);
-  }
-};
-
-const loadPendingFeedbacksFromDB = async (): Promise<any[]> => {
-  try {
-    const db = await openUserDB();
-    const transaction = db.transaction([FEEDBACK_STORE], 'readonly');
-    const store = transaction.objectStore(FEEDBACK_STORE);
-
-    const feedbacks = await new Promise<any[]>((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-
-    db.close();
-    return feedbacks.filter(fb => !fb.synced);
-  } catch (error) {
-    console.error('Feedback load error:', error);
-    return [];
   }
 };
 
@@ -249,33 +175,23 @@ const bottomMenuItems: MenuItem[] = [
   }
 ]
 
-// Official/Admin IDs list
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-// Feedback Types
-const FEEDBACK_TYPES = [
-  { id: 'app_bug', label: 'App Bug', icon: '' },
-  { id: 'suggestion', label: 'Suggestion', icon: '' },
-  { id: 'recharge', label: 'Recharge', icon: '' },
-  { id: 'others', label: 'Others', icon: '' }
-]
-
 export const getOrCreateAccountNumber = (uid: string) => {
-  if (!uid || uid === 'N/A') return { fullAccNum: 'N/A', displayAccNum: 'N/A' }
+  if (!uid || uid === 'N/A') return { fullAccNum: '', displayAccNum: '' }
 
-  // Check if it's an official or admin ID
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
     return { fullAccNum: uid, displayAccNum: uid }
   }
 
-  // Check stored account number first
-  const savedAcc = localStorage.getItem('accountNumber')
-  if (savedAcc) {
-    return { fullAccNum: savedAcc, displayAccNum: savedAcc }
+  if (typeof window !== 'undefined') {
+    const savedAcc = localStorage.getItem('accountNumber')
+    if (savedAcc) {
+      return { fullAccNum: savedAcc, displayAccNum: savedAcc }
+    }
   }
 
-  // Consistent 8-digit calculation based on UID
   let hash = 0
   for (let i = 0; i < uid.length; i++) {
     hash = (hash << 5) - hash + uid.charCodeAt(i)
@@ -284,10 +200,18 @@ export const getOrCreateAccountNumber = (uid: string) => {
   const positiveHash = Math.abs(hash)
   const generated = String(10000000 + (positiveHash % 90000000))
   
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('accountNumber', generated)
+  }
   return { fullAccNum: generated, displayAccNum: generated }
 }
 
-// WebGL Shader Component (unchanged)
+const isValidName = (val?: string | null): boolean => {
+  if (!val) return false;
+  const clean = val.trim().toLowerCase();
+  return clean !== '' && clean !== 'guest' && clean !== 'user' && clean !== 'null' && clean !== 'undefined';
+}
+
 const WhiteColorRemovalShader = ({ 
   imageSrc, 
   threshold = 0.9,
@@ -307,41 +231,29 @@ const WhiteColorRemovalShader = ({
     if (!canvas) return
 
     const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
-    if (!gl) {
-      console.warn('WebGL not supported')
-      return
-    }
+    if (!gl) return
 
-    // Vertex shader
     const vertexShaderSource = `
       attribute vec2 a_position;
       attribute vec2 a_texCoord;
       varying vec2 v_texCoord;
-      
       void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
         v_texCoord = a_texCoord;
       }
     `
 
-    // Fragment shader with white color removal
     const fragmentShaderSource = `
       precision mediump float;
-      
       varying vec2 v_texCoord;
       uniform sampler2D u_texture;
       uniform float u_threshold;
-      
       void main() {
         vec4 color = texture2D(u_texture, v_texCoord);
-        
-        // Calculate whiteness
         float maxColor = max(color.r, max(color.g, color.b));
         float minColor = min(color.r, min(color.g, color.b));
         float lightness = (maxColor + minColor) / 2.0;
         float saturation = maxColor - minColor;
-        
-        // If pixel is white (high lightness, low saturation), make it transparent
         if (lightness > u_threshold && saturation < 0.3) {
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
@@ -350,15 +262,12 @@ const WhiteColorRemovalShader = ({
       }
     `
 
-    // Compile shaders
     const compileShader = (type: number, source: string) => {
       const shader = gl.createShader(type)
       if (!shader) return null
       gl.shaderSource(shader, source)
       gl.compileShader(shader)
-      
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
         gl.deleteShader(shader)
         return null
       }
@@ -367,69 +276,39 @@ const WhiteColorRemovalShader = ({
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-    
     if (!vertexShader || !fragmentShader) return
 
-    // Create program
     const program = gl.createProgram()
     if (!program) return
-    
     gl.attachShader(program, vertexShader)
     gl.attachShader(program, fragmentShader)
     gl.linkProgram(program)
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program))
-      return
-    }
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return
 
     gl.useProgram(program)
 
-    // Setup geometry
     const positionBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    const positions = new Float32Array([
-      -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-      -1.0,  1.0,
-       1.0, -1.0,
-       1.0,  1.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW)
 
     const positionLocation = gl.getAttribLocation(program, 'a_position')
     gl.enableVertexAttribArray(positionLocation)
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // Setup texture coordinates - FLIP Y axis
     const texCoordBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    const texCoords = new Float32Array([
-      0.0, 1.0,  // Bottom-left
-      1.0, 1.0,  // Bottom-right
-      0.0, 0.0,  // Top-left
-      0.0, 0.0,  // Top-left
-      1.0, 1.0,  // Bottom-right
-      1.0, 0.0,  // Top-right
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]), gl.STATIC_DRAW)
 
     const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
     gl.enableVertexAttribArray(texCoordLocation)
     gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // Load and create texture
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
-    
-    // Set texture parameters
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    
-    // Enable blending for transparency
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
@@ -438,29 +317,18 @@ const WhiteColorRemovalShader = ({
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      
-      // Set threshold uniform
       const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
       gl.uniform1f(thresholdLocation, threshold)
-      
-      // Set canvas size to match image
       canvas.width = image.width
       canvas.height = image.height
       gl.viewport(0, 0, canvas.width, canvas.height)
-      
-      // Draw
       gl.clearColor(0.0, 0.0, 0.0, 0.0)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
-      
       setIsLoaded(true)
-    }
-    image.onerror = () => {
-      console.error('Failed to load image for WebGL processing')
     }
     image.src = imageSrc
 
-    // Cleanup
     return () => {
       gl.deleteProgram(program)
       gl.deleteShader(vertexShader)
@@ -488,14 +356,30 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [currentView, setCurrentView] = useState<'me' | 'settings' | 'public_profile' | 'customer_service' | 'language'>('me')
   const [appLang, setAppLang] = useState<LanguageCode>('en')
   
-  // Feedback States
   const [showFeedbackPage, setShowFeedbackPage] = useState(false)
+  const [showWallet, setShowWallet] = useState(false)
+  const [walletTab, setWalletTab] = useState<'coins' | 'diamond'>('coins')
+  const [showStore, setShowStore] = useState(false)
+  
+  const [showInviteFriends, setShowInviteFriends] = useState(false)
+  const [showFamily, setShowFamily] = useState(false)
+  const [showLevel, setShowLevel] = useState(false)
+  const [showMedal, setShowMedal] = useState(false)
 
   useEffect(() => {
     if (onPublicProfileChange) {
-      onPublicProfileChange(currentView !== 'me' || showFeedbackPage)
+      onPublicProfileChange(
+        currentView !== 'me' || 
+        showFeedbackPage || 
+        showWallet || 
+        showStore ||
+        showInviteFriends ||
+        showFamily ||
+        showLevel ||
+        showMedal
+      )
     }
-  }, [showFeedbackPage, currentView])
+  }, [showFeedbackPage, currentView, showWallet, showStore, showInviteFriends, showFamily, showLevel, showMedal])
   
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
@@ -522,23 +406,65 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const t = getTranslation(appLang)
 
-  const [user, setUser] = useState({
-    name: "",
-    uid: "",
-    accountNumber: "",
-    displayAccountNumber: "",
-    phone: "",
-    photo: "",
+  // Aggressive Local Storage & State Lock
+  const [user, setUser] = useState(() => {
+    if (typeof window === 'undefined') {
+      return { name: "", uid: "", accountNumber: "", displayAccountNumber: "", phone: "", photo: "" }
+    }
+    const uid = localStorage.getItem("userUID") || localStorage.getItem("userPhone") || localStorage.getItem("userId") || ""
+    const localName = localStorage.getItem("userName")
+    const validName = isValidName(localName) ? localName! : ""
+    const acc = localStorage.getItem("accountNumber") || (uid ? getOrCreateAccountNumber(uid).fullAccNum : "")
+    const photo = localStorage.getItem("userPhoto") || ""
+    const phone = localStorage.getItem("userPhone") || ""
+
+    return {
+      name: validName,
+      uid: uid,
+      accountNumber: acc,
+      displayAccountNumber: acc,
+      phone: phone,
+      photo: photo,
+    }
   })
+
+  // Poll localStorage continuously to instantly reflect edits made in PublicProfile/Edit Sheet
+  useEffect(() => {
+    const syncLocalInterval = setInterval(() => {
+      const currentStoredName = localStorage.getItem("userName") || "";
+      const currentStoredPhoto = localStorage.getItem("userPhoto") || "";
+      
+      setUser(prev => {
+        if (prev.name !== currentStoredName || prev.photo !== currentStoredPhoto) {
+          return {
+            ...prev,
+            name: isValidName(currentStoredName) ? currentStoredName : prev.name,
+            photo: currentStoredPhoto || prev.photo
+          };
+        }
+        return prev;
+      });
+    }, 500);
+
+    return () => clearInterval(syncLocalInterval);
+  }, []);
 
   const switchView = (view: 'me' | 'settings' | 'public_profile' | 'customer_service' | 'language') => {
     setCurrentView(view)
     if (onPublicProfileChange) {
-      onPublicProfileChange(view !== 'me' || showFeedbackPage)
+      onPublicProfileChange(
+        view !== 'me' || 
+        showFeedbackPage || 
+        showWallet || 
+        showStore || 
+        showInviteFriends || 
+        showFamily || 
+        showLevel || 
+        showMedal
+      )
     }
   }
 
-  // Handle Feedback Submit (unchanged)
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackError(null);
@@ -569,6 +495,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     try {
+      await addDoc(collection(db, "feedbacks"), feedbackData);
       // Google Sheets API mein save karo
       await saveFeedback(feedbackData);
       
@@ -580,7 +507,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
       setProblemDescription('');
       setContactInfo('');
       
-      // Auto close after 2 seconds
       setTimeout(() => {
         setShowFeedbackPage(false);
         setFeedbackSuccess(false);
@@ -601,10 +527,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           setShowFeedbackPage(false);
           setFeedbackSuccess(false);
         }, 2000);
-        
-        console.log('Feedback saved offline in IndexedDB');
       } catch (dbError) {
-        console.error('Failed to save feedback offline:', dbError);
         setFeedbackError("Failed to submit feedback. Please try again.");
       }
     } finally {
@@ -613,41 +536,72 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   };
 
   useEffect(() => {
+    const lockUserDataPermanently = async () => {
     const fetchUserData = async () => {
       try {
-        // Step 1: Get UID from localStorage
         const uid = localStorage.getItem("userUID") || 
                     localStorage.getItem("userPhone") || 
                     localStorage.getItem("userId") || 
                     "";
-        
-        console.log('🔍 User data fetch kar rahe hai, UID:', uid);
 
-        if (!uid || uid === "N/A") {
-          console.log('❌ No UID found');
-          setUser({
-            name: "",
-            uid: "N/A",
-            accountNumber: "",
-            displayAccountNumber: "",
-            phone: "",
-            photo: "",
-          });
+        if (!uid || uid === "N/A") return;
+
+        const cachedUser = await loadUserFromDB(uid);
+        if (cachedUser && (isValidName(cachedUser.name) || cachedUser.accountNumber || cachedUser.photo)) {
+          const localStoredName = localStorage.getItem("userName");
+          const finalName = isValidName(localStoredName) ? localStoredName! : (isValidName(cachedUser.name) ? cachedUser.name : "");
+          const finalPhoto = localStorage.getItem("userPhoto") || cachedUser.photo || "";
+
+          const lockedData = {
+            ...cachedUser,
+            name: finalName,
+            photo: finalPhoto,
+            accountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
+            displayAccountNumber: cachedUser.accountNumber || localStorage.getItem("accountNumber") || getOrCreateAccountNumber(uid).fullAccNum,
+          };
+          setUser(lockedData);
           return;
         }
 
-        // Step 2: Check IndexedDB FIRST (PERMANENT STORAGE)
-        const cachedUser = await loadUserFromDB(uid);
-        
-        if (cachedUser) {
-          console.log('✅ IndexedDB se data mila (PERMANENT):', {
-            name: cachedUser.name,
-            hasPhoto: !!cachedUser.photo,
-            accountNumber: cachedUser.accountNumber
-          });
-          setUser(cachedUser);
-        }
+        try {
+          const res = await getUser(uid);
+          const sheetData = res && (res.user || res.data || res);
+          
+          let resolvedName = localStorage.getItem("userName") || "";
+          let photo = localStorage.getItem("userPhoto") || "";
+          let phone = localStorage.getItem("userPhone") || "";
+          let accNum = localStorage.getItem("accountNumber") || "";
 
+          if (sheetData && (sheetData.id || sheetData.AppLongId || sheetData['App long ID'] || sheetData.Name || sheetData.name)) {
+            const sName = sheetData.name || sheetData.Name;
+            const sPhoto = sheetData.photo || sheetData.avatar || sheetData.Avtar || sheetData.image;
+            const sAcc = sheetData.accountId || sheetData.accountNumber || sheetData['Account Number'];
+            if (isValidName(sName) && !isValidName(resolvedName)) resolvedName = sName;
+            if (sPhoto && !photo) photo = sPhoto;
+            if (sAcc && !accNum) accNum = String(sAcc);
+          }
+
+          if (!accNum) {
+            accNum = getOrCreateAccountNumber(uid).fullAccNum;
+          }
+
+          const finalLockedUser = {
+            name: isValidName(resolvedName) ? resolvedName : "",
+            uid: uid,
+            accountNumber: accNum,
+            displayAccountNumber: accNum,
+            phone: phone,
+            photo: photo,
+          };
+
+          await saveUserToDB(finalLockedUser);
+          if (isValidName(finalLockedUser.name)) localStorage.setItem("userName", finalLockedUser.name);
+          if (accNum) localStorage.setItem("accountNumber", accNum);
+          if (photo) localStorage.setItem("userPhoto", photo);
+
+          setUser(finalLockedUser);
+        } catch (sheetError) {
+          console.warn('Google Sheets one-time read bypassed/failed:', sheetError);
         // Step 3: Google Sheets API se user sync
         try {
           let sheetUser: any = null;
@@ -712,15 +666,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         }
 
       } catch (error) {
-        console.error('❌ Error in fetchUserData:', error);
+        console.error('Error locking user data:', error);
       }
     };
 
+    lockUserDataPermanently();
+  }, []);
     fetchUserData();
   }, []); // Only run once when component mounts
 
   const handleCopyAccountNumber = () => {
-    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
+    if (user.displayAccountNumber) {
       navigator.clipboard.writeText(user.displayAccountNumber)
       alert("ID Copied to clipboard!")
     }
@@ -728,11 +684,17 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // Feedback Page View (unchanged)
+  // Early returns
+  if (showInviteFriends) return <InviteFriends onBack={() => setShowInviteFriends(false)} />
+  if (showFamily) return <Family onBack={() => setShowFamily(false)} />
+  if (showLevel) return <Level onBack={() => setShowLevel(false)} />
+  if (showMedal) return <Medal onBack={() => setShowMedal(false)} />
+  if (showWallet) return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
+  if (showStore) return <StorePage onBack={() => setShowStore(false)} />
+
   if (showFeedbackPage) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Header */}
+      <div className="min-h-screen bg-gray-50 flex flex-col pb-[8vh]">
         <div className="flex items-center p-4 bg-white border-b border-gray-200">
           <button
             onClick={() => {
@@ -750,7 +712,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           <h1 className="text-lg font-semibold text-gray-900 ml-3">{t.helpFeedback}</h1>
         </div>
 
-        {/* Content */}
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="max-w-md mx-auto">
             {feedbackSuccess ? (
@@ -761,7 +722,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
               </div>
             ) : (
               <form onSubmit={handleFeedbackSubmit} className="space-y-6">
-                {/* Type of Issue */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Type of Issue</h2>
                   <div className="grid grid-cols-2 gap-3">
@@ -787,7 +747,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 </div>
 
-                {/* Problem Description */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Problem Description</h2>
                   <div className="relative">
@@ -809,7 +768,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 </div>
 
-                {/* Contact Information */}
                 <div>
                   <h2 className="text-base font-semibold text-gray-800 mb-3">Contact Information</h2>
                   <input
@@ -821,14 +779,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   />
                 </div>
 
-                {/* Error Message */}
                 {feedbackError && (
                   <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
                     {feedbackError}
                   </div>
                 )}
 
-                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={feedbackSubmitting}
@@ -854,57 +810,45 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     );
   }
 
-  if (currentView === 'language') {
-    return <LanguagePage onBack={() => switchView('me')} />
-  }
+  if (currentView === 'language') return <LanguagePage onBack={() => switchView('me')} />
+  if (currentView === 'customer_service') return <HurrySupport onBack={() => switchView('me')} />
+  if (currentView === 'settings') return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
+  if (currentView === 'public_profile') return <PublicProfile onBack={() => switchView('me')} />
 
-  if (currentView === 'customer_service') {
-    return <HurrySupport onBack={() => switchView('me')} />
-  }
+  const lockedNameDisplay = isValidName(user.name) 
+    ? user.name 
+    : (user.displayAccountNumber ? user.displayAccountNumber : (user.uid ? user.uid.substring(0, 8) : ''));
 
-  if (currentView === 'settings') {
-    return <SettingPage onBack={() => switchView('me')} onLogout={onLogout} />
-  }
-
-  if (currentView === 'public_profile') {
-    return <PublicProfile onBack={() => switchView('me')} />
-  }
+  const lockedAvatarLetter = lockedNameDisplay ? lockedNameDisplay.charAt(0).toUpperCase() : '';
 
   return (
-    <div className="w-full min-h-screen bg-white">
-      {/* Profile Header */}
+    <div className="w-full min-h-screen bg-white pb-[8vh]">
       <div
-        className="px-4 pb-6 relative safe-top"
+        className="px-4 pb-4 relative safe-top"
         style={{
           background: 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
-          paddingTop: 'max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 24px)'
+          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 24px) + 24px)'
         }}
       >
-        {/* User Card */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            {/* Avatar with WebGL Shader Overlay */}
-            <div className="relative w-20 h-20 ml-1 shrink-0">
+            <div className="relative w-20 h-20 ml-3 shrink-0">
               {user.photo ? (
                 <img
                   src={user.photo}
                   className="w-20 h-20 rounded-full object-cover border-2 border-white/60 shadow-sm"
                   alt="Profile"
                   onError={(e) => {
-                    // Agar image load nahi ho to fallback dikhao
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
                 />
               ) : null}
               
-              {!user.photo && (
-                <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm">
-                  {user.name ? user.name.charAt(0).toUpperCase() : "?"}
-                </div>
-              )}
+              <div className={`w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center text-4xl text-white font-bold border-2 border-white/60 shadow-sm ${user.photo ? 'hidden' : ''}`}>
+                {lockedAvatarLetter}
+              </div>
               
-              {/* WebGL Shader Overlay - FULL OVERLAP */}
               <div className="absolute inset-0 pointer-events-none">
                 <WhiteColorRemovalShader
                   imageSrc="/1786867564769.png"
@@ -923,12 +867,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             </div>
 
             <div className="flex flex-col">
-              {/* Name */}
               <h2 className="text-2xl font-bold text-gray-900 mb-0.5">
-                {user.name || "User"}
+                {lockedNameDisplay}
               </h2>
 
-              {/* Account Number Display */}
               <div className="flex items-center gap-1 mt-1">
                 {isSpecialUID ? (
                   <div className="relative inline-block w-22">
@@ -938,16 +880,18 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       className="absolute inset-0 w-full h-full object-contain rounded-md"
                     />
                     <p className="relative text-white font-bold px-3 py-1.5 z-10 text-xs" style={{ paddingLeft: '30px' }}>
-                      {user.accountNumber}
+                      {user.accountNumber || user.displayAccountNumber}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-gray-700 text-xs font-semibold">
-                    ID: {user.displayAccountNumber || "N/A"}
-                  </p>
+                  (user.displayAccountNumber || user.accountNumber) && (
+                    <p className="text-gray-700 text-xs font-semibold">
+                      ID: {user.displayAccountNumber || user.accountNumber}
+                    </p>
+                  )
                 )}
 
-                {user.accountNumber && user.accountNumber !== 'N/A' && (
+                {(user.accountNumber || user.displayAccountNumber) && (
                   <button
                     onClick={handleCopyAccountNumber}
                     className="text-gray-600 hover:text-blue-900 transition-colors p-1 cursor-pointer"
@@ -966,7 +910,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
             </div>
           </div>
 
-          {/* Top Right Arrow - View Public Profile */}
           <button
             onClick={() => switchView('public_profile')}
             className="p-2 hover:bg-white/20 rounded-full transition-colors mt-2 cursor-pointer"
@@ -976,7 +919,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">1</div>
@@ -992,16 +934,27 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </div>
         </div>
 
-        {/* Banner Images */}
-        <div className="flex gap-1 mt-6">
-          <div className="flex-1 rounded-lg overflow-hidden">
+        <div className="flex gap-1 mt-4">
+          <div 
+            className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
+            onClick={() => {
+              setWalletTab('coins');
+              setShowWallet(true);
+            }}
+          >
             <img
               src="/1784480382765~2.jpg"
               alt="Feature 1"
               className="w-full h-14 object-cover"
             />
           </div>
-          <div className="flex-1 rounded-lg overflow-hidden">
+          <div 
+            className="flex-1 rounded-lg overflow-hidden cursor-pointer active:scale-95 transition-transform"
+            onClick={() => {
+              setWalletTab('diamond');
+              setShowWallet(true);
+            }}
+          >
             <img
               src="/1784480368941~2.jpg"
               alt="Feature 2"
@@ -1011,12 +964,20 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Main Menu Items */}
-      <div className="px-4 mt-1">
+      <div className="px-4 mt-0.5">
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {menuItems.map((item, index) => (
             <div key={item.id}>
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+              <div 
+                className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  if (item.id === '1') setShowInviteFriends(true);
+                  else if (item.id === '2') setShowFamily(true);
+                  else if (item.id === '3') setShowLevel(true);
+                  else if (item.id === '4') setShowMedal(true);
+                  else if (item.id === '5') setShowStore(true);
+                }}
+              >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
@@ -1046,7 +1007,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Bottom Menu Items */}
       <div className="px-4 mt-4 mb-6">
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {bottomMenuItems.map((item, index) => (
@@ -1085,7 +1045,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      {/* Recharge Event Floating Card */}
       <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">
         <div className="text-center text-sm">
           <div className="text-2xl mb-1"></div>
