@@ -10,8 +10,7 @@ import {
   Mic
 } from 'lucide-react'
 import WhiteColorRemovalShader from './WhiteColorRemovalShader'
-import { db } from '../src/lib/firebase'
-import { doc, onSnapshot } from 'firebase/firestore'
+import { getUser } from '../src/lib/googleSheets'
 
 // ============ Green Color Removal Shader Component ============
 const GreenColorRemovalShader = ({ 
@@ -28,224 +27,125 @@ const GreenColorRemovalShader = ({
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || !imageSrc) return
 
-    const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
-    if (!gl) {
-      console.warn('WebGL not supported')
-      return
-    }
+    const img = new Image()
+    img.crossOrigin = "Anonymous"
+    img.src = imageSrc
 
-    const vertexShaderSource = `
-      attribute vec2 a_position;
-      attribute vec2 a_texCoord;
-      varying vec2 v_texCoord;
-      
-      void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
-        v_texCoord = a_texCoord;
-      }
-    `
+    img.onload = () => {
+      canvas.width = img.width
+      canvas.height = img.height
 
-    const fragmentShaderSource = `
-      precision mediump float;
-      
-      varying vec2 v_texCoord;
-      uniform sampler2D u_texture;
-      
-      void main() {
-        vec4 color = texture2D(u_texture, v_texCoord);
-        
-        // Detect green background (high green, low red and blue)
-        if (color.g > 0.25 && color.g > color.r * 1.3 && color.g > color.b * 1.3) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); // Make transparent
-        } else {
-          gl_FragColor = color;
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      ctx.drawImage(img, 0, 0)
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const data = imageData.data
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+
+        if (g > 100 && g > r * 1.3 && g > b * 1.3) {
+          data[i + 3] = 0
         }
       }
-    `
 
-    const compileShader = (type: number, source: string) => {
-      const shader = gl.createShader(type)
-      if (!shader) return null
-      gl.shaderSource(shader, source)
-      gl.compileShader(shader)
-      
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', gl.getShaderInfoLog(shader))
-        gl.deleteShader(shader)
-        return null
-      }
-      return shader
-    }
-
-    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
-    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-    
-    if (!vertexShader || !fragmentShader) return
-
-    const program = gl.createProgram()
-    if (!program) return
-    
-    gl.attachShader(program, vertexShader)
-    gl.attachShader(program, fragmentShader)
-    gl.linkProgram(program)
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program))
-      return
-    }
-
-    gl.useProgram(program)
-
-    const positionBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    const positions = new Float32Array([
-      -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-      -1.0,  1.0,
-       1.0, -1.0,
-       1.0,  1.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
-
-    const positionLocation = gl.getAttribLocation(program, 'a_position')
-    gl.enableVertexAttribArray(positionLocation)
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
-
-    const texCoordBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    const texCoords = new Float32Array([
-      0.0, 1.0,
-      1.0, 1.0,
-      0.0, 0.0,
-      0.0, 0.0,
-      1.0, 1.0,
-      1.0, 0.0,
-    ])
-    gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW)
-
-    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
-    gl.enableVertexAttribArray(texCoordLocation)
-    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
-
-    const texture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-    
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    
-    gl.enable(gl.BLEND)
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-
-    const image = new Image()
-    image.crossOrigin = 'anonymous'
-    image.onload = () => {
-      gl.bindTexture(gl.TEXTURE_2D, texture)
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      
-      canvas.width = image.width
-      canvas.height = image.height
-      gl.viewport(0, 0, canvas.width, canvas.height)
-      
-      gl.clearColor(0.0, 0.0, 0.0, 0.0)
-      gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.drawArrays(gl.TRIANGLES, 0, 6)
-      
+      ctx.putImageData(imageData, 0, 0)
       setIsLoaded(true)
     }
-    image.onerror = () => {
-      console.error('Failed to load image for WebGL processing')
-    }
-    image.src = imageSrc
 
-    return () => {
-      gl.deleteProgram(program)
-      gl.deleteShader(vertexShader)
-      gl.deleteShader(fragmentShader)
-      gl.deleteBuffer(positionBuffer)
-      gl.deleteBuffer(texCoordBuffer)
-      gl.deleteTexture(texture)
+    img.onerror = () => {
+      console.warn("Failed to load green removal shader image:", imageSrc)
     }
   }, [imageSrc])
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={className}
-      style={{
-        ...style,
-        opacity: isLoaded ? 1 : 0,
-        transition: 'opacity 0.3s ease-in-out'
-      }}
-    />
+    <div className={`relative inline-block ${className}`} style={style}>
+      {!isLoaded && (
+        <img
+          src={imageSrc}
+          alt="loading"
+          className="w-full h-full object-contain absolute inset-0"
+        />
+      )}
+      <canvas
+        ref={canvasRef}
+        className={`w-full h-full object-contain ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
   )
 }
 
 interface RoomProfileProps {
   user: {
-    id?: string
     uid?: string
+    id?: string
     accountId?: string
     name: string
-    image: string
-    gender?: string
-    age?: number
     country?: string
-    flag?: string
-    followers?: number
-    bio?: string
-    isFollowing?: boolean
-    isOnline?: boolean
-    isInSeat?: boolean
-    isMuted?: boolean
-    isLocked?: boolean
+    image?: string
   }
-  isCurrentUser?: boolean
-  isRoomOwner?: boolean
   onClose: () => void
-  onCopyId?: () => void
-  onLeaveSeat?: () => void
-  onMention?: (username?: string) => void
-  onFollow?: () => void
-  onMessage?: () => void
-  onThirdAction?: () => void
-  onMute?: () => void
+  onMuteToggle?: () => void
   onLock?: () => void
-  onKickOut?: () => void
+  isRoomOwner?: boolean
+  isSeatOwner?: boolean
+  hasSeat?: boolean
+  seatNumber?: number
 }
 
-export default function RoomProfile({ 
-  user, 
-  isCurrentUser = false,
-  isRoomOwner = false,
-  onClose, 
-  onCopyId,
-  onLeaveSeat,
-  onMention,
-  onFollow,
-  onMessage,
-  onThirdAction,
-  onMute,
+// Country Options
+const COUNTRIES = [
+  { code: 'IN', name: 'India', flag: '🇮🇳' },
+  { code: 'US', name: 'United States', flag: '🇺🇸' },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
+  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
+  { code: 'PK', name: 'Pakistan', flag: '🇵🇰' },
+  { code: 'BD', name: 'Bangladesh', flag: '🇧🇩' },
+  { code: 'NP', name: 'Nepal', flag: '🇳🇵' },
+  { code: 'LK', name: 'Sri Lanka', flag: '🇱🇰' },
+  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
+  { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
+  { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
+  { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
+  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
+  { code: 'CN', name: 'China', flag: '🇨🇳' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+  { code: 'FR', name: 'France', flag: '🇫🇷' },
+  { code: 'IT', name: 'Italy', flag: '🇮🇹' },
+  { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
+  { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
+  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+  { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
+  { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
+  { code: 'RU', name: 'Russia', flag: '🇷🇺' },
+  { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
+  { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
+]
+
+export default function RoomProfile({
+  user,
+  onClose,
+  onMuteToggle,
   onLock,
-  onKickOut
+  isRoomOwner = false,
+  isSeatOwner = false,
+  hasSeat = false,
+  seatNumber
 }: RoomProfileProps) {
-  // Default values
-  const displayName = user.name || 'User'
-  const displayImage = user.image || '/default-avatar.png'
-  const displayGender = user.gender || '♂'
-  const displayAge = user.age || 24
-  const displayCountry = user.country || 'India'
-  const displayFlag = user.flag || '🇮🇳'
-  const followers = user.followers || 0
-  const isOnline = user.isOnline !== undefined ? user.isOnline : true
-  const isInSeat = user.isInSeat !== undefined ? user.isInSeat : false
-  const isFollowing = user.isFollowing || false
-  const isMuted = user.isMuted || false
-  const isLocked = user.isLocked || false
+  const [copied, setCopied] = useState(false)
+
+  const displayAccountId = user.accountId || user.id || '100001'
+  const displayCountry = user.country || '🇮🇳'
 
   // Tag states
   const [tags, setTags] = useState({
@@ -255,417 +155,165 @@ export default function RoomProfile({
     premiumTag: false,
   })
 
-  // Fetch tags from Firestore
+  // Fetch tags from Google Sheets
   useEffect(() => {
     const uid = user.uid || user.id || user.accountId
     if (!uid || uid === 'N/A' || uid === 'User') return
 
-    let unsubscribe: (() => void) | undefined
-
     const fetchTags = async () => {
       try {
-        const userDocRef = doc(db, 'users', uid)
-        unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data()
-            setTags({
-              adminTag: data.adminTag || false,
-              officialTag: data.officialTag || false,
-              vipTag: data.vipTag || false,
-              premiumTag: data.premiumTag || false,
-            })
-          } else {
-            // Try globalRooms if not in users
-            const globalRoomRef = doc(db, 'globalRooms', uid)
-            const unsub2 = onSnapshot(globalRoomRef, (roomSnap) => {
-              if (roomSnap.exists()) {
-                const data = roomSnap.data()
-                setTags({
-                  adminTag: data.adminTag || false,
-                  officialTag: data.officialTag || false,
-                  vipTag: data.vipTag || false,
-                  premiumTag: data.premiumTag || false,
-                })
-              } else {
-                // Default to false
-                setTags({
-                  adminTag: false,
-                  officialTag: false,
-                  vipTag: false,
-                  premiumTag: false,
-                })
-              }
-            })
-            return () => unsub2()
-          }
-        })
+        const res = await getUser(uid)
+        const data = res && (res.user || res.data || res)
+        if (data) {
+          setTags({
+            adminTag: Boolean(data.adminTag),
+            officialTag: Boolean(data.officialTag),
+            vipTag: Boolean(data.vipTag),
+            premiumTag: Boolean(data.premiumTag),
+          })
+        }
       } catch (err) {
-        console.warn('Error fetching tags in RoomProfile:', err)
-        setTags({
-          adminTag: false,
-          officialTag: false,
-          vipTag: false,
-          premiumTag: false,
-        })
+        console.error("Error fetching tags from Google Sheets:", err)
       }
     }
 
     fetchTags()
+  }, [user])
 
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [user.uid, user.id, user.accountId])
-
-  // Check if any tags are assigned
-  const hasAnyTag = tags.adminTag || tags.officialTag || tags.vipTag || tags.premiumTag
-
-  // Get user ID correctly
-  const getUserId = () => {
-    const possibleIds = [
-      user.accountId,
-      user.id,
-      user.uid,
-    ]
-    
-    const id = possibleIds.find(val => val && val.trim() !== '')
-    
-    return id || 'User'
-  }
-
-  const accountId = getUserId()
-
-  const handleCopyId = () => {
-    if (accountId && accountId !== 'N/A' && accountId !== 'User') {
-      navigator.clipboard.writeText(accountId)
-      if (onCopyId) onCopyId()
-    }
-  }
-
-  const handleLeaveSeat = () => {
-    if (onLeaveSeat) onLeaveSeat()
-  }
-
-  const handleMention = () => {
-    if (onMention) onMention(displayName)
-  }
-
-  // Determine gender color
-  const getGenderColor = (gender: string) => {
-    const lowerGender = gender.toLowerCase()
-    if (lowerGender === 'male' || lowerGender === 'm' || lowerGender === '♂') {
-      return 'bg-blue-500'
-    } else if (lowerGender === 'female' || lowerGender === 'f' || lowerGender === '♀') {
-      return 'bg-pink-500'
-    }
-    return 'bg-gray-500'
-  }
-
-  const genderColor = getGenderColor(displayGender)
-
-  // Determine what to show
-  const showLeaveSeat = isCurrentUser && isInSeat
-  const showModerationRow = isRoomOwner && !isCurrentUser
-  const showActions = !isCurrentUser // Show actions for all other users
-
-  // Determine sheet height based on content
-  const getSheetHeight = () => {
-    // If both actions and moderation are shown
-    if (showActions && showModerationRow) {
-      return '40vh'
-    }
-    // If only actions (follow, chat, image) without moderation
-    if (showActions && !showModerationRow) {
-      return '32vh'
-    }
-    // If only leave seat button
-    if (showLeaveSeat) {
-      return '34vh'
-    }
-    // If no options at all
-    return '27vh'
+  const copyId = () => {
+    navigator.clipboard.writeText(displayAccountId)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* Transparent Backdrop */}
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div 
-        className="absolute inset-0 bg-transparent"
-        onClick={onClose}
-      />
-      
-      {/* Bottom Sheet - Dynamic height based on content */}
-      <div 
-        className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up"
-        style={{ 
-          height: getSheetHeight(), 
-          minHeight: getSheetHeight(), 
-          maxHeight: getSheetHeight(),
-          overflow: 'visible'
-        }}
+        className="bg-white/95 backdrop-blur-md w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl border border-white/20 relative animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Avatar - Positioned above the sheet */}
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-30">
-          <div className="relative w-22 h-22">
-            {/* Base Avatar */}
-            <img 
-              src={displayImage} 
-              alt={displayName}
-              className="w-full h-full object-cover rounded-full border-4 border-white shadow-xl bg-gray-100"
-              style={{
-                position: 'relative',
-                zIndex: 1,
-              }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/default-avatar.png'
-              }}
-            />
-            
-            {/* WebGL Shader Overlay - Size increased */}
-            <div 
-              className="absolute pointer-events-none"
-              style={{
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '150%',
-                height: '150%',
-                zIndex: 2,
-              }}
-            >
-              <WhiteColorRemovalShader
-                imageSrc="/1786867564769.png"
-                threshold={0.85}
-                className="w-full h-full"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                }}
+        {/* Background Header Decoration */}
+        <div className="h-24 bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-500 relative">
+          <div className="absolute inset-0 bg-black/10" />
+        </div>
+
+        {/* User Content */}
+        <div className="px-5 pb-5 pt-0 relative flex flex-col items-center text-center">
+
+          {/* Avatar Container */}
+          <div className="relative -mt-12 mb-2">
+            <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden bg-slate-100 relative">
+              <img
+                src={user.image || '/default-avatar.png'}
+                alt={user.name}
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
-        </div>
 
-        {/* Top Left - Warning Icon */}
-        <div className="absolute top-3 left-4 z-30">
-          <button
-            className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Warning"
-          >
-            <AlertTriangle size={22} className="text-gray-700" strokeWidth={2.5} />
-          </button>
-        </div>
-
-        {/* Top Right - @ Mention Icon */}
-        <div className="absolute top-3 right-4 z-30">
-          <button
-            onClick={handleMention}
-            className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Mention user"
-          >
-            <AtSign size={22} className="text-gray-700" strokeWidth={2.5} />
-          </button>
-        </div>
-
-        {/* Content - No scroll */}
-        <div className="flex flex-col items-center px-4 pt-14 pb-3 h-full">
-          {/* User Info */}
-          <div className="text-center w-full shrink-0">
-            {/* Row 1: Name + Gender Tag */}
-            <div className="flex items-center justify-center gap-2">
-              <h3 className="text-lg font-bold text-gray-900">
-                {displayName}
-              </h3>
-              <span className={`px-2 py-0.5 ${genderColor} text-white text-xs font-medium rounded-full`}>
-                {displayGender} {displayAge}
-              </span>
-            </div>
-
-            {/* Row 2: Tags - ONLY show if assigned from Owner Panel */}
-            {hasAnyTag && (
-              <div className="flex items-center justify-center gap-0.5 mt-1.5 w-auto flex-wrap">
-                {/* Admin Tag with Green Removal */}
-                {tags.adminTag && (
-                  <GreenColorRemovalShader
-                    imageSrc="/1788021461820~2.jpg"
-                    className="h-8 w-auto object-contain"
-                  />
-                )}
-                
-                {/* Official Tag with Green Removal */}
-                {tags.officialTag && (
-                  <GreenColorRemovalShader
-                    imageSrc="/1788021468845~2.jpg"
-                    className="h-8 w-auto object-contain"
-                  />
-                )}
-                
-                {/* VIP Tag */}
-                {tags.vipTag && (
-                  <img src="/1785469775751.png" alt="VIP" className="h-6 w-auto object-contain" />
-                )}
-                
-                {/* Premium Tag */}
-                {tags.premiumTag && (
-                  <img src="/1785469365805.png" alt="Premium" className="h-6 w-auto object-contain" />
-                )}
+          {/* Tags Display */}
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap justify-center min-h-[32px]">
+            {tags.adminTag && (
+              <div className="h-8 relative inline-block">
+                <GreenColorRemovalShader
+                  imageSrc="/1788021461820~2.jpg"
+                  className="h-full w-auto"
+                />
               </div>
             )}
-
-            {/* Row 3: Level Badge + Additional Image */}
-            <div className="flex items-center justify-center gap-0.5 mt-1.5">
-              <div className="relative inline-flex items-center">
-                <img 
-                  src="/1785137410522.png" 
-                  alt="Level" 
-                  className="h-6 w-auto object-contain"
+            {tags.officialTag && (
+              <div className="h-8 relative inline-block">
+                <GreenColorRemovalShader
+                  imageSrc="/1788021468845~2.jpg"
+                  className="h-full w-auto"
                 />
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm pl-2">
-                  Lv.1
-                </span>
               </div>
-              <img src="/1785486414756.png" alt="" className="h-6 w-auto object-contain" />
-            </div>
-
-            {/* Row 4: ID | Fans | Flag */}
-            <div className="flex items-center justify-center gap-2 mt-1.5 text-sm">
-              {/* ID with Copy */}
-              <div className="flex items-center gap-1">
-                <span className="text-gray-500">ID:</span>
-                <span className="text-gray-700 font-medium">{accountId}</span>
-                {accountId !== 'N/A' && accountId !== 'User' && (
-                  <button
-                    onClick={handleCopyId}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-0.5"
-                    aria-label="Copy ID"
-                  >
-                    <Copy size={14} strokeWidth={2} />
-                  </button>
-                )}
+            )}
+            {tags.vipTag && (
+              <div className="h-8 relative inline-block">
+                <WhiteColorRemovalShader
+                  imageSrc="/1785469775751.png"
+                  className="h-full w-auto"
+                />
               </div>
-
-              <span className="text-gray-300">|</span>
-
-              {/* Fans */}
-              <div className="flex items-center gap-1">
-                <span className="text-gray-700 font-medium">{followers}</span>
-                <span className="text-gray-500">Fans</span>
+            )}
+            {tags.premiumTag && (
+              <div className="h-8 relative inline-block">
+                <WhiteColorRemovalShader
+                  imageSrc="/1785469784333.png"
+                  className="h-full w-auto"
+                />
               </div>
-
-              <span className="text-gray-300">|</span>
-
-              {/* Flag only */}
-              <div className="flex items-center">
-                {displayFlag && (
-                  <span className="text-base">{displayFlag}</span>
-                )}
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Blue Leave Button - Only for current user in seat */}
-          {showLeaveSeat && (
-            <div className="mt-3 w-full px-2 shrink-0">
-              <button
-                onClick={handleLeaveSeat}
-                className="w-full h-12 rounded-full bg-blue-500 text-white font-semibold text-base shadow-md shadow-blue-200 hover:bg-blue-600 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
-              >
-                <div className="relative flex items-center justify-center">
-                  <Mic size={20} strokeWidth={2.5} className="text-white" />
-                  <span className="absolute -bottom-1 -right-1 text-[11px] font-bold text-white">↓</span>
-                </div>
-                <span>Leave</span>
-              </button>
-            </div>
-          )}
+          {/* User Name & Country */}
+          <div className="flex items-center gap-1.5 justify-center mb-1">
+            <h2 className="text-lg font-bold text-slate-800 leading-tight">
+              {user.name}
+            </h2>
+            <span className="text-base">{displayCountry}</span>
+          </div>
 
-          {/* Action Buttons for OTHER users */}
-          {showActions && (
-            <div className="mt-3 w-full flex flex-col gap-2 shrink-0">
-              {/* Row: Follow, Chat, Image */}
-              <div className="flex items-center gap-6 w-full justify-center">
+          {/* ID with Copy */}
+          <button
+            onClick={copyId}
+            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 text-[11px] font-medium transition mb-4 cursor-pointer"
+          >
+            <span>ID: {displayAccountId}</span>
+            <Copy className="w-3 h-3" />
+            {copied && <span className="text-green-600 font-bold ml-1">Copied!</span>}
+          </button>
+
+          {/* Action Buttons Row 1 (Socials) */}
+          <div className="grid grid-cols-3 gap-2 w-full mb-3">
+            <button className="flex items-center justify-center gap-1 py-2 px-2 bg-pink-50 hover:bg-pink-100 text-pink-600 rounded-xl text-xs font-semibold transition cursor-pointer">
+              <Heart className="w-3.5 h-3.5" />
+              <span>Follow</span>
+            </button>
+            <button className="flex items-center justify-center gap-1 py-2 px-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-semibold transition cursor-pointer">
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>Chat</span>
+            </button>
+            <button className="flex items-center justify-center gap-1 py-2 px-2 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-xl text-xs font-semibold transition cursor-pointer">
+              <AtSign className="w-3.5 h-3.5" />
+              <span>@ Mention</span>
+            </button>
+          </div>
+
+          {/* Action Buttons Row 2 (Seat Controls if Room/Seat Owner) */}
+          {(isRoomOwner || isSeatOwner) && hasSeat && (
+            <div className="grid grid-cols-2 gap-2 w-full mb-3 border-t border-slate-100 pt-3">
+              {onMuteToggle && (
                 <button
-                  onClick={onFollow}
-                  className="flex items-center gap-1.5 text-pink-500 font-medium text-base hover:text-pink-600 transition-colors active:scale-95"
+                  onClick={onMuteToggle}
+                  className="flex items-center justify-center gap-1 py-2 px-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-xs font-semibold transition cursor-pointer"
                 >
-                  <Heart size={20} className="fill-pink-500" />
-                  <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>Mute Mic</span>
                 </button>
-
+              )}
+              {onLock && (
                 <button
-                  onClick={onMessage}
-                  className="flex items-center gap-1.5 text-gray-700 font-medium text-base hover:text-gray-900 transition-colors active:scale-95"
+                  onClick={onLock}
+                  className="flex items-center justify-center gap-1 py-2 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-semibold transition cursor-pointer"
                 >
-                  <MessageCircle size={20} />
-                  <span>Chat</span>
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Lock Seat</span>
                 </button>
-
-                <button
-                  onClick={onThirdAction}
-                  className="flex items-center gap-1.5 group active:scale-95 transition-all"
-                  aria-label="Additional action"
-                >
-                  <img 
-                    src="/file_000000008e508208b1353ae33e2abef9.png" 
-                    alt="Action" 
-                    className="w-8 h-8 object-contain rounded-full group-hover:scale-110 transition-transform"
-                  />
-                </button>
-              </div>
-
-              {/* Moderation row - Only for room owner viewing other users */}
-              {showModerationRow && (
-                <div className="flex items-center justify-around w-full py-1 text-gray-500 text-sm font-medium">
-                  <button 
-                    onClick={onMute}
-                    className="hover:text-gray-800 transition-colors py-0.5 px-2"
-                  >
-                    {isMuted ? 'Unmute' : 'Mute'}
-                  </button>
-                  <span className="text-gray-300">|</span>
-                  <button 
-                    onClick={onLeaveSeat}
-                    className="hover:text-gray-800 transition-colors py-0.5 px-2"
-                  >
-                    Leave
-                  </button>
-                  <span className="text-gray-300">|</span>
-                  <button 
-                    onClick={onLock}
-                    className="hover:text-gray-800 transition-colors py-0.5 px-2"
-                  >
-                    {isLocked ? 'Unlock' : 'Lock'}
-                  </button>
-                  <span className="text-gray-300">|</span>
-                  <button 
-                    onClick={onKickOut}
-                    className="hover:text-red-600 transition-colors py-0.5 px-2"
-                  >
-                    Kick out
-                  </button>
-                </div>
               )}
             </div>
           )}
+
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+          >
+            Close
+          </button>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes slideUp {
-          from {
-            transform: translateY(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-up {
-          animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-      `}</style>
     </div>
   )
-    }
+}

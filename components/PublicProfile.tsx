@@ -13,8 +13,7 @@ import {
   MessageCircle,
   MoreHorizontal,
 } from 'lucide-react'
-import { db } from '../src/lib/firebase'
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
+import { getUser, saveUser, updateUser, updateRoom } from '../src/lib/googleSheets'
 
 // Import the WebRTC ChatScreen component
 import ChatScreen from './ChatScreen' // adjust path if necessary
@@ -39,137 +38,125 @@ const openProfileDB = (): Promise<IDBDatabase> => {
   });
 };
 
-// Save complete profile data to IndexedDB
 const saveProfileToDB = async (profileData: any) => {
   try {
     const db = await openProfileDB();
     const transaction = db.transaction([PROFILE_STORE], 'readwrite');
     const store = transaction.objectStore(PROFILE_STORE);
-    
-    const completeData = {
-      ...profileData,
-      cachedAt: Date.now(),
-      lastUpdated: new Date().toISOString(),
-    };
+    store.put(profileData);
 
-    await new Promise<void>((resolve, reject) => {
-      const request = store.put(completeData);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+    return new Promise((resolve) => {
+      transaction.oncomplete = () => {
+        db.close();
+        resolve(true);
+      };
     });
-
-    db.close();
   } catch (error) {
-    console.error('❌ Profile save error:', error);
+    console.error('Error saving profile to IndexedDB:', error);
   }
 };
 
-// Load profile data from IndexedDB
-const loadProfileFromDB = async (uid: string): Promise<any> => {
+const loadProfileFromDB = async (uid: string): Promise<any | null> => {
   try {
     const db = await openProfileDB();
     const transaction = db.transaction([PROFILE_STORE], 'readonly');
     const store = transaction.objectStore(PROFILE_STORE);
+    const request = store.get(uid);
 
-    const profileData = await new Promise<any>((resolve, reject) => {
-      const request = store.get(uid);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+    return new Promise((resolve) => {
+      request.onsuccess = () => {
+        db.close();
+        resolve(request.result || null);
+      };
+      request.onerror = () => {
+        db.close();
+        resolve(null);
+      };
     });
-
-    db.close();
-    return profileData || null;
   } catch (error) {
-    console.error('❌ Profile load error:', error);
+    console.error('Error loading profile from IndexedDB:', error);
     return null;
   }
 };
 
-export interface TargetUser {
-  id?: string
-  uid?: string
-  name?: string
-  displayAccountNumber?: string
-  accountId?: string
-  photo?: string
-  image?: string
-  coverPhoto?: string
-  gender?: string
-  age?: number | string
-  followers?: number
-  bio?: string
-  location?: string
-  country?: string
-  countryCode?: string
-  flag?: string
-  officialTag?: boolean
-  adminTag?: boolean
-  vipTag?: boolean
-  premiumTag?: boolean
+interface UserProfile {
+  uid: string
+  name: string
+  displayAccountNumber: string
+  photo: string
+  coverPhoto: string
+  gender: '♂' | '♀'
+  age: number
+  followers: number
+  bio: string
+  location: string
+  flag: string
+  countryCode: string
+  albumImages: string[]
+  officialTag?: string
+  adminTag?: string
+  vipTag?: string
+  premiumTag?: string
 }
 
 interface PublicProfileProps {
   onBack?: () => void
   onJoinRoom?: (roomId: string) => void
-  isOtherUser?: boolean
-  targetUser?: TargetUser | null
+  targetUser?: {
+    uid: string;
+    name?: string;
+    photo?: string;
+    accountNumber?: string;
+  } | null;
 }
 
-const COUNTRIES = [
-  { code: 'IN', name: 'India', flag: '🇮🇳' },
-  { code: 'US', name: 'United States', flag: '🇺🇸' },
-  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
-  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
-  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
-  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: 'PK', name: 'Pakistan', flag: '🇵🇰' },
-  { code: 'BD', name: 'Bangladesh', flag: '🇧🇩' },
-  { code: 'NP', name: 'Nepal', flag: '🇳🇵' },
-  { code: 'LK', name: 'Sri Lanka', flag: '🇱🇰' },
-  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
-  { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
-  { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
-  { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
-  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
-  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
-  { code: 'CN', name: 'China', flag: '🇨🇳' },
-  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
-  { code: 'FR', name: 'France', flag: '🇫🇷' },
-  { code: 'IT', name: 'Italy', flag: '🇮🇹' },
-  { code: 'ES', name: 'Spain', flag: '🇪🇸' },
-  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
-  { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
-  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
-  { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
-  { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
-  { code: 'RU', name: 'Russia', flag: '🇷🇺' },
-  { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
-  { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
-]
-
+// Special Accounts Mapping
 const SPECIAL_ACCOUNTS: { [key: string]: string } = {
-  HUSxSvQnabgU029dWYt1TUV04hd2: '100002',
-  ADqW31RGBMaosOzy0HiqexKSD7h1: '100003',
+  'HUSxSvQnabgU029dWYt1TUV04hd2': '100002',
+  'ADqW31RGBMaosOzy0HiqexKSD7h1': '100003',
+  '100002': '100002',
+  '100003': '100003'
 }
 
+// Official & Admin IDs List
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
-const isValidName = (val?: string | null): boolean => {
-  if (!val) return false;
-  const clean = val.trim().toLowerCase();
-  return clean !== '' && clean !== 'guest' && clean !== 'user' && clean !== 'null' && clean !== 'undefined';
-}
+// List of all countries
+const COUNTRIES = [
+  { name: 'India', flag: '🇮🇳', code: 'IN' },
+  { name: 'United States', flag: '🇺🇸', code: 'US' },
+  { name: 'United Kingdom', flag: '🇬🇧', code: 'GB' },
+  { name: 'Canada', flag: '🇨🇦', code: 'CA' },
+  { name: 'Australia', flag: '🇦🇺', code: 'AU' },
+  { name: 'UAE', flag: '🇦🇪', code: 'AE' },
+  { name: 'Saudi Arabia', flag: '🇸🇦', code: 'SA' },
+  { name: 'Pakistan', flag: '🇵🇰', code: 'PK' },
+  { name: 'Bangladesh', flag: '🇧🇩', code: 'BD' },
+  { name: 'Nepal', flag: '🇳🇵', code: 'NP' },
+  { name: 'Sri Lanka', flag: '🇱🇰', code: 'LK' },
+  { name: 'Singapore', flag: '🇸🇬', code: 'SG' },
+  { name: 'Malaysia', flag: '🇲🇾', code: 'MY' },
+  { name: 'Indonesia', flag: '🇮🇩', code: 'ID' },
+  { name: 'Philippines', flag: '🇵🇭', code: 'PH' },
+  { name: 'Japan', flag: '🇯🇵', code: 'JP' },
+  { name: 'South Korea', flag: '🇰🇷', code: 'KR' },
+  { name: 'China', flag: '🇨🇳', code: 'CN' },
+  { name: 'Germany', flag: '🇩🇪', code: 'DE' },
+  { name: 'France', flag: '🇫🇷', code: 'FR' },
+  { name: 'Italy', flag: '🇮🇹', code: 'IT' },
+  { name: 'Spain', flag: '🇪🇸', code: 'ES' },
+  { name: 'Brazil', flag: '🇧🇷', code: 'BR' },
+  { name: 'Mexico', flag: '🇲🇽', code: 'MX' },
+  { name: 'South Africa', flag: '🇿🇦', code: 'ZA' },
+  { name: 'Nigeria', flag: '🇳🇬', code: 'NG' },
+  { name: 'Egypt', flag: '🇪🇬', code: 'EG' },
+  { name: 'Russia', flag: '🇷🇺', code: 'RU' },
+  { name: 'Turkey', flag: '🇹🇷', code: 'TR' },
+  { name: 'Netherlands', flag: '🇳🇱', code: 'NL' },
+]
 
-const getDefaultAvatar = (gender: string): string => {
-  if (gender === '♀' || gender === 'female') {
-    return '/IMG_20260804_211013.jpg'
-  }
-  return '/IMG_20260804_211031.jpg'
-}
-
-const getOrCreateAccountNumber = (uid: string) => {
+export const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return '100379620'
 
   if (OFFICIAL_IDS.includes(uid) || ADMIN_IDS.includes(uid)) {
@@ -180,432 +167,66 @@ const getOrCreateAccountNumber = (uid: string) => {
     return SPECIAL_ACCOUNTS[uid]
   }
 
-  const storageKey = `user_account_number_${uid}`
-  let savedAccountNumber =
-    typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
-
-  if (!savedAccountNumber) {
-    let hash = 0
-    for (let i = 0; i < uid.length; i++) {
-      hash = (hash << 5) - hash + uid.charCodeAt(i)
-      hash |= 0
-    }
-    const positiveHash = Math.abs(hash)
-    savedAccountNumber = String(10000000 + (positiveHash % 90000000))
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(storageKey, savedAccountNumber)
-    }
+  let hash = 0
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash << 5) - hash + uid.charCodeAt(i)
+    hash |= 0
   }
-
-  return savedAccountNumber
+  const positiveHash = Math.abs(hash)
+  return String(10000000 + (positiveHash % 90000000))
 }
 
-const compressImage = (
-  file: File,
-  maxWidth: number,
-  maxHeight: number,
-  quality: number
-): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = (event) => {
-      const img = new Image()
-      img.src = event.target?.result as string
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        let width = img.width
-        let height = img.height
+const isValidName = (name: string | null | undefined): boolean => {
+  if (!name) return false;
+  const trimmed = name.trim();
+  if (!trimmed) return false;
 
-        if (width > height) {
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width)
-            width = maxWidth
-          }
-        } else {
-          if (height > maxHeight) {
-            width = Math.round((width * maxHeight) / height)
-            height = maxHeight
-          }
-        }
+  if (/^\d{8,}$/.test(trimmed)) return false;
+  if (/^User\s*\(?\d*\)?$/i.test(trimmed)) return false;
+  if (/^Account\s*\d*$/i.test(trimmed)) return false;
 
-        canvas.width = width
-        canvas.height = height
+  return true;
+};
 
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, width, height)
-        resolve(canvas.toDataURL('image/jpeg', quality))
-      }
-      img.onerror = (error) => reject(error)
-    }
-    reader.onerror = (error) => reject(error)
+export default function PublicProfile({ onBack, onJoinRoom, targetUser }: PublicProfileProps) {
+  const [user, setUser] = useState<UserProfile>({
+    uid: '',
+    name: 'Loading...',
+    displayAccountNumber: '',
+    photo: '/default-avatar.png',
+    coverPhoto: '/cover.png',
+    gender: '♀',
+    age: 18,
+    followers: 0,
+    bio: '',
+    location: 'India',
+    flag: '🇮🇳',
+    countryCode: 'IN',
+    albumImages: [],
+    officialTag: undefined,
+    adminTag: undefined,
+    vipTag: undefined,
+    premiumTag: undefined
   })
-}
 
-// Green Color Removal Shader Component - For Official/Admin tags
-const GreenColorRemovalShader = ({ 
-  imageSrc, 
-  className = "",
-  style = {}
-}: { 
-  imageSrc: string
-  className?: string
-  style?: React.CSSProperties
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [isSelf, setIsSelf] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [isEditingBio, setIsEditingBio] = useState(false)
+  const [isEditingAge, setIsEditingAge] = useState(false)
+  const [showCountrySelector, setShowCountrySelector] = useState(false)
+  const [tempName, setTempName] = useState('')
+  const [tempBio, setTempBio] = useState('')
+  const [tempAge, setTempAge] = useState('18')
+  const [isCountryLocked, setIsCountryLocked] = useState(false)
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+  const [albumImages, setAlbumImages] = useState<string[]>([])
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [selectedPhotoForPreview, setSelectedPhotoForPreview] = useState<'profile' | 'cover' | 'album' | null>(null)
 
-    const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
-    if (!gl) return
-
-    const vertexShaderSource = `
-      attribute vec2 a_position;
-      attribute vec2 a_texCoord;
-      varying vec2 v_texCoord;
-      void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
-        v_texCoord = a_texCoord;
-      }
-    `
-
-    const fragmentShaderSource = `
-      precision mediump float;
-      varying vec2 v_texCoord;
-      uniform sampler2D u_texture;
-      void main() {
-        vec4 color = texture2D(u_texture, v_texCoord);
-        if (color.g > 0.25 && color.g > color.r * 1.3 && color.g > color.b * 1.3) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-        } else {
-          gl_FragColor = color;
-        }
-      }
-    `
-
-    const compileShader = (type: number, source: string) => {
-      const shader = gl.createShader(type)
-      if (!shader) return null
-      gl.shaderSource(shader, source)
-      gl.compileShader(shader)
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        gl.deleteShader(shader)
-        return null
-      }
-      return shader
-    }
-
-    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
-    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-    if (!vertexShader || !fragmentShader) return
-
-    const program = gl.createProgram()
-    if (!program) return
-    gl.attachShader(program, vertexShader)
-    gl.attachShader(program, fragmentShader)
-    gl.linkProgram(program)
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return
-
-    gl.useProgram(program)
-
-    const positionBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW)
-
-    const positionLocation = gl.getAttribLocation(program, 'a_position')
-    gl.enableVertexAttribArray(positionLocation)
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
-
-    const texCoordBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]), gl.STATIC_DRAW)
-
-    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
-    gl.enableVertexAttribArray(texCoordLocation)
-    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
-
-    const texture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    gl.enable(gl.BLEND)
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-
-    const image = new Image()
-    image.crossOrigin = 'anonymous'
-    image.onload = () => {
-      gl.bindTexture(gl.TEXTURE_2D, texture)
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      canvas.width = image.width
-      canvas.height = image.height
-      gl.viewport(0, 0, canvas.width, canvas.height)
-      gl.clearColor(0.0, 0.0, 0.0, 0.0)
-      gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.drawArrays(gl.TRIANGLES, 0, 6)
-      setIsLoaded(true)
-    }
-    image.src = imageSrc
-
-    return () => {
-      gl.deleteProgram(program)
-      gl.deleteShader(vertexShader)
-      gl.deleteShader(fragmentShader)
-      gl.deleteBuffer(positionBuffer)
-      gl.deleteBuffer(texCoordBuffer)
-      gl.deleteTexture(texture)
-    }
-  }, [imageSrc])
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className={className}
-      style={{
-        ...style,
-        opacity: isLoaded ? 1 : 0,
-        transition: 'opacity 0.3s ease-in-out'
-      }}
-    />
-  )
-}
-
-// WebGL Shader Component for removing white color (for avatar overlay)
-const WhiteColorRemovalShader = ({ 
-  imageSrc, 
-  threshold = 0.9,
-  className = "",
-  style = {}
-}: { 
-  imageSrc: string
-  threshold?: number
-  className?: string
-  style?: React.CSSProperties
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [isLoaded, setIsLoaded] = useState(false)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const gl = canvas.getContext('webgl', { premultipliedAlpha: true })
-    if (!gl) return
-
-    const vertexShaderSource = `
-      attribute vec2 a_position;
-      attribute vec2 a_texCoord;
-      varying vec2 v_texCoord;
-      void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
-        v_texCoord = a_texCoord;
-      }
-    `
-
-    const fragmentShaderSource = `
-      precision mediump float;
-      varying vec2 v_texCoord;
-      uniform sampler2D u_texture;
-      uniform float u_threshold;
-      void main() {
-        vec4 color = texture2D(u_texture, v_texCoord);
-        float maxColor = max(color.r, max(color.g, color.b));
-        float minColor = min(color.r, min(color.g, color.b));
-        float lightness = (maxColor + minColor) / 2.0;
-        float saturation = maxColor - minColor;
-        if (lightness > u_threshold && saturation < 0.3) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-        } else {
-          gl_FragColor = color;
-        }
-      }
-    `
-
-    const compileShader = (type: number, source: string) => {
-      const shader = gl.createShader(type)
-      if (!shader) return null
-      gl.shaderSource(shader, source)
-      gl.compileShader(shader)
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        gl.deleteShader(shader)
-        return null
-      }
-      return shader
-    }
-
-    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource)
-    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
-    if (!vertexShader || !fragmentShader) return
-
-    const program = gl.createProgram()
-    if (!program) return
-    gl.attachShader(program, vertexShader)
-    gl.attachShader(program, fragmentShader)
-    gl.linkProgram(program)
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return
-
-    gl.useProgram(program)
-
-    const positionBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW)
-
-    const positionLocation = gl.getAttribLocation(program, 'a_position')
-    gl.enableVertexAttribArray(positionLocation)
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
-
-    const texCoordBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0]), gl.STATIC_DRAW)
-
-    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord')
-    gl.enableVertexAttribArray(texCoordLocation)
-    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0)
-
-    const texture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    gl.enable(gl.BLEND)
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-
-    const image = new Image()
-    image.crossOrigin = 'anonymous'
-    image.onload = () => {
-      gl.bindTexture(gl.TEXTURE_2D, texture)
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
-      const thresholdLocation = gl.getUniformLocation(program, 'u_threshold')
-      gl.uniform1f(thresholdLocation, threshold)
-      canvas.width = image.width
-      canvas.height = image.height
-      gl.viewport(0, 0, canvas.width, canvas.height)
-      gl.clearColor(0.0, 0.0, 0.0, 0.0)
-      gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.drawArrays(gl.TRIANGLES, 0, 6)
-      setIsLoaded(true)
-    }
-    image.src = imageSrc
-
-    return () => {
-      gl.deleteProgram(program)
-      gl.deleteShader(vertexShader)
-      gl.deleteShader(fragmentShader)
-      gl.deleteBuffer(positionBuffer)
-      gl.deleteBuffer(texCoordBuffer)
-      gl.deleteTexture(texture)
-    }
-  }, [imageSrc, threshold])
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className={className}
-      style={{
-        ...style,
-        opacity: isLoaded ? 1 : 0,
-        transition: 'opacity 0.3s ease-in-out'
-      }}
-    />
-  )
-}
-
-export default function PublicProfile({
-  onBack,
-  onJoinRoom,
-  isOtherUser = false,
-  targetUser = null,
-}: PublicProfileProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null)
-  const albumInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
-
-  // Instant Synchronous Lock state load to prevent Guest/blank flashing
-  const [user, setUser] = useState(() => {
-    if (typeof window === 'undefined') {
-      return {
-        name: '',
-        uid: '',
-        displayAccountNumber: '100379620',
-        photo: '',
-        coverPhoto: '',
-        gender: '♂',
-        age: 24,
-        followers: 0,
-        bio: '',
-        location: 'India',
-        flag: '🇮🇳',
-        countryCode: 'IN',
-        officialTag: false,
-        adminTag: false,
-        vipTag: false,
-        premiumTag: false,
-      }
-    }
-
-    const uid = localStorage.getItem('userUID') || localStorage.getItem('userPhone') || localStorage.getItem('userId') || ''
-    const localName = localStorage.getItem('userName')
-    const validName = isValidName(localName) ? localName! : ''
-    const photo = localStorage.getItem('userPhoto') || ''
-    const coverPhoto = localStorage.getItem('userCoverPhoto') || ''
-    const bio = localStorage.getItem('userBio') || ''
-    const country = localStorage.getItem('userCountry') || 'India'
-    const countryCode = localStorage.getItem('userCountryCode') || 'IN'
-    const age = localStorage.getItem('userAge') ? parseInt(localStorage.getItem('userAge')!) : 24
-    const gender = localStorage.getItem('userGender') || '♂'
-    const displayAccNum = localStorage.getItem('accountNumber') || (uid ? getOrCreateAccountNumber(uid) : '100379620')
-
-    return {
-      name: validName,
-      uid: uid,
-      displayAccountNumber: displayAccNum,
-      photo,
-      coverPhoto,
-      gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
-      age,
-      followers: 0,
-      bio,
-      location: country,
-      flag: '🇮🇳',
-      countryCode,
-      officialTag: false,
-      adminTag: false,
-      vipTag: false,
-      premiumTag: false,
-    }
-  })
-
-  const [albumImages, setAlbumImages] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return []
-    const storedAlbum = localStorage.getItem('userAlbumImages')
-    return storedAlbum ? JSON.parse(storedAlbum) : []
-  })
-
-  const [showEditSheet, setShowEditSheet] = useState(false)
-  const [editName, setEditName] = useState(user.name)
-  const [editAge, setEditAge] = useState(user.age.toString())
-  const [editBio, setEditBio] = useState(user.bio)
-
-  const [editGender, setEditGender] = useState('')
-  const [genderLocked, setGenderLocked] = useState(false)
-
-  const [editCountry, setEditCountry] = useState(user.location)
-  const [editCountryCode, setEditCountryCode] = useState(user.countryCode)
-  const [countryLocked, setCountryLocked] = useState(false)
-
-  const [showBioInput, setShowBioInput] = useState(false)
-  const [activeTab, setActiveTab] = useState('profile')
-
-  const [fullImageView, setFullImageView] = useState<string | null>(null)
-
-  const [isFollowing, setIsFollowing] = useState(false)
-
-  const [showThreeDotMenu, setShowThreeDotMenu] = useState(false)
+  const albumInputRef = useRef<HTMLInputElement>(null)
 
   const [showChat, setShowChat] = useState(false)
 
@@ -616,8 +237,7 @@ export default function PublicProfile({
       user.uid || localStorage.getItem('userUID') || localStorage.getItem('userPhone')
     if (currentUid && currentUid !== 'N/A') {
       try {
-        const userDocRef = doc(db, 'users', currentUid)
-        await setDoc(userDocRef, updateData, { merge: true })
+        await updateUser({ id: currentUid, appLongId: currentUid, ...updateData })
 
         const roomUpdateData = { ...updateData }
         delete roomUpdateData.name
@@ -630,11 +250,10 @@ export default function PublicProfile({
         delete roomUpdateData.coverImage
 
         if (Object.keys(roomUpdateData).length > 0) {
-          const globalRoomRef = doc(db, 'globalRooms', currentUid)
-          await setDoc(globalRoomRef, roomUpdateData, { merge: true })
+          await updateRoom({ roomId: currentUid, id: currentUid, ...roomUpdateData })
         }
       } catch (err) {
-        console.error('Error saving data to Firestore collections:', err)
+        console.error('Error saving data to Google Sheets:', err)
       }
     }
   }
@@ -649,13 +268,12 @@ export default function PublicProfile({
         displayAccountNumber: user.displayAccountNumber,
         photo: user.photo,
         coverPhoto: user.coverPhoto,
+        bio: user.bio,
+        country: user.location,
+        countryCode: user.countryCode,
         gender: user.gender,
         age: user.age,
         followers: user.followers,
-        bio: user.bio,
-        location: user.location,
-        flag: user.flag,
-        countryCode: user.countryCode,
         albumImages: albumImages,
         officialTag: user.officialTag,
         adminTag: user.adminTag,
@@ -667,184 +285,41 @@ export default function PublicProfile({
   };
 
   useEffect(() => {
-    let unsubscribe: () => void
+    let isMounted = true;
 
     const loadProfileData = async () => {
-      if (isOtherUser && targetUser) {
-        const targetUid = targetUser.uid || targetUser.id || 'N/A'
+      let isViewingSelf = false
+      let uid = ''
 
-        let displayAccNum = targetUser.displayAccountNumber || targetUser.accountId || ''
-        let initialName = targetUser.name || ''
-        if (!isValidName(initialName)) initialName = targetUid.substring(0, 8)
-
-        let photo = targetUser.photo || targetUser.image || ''
-        let coverPhoto = targetUser.coverPhoto || ''
-        let bio = targetUser.bio || ''
-        let country = targetUser.country || targetUser.location || 'India'
-        let countryCode = targetUser.countryCode || 'IN'
-        let gender = targetUser.gender || '♂'
-        let age = targetUser.age
-          ? typeof targetUser.age === 'number'
-            ? targetUser.age
-            : parseInt(targetUser.age)
-          : 22
-        let followers = targetUser.followers || 0
-        let album: string[] = []
-        let officialTag = targetUser.officialTag || false
-        let adminTag = targetUser.adminTag || false
-        let vipTag = targetUser.vipTag || false
-        let premiumTag = targetUser.premiumTag || false
-
-        if (targetUid && targetUid !== 'N/A') {
-          const cachedProfile = await loadProfileFromDB(targetUid);
-          if (cachedProfile && isValidName(cachedProfile.name)) {
-            setUser({
-              name: cachedProfile.name,
-              uid: targetUid,
-              displayAccountNumber: cachedProfile.displayAccountNumber || displayAccNum,
-              photo: cachedProfile.photo || photo,
-              coverPhoto: cachedProfile.coverPhoto || coverPhoto,
-              gender: cachedProfile.gender || gender,
-              age: cachedProfile.age || age,
-              followers: cachedProfile.followers || followers,
-              bio: cachedProfile.bio || bio,
-              location: cachedProfile.location || country,
-              flag: cachedProfile.flag || '🇮🇳',
-              countryCode: cachedProfile.countryCode || countryCode,
-              officialTag: cachedProfile.officialTag || officialTag,
-              adminTag: cachedProfile.adminTag || adminTag,
-              vipTag: cachedProfile.vipTag || vipTag,
-              premiumTag: cachedProfile.premiumTag || premiumTag,
-            });
-            setAlbumImages(cachedProfile.albumImages || []);
-            return;
-          }
-
-          try {
-            const userDocRef = doc(db, 'users', targetUid)
-
-            unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
-              if (docSnap.exists()) {
-                const data = docSnap.data()
-
-                displayAccNum = data.accountId
-                  ? String(data.accountId)
-                  : data.displayAccountNumber || displayAccNum
-                
-                const docName = data.name || data.displayName || data.userName || data.fullName
-                const finalName = isValidName(docName) ? docName : (isValidName(initialName) ? initialName : targetUid.substring(0, 8))
-
-                photo = data.photo || data.photoURL || data.image || data.avatar || photo
-                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
-                bio = data.bio || data.about || bio
-                country = data.country || data.location || country
-                countryCode = data.countryCode || countryCode
-                gender = data.gender || gender
-                age = data.age ? parseInt(data.age) : age
-                followers = data.followers !== undefined ? data.followers : followers
-                officialTag = data.officialTag || officialTag
-                adminTag = data.adminTag || adminTag
-                vipTag = data.vipTag || vipTag
-                premiumTag = data.premiumTag || premiumTag
-
-                if (data.albumImages && Array.isArray(data.albumImages)) {
-                  album = data.albumImages
-                } else if (data.album && Array.isArray(data.album)) {
-                  album = data.album
-                }
-
-                if (!displayAccNum) {
-                  displayAccNum = getOrCreateAccountNumber(targetUid)
-                }
-
-                const matchedCountry = COUNTRIES.find(
-                  (c) =>
-                    c.code === countryCode || c.name === country || c.flag === country
-                ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-                const profileData = {
-                  uid: targetUid,
-                  name: finalName,
-                  displayAccountNumber: displayAccNum,
-                  photo,
-                  coverPhoto,
-                  gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
-                  age,
-                  followers,
-                  bio,
-                  location: matchedCountry.name,
-                  flag: matchedCountry.flag,
-                  countryCode: matchedCountry.code,
-                  albumImages: album,
-                  officialTag,
-                  adminTag,
-                  vipTag,
-                  premiumTag,
-                };
-
-                setAlbumImages(album);
-                setUser(profileData);
-                await saveProfileToDB(profileData);
-              }
-            })
-          } catch (err) {
-            console.warn('Firestore fetch error for Target User:', err)
-          }
+      if (targetUser && targetUser.uid) {
+        const currentSelfUid = localStorage.getItem('userUID') || localStorage.getItem('userPhone')
+        if (targetUser.uid === currentSelfUid) {
+          isViewingSelf = true
+          uid = currentSelfUid
+        } else {
+          isViewingSelf = false
+          uid = targetUser.uid
         }
-        return
+      } else {
+        isViewingSelf = true
+        uid = localStorage.getItem('userUID') || localStorage.getItem('userPhone') || 'N/A'
       }
 
-      // For current user
-      const uid =
-        localStorage.getItem('userUID') || localStorage.getItem('userPhone') || localStorage.getItem('userId') || 'N/A'
-      
-      if (uid !== 'N/A') {
-        const cachedProfile = await loadProfileFromDB(uid);
-        if (cachedProfile && isValidName(cachedProfile.name)) {
-          setUser({
-            name: cachedProfile.name,
-            uid: uid,
-            displayAccountNumber: cachedProfile.displayAccountNumber || '',
-            photo: cachedProfile.photo || '',
-            coverPhoto: cachedProfile.coverPhoto || '',
-            gender: cachedProfile.gender || '♂',
-            age: cachedProfile.age || 24,
-            followers: cachedProfile.followers || 0,
-            bio: cachedProfile.bio || '',
-            location: cachedProfile.location || 'India',
-            flag: cachedProfile.flag || '🇮🇳',
-            countryCode: cachedProfile.countryCode || 'IN',
-            officialTag: cachedProfile.officialTag || false,
-            adminTag: cachedProfile.adminTag || false,
-            vipTag: cachedProfile.vipTag || false,
-            premiumTag: cachedProfile.premiumTag || false,
-          });
-          setAlbumImages(cachedProfile.albumImages || []);
-          setEditName(cachedProfile.name);
-          setEditAge(String(cachedProfile.age || '24'));
-          setEditBio(cachedProfile.bio || '');
-          setEditCountry(cachedProfile.location || 'India');
-          setEditCountryCode(cachedProfile.countryCode || 'IN');
-          return;
-        }
-      }
+      setIsSelf(isViewingSelf)
 
-      let storedName = localStorage.getItem('userName') || ''
-      if (!isValidName(storedName)) storedName = ''
-
-      let photo = localStorage.getItem('userPhoto') || ''
-      let coverPhoto = localStorage.getItem('userCoverPhoto') || ''
+      let initialName = localStorage.getItem('userName') || ''
+      let photo = localStorage.getItem('userPhoto') || '/default-avatar.png'
+      let coverPhoto = localStorage.getItem('userCoverPhoto') || '/cover.png'
       let storedBio = localStorage.getItem('userBio') || ''
       let storedCountry = localStorage.getItem('userCountry') || 'India'
       let storedCountryCode = localStorage.getItem('userCountryCode') || 'IN'
-      let storedAge = localStorage.getItem('userAge') || '24'
-      let storedGender =
-        localStorage.getItem('userGender') ||
-        localStorage.getItem('userGenderLocked') ||
-        ''
-      let isCountryLockedInStorage =
-        localStorage.getItem('userCountryLocked') === 'true' ||
-        localStorage.getItem('setupComplete') === 'true'
+      let storedGender: '♂' | '♀' = (localStorage.getItem('userGender') as '♂' | '♀') || '♀'
+      let storedAge = localStorage.getItem('userAge') || '18'
+      let storedFollowers = 0
+      let officialTag: string | undefined = undefined
+      let adminTag: string | undefined = undefined
+      let vipTag: string | undefined = undefined
+      let premiumTag: string | undefined = undefined
 
       const storedAlbum = localStorage.getItem('userAlbumImages')
       if (storedAlbum) {
@@ -853,946 +328,730 @@ export default function PublicProfile({
 
       let displayAccNum = localStorage.getItem('accountNumber') || ''
 
+      // Target User lookup
+      if (!isViewingSelf && targetUser) {
+        const targetUid = targetUser.uid
+        initialName = targetUser.name || ''
+        photo = targetUser.photo || '/default-avatar.png'
+        displayAccNum = targetUser.accountNumber || getOrCreateAccountNumber(targetUid)
+
+        const cachedProfile = await loadProfileFromDB(targetUid);
+        if (cachedProfile && isMounted) {
+          const matchedCountry = COUNTRIES.find(
+            (c) =>
+              c.code === cachedProfile.countryCode || c.name === cachedProfile.country || c.flag === cachedProfile.country
+          ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
+
+          setUser({
+            uid: targetUid,
+            name: isValidName(cachedProfile.name) ? cachedProfile.name : (isValidName(initialName) ? initialName : targetUid.substring(0, 8)),
+            displayAccountNumber: cachedProfile.displayAccountNumber || displayAccNum,
+            photo: cachedProfile.photo || photo,
+            coverPhoto: cachedProfile.coverPhoto || '/cover.png',
+            gender: cachedProfile.gender || '♀',
+            age: cachedProfile.age || 18,
+            followers: cachedProfile.followers || 0,
+            bio: cachedProfile.bio || '',
+            location: matchedCountry.name,
+            flag: matchedCountry.flag,
+            countryCode: matchedCountry.code,
+            albumImages: cachedProfile.albumImages || [],
+            officialTag: cachedProfile.officialTag || officialTag,
+            adminTag: cachedProfile.adminTag || adminTag,
+            vipTag: cachedProfile.vipTag || vipTag,
+            premiumTag: cachedProfile.premiumTag || premiumTag,
+          });
+          setAlbumImages(cachedProfile.albumImages || []);
+        }
+
+        try {
+          const res = await getUser(targetUid);
+          const data = res && (res.user || res.data || res);
+
+          if (isMounted && data && (data.id || data.AppLongId || data['App long ID'] || data.Name || data.name)) {
+            displayAccNum = data.accountId || data.accountNumber || data['Account Number']
+              ? String(data.accountId || data.accountNumber || data['Account Number'])
+              : displayAccNum;
+
+            const docName = data.name || data.Name || data.displayName || data.userName || data.fullName;
+            const finalName = isValidName(docName) ? docName : (isValidName(initialName) ? initialName : targetUid.substring(0, 8));
+
+            photo = data.photo || data.photoURL || data.image || data.avatar || data.Avtar || photo;
+            coverPhoto = data.coverPhoto || data.coverImage || data.backCover || data['Back Cover'] || coverPhoto;
+            let bio = data.bio || data.Bio || data.about || '';
+            let country = data.country || data.Country || data.location || 'India';
+            let countryCode = data.countryCode || 'IN';
+            let gender = data.gender || data.Gender || '♀';
+            let age = data.age || data.Age ? parseInt(data.age || data.Age) : 18;
+            let followers = data.followers !== undefined ? data.followers : 0;
+            let officialTag = data.officialTag;
+            let adminTag = data.adminTag;
+            let vipTag = data.vipTag;
+            let premiumTag = data.premiumTag;
+
+            let album = [];
+            if (data.albumImages && Array.isArray(data.albumImages)) {
+              album = data.albumImages;
+            } else if (data.album && Array.isArray(data.album)) {
+              album = data.album;
+            }
+
+            if (!displayAccNum) {
+              displayAccNum = getOrCreateAccountNumber(targetUid);
+            }
+
+            const matchedCountry = COUNTRIES.find(
+              (c) =>
+                c.code === countryCode || c.name === country || c.flag === country
+            ) || { name: 'India', flag: '🇮🇳', code: 'IN' };
+
+            const profileData = {
+              uid: targetUid,
+              name: finalName,
+              displayAccountNumber: displayAccNum,
+              photo,
+              coverPhoto,
+              gender: gender === 'female' || gender === '♀' ? '♀' : '♂',
+              age,
+              followers,
+              bio,
+              location: matchedCountry.name,
+              flag: matchedCountry.flag,
+              countryCode: matchedCountry.code,
+              albumImages: album,
+              officialTag,
+              adminTag,
+              vipTag,
+              premiumTag,
+            };
+
+            setAlbumImages(album);
+            setUser(profileData);
+            await saveProfileToDB(profileData);
+          }
+        } catch (err) {
+          console.warn('Google Sheets fetch error for Target User:', err);
+        }
+        return;
+      }
+
+      // Current User lookup
       if (uid && uid !== 'N/A') {
         try {
-          const userDocRef = doc(db, 'users', uid)
+          const res = await getUser(uid);
+          const data = res && (res.user || res.data || res);
 
-          unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
-            if (docSnap.exists()) {
-              const data = docSnap.data()
-              if (data.accountId) {
-                displayAccNum = String(data.accountId)
-                localStorage.setItem('accountNumber', displayAccNum)
-              }
-              const docName = data.name || data.displayName || data.userName
-              if (isValidName(docName)) {
-                storedName = docName
-                localStorage.setItem('userName', storedName)
-              }
-              if (data.photo || data.photoURL || data.image) {
-                photo = data.photo || data.photoURL || data.image || photo
-                localStorage.setItem('userPhoto', photo)
-              }
-              if (data.coverPhoto || data.coverImage) {
-                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
-                localStorage.setItem('userCoverPhoto', coverPhoto)
-              }
-              if (data.bio) {
-                storedBio = data.bio
-                localStorage.setItem('userBio', storedBio)
-              }
-              if (data.country || data.location) {
-                storedCountry = data.country || data.location
-                localStorage.setItem('userCountry', storedCountry)
-              }
-              if (data.countryCode) {
-                storedCountryCode = data.countryCode
-                localStorage.setItem('userCountryCode', storedCountryCode)
-              }
-              if (data.countryLocked !== undefined) {
-                isCountryLockedInStorage = data.countryLocked
-                if (data.countryLocked) localStorage.setItem('userCountryLocked', 'true')
-              }
-              if (data.setupComplete) {
-                isCountryLockedInStorage = true
-                localStorage.setItem('userCountryLocked', 'true')
-              }
-              if (data.gender) {
-                storedGender = data.gender
-                localStorage.setItem('userGender', storedGender)
-              }
-              if (data.age) {
-                storedAge = String(data.age)
-                localStorage.setItem('userAge', storedAge)
-              }
-              if (data.albumImages && Array.isArray(data.albumImages)) {
-                setAlbumImages(data.albumImages)
-                localStorage.setItem(
-                  'userAlbumImages',
-                  JSON.stringify(data.albumImages)
-                )
-              }
-
-              if (!displayAccNum) {
-                displayAccNum = getOrCreateAccountNumber(uid)
-              }
-
-              if (!isValidName(storedName)) {
-                storedName = displayAccNum
-              }
-
-              const matchedCountry = COUNTRIES.find(
-                (c) =>
-                  c.code === storedCountryCode ||
-                  c.flag === storedCountry ||
-                  c.name === storedCountry
-              ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-              const profileData = {
-                uid: uid,
-                name: storedName,
-                displayAccountNumber: displayAccNum,
-                photo,
-                coverPhoto,
-                bio: storedBio,
-                location: matchedCountry.name,
-                flag: matchedCountry.flag,
-                countryCode: matchedCountry.code,
-                gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
-                age: storedAge ? parseInt(storedAge) : 24,
-                followers: data.followers || 0,
-                albumImages: data.albumImages || [],
-                officialTag: data.officialTag || false,
-                adminTag: data.adminTag || false,
-                vipTag: data.vipTag || false,
-                premiumTag: data.premiumTag || false,
-              };
-
-              setUser(profileData);
-              await saveProfileToDB(profileData);
-
-              setEditName(storedName)
-              setEditAge(storedAge || '24')
-              setEditBio(storedBio || '')
-              setEditCountry(matchedCountry.name)
-              setEditCountryCode(matchedCountry.code)
-              setCountryLocked(isCountryLockedInStorage)
-
-              if (storedGender) {
-                setEditGender(
-                  storedGender === 'female' || storedGender === '♀' ? 'female' : 'male'
-                )
-                setGenderLocked(true)
-              }
+          if (isMounted && data && (data.id || data.AppLongId || data['App long ID'] || data.Name || data.name)) {
+            if (data.accountId || data.accountNumber || data['Account Number']) {
+              displayAccNum = String(data.accountId || data.accountNumber || data['Account Number'])
+              localStorage.setItem('accountNumber', displayAccNum)
             }
-          })
+            const docName = data.name || data.Name || data.displayName || data.userName
+            if (isValidName(docName)) {
+              storedName = docName
+              localStorage.setItem('userName', storedName)
+            }
+            if (data.photo || data.photoURL || data.image || data.avatar || data.Avtar) {
+              photo = data.photo || data.photoURL || data.image || data.avatar || data.Avtar || photo
+              localStorage.setItem('userPhoto', photo)
+            }
+            if (data.coverPhoto || data.coverImage || data.backCover || data['Back Cover']) {
+              coverPhoto = data.coverPhoto || data.coverImage || data.backCover || data['Back Cover'] || coverPhoto
+              localStorage.setItem('userCoverPhoto', coverPhoto)
+            }
+            if (data.bio || data.Bio) {
+              storedBio = data.bio || data.Bio
+              localStorage.setItem('userBio', storedBio)
+            }
+            if (data.country || data.Country || data.location) {
+              storedCountry = data.country || data.Country || data.location
+              localStorage.setItem('userCountry', storedCountry)
+            }
+            if (data.countryCode) {
+              storedCountryCode = data.countryCode
+              localStorage.setItem('userCountryCode', storedCountryCode)
+            }
+            if (data.gender || data.Gender) {
+              storedGender = (data.gender || data.Gender) as any
+              localStorage.setItem('userGender', storedGender)
+            }
+            if (data.age || data.Age) {
+              storedAge = String(data.age || data.Age)
+              localStorage.setItem('userAge', storedAge)
+            }
+            if (data.albumImages && Array.isArray(data.albumImages)) {
+              setAlbumImages(data.albumImages)
+              localStorage.setItem('userAlbumImages', JSON.stringify(data.albumImages))
+            }
+
+            if (!displayAccNum) {
+              displayAccNum = getOrCreateAccountNumber(uid)
+            }
+          }
+
+          if (!isValidName(storedName)) {
+            storedName = displayAccNum
+          }
+
+          const matchedCountry = COUNTRIES.find(
+            (c) =>
+              c.code === storedCountryCode || c.name === storedCountry || c.flag === storedCountry
+          ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
+
+          if (isMounted) {
+            setUser({
+              uid: uid,
+              name: storedName,
+              displayAccountNumber: displayAccNum,
+              photo: photo,
+              coverPhoto: coverPhoto,
+              gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
+              age: parseInt(storedAge) || 18,
+              followers: storedFollowers,
+              bio: storedBio,
+              location: matchedCountry.name,
+              flag: matchedCountry.flag,
+              countryCode: matchedCountry.code,
+              albumImages: albumImages,
+              officialTag: officialTag,
+              adminTag: adminTag,
+              vipTag: vipTag,
+              premiumTag: premiumTag,
+            })
+
+            saveCurrentUserToDB()
+          }
         } catch (err) {
-          console.warn('Firestore fetch error in PublicProfile:', err)
+          console.warn('Google Sheets fetch error for Current User:', err);
         }
       }
-    }
+    };
 
-    loadProfileData()
+    loadProfileData();
 
     return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [isOtherUser, targetUser])
+      isMounted = false;
+    };
+  }, [targetUser]);
 
-  // Save to IndexedDB whenever user data changes
-  useEffect(() => {
-    if (user.uid && user.uid !== 'N/A') {
-      saveCurrentUserToDB();
-    }
-  }, [user, albumImages]);
-
-  const handleCopyID = () => {
-    if (user.displayAccountNumber && user.displayAccountNumber !== 'N/A') {
-      navigator.clipboard.writeText(user.displayAccountNumber)
-      alert('ID Copied!')
-    }
+  const copyId = () => {
+    navigator.clipboard.writeText(user.displayAccountNumber)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleOpenEditSheet = () => {
-    if (isOtherUser) return
-    setEditName(user.name)
-    setEditAge(user.age.toString())
-    setEditBio(user.bio)
-    setEditCountry(user.location || 'India')
-    setEditCountryCode(user.countryCode || 'IN')
-    setShowEditSheet(true)
+  const handleGenderToggle = async () => {
+    if (!isSelf) return
+    const newGender = user.gender === '♂' ? '♀' : '♂'
+    setUser((prev) => ({ ...prev, gender: newGender }))
+    localStorage.setItem('userGender', newGender)
+    await saveToFirestore({ gender: newGender })
+    saveCurrentUserToDB()
   }
 
-  const handleCloseEditSheet = () => {
-    setShowEditSheet(false)
-    setShowBioInput(false)
+  const handleCountrySelect = async (countryName: string, flag: string, code: string) => {
+    if (!isSelf || isCountryLocked) return
+    setUser((prev) => ({
+      ...prev,
+      location: countryName,
+      flag: flag,
+      countryCode: code,
+    }))
+    localStorage.setItem('userCountry', countryName)
+    localStorage.setItem('userCountryCode', code)
+    localStorage.setItem('userCountryLocked', 'true')
+    setIsCountryLocked(true)
+    setShowCountrySelector(false)
+
+    await saveToFirestore({
+      country: countryName,
+      countryCode: code,
+      countryLocked: true,
+      setupComplete: true
+    })
+    saveCurrentUserToDB()
   }
 
-  const handleGenderSelect = async (gender: string) => {
-    if (genderLocked) return
-    setEditGender(gender)
-    setGenderLocked(true)
-    const formattedGender = gender === 'male' ? '♂' : '♀'
-    localStorage.setItem('userGender', gender)
-    localStorage.setItem('userGenderLocked', gender)
-    setUser((prev) => ({ ...prev, gender: formattedGender }))
-
-    await saveToFirestore({ gender: formattedGender })
-  }
-
-  const handleCountrySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (countryLocked) return
-    const selectedCountryName = e.target.value
-    const matchedCountry = COUNTRIES.find((c) => c.name === selectedCountryName)
-    setEditCountry(selectedCountryName)
-    if (matchedCountry) {
-      setEditCountryCode(matchedCountry.code)
+  const handleNameSave = async () => {
+    if (!isSelf) return
+    if (tempName.trim()) {
+      setUser((prev) => ({ ...prev, name: tempName }))
+      localStorage.setItem('userName', tempName)
+      await saveToFirestore({ name: tempName, displayName: tempName, userName: tempName })
+      saveCurrentUserToDB()
     }
+    setIsEditingName(false)
+  }
+
+  const handleBioSave = async () => {
+    if (!isSelf) return
+    setUser((prev) => ({ ...prev, bio: tempBio }))
+    localStorage.setItem('userBio', tempBio)
+    await saveToFirestore({ bio: tempBio, about: tempBio })
+    saveCurrentUserToDB()
+    setIsEditingBio(false)
+  }
+
+  const handleAgeSave = async () => {
+    if (!isSelf) return
+    const ageNum = parseInt(tempAge) || 18
+    setUser((prev) => ({ ...prev, age: ageNum }))
+    localStorage.setItem('userAge', tempAge)
+    await saveToFirestore({ age: ageNum })
+    saveCurrentUserToDB()
+    setIsEditingAge(false)
+  }
+
+  const compressAndConvertImage = (
+    file: File,
+    maxWidth: number,
+    quality: number = 0.7
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          if (width > maxWidth) {
+            height = (maxWidth * height) / width
+            width = maxWidth
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Canvas context failed'))
+            return
+          }
+
+          ctx.drawImage(img, 0, 0, width, height)
+          const dataUrl = canvas.toDataURL('image/jpeg', quality)
+          resolve(dataUrl)
+        }
+        img.onerror = (error) => reject(error)
+      }
+      reader.onerror = (error) => reject(error)
+    })
   }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isSelf) return
     const file = e.target.files?.[0]
     if (file) {
       try {
-        const compressedBase64 = await compressImage(file, 300, 300, 0.7)
-        localStorage.setItem('userPhoto', compressedBase64)
+        const compressedBase64 = await compressAndConvertImage(file, 400, 0.7)
         setUser((prev) => ({ ...prev, photo: compressedBase64 }))
+        localStorage.setItem('userPhoto', compressedBase64)
 
         await saveToFirestore({
           photo: compressedBase64,
-          image: compressedBase64,
           photoURL: compressedBase64,
+          image: compressedBase64,
+          avatar: compressedBase64
         })
+        saveCurrentUserToDB()
       } catch (err) {
-        console.error('Avatar compression error:', err)
+        console.error('Error compressing avatar image:', err)
       }
     }
   }
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isSelf) return
     const file = e.target.files?.[0]
     if (file) {
       try {
-        const compressedBase64 = await compressImage(file, 800, 400, 0.7)
-        localStorage.setItem('userCoverPhoto', compressedBase64)
+        const compressedBase64 = await compressAndConvertImage(file, 800, 0.7)
         setUser((prev) => ({ ...prev, coverPhoto: compressedBase64 }))
+        localStorage.setItem('userCoverPhoto', compressedBase64)
 
         await saveToFirestore({
           coverPhoto: compressedBase64,
           coverImage: compressedBase64,
+          backCover: compressedBase64
         })
+        saveCurrentUserToDB()
       } catch (err) {
-        console.error('Cover compression error:', err)
+        console.error('Error compressing cover image:', err)
       }
     }
   }
 
-  const handleRemoveCoverPhoto = async () => {
-    localStorage.removeItem('userCoverPhoto')
-    setUser((prev) => ({ ...prev, coverPhoto: '' }))
-    await saveToFirestore({ coverPhoto: '', coverImage: '' })
-  }
-
   const handleAlbumUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isSelf) return
     const file = e.target.files?.[0]
-    if (file) {
-      if (albumImages.length >= 4) {
-        alert('You can only upload up to 4 images in the album.')
-        return
-      }
+    if (file && albumImages.length < 3) {
       try {
-        const compressedBase64 = await compressImage(file, 600, 600, 0.7)
+        const compressedBase64 = await compressAndConvertImage(file, 600, 0.7)
         const updatedAlbum = [...albumImages, compressedBase64]
         setAlbumImages(updatedAlbum)
         localStorage.setItem('userAlbumImages', JSON.stringify(updatedAlbum))
 
-        await saveToFirestore({ albumImages: updatedAlbum, album: updatedAlbum })
+        await saveToFirestore({
+          albumImages: updatedAlbum,
+          album: updatedAlbum
+        })
+        saveCurrentUserToDB()
       } catch (err) {
-        console.error('Album image compression error:', err)
+        console.error('Error compressing album image:', err)
       }
     }
   }
 
-  const handleRemoveAlbumImage = async (indexToRemove: number) => {
-    const updated = albumImages.filter((_, index) => index !== indexToRemove)
-    setAlbumImages(updated)
-    localStorage.setItem('userAlbumImages', JSON.stringify(updated))
-    await saveToFirestore({ albumImages: updated, album: updated })
+  const handleOpenPhotoPreview = (type: 'profile' | 'cover' | 'album', src: string) => {
+    setSelectedPhotoForPreview(type)
+    setPreviewImage(src)
   }
 
-  const handleSaveEdit = async () => {
-    const finalNewName = isValidName(editName) ? editName : user.displayAccountNumber
-    localStorage.setItem('userName', finalNewName)
-    if (editAge) localStorage.setItem('userAge', editAge)
-    if (editBio) localStorage.setItem('userBio', editBio)
+  const handleReplacePhotoFromPreview = () => {
+    if (!isSelf) return
+    setPreviewImage(null)
 
-    if (editCountry && editCountryCode) {
-      localStorage.setItem('userCountry', editCountry)
-      localStorage.setItem('userCountryCode', editCountryCode)
-      localStorage.setItem('userCountryLocked', 'true')
-      setCountryLocked(true)
+    if (selectedPhotoForPreview === 'profile' && avatarInputRef.current) {
+      avatarInputRef.current.click()
+    } else if (selectedPhotoForPreview === 'cover' && coverInputRef.current) {
+      coverInputRef.current.click()
+    } else if (selectedPhotoForPreview === 'album' && albumInputRef.current) {
+      albumInputRef.current.click()
     }
-
-    const matchedCountry = COUNTRIES.find(
-      (c) => c.name === editCountry || c.code === editCountryCode
-    ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-    const updatedUser = {
-      ...user,
-      name: finalNewName,
-      age: parseInt(editAge) || user.age,
-      bio: editBio,
-      location: matchedCountry.name,
-      flag: matchedCountry.flag,
-      countryCode: matchedCountry.code,
-    };
-
-    setUser(updatedUser);
-
-    await saveToFirestore({
-      name: finalNewName,
-      displayName: finalNewName,
-      userName: finalNewName,
-      age: parseInt(editAge) || user.age,
-      bio: editBio,
-      about: editBio,
-      country: matchedCountry.flag,
-      countryCode: matchedCountry.code,
-      location: matchedCountry.name,
-      countryLocked: true,
-    })
-
-    await saveProfileToDB({
-      ...updatedUser,
-      albumImages: albumImages,
-    });
-
-    setShowEditSheet(false)
-    setShowBioInput(false)
   }
 
-  const handleBioSave = async () => {
-    localStorage.setItem('userBio', editBio)
-    const updatedUser = { ...user, bio: editBio };
-    setUser(updatedUser);
-    setShowBioInput(false);
-    await saveToFirestore({ bio: editBio, about: editBio });
-    
-    await saveProfileToDB({
-      ...updatedUser,
-      albumImages: albumImages,
-    });
-  }
-
-  const getDisplayID = () => {
-    return user.displayAccountNumber
-  }
-
-  const handleToggleFollow = () => {
-    setIsFollowing((prev) => {
-      const nextState = !prev
-      setUser((u) => ({
-        ...u,
-        followers: nextState ? u.followers + 1 : Math.max(0, u.followers - 1),
-      }))
-      return nextState
-    })
-  }
-
-  const getCurrentUserData = () => {
-    const uid =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('userUID') || localStorage.getItem('userPhone') || localStorage.getItem('userId') || 'N/A'
-        : 'N/A'
-    const name =
-      typeof window !== 'undefined' ? localStorage.getItem('userName') || user.displayAccountNumber : user.displayAccountNumber
-    const photo =
-      typeof window !== 'undefined' ? localStorage.getItem('userPhoto') || '' : ''
-    return { uid, name, photo }
-  }
-
-  // Strict Name Resolution: No Guest allowed anywhere
-  const finalDisplayName = isValidName(user.name) 
-    ? user.name 
-    : (user.displayAccountNumber ? user.displayAccountNumber : 'User');
-
-  const avatarLetter = finalDisplayName ? finalDisplayName.charAt(0).toUpperCase() : '?';
+  // Active user data
+  const currentUid = localStorage.getItem('userUID') || 'N/A'
+  const currentName = localStorage.getItem('userName') || 'Me'
+  const currentPhoto = localStorage.getItem('userPhoto') || '/default-avatar.png'
 
   return (
-    <div
-      className={`w-full bg-white min-h-screen text-gray-900 relative ${
-        isOtherUser ? 'pb-24' : 'pb-10'
-      }`}
-    >
-      {/* Cover Image & Header Section */}
-      <div className="relative w-full h-[340px] bg-gray-800">
-        {user.coverPhoto ? (
-          <img src={user.coverPhoto} alt="" className="w-full h-full object-cover" />
-        ) : user.photo ? (
-          <img src={user.photo} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white text-4xl font-bold">
-            {avatarLetter}
-          </div>
+    <div className="flex flex-col h-screen bg-slate-50 max-w-md mx-auto relative overflow-hidden font-sans">
+
+      {/* Hidden File Inputs */}
+      {isSelf && (
+        <>
+          <input
+            type="file"
+            ref={avatarInputRef}
+            onChange={handleAvatarUpload}
+            accept="image/*"
+            className="hidden"
+          />
+          <input
+            type="file"
+            ref={coverInputRef}
+            onChange={handleCoverUpload}
+            accept="image/*"
+            className="hidden"
+          />
+          <input
+            type="file"
+            ref={albumInputRef}
+            onChange={handleAlbumUpload}
+            accept="image/*"
+            className="hidden"
+          />
+        </>
+      )}
+
+      {/* Background Cover Area */}
+      <div className="relative h-64 w-full bg-slate-800 flex-shrink-0">
+        <img
+          src={user.coverPhoto}
+          alt="Cover"
+          className="w-full h-full object-cover cursor-pointer"
+          onClick={() => handleOpenPhotoPreview('cover', user.coverPhoto)}
+        />
+
+        {/* Cover Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+
+        {/* Top Header Buttons */}
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pt-[calc(env(safe-area-inset-top)+8px)]">
+          <button
+            onClick={onBack || (() => window.history.back())}
+            className="p-2 rounded-full bg-black/30 text-white backdrop-blur-md hover:bg-black/50 transition cursor-pointer"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Edit Cover Camera Button */}
+        {isSelf && (
+          <button
+            onClick={() => coverInputRef.current?.click()}
+            className="absolute bottom-4 right-4 p-2.5 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition shadow-lg cursor-pointer"
+          >
+            <Camera className="w-5 h-5" />
+          </button>
         )}
-
-        <div className="absolute top-10 left-0 right-0 px-4 flex items-center justify-between z-10">
-          <button onClick={onBack} className="text-white">
-            <ChevronLeft size={28} />
-          </button>
-
-          {isOtherUser ? (
-            <div className="relative">
-              <button
-                onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
-                className="text-white"
-              >
-                <MoreHorizontal size={24} />
-              </button>
-
-              {showThreeDotMenu && (
-                <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg py-2 w-48 z-50">
-                  <button
-                    onClick={() => {
-                      setShowThreeDotMenu(false)
-                      alert('Report user')
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                  >
-                    Report
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowThreeDotMenu(false)
-                      alert('Block user')
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Block
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowThreeDotMenu(false)
-                      alert('Share profile')
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Share Profile
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button onClick={handleOpenEditSheet} className="text-white">
-              <Edit3 size={22} />
-            </button>
-          )}
-        </div>
-
-        {/* Avatar with WebGL Shader Overlay */}
-        <div className="absolute bottom-2 left-6 flex items-center">
-          <div className="relative w-24 h-24 rounded-full shadow-lg border-3 border-white bg-gray-700">
-            <div className="w-full h-full rounded-full overflow-hidden">
-              {user.photo ? (
-                <img src={user.photo} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gray-600 flex items-center justify-center text-4xl text-white font-bold">
-                  {avatarLetter}
-                </div>
-              )}
-            </div>
-            
-            {/* WebGL Overlay */}
-            <div className="absolute inset-0 pointer-events-none">
-              <WhiteColorRemovalShader
-                imageSrc="/1786867564769.png"
-                threshold={0.85}
-                className="w-full h-full"
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%) scale(1.5)',
-                  width: '100%',
-                  height: '100%',
-                }}
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Profile Info Details Section */}
-      <div className="px-5 pt-5">
-        <div className="flex flex-wrap items-center gap-0.5">
-          <h1 className="text-2xl font-bold text-black tracking-wide">{finalDisplayName}</h1>
-          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-0.5 whitespace-nowrap">
-            {user.gender} {user.age}
-          </span>
-          
-          {user.adminTag && (
-            <GreenColorRemovalShader
-              imageSrc="/1788021461820~2.jpg"
-              className="h-9 w-auto object-contain"
-            />
-          )}
-          
-          {user.officialTag && (
-            <GreenColorRemovalShader
-              imageSrc="/1788021468845~2.jpg"
-              className="h-9 w-auto object-contain"
-            />
-          )}
-          
-          {user.vipTag && (
-            <img src="/1785469775751.png" alt="VIP" className="h-7 w-auto object-contain" />
-          )}
-          
-          {user.premiumTag && (
-            <img src="/1785469365805.png" alt="Premium" className="h-7 w-auto object-contain" />
-          )}
-        </div>
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto px-4 -mt-10 relative z-20 pb-24">
 
-        <div className="flex items-center gap-1 text-xs mt-0.5 font-medium">
-          <div className="flex items-center gap-1">
-            {isSpecialAccount ? (
-              <>
-                <span
-                  className="relative font-bold rounded text-white -ml-2.5"
-                  style={{
-                    backgroundImage: 'url(/1785137282040.png)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    minWidth: '90px',
-                    paddingLeft: '0px',
-                    paddingRight: '5px',
-                    paddingTop: '2px',
-                    paddingBottom: '2px',
-                  }}
-                >
-                  <span className="relative text-xs" style={{ paddingLeft: '32px' }}>
-                    {user.displayAccountNumber}
-                  </span>
-                </span>
-                <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600">
-                  <Copy size={12} />
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="text-gray-500">ID:{getDisplayID()}</span>
-                <button onClick={handleCopyID} className="text-gray-400 hover:text-gray-600">
-                  <Copy size={12} />
-                </button>
-              </>
-            )}
-          </div>
-          <span className="text-gray-300">|</span>
-          <span className="text-gray-500">{user.followers} Fans</span>
-        </div>
+        {/* Profile Card Header */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col items-center text-center relative">
 
-        <div className="mt-1 flex items-center gap-1 -ml-2">
-          <div className="relative inline-flex items-center justify-center ml-0.5">
-            <img src="/1785137410522.png" alt="" className="h-6 w-auto object-contain" />
-            <span
-              className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm"
-              style={{ paddingLeft: '10px' }}
-            >
-              Lv.1
-            </span>
-          </div>
-          <img src="/1785486414756.png" alt="" className="h-6 w-auto object-contain" />
-        </div>
-
-        <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-3">
-          <MapPin size={14} className="text-gray-400" />
-          <span className="text-base">{user.flag}</span>
-          <span className="text-gray-500">{user.location || 'India'}</span>
-        </div>
-
-        {/* Bio Section */}
-        <div className="flex items-start gap-2 mt-2">
-          <button
-            onClick={!isOtherUser ? handleOpenEditSheet : undefined}
-            className={`mt-0.5 shrink-0 ${isOtherUser ? 'text-gray-400' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            <Edit3 size={14} />
-          </button>
-          {user.bio ? (
-            <p className="text-xs text-gray-500 italic">{user.bio}</p>
-          ) : (
-            <p className="text-xs text-gray-400 italic">
-              {isOtherUser ? 'No bio added yet' : 'Add bio...'}
-            </p>
-          )}
-        </div>
-
-        <div className="flex gap-0 mt-4 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`px-6 py-2 text-sm font-semibold transition-colors relative ${
-              activeTab === 'profile' ? 'text-blue-500' : 'text-gray-500'
-            }`}
-          >
-            Profile
-            {activeTab === 'profile' && (
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-1 bg-blue-500 rounded-full"></div>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Content Tabs Section */}
-      <div className="px-5 mt-6 space-y-4">
-        <div>
-          <h3 className="text-sm font-bold text-gray-800 mb-2 flex justify-between items-center">
-            Albums
-            <span className="text-xs text-gray-400 font-normal">{albumImages.length}/4</span>
-          </h3>
-          {albumImages.length > 0 ? (
-            <div className="flex gap-2 overflow-x-auto">
-              {albumImages.map((img, index) => (
-                <div
-                  key={index}
-                  className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => setFullImageView(img)}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="w-full h-28 rounded-2xl overflow-hidden bg-gray-100">
+          {/* Avatar Container */}
+          <div className="relative -mt-16 mb-3">
+            <div className="w-24 h-24 rounded-full border-4 border-white shadow-xl overflow-hidden bg-slate-100 relative group cursor-pointer">
               <img
-                src="/IMG_20260726_225835.jpg"
-                alt=""
+                src={user.photo}
+                alt={user.name}
                 className="w-full h-full object-cover"
+                onClick={() => handleOpenPhotoPreview('profile', user.photo)}
               />
             </div>
-          )}
-        </div>
 
-        <div>
-          <h3 className="text-sm font-bold text-gray-800 mb-2">Vehicle</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden">
-            <img src="/1785091443553.png" alt="" className="w-full h-full object-cover" />
+            {/* Avatar Edit Camera Button */}
+            {isSelf && (
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                className="absolute bottom-0 right-0 p-2 rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 transition cursor-pointer border-2 border-white"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Name & Special Tags */}
+          <div className="flex items-center gap-2 mb-1 justify-center flex-wrap">
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">{user.name}</h1>
+
+            {/* Tag Badges */}
+            {user.officialTag && (
+              <span className="bg-blue-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
+                OFFICIAL
+              </span>
+            )}
+            {user.adminTag && (
+              <span className="bg-purple-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
+                ADMIN
+              </span>
+            )}
+            {user.vipTag && (
+              <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
+                VIP
+              </span>
+            )}
+          </div>
+
+          {/* Account ID & Copy */}
+          <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full text-xs font-medium text-slate-600 mb-3 cursor-pointer hover:bg-slate-200 transition" onClick={copyId}>
+            <span>ID: {user.displayAccountNumber}</span>
+            <Copy className="w-3.5 h-3.5 text-slate-400" />
+            {copied && <span className="text-green-600 text-[10px] font-bold ml-1">Copied!</span>}
+          </div>
+
+          {/* Badges Row (Gender, Age, Location) */}
+          <div className="flex items-center gap-2 justify-center flex-wrap mb-4">
+
+            {/* Gender & Age Badge */}
+            <button
+              onClick={handleGenderToggle}
+              disabled={!isSelf}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white shadow-sm transition ${
+                user.gender === '♀' ? 'bg-pink-500' : 'bg-blue-500'
+              } ${isSelf ? 'hover:opacity-90 cursor-pointer' : ''}`}
+            >
+              <span>{user.gender}</span>
+              <span>{user.age}</span>
+            </button>
+
+            {/* Country / Location Badge */}
+            <button
+              onClick={() => isSelf && !isCountryLocked && setShowCountrySelector(true)}
+              disabled={!isSelf || isCountryLocked}
+              className={`flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-full text-xs font-semibold text-slate-700 shadow-2xs ${
+                isSelf && !isCountryLocked ? 'hover:bg-slate-200 cursor-pointer' : ''
+              }`}
+            >
+              <span className="text-sm">{user.flag}</span>
+              <span>{user.location}</span>
+            </button>
+          </div>
+
+          {/* Bio Section */}
+          <div className="w-full bg-slate-50 rounded-2xl p-3 text-xs text-slate-600 relative border border-slate-100">
+            <p className="whitespace-pre-wrap leading-relaxed">{user.bio || 'No bio yet.'}</p>
+            {isSelf && (
+              <button
+                onClick={() => {
+                  setTempBio(user.bio)
+                  setIsEditingBio(true)
+                }}
+                className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 p-1 rounded-full transition cursor-pointer"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        <div>
-          <h3 className="text-sm font-bold text-gray-800 mb-2">Medal</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden">
-            <img src="/1785091431545.png" alt="" className="w-full h-full object-cover" />
+        {/* Album Section */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-slate-800">Album ({albumImages.length}/3)</h2>
           </div>
-        </div>
 
-        <div>
-          <h3 className="text-sm font-bold text-gray-800 mb-2">Frame</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden">
-            <img src="/1785091457562.png" alt="" className="w-full h-full object-cover" />
-          </div>
-        </div>
+          <div className="grid grid-cols-3 gap-3">
+            {albumImages.map((src, index) => (
+              <div
+                key={index}
+                onClick={() => handleOpenPhotoPreview('album', src)}
+                className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 relative group cursor-pointer shadow-2xs"
+              >
+                <img src={src} alt={`Album ${index}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
 
-        <div>
-          <h3 className="text-sm font-bold text-gray-800 mb-2">Gift</h3>
-          <div className="w-full h-28 rounded-2xl overflow-hidden">
-            <img src="/1785091520912.png" alt="" className="w-full h-full object-cover" />
+            {isSelf && albumImages.length < 3 && (
+              <button
+                onClick={() => albumInputRef.current?.click()}
+                className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-blue-500 hover:text-blue-500 transition cursor-pointer bg-slate-50/50"
+              >
+                <Camera className="w-6 h-6 mb-1" />
+                <span className="text-[10px] font-semibold">Upload</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Bottom Action Bar for Other User */}
-      {isOtherUser && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md px-6 py-3.5 border-t border-gray-100 flex items-center justify-between gap-4 max-w-md mx-auto shadow-lg">
-          <button
-            onClick={handleToggleFollow}
-            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff5874] to-[#ff6b8b] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-pink-200"
-          >
-            <Heart className="w-6 h-6 fill-white stroke-none" />
-            <span>{isFollowing ? 'Following' : 'Follow'}</span>
-          </button>
-
+      {/* Bottom Floating Action Bar for non-self viewing */}
+      {!isSelf && (
+        <div className="absolute bottom-4 left-4 right-4 z-30 flex items-center gap-3">
           <button
             onClick={() => setShowChat(true)}
-            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#1dc4e9] to-[#1de9b6] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 text-white font-medium text-lg shadow-md shadow-cyan-200"
+            className="flex-1 bg-gradient-to-r from-blue-600 to-sky-500 text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 hover:opacity-95 active:scale-98 transition cursor-pointer"
           >
-            <MessageCircle className="w-6 h-6 fill-white stroke-none" />
+            <MessageCircle className="w-5 h-5" />
             <span>Chat</span>
           </button>
         </div>
       )}
 
-      {/* Full Image View Modal */}
-      {fullImageView && (
-        <div
-          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setFullImageView(null)}
-        >
-          <button
-            onClick={() => setFullImageView(null)}
-            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
-          >
-            <X size={24} />
-          </button>
-          <img
-            src={fullImageView}
-            alt=""
-            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+      {/* Country Selector Modal */}
+      {showCountrySelector && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-full duration-300">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-slate-800 text-lg">Select Country</h3>
+              <button
+                onClick={() => setShowCountrySelector(false)}
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 space-y-1 pr-1">
+              {COUNTRIES.map((c) => (
+                <button
+                  key={c.code}
+                  onClick={() => handleCountrySelect(c.name, c.flag, c.code)}
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition cursor-pointer text-left border border-transparent hover:border-slate-100"
+                >
+                  <span className="text-2xl">{c.flag}</span>
+                  <span className="text-sm font-semibold text-slate-700 flex-1">{c.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Edit Profile Bottom Sheet */}
-      {!isOtherUser && showEditSheet && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={handleCloseEditSheet}></div>
-
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl animate-slide-up flex flex-col h-[70vh]">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
-              <button onClick={handleCloseEditSheet}>
-                <ChevronLeft size={24} className="text-gray-700" />
-              </button>
-              <h2 className="text-lg font-bold text-gray-900">Edit Information</h2>
-              <div className="w-6"></div>
-            </div>
-
-            <div className="overflow-y-auto px-5 py-4 space-y-5 flex-1 pb-24">
-              <input
-                type="file"
-                ref={avatarInputRef}
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
-              <input
-                type="file"
-                ref={albumInputRef}
-                accept="image/*"
-                onChange={handleAlbumUpload}
-                className="hidden"
-              />
-              <input
-                type="file"
-                ref={coverInputRef}
-                accept="image/*"
-                onChange={handleCoverUpload}
-                className="hidden"
-              />
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Avatar</span>
-                <div
-                  onClick={() => avatarInputRef.current?.click()}
-                  className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 cursor-pointer"
-                >
-                  {user.photo ? (
-                    <img src={user.photo} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xl text-white font-bold">
-                      {avatarLetter}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Background Cover</span>
-                  <div className="flex items-center gap-2">
-                    {user.coverPhoto && (
-                      <button
-                        onClick={handleRemoveCoverPhoto}
-                        className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-xs font-semibold hover:bg-red-100 transition-colors"
-                      >
-                        Remove
-                      </button>
-                    )}
-                    <button
-                      onClick={() => coverInputRef.current?.click()}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
-                    >
-                      <Camera size={14} /> Add Photo
-                    </button>
-                  </div>
-                </div>
-                {user.coverPhoto && (
-                  <div className="w-full h-20 rounded-xl overflow-hidden border border-gray-200">
-                    <img
-                      src={user.coverPhoto}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">
-                    Album Photos ({albumImages.length}/4)
-                  </span>
-                  {albumImages.length < 4 && (
-                    <button
-                      onClick={() => albumInputRef.current?.click()}
-                      className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold flex items-center gap-1 hover:bg-blue-100 transition-colors"
-                    >
-                      <Camera size={14} /> Add Photo
-                    </button>
-                  )}
-                </div>
-
-                {albumImages.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2 pt-1">
-                    {albumImages.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className="relative w-full h-16 rounded-xl overflow-hidden border border-gray-200 group"
-                      >
-                        <img src={img} alt="" className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => handleRemoveAlbumImage(idx)}
-                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Name</span>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
-                  placeholder="Enter name"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Age</span>
-                <input
-                  type="number"
-                  value={editAge}
-                  onChange={(e) => setEditAge(e.target.value)}
-                  className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-48"
-                  placeholder="0"
-                  min="0"
-                  max="150"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Bio</span>
-                {showBioInput ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editBio}
-                      onChange={(e) => setEditBio(e.target.value)}
-                      className="text-sm text-gray-900 text-right bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none px-2 py-1 w-36"
-                      placeholder="Add bio"
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleBioSave}
-                      className="text-xs text-blue-500 font-medium"
-                    >
-                      Save
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowBioInput(true)}
-                    className="flex items-center gap-1 text-sm text-gray-400"
-                  >
-                    <span className="max-w-[180px] truncate">
-                      {editBio || 'Add bio'}
-                    </span>
-                    <ChevronRight size={16} />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Country</span>
-                <select
-                  value={editCountry}
-                  onChange={handleCountrySelect}
-                  disabled={countryLocked}
-                  className={`text-sm text-right outline-none px-2 py-1 bg-transparent border-b w-48 ${
-                    countryLocked
-                      ? 'text-gray-400 border-transparent cursor-not-allowed'
-                      : 'text-gray-900 border-gray-200 focus:border-blue-500'
-                  }`}
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c.code} value={c.name}>
-                      {c.flag} {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Gender</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleGenderSelect('male')}
-                    disabled={genderLocked && editGender !== 'male'}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      editGender === 'male'
-                        ? 'bg-blue-500 text-white'
-                        : genderLocked
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    ♂ Male
-                  </button>
-                  <button
-                    onClick={() => handleGenderSelect('female')}
-                    disabled={genderLocked && editGender !== 'female'}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      editGender === 'female'
-                        ? 'bg-pink-500 text-white'
-                        : genderLocked
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    ♀ Female
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white border-t border-gray-100 shrink-0">
+      {/* Edit Bio Modal */}
+      {isEditingBio && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="font-bold text-slate-800 text-lg mb-3">Edit Bio</h3>
+            <textarea
+              value={tempBio}
+              onChange={(e) => setTempBio(e.target.value)}
+              maxLength={150}
+              rows={4}
+              placeholder="Write something about yourself..."
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 resize-none mb-4"
+            />
+            <div className="flex gap-2 justify-end">
               <button
-                onClick={handleSaveEdit}
-                className="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors"
+                onClick={() => setIsEditingBio(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 transition cursor-pointer"
               >
-                Save Changes
+                Cancel
+              </button>
+              <button
+                onClick={handleBioSave}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md hover:bg-blue-700 transition cursor-pointer"
+              >
+                Save
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ChatScreen Overlay */}
-      {isOtherUser && showChat && targetUser && (
-        <div className="fixed inset-0 z-[100]">
+      {/* Image Preview / Change Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-between p-4">
+          <div className="w-full flex justify-end">
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center w-full max-h-[75vh]">
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+            />
+          </div>
+
+          <div className="w-full max-w-xs flex gap-3 mb-6">
+            {isSelf && (
+              <button
+                onClick={handleReplacePhotoFromPreview}
+                className="flex-1 bg-white text-slate-900 font-bold py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 hover:bg-slate-100 transition cursor-pointer text-sm"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Change Photo</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Embedded Fullscreen WebRTC Chat Screen */}
+      {showChat && (
+        <div className="fixed inset-0 z-50 bg-white">
           <ChatScreen
-            currentUser={getCurrentUserData()}
-            targetUser={{
-              uid: targetUser.uid || targetUser.id || '',
-              name: isValidName(targetUser.name) ? targetUser.name! : (targetUser.displayAccountNumber || 'User'),
-              photo: targetUser.photo || targetUser.image || '',
+            chatId={`${[currentUid, user.uid].sort().join('_')}`}
+            currentUser={{
+              uid: currentUid,
+              name: currentName,
+              photo: currentPhoto,
             }}
-            onClose={() => setShowChat(false)}
+            targetUser={{
+              uid: user.uid,
+              name: user.name,
+              photo: user.photo,
+            }}
+            onBack={() => setShowChat(false)}
             onJoinRoom={onJoinRoom}
           />
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes slideUp {
-          from {
-            transform: translateY(100%);
-          }
-          to {
-            transform: translateY(0);
-          }
-        }
-        .animate-slide-up {
-          animation: slideUp 0.3s ease-out;
-        }
-      `}</style>
     </div>
   )
 }
-
