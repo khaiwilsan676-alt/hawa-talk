@@ -190,7 +190,7 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
         chats.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
 
         if (isMounted) {
-          setConversations(chats);
+          setDynamicChats(chats);
           await saveToDB(chats);
         }
       } catch (error) {
@@ -225,14 +225,6 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
 
   const handleOpenDynamicChat = async (chat: ChatPreview) => {
     setActiveChat({ uid: chat.otherUser.uid, name: chat.otherUser.name, photo: chat.otherUser.photo });
-    try {
-      const convoRef = doc(db, 'conversations', chat.chatId);
-      await updateDoc(convoRef, {
-        [`unreadCounts.${currentUserUid}`]: 0,
-      });
-    } catch (error) {
-      console.error('Failed to reset unread count:', error);
-    }
   };
 
   const handleCloseChat = () => {

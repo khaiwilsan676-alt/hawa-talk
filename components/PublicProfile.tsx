@@ -850,128 +850,121 @@ export default function PublicProfile({
 
       if (uid && uid !== 'N/A') {
         try {
-          const userDocRef = doc(db, 'users', uid)
-
-          unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
-            if (docSnap.exists()) {
-              const data = docSnap.data()
-              if (data.accountId) {
-                displayAccNum = String(data.accountId)
-                localStorage.setItem('accountNumber', displayAccNum)
-              }
-              const docName = data.name || data.displayName || data.userName
-              if (isValidName(docName)) {
-                storedName = docName
-                localStorage.setItem('userName', storedName)
-              }
-              if (data.photo || data.photoURL || data.image) {
-                photo = data.photo || data.photoURL || data.image || photo
-                localStorage.setItem('userPhoto', photo)
-              }
-              if (data.coverPhoto || data.coverImage) {
-                coverPhoto = data.coverPhoto || data.coverImage || coverPhoto
-                localStorage.setItem('userCoverPhoto', coverPhoto)
-              }
-              if (data.bio) {
-                storedBio = data.bio
-                localStorage.setItem('userBio', storedBio)
-              }
-              if (data.country || data.location) {
-                storedCountry = data.country || data.location
-                localStorage.setItem('userCountry', storedCountry)
-              }
-              if (data.countryCode) {
-                storedCountryCode = data.countryCode
-                localStorage.setItem('userCountryCode', storedCountryCode)
-              }
-              if (data.countryLocked !== undefined) {
-                isCountryLockedInStorage = data.countryLocked
-                if (data.countryLocked) localStorage.setItem('userCountryLocked', 'true')
-              }
-              if (data.setupComplete) {
-                isCountryLockedInStorage = true
-                localStorage.setItem('userCountryLocked', 'true')
-              }
-              if (data.gender) {
-                storedGender = data.gender
-                localStorage.setItem('userGender', storedGender)
-              }
-              if (data.age) {
-                storedAge = String(data.age)
-                localStorage.setItem('userAge', storedAge)
-              }
-              if (data.albumImages && Array.isArray(data.albumImages)) {
-                setAlbumImages(data.albumImages)
-                localStorage.setItem(
-                  'userAlbumImages',
-                  JSON.stringify(data.albumImages)
-                )
-              }
-
-              if (!displayAccNum) {
-                displayAccNum = getOrCreateAccountNumber(uid)
-              }
-
-              if (!isValidName(storedName)) {
-                storedName = displayAccNum
-              }
-
-              const matchedCountry = COUNTRIES.find(
-                (c) =>
-                  c.code === storedCountryCode ||
-                  c.flag === storedCountry ||
-                  c.name === storedCountry
-              ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
-
-              const profileData = {
-                uid: uid,
-                name: storedName,
-                displayAccountNumber: displayAccNum,
-                photo,
-                coverPhoto,
-                bio: storedBio,
-                location: matchedCountry.name,
-                flag: matchedCountry.flag,
-                countryCode: matchedCountry.code,
-                gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
-                age: storedAge ? parseInt(storedAge) : 24,
-                followers: data.followers || 0,
-                albumImages: data.albumImages || [],
-                officialTag: data.officialTag || false,
-                adminTag: data.adminTag || false,
-                vipTag: data.vipTag || false,
-                premiumTag: data.premiumTag || false,
-              };
-
-              setUser(profileData);
-              await saveProfileToDB(profileData);
-
-              setEditName(storedName)
-              setEditAge(storedAge || '24')
-              setEditBio(storedBio || '')
-              setEditCountry(matchedCountry.name)
-              setEditCountryCode(matchedCountry.code)
-              setCountryLocked(isCountryLockedInStorage)
-
-              if (storedGender) {
-                setEditGender(
-                  storedGender === 'female' || storedGender === '♀' ? 'female' : 'male'
-                )
-                setGenderLocked(true)
-              }
+          const res = await getUser(uid)
+          const data = res && (res.user || res.data || res)
+          if (data && (data.id || data.Name || data.name)) {
+            if (data.accountId || data.accountNumber || data['Account Number']) {
+              displayAccNum = String(data.accountId || data.accountNumber || data['Account Number'])
+              localStorage.setItem('accountNumber', displayAccNum)
             }
-          })
+            const docName = data.name || data.Name || data.displayName || data.userName
+            if (isValidName(docName)) {
+              storedName = docName
+              localStorage.setItem('userName', storedName)
+            }
+            if (data.photo || data.photoURL || data.image || data.avatar || data.Avtar) {
+              photo = data.photo || data.photoURL || data.image || data.avatar || data.Avtar || photo
+              localStorage.setItem('userPhoto', photo)
+            }
+            if (data.coverPhoto || data.coverImage || data.backCover || data['Back Cover']) {
+              coverPhoto = data.coverPhoto || data.coverImage || data.backCover || data['Back Cover'] || coverPhoto
+              localStorage.setItem('userCoverPhoto', coverPhoto)
+            }
+            if (data.bio || data.Bio) {
+              storedBio = data.bio || data.Bio
+              localStorage.setItem('userBio', storedBio)
+            }
+            if (data.country || data.Country || data.location) {
+              storedCountry = data.country || data.Country || data.location
+              localStorage.setItem('userCountry', storedCountry)
+            }
+            if (data.countryCode) {
+              storedCountryCode = data.countryCode
+              localStorage.setItem('userCountryCode', storedCountryCode)
+            }
+            if (data.countryLocked !== undefined) {
+              isCountryLockedInStorage = data.countryLocked
+              if (data.countryLocked) localStorage.setItem('userCountryLocked', 'true')
+            }
+            if (data.setupComplete) {
+              isCountryLockedInStorage = true
+              localStorage.setItem('userCountryLocked', 'true')
+            }
+            if (data.gender || data.Gender) {
+              storedGender = data.gender || data.Gender
+              localStorage.setItem('userGender', storedGender)
+            }
+            if (data.age || data.Age) {
+              storedAge = String(data.age || data.Age)
+              localStorage.setItem('userAge', storedAge)
+            }
+            if (data.albumImages && Array.isArray(data.albumImages)) {
+              setAlbumImages(data.albumImages)
+              localStorage.setItem(
+                'userAlbumImages',
+                JSON.stringify(data.albumImages)
+              )
+            }
+          }
+
+          if (!displayAccNum) {
+            displayAccNum = getOrCreateAccountNumber(uid)
+          }
+
+          if (!isValidName(storedName)) {
+            storedName = displayAccNum
+          }
+
+          const matchedCountry = COUNTRIES.find(
+            (c) =>
+              c.code === storedCountryCode ||
+              c.flag === storedCountry ||
+              c.name === storedCountry
+          ) || { name: 'India', flag: '🇮🇳', code: 'IN' }
+
+          const profileData = {
+            uid: uid,
+            name: storedName,
+            displayAccountNumber: displayAccNum,
+            photo,
+            coverPhoto,
+            bio: storedBio,
+            location: matchedCountry.name,
+            flag: matchedCountry.flag,
+            countryCode: matchedCountry.code,
+            gender: storedGender === 'female' || storedGender === '♀' ? '♀' : '♂',
+            age: storedAge ? parseInt(storedAge) : 24,
+            followers: data ? (data.followers || 0) : 0,
+            albumImages: data ? (data.albumImages || []) : [],
+            officialTag: data ? (data.officialTag || false) : false,
+            adminTag: data ? (data.adminTag || false) : false,
+            vipTag: data ? (data.vipTag || false) : false,
+            premiumTag: data ? (data.premiumTag || false) : false,
+          };
+
+          setUser(profileData);
+          await saveProfileToDB(profileData);
+
+          setEditName(storedName)
+          setEditAge(storedAge || '24')
+          setEditBio(storedBio || '')
+          setEditCountry(matchedCountry.name)
+          setEditCountryCode(matchedCountry.code)
+          setCountryLocked(isCountryLockedInStorage)
+
+          if (storedGender) {
+            setEditGender(
+              storedGender === 'female' || storedGender === '♀' ? 'female' : 'male'
+            )
+            setGenderLocked(true)
+          }
         } catch (err) {
-          console.warn('Firestore fetch error in PublicProfile:', err)
+          console.warn('Google Sheets fetch error in PublicProfile:', err)
         }
       }
     }
 
     loadProfileData()
-
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
   }, [isOtherUser, targetUser])
 
   // Save to IndexedDB whenever user data changes

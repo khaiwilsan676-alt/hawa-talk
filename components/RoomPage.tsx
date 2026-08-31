@@ -1526,10 +1526,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               if (seat) {
                 const updated = seats.map(s => s.number === seat.number ? { ...s, isMuted: !s.isMuted } : s);
                 setSeats(updated);
-                updated.forEach(s => {
-                  const sRef = doc(db, seatsCollection, String(s.number));
-                  updateDoc(sRef, { isMuted: s.isMuted });
-                });
               }
             }
             setShowUserProfile(false);
@@ -1540,10 +1536,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               if (seat) {
                 const updated = seats.map(s => s.number === seat.number ? { ...s, isLocked: !s.isLocked } : s);
                 setSeats(updated);
-                updated.forEach(s => {
-                  const sRef = doc(db, seatsCollection, String(s.number));
-                  updateDoc(sRef, { isLocked: s.isLocked });
-                });
               }
             }
             setShowUserProfile(false);
@@ -2016,7 +2008,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             <WhiteColorRemovalShader
               imageSrc="/1787162568668.png"
               threshold={0.85}
-              removeColor="white"
               className="w-full h-full"
               style={{
                 width: '100%',

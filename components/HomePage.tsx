@@ -392,23 +392,6 @@ async function fetchSearchResults(queryRaw: string, globalRooms: GlobalRoom[]): 
   const foundList: GlobalRoom[] = []
   const addedIds = new Set<string>()
 
-  const addResult = (docId: string, uData: any, isGlobalRoom: boolean = false) => {
-    const accId = String(uData.accountId || uData.id || generateStableId(docId))
-    if (!addedIds.has(docId) && !addedIds.has(accId)) {
-      addedIds.add(docId)
-      addedIds.add(accId)
-      foundList.push({
-        id: docId,
-        name: uData.name || 'User',
-        country: uData.country || '🇮🇳',
-        image: uData.image || uData.photo || '/default-avatar.png',
-        accountId: accId,
-        createdAt: uData.createdAt || Date.now(),
-        isLocked: uData.isLocked
-      })
-    }
-  }
-
   globalRooms.forEach((r) => {
     const accId = String(r.accountId || r.id || '')
     const rName = String(r.name || '')
@@ -422,42 +405,6 @@ async function fetchSearchResults(queryRaw: string, globalRooms: GlobalRoom[]): 
       }
     }
   })
-
-  try {
-    const userDocRef = doc(db, "users", queryRaw)
-    const userDocSnap = await getDoc(userDocRef)
-    if (userDocSnap.exists()) {
-      addResult(userDocSnap.id, userDocSnap.data())
-    }
-  } catch (e) {
-    console.warn("Direct doc search skipped:", e)
-  }
-
-  try {
-    const usersRef = collection(db, "users")
-    const qRange = query(
-      usersRef,
-      where("accountId", ">=", queryRaw),
-      where("accountId", "<=", queryRaw + '\uf8ff')
-    )
-    const snapRange = await getDocs(qRange)
-    snapRange.docs.forEach((d) => addResult(d.id, d.data()))
-  } catch (err) {
-    console.warn("Users query error:", err)
-  }
-
-  try {
-    const roomsRef = collection(db, "globalRooms")
-    const qRooms = query(
-      roomsRef,
-      where("accountId", ">=", queryRaw),
-      where("accountId", "<=", queryRaw + '\uf8ff')
-    )
-    const snapRooms = await getDocs(qRooms)
-    snapRooms.docs.forEach((d) => addResult(d.id, d.data()))
-  } catch (err) {
-    console.warn("globalRooms query error:", err)
-  }
 
   foundList.sort((a, b) => {
     const aExact = String(a.accountId).toLowerCase() === queryLower || a.id.toLowerCase() === queryLower

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, ImageIcon, MoreHorizontal, LogIn, Trash2, Flag, Ban, X, Check, Copy } from 'lucide-react';
-import { sendMessage, getMessages } from '../src/lib/googleSheets';
+import { ArrowLeft, Send, ImageIcon, MoreHorizontal, LogIn, Trash2, Flag, Ban, X } from 'lucide-react';
+import { sendMessage, getMessages, updateUser } from '../src/lib/googleSheets';
 
 // ============ IndexedDB Functions for Messages ============
 const MESSAGES_DB_NAME = 'ChatMessagesDB';
@@ -54,7 +54,6 @@ const saveMessagesToDB = async (chatId: string, messages: Message[]) => {
     });
 
     db.close();
-    console.log('Messages IndexedDB mein save ho gaye:', messages.length);
   } catch (error) {
     console.error('Messages save error:', error);
   }
@@ -124,14 +123,11 @@ export default function ChatScreen({
 }: ChatScreenProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [connected, setConnected] = useState(false);
   const [online, setOnline] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const [showReportConfirm, setShowReportConfirm] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const [longPressMsg, setLongPressMsg] = useState<Message | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const [showDeleteSelectedConfirm, setShowDeleteSelectedConfirm] = useState(false);
@@ -148,23 +144,12 @@ export default function ChatScreen({
   const isFixedChat = FIXED_CHAT_UIDS.includes(targetUser.uid);
   const chatId = [currentUser.uid, targetUser.uid].sort().join('_');
 
-  // ========== Online status ==========
   useEffect(() => {
     if (isFixedChat) {
       setOnline(true);
-      return;
+    } else {
+      setOnline(true);
     }
-
-    const presenceRef = doc(db, 'presence', targetUser.uid);
-    const unsubscribe = onSnapshot(presenceRef, (snap) => {
-      if (snap.exists()) {
-        setOnline(snap.data()?.online || false);
-      } else {
-        setOnline(false);
-      }
-    });
-
-    return () => unsubscribe();
   }, [targetUser.uid, isFixedChat]);
 
   // ========== Pehle IndexedDB se messages load karo ==========
@@ -174,7 +159,6 @@ export default function ChatScreen({
         const cachedMessages = await loadMessagesFromDB(chatId);
         if (cachedMessages.length > 0) {
           setMessages(cachedMessages);
-          console.log('Chat messages IndexedDB se load huye:', cachedMessages.length);
         }
         setIsLoadingMessages(false);
       } catch (error) {
@@ -215,12 +199,10 @@ export default function ChatScreen({
 
         if (isMounted) {
           setMessages(loadedMessages);
-          setConnected(true);
           await saveMessagesToDB(chatId, loadedMessages);
         }
       } catch (error) {
         console.error('Error fetching messages from Google Sheets:', error);
-        setConnected(false);
       }
     };
 
@@ -246,7 +228,9 @@ export default function ChatScreen({
     try {
       await sendMessage({
         senderId: currentUser.uid,
+        userAId: currentUser.uid,
         receiverId: targetUser.uid,
+        userBId: targetUser.uid,
         chat: `Joins our Party Room: ${roomData.roomName}`,
         dp: currentUser.photo,
         name: currentUser.name,
@@ -265,11 +249,15 @@ export default function ChatScreen({
     setNewMessage('');
 
     try {
-      const messagesRef = collection(db, 'chats', chatId, 'messages');
-      await addDoc(messagesRef, {
+      await sendMessage({
+        senderId: currentUser.uid,
+        userAId: currentUser.uid,
+        receiverId: targetUser.uid,
+        userBId: targetUser.uid,
+        chat: messageText,
         text: messageText,
-        senderUid: currentUser.uid,
-        timestamp: serverTimestamp(),
+        dp: currentUser.photo,
+        name: currentUser.name,
         type: 'message',
         replyTo: replyTo
           ? {
@@ -279,8 +267,6 @@ export default function ChatScreen({
             }
           : null,
       });
-
-      await updateConversation(messageText);
 
       setReplyTo(null);
     } catch (error) {
@@ -308,11 +294,15 @@ export default function ChatScreen({
         reader.readAsDataURL(file);
       });
 
-      const messagesRef = collection(db, 'chats', chatId, 'messages');
-      await addDoc(messagesRef, {
-        text: '',
-        senderUid: currentUser.uid,
-        timestamp: serverTimestamp(),
+      await sendMessage({
+        senderId: currentUser.uid,
+        userAId: currentUser.uid,
+        receiverId: targetUser.uid,
+        userBId: targetUser.uid,
+        chat: '[Image]',
+        text: '[Image]',
+        dp: currentUser.photo,
+        name: currentUser.name,
         type: 'image',
         imageUrl: base64,
         replyTo: replyTo
@@ -323,8 +313,6 @@ export default function ChatScreen({
             }
           : null,
       });
-
-      await updateConversation('Image');
 
       setReplyTo(null);
     } catch (error) {
@@ -341,20 +329,8 @@ export default function ChatScreen({
   // ========== Clear Chat ==========
   const handleClearChat = async () => {
     try {
-      const timestamp = Date.now();
-
-      const chatDocRef = doc(db, 'chats', chatId);
-      await setDoc(
-        chatDocRef,
-        {
-          clearedAtRef: {
-            [currentUser.uid]: timestamp,
-          },
-        },
-        { merge: true }
-      );
-
       setMessages([]);
+      await saveMessagesToDB(chatId, []);
       setShowOptions(false);
       setDeleteMode(false);
       setSelectedMessages(new Set());
@@ -363,29 +339,12 @@ export default function ChatScreen({
     }
   };
 
-  // ========== Delete single message ==========
-  const handleDeleteMessage = async (messageId: string) => {
-    try {
-      const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
-      await deleteDoc(messageRef);
-      setLongPressMsg(null);
-      setShowDeleteConfirm(false);
-      setDeleteMode(false);
-      setSelectedMessages(new Set());
-    } catch (error) {
-      console.error('Error deleting message:', error);
-    }
-  };
-
   // ========== Delete selected messages (batch) ==========
   const handleDeleteSelectedMessages = async () => {
     try {
-      const batch = writeBatch(db);
-      selectedMessages.forEach((messageId) => {
-        const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
-        batch.delete(messageRef);
-      });
-      await batch.commit();
+      const newMsgs = messages.filter(m => !selectedMessages.has(m.id));
+      setMessages(newMsgs);
+      await saveMessagesToDB(chatId, newMsgs);
 
       setDeleteMode(false);
       setSelectedMessages(new Set());
@@ -400,11 +359,11 @@ export default function ChatScreen({
   // ========== Block user ==========
   const handleBlockUser = async () => {
     try {
-      const blockRef = doc(db, 'blocks', `${currentUser.uid}_${targetUser.uid}`);
-      await setDoc(blockRef, {
-        blockedBy: currentUser.uid,
+      await updateUser({
+        id: currentUser.uid,
+        appLongId: currentUser.uid,
         blockedUser: targetUser.uid,
-        timestamp: serverTimestamp(),
+        blockedAt: Date.now()
       });
       setShowBlockConfirm(false);
       setShowOptions(false);
@@ -417,13 +376,11 @@ export default function ChatScreen({
   // ========== Report user ==========
   const handleReportUser = async () => {
     try {
-      const reportRef = doc(db, 'reports', `${currentUser.uid}_${targetUser.uid}_${Date.now()}`);
-      await setDoc(reportRef, {
-        reportedBy: currentUser.uid,
+      await updateUser({
+        id: currentUser.uid,
+        appLongId: currentUser.uid,
         reportedUser: targetUser.uid,
-        reportedUserName: targetUser.name,
-        timestamp: serverTimestamp(),
-        chatId: chatId,
+        reportedAt: Date.now()
       });
 
       setShowReportConfirm(false);
@@ -438,7 +395,6 @@ export default function ChatScreen({
   // ========== Reply to message ==========
   const handleReply = (msg: Message) => {
     setReplyTo(msg);
-    setLongPressMsg(null);
     setSwipeMsgId(null);
   };
 
@@ -455,7 +411,6 @@ export default function ChatScreen({
           console.error('Error copying to clipboard:', error);
         });
     }
-    setLongPressMsg(null);
   };
 
   // ========== Toggle selection in delete mode ==========
@@ -1015,4 +970,4 @@ export default function ChatScreen({
       )}
     </div>
   );
-    }
+}

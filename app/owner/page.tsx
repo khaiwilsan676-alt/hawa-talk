@@ -8,10 +8,9 @@ import {
   Search,
   CheckCircle,
   XCircle,
-  Tag,
-  User as UserIcon
+  Tag
 } from 'lucide-react';
-import { getUser, updateUser, updateRoom, getRooms } from '../../src/lib/googleSheets';
+import { getUsers, updateUser, updateRoom } from '../../src/lib/googleSheets';
 
 interface UserData {
   id: string;
@@ -66,6 +65,7 @@ export default function OwnerUsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('All Roles');
   const [users, setUsers] = useState<UserData[]>([]);
+  const [rawUsersList, setRawUsersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Tag Assignment States
@@ -79,18 +79,16 @@ export default function OwnerUsersPage() {
   const [tagSuccess, setTagSuccess] = useState('');
   const [tagError, setTagError] = useState('');
 
-  // Fetch all users
-  useEffect(() => {
+  // Fetch all users from Google Sheets
+  const fetchAllUsers = async () => {
+    setLoading(true);
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef);
-
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedUsers: UserData[] = snapshot.docs.map((doc) => {
-          const data = doc.data();
-
+      const rawUsers = await getUsers();
+      if (Array.isArray(rawUsers)) {
+        setRawUsersList(rawUsers);
+        const fetchedUsers: UserData[] = rawUsers.map((data: any) => {
           let userRole: 'NORMAL' | 'HOST' | 'AGENCY' | 'ADMIN' = 'NORMAL';
-          if (data.type === 'admin' || data.isOfficial) {
+          if (data.type === 'admin' || data.isOfficial || data.adminTag) {
             userRole = 'ADMIN';
           } else if (data.role === 'HOST' || data.type === 'host') {
             userRole = 'HOST';
@@ -98,31 +96,33 @@ export default function OwnerUsersPage() {
             userRole = 'AGENCY';
           }
 
+          const userId = data['App long ID'] || data.appLongId || data.userId || data.id || '';
+          const accNum = data['Account Number'] || data.accountNumber || data.accountId || '—';
+
           return {
-            id: doc.id,
-            name: data.name || data.displayName || 'Unnamed User',
+            id: userId,
+            name: data.Name || data.name || data.displayName || 'Unnamed User',
             username: data.username || '',
-            hurryId: data.accountId ? String(data.accountId) : '—',
-            emailPhone: data.email || data.phone || '—',
+            hurryId: String(accNum),
+            emailPhone: data['E-mail'] || data.email || data.phone || '—',
             role: userRole,
-            gender: data.gender || '',
-            country: data.country || '🇮🇳',
-            image: data.image || data.photo || data.photoURL || ''
+            gender: data.Gender || data.gender || '',
+            country: data.Country || data.country || '🇮🇳',
+            image: data.Avtar || data.avatar || data.image || data.photo || ''
           };
         });
 
         setUsers(fetchedUsers);
-        setLoading(false);
-      }, (error) => {
-        console.error("Firestore read error:", error);
-        setLoading(false);
-      });
-
-      return () => unsubscribe();
+      }
     } catch (err) {
-      console.error("Error setting up listener:", err);
+      console.error("Google Sheets user fetch error:", err);
+    } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchAllUsers();
   }, []);
 
   const getRoleBadge = (role: string) => {
@@ -152,65 +152,57 @@ export default function OwnerUsersPage() {
     setSelectedTags([]);
 
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef);
-
-      // Get all users and find match
-      const snapshot = await new Promise<any>((resolve, reject) => {
-        const unsubscribe = onSnapshot(q, (snap) => {
-          unsubscribe();
-          resolve(snap);
-        }, reject);
-      });
-
+      const rawUsers = await getUsers();
       let foundUser: UserData | null = null;
+      let foundRaw: any = null;
 
-      snapshot.docs.forEach((doc: any) => {
-        const data = doc.data();
-        const accountId = data.accountId ? String(data.accountId) : '';
-        const displayAccountNumber = data.displayAccountNumber ? String(data.displayAccountNumber) : '';
+      if (Array.isArray(rawUsers)) {
+        setRawUsersList(rawUsers);
+        rawUsers.forEach((data: any) => {
+          const userId = data['App long ID'] || data.appLongId || data.userId || data.id || '';
+          const accountId = data['Account Number'] || data.accountNumber || data.accountId ? String(data['Account Number'] || data.accountNumber || data.accountId) : '';
 
-        if (
-          accountId === tagSearchUserId.trim() ||
-          displayAccountNumber === tagSearchUserId.trim() ||
-          doc.id === tagSearchUserId.trim()
-        ) {
-          let userRole: 'NORMAL' | 'HOST' | 'AGENCY' | 'ADMIN' = 'NORMAL';
-          if (data.type === 'admin' || data.isOfficial) {
-            userRole = 'ADMIN';
-          } else if (data.role === 'HOST' || data.type === 'host') {
-            userRole = 'HOST';
-          } else if (data.role === 'AGENCY' || data.type === 'agency') {
-            userRole = 'AGENCY';
+          if (
+            accountId === tagSearchUserId.trim() ||
+            userId === tagSearchUserId.trim()
+          ) {
+            foundRaw = data;
+            let userRole: 'NORMAL' | 'HOST' | 'AGENCY' | 'ADMIN' = 'NORMAL';
+            if (data.type === 'admin' || data.isOfficial || data.adminTag) {
+              userRole = 'ADMIN';
+            } else if (data.role === 'HOST' || data.type === 'host') {
+              userRole = 'HOST';
+            } else if (data.role === 'AGENCY' || data.type === 'agency') {
+              userRole = 'AGENCY';
+            }
+
+            foundUser = {
+              id: userId,
+              name: data.Name || data.name || data.displayName || 'Unnamed User',
+              username: data.username || '',
+              hurryId: accountId || '—',
+              emailPhone: data['E-mail'] || data.email || data.phone || '—',
+              role: userRole,
+              gender: data.Gender || data.gender || '',
+              country: data.Country || data.country || '🇮🇳',
+              image: data.Avtar || data.avatar || data.image || data.photo || ''
+            };
+
+            const existingTags = [
+              ...(data.adminTag ? ['adminTag'] : []),
+              ...(data.officialTag ? ['officialTag'] : []),
+              ...(data.vipTag ? ['vipTag'] : []),
+              ...(data.premiumTag ? ['premiumTag'] : []),
+            ];
+            setSelectedTags(existingTags);
           }
+        });
+      }
 
-          foundUser = {
-            id: doc.id,
-            name: data.name || data.displayName || 'Unnamed User',
-            username: data.username || '',
-            hurryId: accountId || displayAccountNumber || '—',
-            emailPhone: data.email || data.phone || '—',
-            role: userRole,
-            gender: data.gender || '',
-            country: data.country || '🇮🇳',
-            image: data.image || data.photo || data.photoURL || ''
-          };
-
-          // Load existing tags
-          const existingTags = [
-            ...(data.adminTag ? ['adminTag'] : []),
-            ...(data.officialTag ? ['officialTag'] : []),
-            ...(data.vipTag ? ['vipTag'] : []),
-            ...(data.premiumTag ? ['premiumTag'] : []),
-          ];
-          setSelectedTags(existingTags);
-        }
-      });
-
-      if (foundUser) {
+      if (foundUser && foundRaw) {
         setSelectedTagUserData(foundUser);
-        setSelectedTagUserId(foundUser.id);
-        setTagSuccess(`User found: ${foundUser.name} (ID: ${foundUser.hurryId})`);
+        setSelectedTagUserId((foundUser as UserData).id);
+        setTagSuccess(`User found: ${(foundUser as UserData).name} (ID: ${(foundUser as UserData).hurryId})`);
       } else {
         setTagError('No user found with this ID');
       }
@@ -255,29 +247,25 @@ export default function OwnerUsersPage() {
     setTagSuccess('');
 
     try {
-      const userDocRef = doc(db, 'users', selectedTagUserId);
-
-      // Update tag fields
       const tagUpdate = {
+        id: selectedTagUserId,
+        appLongId: selectedTagUserId,
         adminTag: selectedTags.includes('adminTag'),
         officialTag: selectedTags.includes('officialTag'),
         vipTag: selectedTags.includes('vipTag'),
         premiumTag: selectedTags.includes('premiumTag'),
       };
 
-      await setDoc(userDocRef, tagUpdate, { merge: true });
-
-      // Also update globalRooms
-      const globalRoomRef = doc(db, 'globalRooms', selectedTagUserId);
-      await setDoc(globalRoomRef, tagUpdate, { merge: true });
+      await updateUser(tagUpdate);
+      await updateRoom({ roomId: selectedTagUserId, ...tagUpdate });
 
       setTagSuccess(`✅ Tags assigned successfully to ${selectedTagUserData?.name}!`);
       
-      // Refresh user data
       setTagSearchUserId('');
       setSelectedTagUserData(null);
       setSelectedTagUserId('');
       setSelectedTags([]);
+      fetchAllUsers();
       
       setTimeout(() => {
         setTagSuccess('');
@@ -302,21 +290,21 @@ export default function OwnerUsersPage() {
     setTagSuccess('');
 
     try {
-      const userDocRef = doc(db, 'users', selectedTagUserId);
-      const globalRoomRef = doc(db, 'globalRooms', selectedTagUserId);
-
       const tagUpdate = {
+        id: selectedTagUserId,
+        appLongId: selectedTagUserId,
         adminTag: false,
         officialTag: false,
         vipTag: false,
         premiumTag: false,
       };
 
-      await setDoc(userDocRef, tagUpdate, { merge: true });
-      await setDoc(globalRoomRef, tagUpdate, { merge: true });
+      await updateUser(tagUpdate);
+      await updateRoom({ roomId: selectedTagUserId, ...tagUpdate });
 
       setSelectedTags([]);
       setTagSuccess('✅ All tags removed successfully!');
+      fetchAllUsers();
       
       setTimeout(() => {
         setTagSuccess('');
@@ -851,7 +839,7 @@ export default function OwnerUsersPage() {
                         <td colSpan={4} className="py-12 text-center text-slate-400">
                           <div className="flex items-center justify-center gap-2">
                             <Loader2 className="animate-spin text-blue-500" size={20} />
-                            <span>Loading Users from Firestore...</span>
+                            <span>Loading Users from Google Sheets...</span>
                           </div>
                         </td>
                       </tr>
@@ -924,4 +912,4 @@ export default function OwnerUsersPage() {
       </main>
     </div>
   );
-  }
+}

@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { db } from "../src/lib/supabase"
-import { doc, setDoc } from "../src/lib/supabase"
+import { updateRoom } from "../src/lib/googleSheets"
 
 export interface RoomSettingsData {
   roomImage: string;
@@ -171,19 +170,24 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
       theme: selectedTheme,
     }
 
-    if (roomOwnerId && db) {
+    if (roomOwnerId) {
       try {
-        await setDoc(doc(db, "globalRooms", roomOwnerId), {
+        await updateRoom({
+          id: roomOwnerId,
+          roomId: roomOwnerId,
           name: roomName,
+          roomName: roomName,
           image: roomImage,
+          roomDp: roomImage,
           announcement: announcement,
+          message: announcement,
           micMode: selectedMicMode,
           theme: selectedTheme,
           isLocked: isLocked,
           roomPassword: roomPassword,
-        }, { merge: true })
+        })
       } catch (err) {
-        console.error("Firestore update failed:", err)
+        console.error("Google Sheets room update failed:", err)
       }
     }
 
@@ -454,4 +458,3 @@ export default function RoomSettingPage({ onBack, roomOwnerId, roomData, onSave 
     </div>
   )
 }
-

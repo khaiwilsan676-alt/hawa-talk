@@ -254,65 +254,50 @@ export default function RoomProfile({
     premiumTag: false,
   })
 
-  // Fetch tags from Firestore
+  // Fetch tags from Google Sheets
   useEffect(() => {
     const uid = user.uid || user.id || user.accountId
     if (!uid || uid === 'N/A' || uid === 'User') return
 
-    let unsubscribe: (() => void) | undefined
+    let isMounted = true
 
     const fetchTags = async () => {
       try {
-        const userDocRef = doc(db, 'users', uid)
-        unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data()
-            setTags({
-              adminTag: data.adminTag || false,
-              officialTag: data.officialTag || false,
-              vipTag: data.vipTag || false,
-              premiumTag: data.premiumTag || false,
-            })
-          } else {
-            // Try globalRooms if not in users
-            const globalRoomRef = doc(db, 'globalRooms', uid)
-            const unsub2 = onSnapshot(globalRoomRef, (roomSnap) => {
-              if (roomSnap.exists()) {
-                const data = roomSnap.data()
-                setTags({
-                  adminTag: data.adminTag || false,
-                  officialTag: data.officialTag || false,
-                  vipTag: data.vipTag || false,
-                  premiumTag: data.premiumTag || false,
-                })
-              } else {
-                // Default to false
-                setTags({
-                  adminTag: false,
-                  officialTag: false,
-                  vipTag: false,
-                  premiumTag: false,
-                })
-              }
-            })
-            return () => unsub2()
-          }
-        })
+        const res = await getUser(uid)
+        if (!isMounted) return
+        const userData = res && (res.user || res.data || res)
+        if (userData) {
+          setTags({
+            adminTag: Boolean(userData.adminTag),
+            officialTag: Boolean(userData.officialTag),
+            vipTag: Boolean(userData.vipTag),
+            premiumTag: Boolean(userData.premiumTag),
+          })
+        } else {
+          setTags({
+            adminTag: false,
+            officialTag: false,
+            vipTag: false,
+            premiumTag: false,
+          })
+        }
       } catch (err) {
         console.warn('Error fetching tags in RoomProfile:', err)
-        setTags({
-          adminTag: false,
-          officialTag: false,
-          vipTag: false,
-          premiumTag: false,
-        })
+        if (isMounted) {
+          setTags({
+            adminTag: false,
+            officialTag: false,
+            vipTag: false,
+            premiumTag: false,
+          })
+        }
       }
     }
 
     fetchTags()
 
     return () => {
-      if (unsubscribe) unsubscribe()
+      isMounted = false
     }
   }, [user.uid, user.id, user.accountId])
 

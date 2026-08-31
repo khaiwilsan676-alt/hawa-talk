@@ -1,4 +1,5 @@
 export const GOOGLE_SHEET_API =
+  process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL ||
   "https://script.google.com/macros/s/AKfycbwgZU6Qln77FaLaLZM6EFlxLnXggj5wOF_YrgU92Bc1EB63TDm7QiZ_OTon-JVXYd9B/exec";
 
 /**
@@ -74,6 +75,14 @@ export async function saveUser(userData: {
 export async function getUser(userId: string) {
   if (!userId) return null;
   return await callSheetApi('getUser', { userId, appLongId: userId });
+}
+
+export async function getUsers() {
+  const result = await callSheetApi('getUsers', {}, 'GET');
+  if (Array.isArray(result)) return result;
+  if (result && Array.isArray(result.users)) return result.users;
+  if (result && Array.isArray(result.data)) return result.data;
+  return [];
 }
 
 export async function updateUser(userData: Record<string, any>) {
