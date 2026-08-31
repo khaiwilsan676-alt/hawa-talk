@@ -7,7 +7,7 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-import { getUser, saveUser } from "../src/lib/googleSheets"
+import { getUser, saveUser, saveFeedback } from "../src/lib/googleSheets"
 import Wallet from './Wallet'
 import StorePage from './StorePage'
 import InviteFriends from './InviteFriends'
@@ -501,7 +501,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     try {
-      await addDoc(collection(db, "feedbacks"), feedbackData);
+      await saveFeedback(feedbackData);
       await saveFeedbackToDB(feedbackData);
       
       setFeedbackSuccess(true);
@@ -979,7 +979,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           ))}
         </div>
       </div>
-      ) 
-      }
+    </div>
+  )
+}
 
       
