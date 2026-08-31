@@ -1600,18 +1600,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
       )}
-
-      {fullImageModal && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
-          <div className="relative max-w-full max-h-full">
-            <img src={fullImageModal} alt="Full preview" className="max-w-full max-h-[85vh] object-contain rounded-lg" />
-            <button onClick={() => setFullImageModal(null)} className="absolute -top-8 right-0 text-white bg-white/20 rounded-full p-1.5 hover:bg-white/40">
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5]" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       {showMessageSheet && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
@@ -1624,6 +1612,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             <div className="h-full overflow-y-auto">
               <MessagePage sharedRoomData={{ roomId: roomId, roomName: roomOwner.name, roomImage: roomOwner.image }} />
             </div>
+          </div>
+        </div>
+      )}
+
+      {fullImageModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
+          <div className="relative max-w-full max-h-full">
+            <img src={fullImageModal} alt="Full preview" className="max-w-full max-h-[85vh] object-contain rounded-lg" />
+            <button onClick={() => setFullImageModal(null)} className="absolute -top-8 right-0 text-white bg-white/20 rounded-full p-1.5 hover:bg-white/40">
+              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5]" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
           </div>
         </div>
       )}
@@ -1865,7 +1864,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         /* Android Compact Screen Adjustments (max-width: 400px) */
         @media (max-width: 400px) {
           :root {
-            --seat-size: 50px;
+            --seat-size: 52px;
             --header-btn-size: 28px;
             --header-icon-size: 18px;
             --header-room-img-size: 32px;
@@ -2007,7 +2006,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Right side badge on Seat 1 */}
+           {/* Right side badge on Seat 1 */}
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none"
@@ -2045,7 +2044,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           </div>
         </div>
       )}
-
+      
       {/* Main Seat Circle - Overflow Visible */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
