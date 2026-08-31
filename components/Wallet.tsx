@@ -258,27 +258,27 @@ export default function Wallet({ onBack }: WalletProps) {
         {activeTab === 'wallet' ? (
           /* ================= COINS TAB ================= */
           <div className="flex flex-col space-y-4">
-            {/* Current Balance Banner */}
+            {/* Current Balance Banner - Darker & Higher */}
             <div
-              className="rounded-2xl p-4 relative mt-7 flex flex-col justify-center"
+              className="rounded-2xl p-5 relative mt-8 flex flex-col justify-center"
               style={{
-                background: 'linear-gradient(135deg, #FFE5B4 0%, #F5C065 100%)',
-                boxShadow: '0 4px 15px rgba(245, 192, 101, 0.25)',
-                minHeight: '95px',
+                background: 'linear-gradient(135deg, #FFD166 0%, #E09F3E 100%)',
+                boxShadow: '0 6px 20px rgba(224, 159, 62, 0.35)',
+                minHeight: '115px',
               }}
             >
-              {/* Half Overflow Coin Image */}
-              <div className="absolute -top-7 right-3 w-24 h-24 pointer-events-none z-20 drop-shadow-md">
+              {/* Larger Half Overflow Coin Image */}
+              <div className="absolute -top-9 right-3 w-28 h-28 pointer-events-none z-20 drop-shadow-xl">
                 <WhiteColorRemovalShader
                   imageSrc="/1786855398290.png"
                   className="w-full h-full object-contain"
                   threshold={0.88}
                 />
               </div>
-              <span className="text-[11px] font-bold text-amber-900/70 uppercase tracking-wider mb-0.5">
+              <span className="text-xs font-extrabold text-amber-950 uppercase tracking-wider mb-1">
                 current balance
               </span>
-              <p className="text-2xl font-black text-amber-950 tracking-tight">
+              <p className="text-3xl font-black text-amber-950 tracking-tight">
                 1,077,472
               </p>
             </div>
@@ -296,7 +296,7 @@ export default function Wallet({ onBack }: WalletProps) {
               >
                 {/* Top left small bonus tag */}
                 <div className="absolute -top-2 left-2 z-10 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-extrabold rounded shadow-xs flex items-center gap-0.5">
-                  +20,000 <span className="text-[8px]"></span>
+                  +20,000 <span className="text-[8px]">🪙</span>
                 </div>
 
                 {/* Center Coin Image */}
@@ -329,32 +329,32 @@ export default function Wallet({ onBack }: WalletProps) {
           /* ================= DIAMONDS TAB ================= */
           <div className="flex flex-col justify-between min-h-[calc(100vh-140px)]">
             <div className="space-y-4">
-              {/* Current Diamonds Banner */}
+              {/* Current Diamonds Banner - Darker & Higher */}
               <div
-                className="rounded-2xl p-4 relative mt-7 flex flex-col justify-center"
+                className="rounded-2xl p-5 relative mt-8 flex flex-col justify-center"
                 style={{
-                  background: 'linear-gradient(135deg, #FFD1DC 0%, #FF8DA1 100%)',
-                  boxShadow: '0 4px 15px rgba(255, 141, 161, 0.25)',
-                  minHeight: '95px',
+                  background: 'linear-gradient(135deg, #FF70A6 0%, #D90429 100%)',
+                  boxShadow: '0 6px 20px rgba(217, 4, 41, 0.35)',
+                  minHeight: '115px',
                 }}
               >
-                {/* Half Overflow Diamond Image */}
-                <div className="absolute -top-8 right-2 w-24 h-24 pointer-events-none z-20 drop-shadow-md">
+                {/* Larger Half Overflow Diamond Image */}
+                <div className="absolute -top-10 right-2 w-28 h-28 pointer-events-none z-20 drop-shadow-xl">
                   <WhiteColorRemovalShader
                     imageSrc="/1787321690452.png"
                     className="w-full h-full object-contain"
                     threshold={0.88}
                   />
                 </div>
-                <span className="text-[11px] font-bold text-pink-950/70 uppercase tracking-wider mb-0.5">
+                <span className="text-xs font-extrabold text-white/90 uppercase tracking-wider mb-1">
                   current diamonds
                 </span>
-                <p className="text-2xl font-black text-pink-950 tracking-tight">
+                <p className="text-3xl font-black text-white tracking-tight">
                   0
                 </p>
               </div>
 
-              {/* Exchange Section Box (Exact match to screenshot pinkish-white gradient card) */}
+              {/* Exchange Section Box */}
               <div
                 className="rounded-2xl p-4"
                 style={{
