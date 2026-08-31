@@ -176,6 +176,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
+  const [fourgrideDefaultTab, setFourgrideDefaultTab] = useState<'tools' | 'games'>('tools');
 
   useEffect(() => {
     const name = localStorage.getItem('userName') || 'User';
@@ -754,7 +755,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const handleExit = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    // Jab completely Exit karna ho tabhi presence doc ID hategi
     isKeepingRef.current = false;
     setShowExitMenu(false);
     localStorage.removeItem('keptRoom');
@@ -766,7 +766,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const handleKeep = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    // Keep karne par yeh true ho jayega jisse DB se id nahi hatega 
     isKeepingRef.current = true;
     const keptAccId = roomOwner.accountId || (roomOwner.id ? generateStableId(roomOwner.id) : '');
     const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: keptAccId };
@@ -1032,7 +1031,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     const maxX = window.innerWidth - widgetWidth - 8;
     const maxY = window.innerHeight - widgetHeight - 65;
 
-    // Strict Boundary Lock (Screen ke bahar nahi jayega)
     const newX = Math.min(Math.max(8, dragStartPos.current.initialX + deltaX), maxX);
     const newY = Math.min(Math.max(60, dragStartPos.current.initialY + deltaY), maxY);
 
@@ -1288,7 +1286,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             >
               Say Hi
             </button>
-                        <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               {hasSeat && (
                 <button onClick={handleBottomMicToggle} className="bg-black/30 backdrop-blur-md rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   {currentUserSeat?.isMuted ? (
@@ -1302,13 +1300,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   )}
                 </button>
               )}
-              <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 backdrop-blur-md rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
               
-              {/* Message Box Menu Pehle Aa Gaya */}
+              {/* EMOJI BUTTON - Sirf tab dikhega jab user seat pe ho */}
+              {hasSeat && (
+                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 backdrop-blur-md rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              )}
+              
+              {/* Message Box Menu */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
                 aria-label="Message Box Menu"
@@ -1320,11 +1322,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </svg>
               </button>
 
-              {/* Gift Icon Ab Baad Mein Aayega */}
+              {/* Gift Icon */}
               <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                 <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover" draggable={false} />
               </button>
               
+              {/* Apps Menu (Fourgride) */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
                 aria-label="Apps Menu"
@@ -1335,7 +1338,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
                 </svg>
               </button>
-              </div>
+            </div>
           </div>
         </div>
 
@@ -1377,6 +1380,36 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </div>
           </div>
         )}
+      </div>
+
+      {/* GAMES ICON - Fourgride ke UPAR (Absolute positioned) */}
+      <div 
+        className="absolute cursor-pointer z-20"
+        style={{
+          bottom: 'calc(var(--footer-btn-size) + 42px)',
+          right: '20px',
+          width: 'calc(var(--footer-btn-size) * 0.85)',
+          height: 'calc(var(--footer-btn-size) * 0.85)',
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setFourgrideDefaultTab('games');
+          setShowFourGride(true);
+        }}
+      >
+        <WhiteColorRemovalShader
+          imageSrc="/IMG_20260814_111008.png"
+          threshold={0.85}
+          className="w-full h-full"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            maxWidth: 'none',
+            maxHeight: 'none',
+            pointerEvents: 'none',
+          }}
+        />
       </div>
 
       {/* Modals & Sheets */}
@@ -1660,6 +1693,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               };
             };
           }}
+          defaultTab={fourgrideDefaultTab}
         />
       )}
 
@@ -1968,7 +2002,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         <div 
           className="absolute pointer-events-none hidden sm:flex bg-black/40 backdrop-blur-md border border-white/20 px-2 py-1 rounded-full shadow-lg"
           style={{
-            left: '-100px', // Adjusted position for new card look
+            left: '-100px',
             top: '-15px',
             transform: 'none',
             zIndex: 40,
@@ -2013,7 +2047,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      
       {/* Main Seat Circle - Overflow Visible */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
@@ -2134,4 +2167,4 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-}
+            }
