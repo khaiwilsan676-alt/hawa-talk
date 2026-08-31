@@ -49,80 +49,74 @@ const AVAILABLE_TAGS = [
     image: '/1785469775751.png',
     description: 'VIP member badge',
     color: 'bg-amber-50 border-amber-200',
-    isGreenRemoval: false
+    isWhiteRemoval: true
   },
   {
     id: 'premiumTag',
     name: 'Premium',
-    image: '/1785469365805.png',
-    description: 'Premium member badge',
+    image: '/1785469784333.png',
+    description: 'Premium user badge',
     color: 'bg-purple-50 border-purple-200',
-    isGreenRemoval: false
+    isWhiteRemoval: true
   }
 ];
 
-export default function OwnerUsersPage() {
-  const [activeMenu, setActiveMenu] = useState('Manage Users');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState('All Roles');
+export default function OwnerPage() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Tag Assignment States
-  const [showTagAssign, setShowTagAssign] = useState(false);
+  // Tag assignment states
   const [tagSearchUserId, setTagSearchUserId] = useState('');
-  const [selectedTagUserId, setSelectedTagUserId] = useState('');
-  const [selectedTagUserData, setSelectedTagUserData] = useState<UserData | null>(null);
+  const [selectedTagUserData, setSelectedTagUserData] = useState<any>(null);
+  const [selectedTagUserId, setSelectedTagUserId] = useState<string>('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearching, setTagSearching] = useState(false);
   const [tagAssigning, setTagAssigning] = useState(false);
   const [tagSuccess, setTagSuccess] = useState('');
   const [tagError, setTagError] = useState('');
 
-  // Fetch all users
+  // Fetch all users via getRooms / getUser
   useEffect(() => {
-    try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef);
+    const loadUsers = async () => {
+      try {
+        const rawRooms = await getRooms();
+        if (Array.isArray(rawRooms)) {
+          const fetchedUsers: UserData[] = rawRooms.map((data: any) => {
+            const roomId = String(data.ID || data.id || data.roomId || '');
+            const accId = String(data['Room Admin'] || data.accountId || '—');
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedUsers: UserData[] = snapshot.docs.map((doc) => {
-          const data = doc.data();
+            let userRole: 'NORMAL' | 'HOST' | 'AGENCY' | 'ADMIN' = 'NORMAL';
+            if (data.type === 'admin' || data.isOfficial) {
+              userRole = 'ADMIN';
+            } else if (data.role === 'HOST' || data.type === 'host') {
+              userRole = 'HOST';
+            } else if (data.role === 'AGENCY' || data.type === 'agency') {
+              userRole = 'AGENCY';
+            }
 
-          let userRole: 'NORMAL' | 'HOST' | 'AGENCY' | 'ADMIN' = 'NORMAL';
-          if (data.type === 'admin' || data.isOfficial) {
-            userRole = 'ADMIN';
-          } else if (data.role === 'HOST' || data.type === 'host') {
-            userRole = 'HOST';
-          } else if (data.role === 'AGENCY' || data.type === 'agency') {
-            userRole = 'AGENCY';
-          }
+            return {
+              id: roomId,
+              name: data['Room Name'] || data.name || 'User',
+              username: data.username || '',
+              hurryId: accId,
+              emailPhone: data.email || data.phone || '—',
+              role: userRole,
+              gender: data.gender || '',
+              country: data.Country || data.country || '🇮🇳',
+              image: data['Room dp'] || data.image || '/default-avatar.png'
+            };
+          });
 
-          return {
-            id: doc.id,
-            name: data.name || data.displayName || 'Unnamed User',
-            username: data.username || '',
-            hurryId: data.accountId ? String(data.accountId) : '—',
-            emailPhone: data.email || data.phone || '—',
-            role: userRole,
-            gender: data.gender || '',
-            country: data.country || '🇮🇳',
-            image: data.image || data.photo || data.photoURL || ''
-          };
-        });
-
-        setUsers(fetchedUsers);
+          setUsers(fetchedUsers);
+        }
+      } catch (err) {
+        console.error("Error loading users from Google Sheets:", err);
+      } finally {
         setLoading(false);
-      }, (error) => {
-        console.error("Firestore read error:", error);
-        setLoading(false);
-      });
+      }
+    };
 
-      return () => unsubscribe();
-    } catch (err) {
-      console.error("Error setting up listener:", err);
-      setLoading(false);
-    }
+    loadUsers();
   }, []);
 
   const getRoleBadge = (role: string) => {
@@ -152,93 +146,48 @@ export default function OwnerUsersPage() {
     setSelectedTags([]);
 
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef);
+      const res = await getUser(tagSearchUserId.trim());
+      const userData = res && (res.user || res.data || res);
 
-      // Get all users and find match
-      const snapshot = await new Promise<any>((resolve, reject) => {
-        const unsubscribe = onSnapshot(q, (snap) => {
-          unsubscribe();
-          resolve(snap);
-        }, reject);
-      });
+      if (userData && (userData.id || userData.AppLongId || userData['App long ID'] || userData.Name || userData.name)) {
+        const uId = userData.id || userData.AppLongId || userData['App long ID'] || tagSearchUserId.trim();
+        setSelectedTagUserData({
+          id: uId,
+          name: userData.name || userData.Name || 'User',
+          accountId: userData.accountId || userData.accountNumber || userData['Account Number'] || uId,
+          image: userData.photo || userData.avatar || userData.Avtar || userData.image || '/default-avatar.png'
+        });
+        setSelectedTagUserId(uId);
 
-      let foundUser: UserData | null = null;
+        // Pre-select existing tags
+        const existingTags: string[] = [];
+        if (userData.adminTag) existingTags.push('adminTag');
+        if (userData.officialTag) existingTags.push('officialTag');
+        if (userData.vipTag) existingTags.push('vipTag');
+        if (userData.premiumTag) existingTags.push('premiumTag');
 
-      snapshot.docs.forEach((doc: any) => {
-        const data = doc.data();
-        const accountId = data.accountId ? String(data.accountId) : '';
-        const displayAccountNumber = data.displayAccountNumber ? String(data.displayAccountNumber) : '';
-
-        if (
-          accountId === tagSearchUserId.trim() ||
-          displayAccountNumber === tagSearchUserId.trim() ||
-          doc.id === tagSearchUserId.trim()
-        ) {
-          let userRole: 'NORMAL' | 'HOST' | 'AGENCY' | 'ADMIN' = 'NORMAL';
-          if (data.type === 'admin' || data.isOfficial) {
-            userRole = 'ADMIN';
-          } else if (data.role === 'HOST' || data.type === 'host') {
-            userRole = 'HOST';
-          } else if (data.role === 'AGENCY' || data.type === 'agency') {
-            userRole = 'AGENCY';
-          }
-
-          foundUser = {
-            id: doc.id,
-            name: data.name || data.displayName || 'Unnamed User',
-            username: data.username || '',
-            hurryId: accountId || displayAccountNumber || '—',
-            emailPhone: data.email || data.phone || '—',
-            role: userRole,
-            gender: data.gender || '',
-            country: data.country || '🇮🇳',
-            image: data.image || data.photo || data.photoURL || ''
-          };
-
-          // Load existing tags
-          const existingTags = [
-            ...(data.adminTag ? ['adminTag'] : []),
-            ...(data.officialTag ? ['officialTag'] : []),
-            ...(data.vipTag ? ['vipTag'] : []),
-            ...(data.premiumTag ? ['premiumTag'] : []),
-          ];
-          setSelectedTags(existingTags);
-        }
-      });
-
-      if (foundUser) {
-        setSelectedTagUserData(foundUser);
-        setSelectedTagUserId(foundUser.id);
-        setTagSuccess(`User found: ${foundUser.name} (ID: ${foundUser.hurryId})`);
+        setSelectedTags(existingTags);
       } else {
-        setTagError('No user found with this ID');
+        setTagError(`No user found with ID: ${tagSearchUserId}`);
       }
     } catch (err) {
       console.error('Error searching user:', err);
-      setTagError('Error searching user');
+      setTagError('Error searching user. Please try again.');
     } finally {
       setTagSearching(false);
     }
   };
 
   // Toggle tag selection
-  const toggleTag = (tagId: string) => {
-    if (!selectedTagUserId) {
-      setTagError('Please search and select a user first');
-      return;
+  const handleTagToggle = (tagId: string) => {
+    if (selectedTags.includes(tagId)) {
+      setSelectedTags(selectedTags.filter((t) => t !== tagId));
+    } else {
+      setSelectedTags([...selectedTags, tagId]);
     }
-
-    setSelectedTags((prev) => {
-      if (prev.includes(tagId)) {
-        return prev.filter((id) => id !== tagId);
-      } else {
-        return [...prev, tagId];
-      }
-    });
   };
 
-  // Assign tags to user
+  // Assign selected tags to user
   const handleAssignTags = async () => {
     if (!selectedTagUserId) {
       setTagError('Please search and select a user first');
@@ -255,25 +204,20 @@ export default function OwnerUsersPage() {
     setTagSuccess('');
 
     try {
-      const userDocRef = doc(db, 'users', selectedTagUserId);
-
-      // Update tag fields
       const tagUpdate = {
+        id: selectedTagUserId,
+        appLongId: selectedTagUserId,
         adminTag: selectedTags.includes('adminTag'),
         officialTag: selectedTags.includes('officialTag'),
         vipTag: selectedTags.includes('vipTag'),
         premiumTag: selectedTags.includes('premiumTag'),
       };
 
-      await setDoc(userDocRef, tagUpdate, { merge: true });
-
-      // Also update globalRooms
-      const globalRoomRef = doc(db, 'globalRooms', selectedTagUserId);
-      await setDoc(globalRoomRef, tagUpdate, { merge: true });
+      await updateUser(tagUpdate);
+      await updateRoom({ roomId: selectedTagUserId, id: selectedTagUserId, ...tagUpdate });
 
       setTagSuccess(`✅ Tags assigned successfully to ${selectedTagUserData?.name}!`);
       
-      // Refresh user data
       setTagSearchUserId('');
       setSelectedTagUserData(null);
       setSelectedTagUserId('');
@@ -302,18 +246,17 @@ export default function OwnerUsersPage() {
     setTagSuccess('');
 
     try {
-      const userDocRef = doc(db, 'users', selectedTagUserId);
-      const globalRoomRef = doc(db, 'globalRooms', selectedTagUserId);
-
       const tagUpdate = {
+        id: selectedTagUserId,
+        appLongId: selectedTagUserId,
         adminTag: false,
         officialTag: false,
         vipTag: false,
         premiumTag: false,
       };
 
-      await setDoc(userDocRef, tagUpdate, { merge: true });
-      await setDoc(globalRoomRef, tagUpdate, { merge: true });
+      await updateUser(tagUpdate);
+      await updateRoom({ roomId: selectedTagUserId, id: selectedTagUserId, ...tagUpdate });
 
       setSelectedTags([]);
       setTagSuccess('✅ All tags removed successfully!');
@@ -329,599 +272,217 @@ export default function OwnerUsersPage() {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.emailPhone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.hurryId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    const matchesRole =
-      selectedRole === 'All Roles' ||
-      user.role.toLowerCase() === selectedRole.toLowerCase();
-
-    return matchesSearch && matchesRole;
-  });
-
   return (
-    <div className="flex min-h-screen bg-[#F6F8FB] text-[#2D3748] font-sans antialiased">
-      {/* Sidebar */}
-      <aside className="w-[260px] bg-[#0E1322] text-[#8F9CAE] flex flex-col shrink-0 border-r border-[#1B2236]">
-        {/* Brand Header */}
-        <div className="p-5 border-b border-[#1A2234]">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⚡</span>
-            <h1 className="text-white text-base font-bold tracking-wide">Hurry Live</h1>
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8 font-sans">
+      <div className="max-w-6xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Owner Management Panel</h1>
+            <p className="text-xs text-slate-500 mt-1">Manage user tags, roles, and profiles</p>
           </div>
-          <p className="text-[10px] font-semibold tracking-wider text-slate-400 mt-0.5 uppercase">Staff Control Panel</p>
+          <div className="flex items-center gap-2">
+            <span className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold border border-blue-100">
+              Total Rooms: {users.length}
+            </span>
+          </div>
         </div>
 
-        {/* Navigation Items with Emoji Icons */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4 text-[13px] select-none scrollbar-thin scrollbar-thumb-slate-700">
-          <div>
-            <button className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:text-white hover:bg-white/5 transition">
-              <span className="text-base">📊</span>
-              <span>Dashboard</span>
+        {/* Tag Assignment Section */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
+            <Tag className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-bold text-slate-800">Assign Profile Tags</h2>
+          </div>
+
+          {/* Search Bar */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={tagSearchUserId}
+                onChange={(e) => setTagSearchUserId(e.target.value)}
+                placeholder="Enter User UID or Account Number..."
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleTagUserSearch()}
+              />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            </div>
+            <button
+              onClick={handleTagUserSearch}
+              disabled={tagSearching}
+              className="px-6 py-3 bg-blue-600 text-white font-bold text-xs rounded-2xl shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {tagSearching ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Searching...</span>
+                </>
+              ) : (
+                <span>Search User</span>
+              )}
             </button>
           </div>
 
-          {/* User Center */}
-          <div>
-            <div className="flex items-center justify-between text-white font-medium px-3 py-1 mb-1">
-              <div className="flex items-center gap-3">
-                <span className="text-base">👥</span>
-                <span className="text-slate-200">User Center</span>
-              </div>
-              <ChevronDown size={14} className="text-slate-400" />
+          {/* Error / Success Messages */}
+          {tagError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-600 text-xs rounded-2xl flex items-center gap-2">
+              <XCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{tagError}</span>
             </div>
-            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2">
-              <button
-                onClick={() => {
-                  setActiveMenu('Manage Users');
-                  setShowTagAssign(false);
-                }}
-                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs transition font-medium ${
-                  activeMenu === 'Manage Users' ? 'bg-[#1C2541] text-blue-400 font-semibold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>👤</span>
-                <span>Manage Users</span>
-              </button>
-              <button
-                onClick={() => setActiveMenu('Host Applications')}
-                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs transition font-medium ${
-                  activeMenu === 'Host Applications' ? 'bg-[#1C2541] text-blue-400 font-semibold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>📝</span>
-                <span>Host Applications</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveMenu('Tags Assignment');
-                  setShowTagAssign(true);
-                }}
-                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs transition font-medium ${
-                  activeMenu === 'Tags Assignment' ? 'bg-[#1C2541] text-blue-400 font-semibold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>🏷️</span>
-                <span>Tags Assignment</span>
-              </button>
+          )}
+          {tagSuccess && (
+            <div className="p-3 bg-green-50 border border-green-200 text-green-600 text-xs rounded-2xl flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{tagSuccess}</span>
             </div>
-          </div>
+          )}
 
-          {/* Live Rooms */}
-          <div>
-            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-base">📻</span>
-                <span>Live Rooms</span>
-              </div>
-              <ChevronDown size={14} />
-            </div>
-            <div className="ml-2 border-l border-slate-800 pl-2">
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white">
-                <span>🎙️</span>
-                <span>Manage Rooms</span>
-              </button>
-            </div>
-          </div>
+          {/* User Selected Info & Tags List */}
+          {selectedTagUserData && (
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4 animate-in fade-in-50 duration-200">
 
-          {/* Store */}
-          <div>
-            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-base">🛍️</span>
-                <span>Store</span>
-              </div>
-              <ChevronDown size={14} />
-            </div>
-            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🎨</span>
-                <span>Themes</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>⭐</span>
-                <span>Special IDs</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🎁</span>
-                <span>Gift Catalogue</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveMenu('Tags Assignment');
-                  setShowTagAssign(true);
-                }}
-                className={`flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-xs transition ${
-                  activeMenu === 'Tags Assignment' ? 'bg-[#1C2541] text-blue-400 font-semibold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>🏷️</span>
-                <span>Tags</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Economy */}
-          <div>
-            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-base">🏛️</span>
-                <span>Economy</span>
-              </div>
-              <ChevronDown size={14} />
-            </div>
-            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>👛</span>
-                <span>Master Wallet</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>📜</span>
-                <span>Gift Send History</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>💰</span>
-                <span>Bean Revenue</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🪙</span>
-                <span>User Wallets</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>📋</span>
-                <span>Wallet History</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>📥</span>
-                <span>Withdrawal Requests</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>💳</span>
-                <span>Seller Recharges</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>💵</span>
-                <span>Currency Rates</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div>
-            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-base">🖼️</span>
-                <span>Content</span>
-              </div>
-              <ChevronDown size={14} />
-            </div>
-            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🏆</span>
-                <span>Events</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🚩</span>
-                <span>Banners</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Moderation */}
-          <div>
-            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-base">🛡️</span>
-                <span>Moderation</span>
-              </div>
-              <ChevronDown size={14} />
-            </div>
-            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🚨</span>
-                <span>Reports & Bans</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🎫</span>
-                <span>Support Tickets</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>⚠️</span>
-                <span>Risk Control</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Platform */}
-          <div>
-            <div className="flex items-center justify-between px-3 py-1 mb-1 text-slate-400 hover:text-white cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-base">📈</span>
-                <span>Platform</span>
-              </div>
-              <ChevronDown size={14} />
-            </div>
-            <div className="space-y-0.5 ml-2 border-l border-slate-800 pl-2 text-xs">
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>📊</span>
-                <span>Analytics & Reports</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🏢</span>
-                <span>Agency Management</span>
-              </button>
-              <button className="flex items-center gap-2.5 w-full px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">
-                <span>🎮</span>
-                <span>Game Management</span>
-              </button>
-            </div>
-          </div>
-
-          {/* System */}
-          <div>
-            <div className="flex items-center justify-between px-3 py-1 text-slate-400 hover:text-white cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-base">⚙️</span>
-                <span>System</span>
-              </div>
-              <ChevronRight size={14} />
-            </div>
-          </div>
-        </nav>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 bg-[#F8FAFC]">
-        {/* Top Header */}
-        <header className="px-8 pt-7 pb-4 bg-white border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <span>{showTagAssign ? '🏷️' : '👥'}</span>
-              {showTagAssign ? 'Tags Assignment' : 'Users'}
-            </h2>
-            <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">
-              Total: {users.length} Users
-            </span>
-          </div>
-        </header>
-
-        {/* Content Body */}
-        {showTagAssign ? (
-          /* ============ TAGS ASSIGNMENT VIEW ============ */
-          <div className="p-8 flex-1 overflow-y-auto">
-            {/* User ID Search Bar */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Search size={20} className="text-blue-500" />
-                Search User for Tag Assignment
-              </h3>
-
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={tagSearchUserId}
-                  onChange={(e) => setTagSearchUserId(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleTagUserSearch()}
-                  placeholder="Enter User ID (e.g., 100379620)"
-                  className="flex-1 bg-[#F8FAFC] border border-slate-200 text-sm text-slate-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition placeholder:text-slate-400"
+              {/* User Details */}
+              <div className="flex items-center gap-3 border-b border-slate-200/60 pb-3">
+                <img
+                  src={selectedTagUserData.image}
+                  alt={selectedTagUserData.name}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
                 />
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">{selectedTagUserData.name}</h3>
+                  <p className="text-xs text-slate-500">ID: {selectedTagUserData.accountId}</p>
+                </div>
+              </div>
+
+              {/* Tag Options Grid */}
+              <div>
+                <p className="text-xs font-bold text-slate-700 mb-2">Select Tags to Assign:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {AVAILABLE_TAGS.map((tag) => {
+                    const isSelected = selectedTags.includes(tag.id);
+                    return (
+                      <div
+                        key={tag.id}
+                        onClick={() => handleTagToggle(tag.id)}
+                        className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-center gap-3 ${
+                          isSelected
+                            ? 'bg-blue-50 border-blue-500 shadow-xs'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center flex-shrink-0">
+                          <img src={tag.image} alt={tag.name} className="w-full h-full object-contain" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-xs text-slate-800">{tag.name}</p>
+                          <p className="text-[10px] text-slate-400 truncate">{tag.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 justify-end pt-2">
                 <button
-                  onClick={handleTagUserSearch}
-                  disabled={tagSearching}
-                  className="px-6 py-3 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleRemoveAllTags}
+                  disabled={tagAssigning}
+                  className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl border border-rose-200 transition cursor-pointer disabled:opacity-50"
                 >
-                  {tagSearching ? (
+                  Remove All Tags
+                </button>
+                <button
+                  onClick={handleAssignTags}
+                  disabled={tagAssigning}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {tagAssigning ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Searching...
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
                     </>
                   ) : (
-                    <>
-                      <Search size={16} />
-                      Search
-                    </>
+                    <span>Save Tag Changes</span>
                   )}
                 </button>
               </div>
 
-              {/* Success/Error Messages */}
-              {tagSuccess && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-green-600 bg-green-50 px-4 py-3 rounded-lg">
-                  <CheckCircle size={16} />
-                  {tagSuccess}
-                </div>
-              )}
-
-              {tagError && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">
-                  <XCircle size={16} />
-                  {tagError}
-                </div>
-              )}
-
-              {/* Selected User Info */}
-              {selectedTagUserData && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-3">
-                    {selectedTagUserData.image ? (
-                      <img
-                        src={selectedTagUserData.image}
-                        alt={selectedTagUserData.name}
-                        className="w-12 h-12 rounded-full object-cover border border-blue-200"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-lg font-bold text-blue-600">
-                        {selectedTagUserData.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-semibold text-slate-800">{selectedTagUserData.name}</div>
-                      <div className="text-xs text-slate-500">
-                        ID: {selectedTagUserData.hurryId} | {selectedTagUserData.emailPhone}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        Current Tags: {selectedTags.length > 0 ? selectedTags.map(tag => {
-                          const tagData = AVAILABLE_TAGS.find(t => t.id === tag);
-                          return tagData?.name;
-                        }).join(', ') : 'None'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
+          )}
+        </div>
 
-            {/* Available Tags Grid */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Tag size={20} className="text-amber-500" />
-                Available Tags ({selectedTags.length} selected)
-              </h3>
+        {/* User Table List */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-800">Global Rooms & Admin Users</h2>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {AVAILABLE_TAGS.map((tag) => {
-                  const isSelected = selectedTags.includes(tag.id);
-
-                  return (
-                    <button
-                      key={tag.id}
-                      onClick={() => toggleTag(tag.id)}
-                      disabled={!selectedTagUserId}
-                      className={`relative p-4 rounded-xl border-2 transition-all ${
-                        isSelected
-                          ? 'border-blue-500 bg-blue-50 shadow-md scale-105'
-                          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-                      } ${!selectedTagUserId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1">
-                          <CheckCircle size={16} />
-                        </div>
-                      )}
-
-                      <div className={`w-full h-24 rounded-lg flex items-center justify-center mb-3 ${tag.color}`}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-600">
+              <thead className="bg-slate-50 text-slate-400 uppercase font-bold border-b border-slate-100">
+                <tr>
+                  <th className="p-4">User / Room Name</th>
+                  <th className="p-4">Account ID</th>
+                  <th className="p-4">Country</th>
+                  <th className="p-4">Role</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-slate-400">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
+                      <span>Loading database records...</span>
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-slate-400">
+                      No user records found.
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((u) => (
+                    <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-4 font-bold text-slate-800 flex items-center gap-3">
                         <img
-                          src={tag.image}
-                          alt={tag.name}
-                          className="max-h-full max-w-full object-contain p-2"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
+                          src={u.image || '/default-avatar.png'}
+                          alt={u.name}
+                          className="w-8 h-8 rounded-full object-cover border border-slate-200"
                         />
-                      </div>
-
-                      <div className="text-center">
-                        <div className="font-semibold text-sm text-slate-800">{tag.name}</div>
-                        <div className="text-xs text-slate-500 mt-1">{tag.description}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Action Buttons */}
-              {selectedTagUserId && (
-                <div className="mt-6 flex gap-3">
-                  <button
-                    onClick={handleAssignTags}
-                    disabled={tagAssigning || selectedTags.length === 0}
-                    className="flex-1 py-3 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {tagAssigning ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Assigning...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle size={16} />
-                        Assign Selected Tags ({selectedTags.length})
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={handleRemoveAllTags}
-                    disabled={tagAssigning}
-                    className="px-6 py-3 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <XCircle size={16} />
-                    Remove All Tags
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          /* ============ USERS LIST VIEW ============ */
-          <div className="p-8 flex-1 flex flex-col">
-            {/* Filters Bar */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 space-y-3">
-              {/* Search Input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, phone, email, Hurry ID..."
-                  className="w-full bg-[#F8FAFC] border border-slate-200 text-sm text-slate-800 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition placeholder:text-slate-400"
-                />
-              </div>
-
-              {/* Filter Dropdowns */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-slate-300"
-                >
-                  <option value="All Roles">All Roles</option>
-                  <option value="NORMAL">Normal</option>
-                  <option value="HOST">Host</option>
-                  <option value="AGENCY">Agency</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-
-                <select className="bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-slate-300">
-                  <option>All Status</option>
-                  <option>Active</option>
-                  <option>Banned</option>
-                </select>
-
-                <select className="bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-slate-300">
-                  <option>All (mute)</option>
-                  <option>Muted</option>
-                  <option>Unmuted</option>
-                </select>
-
-                <input
-                  type="text"
-                  placeholder="Country..."
-                  className="bg-[#F8FAFC] border border-slate-200 text-xs text-slate-700 rounded-lg px-3 py-2 outline-none w-32 placeholder:text-slate-400"
-                />
-
-                <button className="flex items-center gap-1 bg-[#F8FAFC] border border-slate-200 text-xs font-medium text-slate-700 px-3 py-2 rounded-lg hover:bg-slate-100 transition">
-                  <span>↓ DESC</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Users Table */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[11px] font-bold tracking-wider text-slate-400 uppercase bg-[#FCFDFE]">
-                      <th className="py-3.5 px-6 font-semibold">User</th>
-                      <th className="py-3.5 px-6 font-semibold">Hurry ID</th>
-                      <th className="py-3.5 px-6 font-semibold">Phone / Email</th>
-                      <th className="py-3.5 px-6 font-semibold">Role</th>
+                        <span>{u.name}</span>
+                      </td>
+                      <td className="p-4 font-mono">{u.hurryId}</td>
+                      <td className="p-4">{u.country}</td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${getRoleBadge(u.role)}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => {
+                            setTagSearchUserId(u.id);
+                            handleTagUserSearch();
+                          }}
+                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl font-bold text-[11px] transition cursor-pointer"
+                        >
+                          Manage Tags
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={4} className="py-12 text-center text-slate-400">
-                          <div className="flex items-center justify-center gap-2">
-                            <Loader2 className="animate-spin text-blue-500" size={20} />
-                            <span>Loading Users from Firestore...</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : filteredUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="py-12 text-center text-slate-400">
-                          No users found.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredUsers.map((user) => (
-                        <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
-                          {/* User Column */}
-                          <td className="py-3.5 px-6">
-                            <div className="flex items-center gap-3">
-                              {user.image ? (
-                                <img
-                                  src={user.image}
-                                  alt={user.name}
-                                  className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display = 'none';
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-blue-100 text-blue-600">
-                                  {user.name.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <div>
-                                <div className="font-semibold text-slate-800 text-sm leading-tight">
-                                  {user.name}
-                                </div>
-                                <div className="text-slate-400 text-[11px] mt-0.5">
-                                  {user.username ? `@${user.username}` : (user.country || '—')}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Hurry ID Column */}
-                          <td className="py-3.5 px-6">
-                            <span className={user.hurryId !== '—' ? 'font-semibold text-blue-600 font-mono' : 'text-slate-400'}>
-                              {user.hurryId}
-                            </span>
-                          </td>
-
-                          {/* Phone / Email Column */}
-                          <td className="py-3.5 px-6">
-                            <span className={user.emailPhone !== '—' ? 'text-slate-600 font-mono text-[11px]' : 'text-slate-400'}>
-                              {user.emailPhone}
-                            </span>
-                          </td>
-
-                          {/* Role Column */}
-                          <td className="py-3.5 px-6">
-                            <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getRoleBadge(user.role)}`}>
-                              {user.role}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </main>
+        </div>
+
+      </div>
     </div>
   );
-  }
+}

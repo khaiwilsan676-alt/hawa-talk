@@ -7,7 +7,7 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-import { getUser, saveUser, saveFeedback } from "../src/lib/googleSheets"
+import { getUser, saveUser } from "../src/lib/googleSheets"
 import Wallet from './Wallet'
 import StorePage from './StorePage'
 import InviteFriends from './InviteFriends'
@@ -494,7 +494,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     try {
-      await saveFeedback(feedbackData);
+      await addDoc(collection(db, "feedbacks"), feedbackData);
       await saveFeedbackToDB(feedbackData);
       
       setFeedbackSuccess(true);
@@ -972,9 +972,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           ))}
         </div>
       </div>
-    </div>
-  )
-}
 
       <div className="fixed bottom-24 right-4 bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-md cursor-pointer">
         <div className="text-center text-sm">
