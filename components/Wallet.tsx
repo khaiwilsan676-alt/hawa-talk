@@ -146,6 +146,7 @@ export default function Wallet({ onBack }: WalletProps) {
   const [activeTab, setActiveTab] = useState<'wallet' | 'diamonds'>('wallet')
   const [diamonds, setDiamonds] = useState('100')
   const [coins, setCoins] = useState('33')
+  const [selectedPercentage, setSelectedPercentage] = useState('100%')
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
@@ -166,6 +167,15 @@ export default function Wallet({ onBack }: WalletProps) {
     setDiamonds(diamondValue)
   }
 
+  const handlePercentageSelect = (pct: string) => {
+    setSelectedPercentage(pct)
+    const numPct = parseInt(pct)
+    // Example logic for percentage selection on diamonds balance (assuming max 4719 or general input)
+    const baseVal = 1000 * (numPct / 100)
+    setDiamonds(baseVal.toString())
+    handleDiamondChange(baseVal.toString())
+  }
+
   return (
     <div
       className="fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col pt-[env(safe-area-inset-top,12px)] pb-[env(safe-area-inset-bottom,12px)] bg-white transition-all duration-500"
@@ -175,8 +185,8 @@ export default function Wallet({ onBack }: WalletProps) {
         userSelect: 'none',
         WebkitTouchCallout: 'none',
         background: activeTab === 'wallet' 
-          ? 'linear-gradient(180deg, #FFA500 0%, #FFB84D 12%, #FFE4B5 22%, #FFFFFF 30%, #FFFFFF 100%)'
-          : 'linear-gradient(180deg, #FF1493 0%, #FF69B4 12%, #FFD1DC 22%, #FFFFFF 30%, #FFFFFF 100%)',
+          ? 'linear-gradient(180deg, #FFE4B5 0%, #FFF5EE 20%, #FFFFFF 35%, #FFFFFF 100%)'
+          : 'linear-gradient(180deg, #FFC0CB 0%, #FFE4E1 20%, #FFFFFF 35%, #FFFFFF 100%)',
       }}
     >
       <style>{`
@@ -205,50 +215,37 @@ export default function Wallet({ onBack }: WalletProps) {
       >
         <button
           onClick={onBack}
-          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
-          style={{
-            background: activeTab === 'wallet' ? '#FFA500' : '#FF1493',
-          }}
+          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0 bg-transparent text-gray-800"
           aria-label="Back"
         >
           <svg
-            width="18"
-            height="18"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <line x1="19" y1="12" x2="5" y2="12" />
-            <polyline points="12 19 5 12 12 5" />
+            <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
 
-        <h1
-          className="text-xl font-extrabold tracking-wide"
-          style={{
-            color: 'white',
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          }}
-        >
-          {activeTab === 'wallet' ? 'Wallet' : 'Diamonds'}
+        <h1 className="text-lg font-bold text-gray-900">
+          Wallet
         </h1>
 
         <button
-          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
-          style={{
-            background: activeTab === 'wallet' ? '#FFA500' : '#FF1493',
-          }}
+          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all flex-shrink-0 bg-transparent text-gray-800"
           aria-label="History"
         >
           <svg
-            width="18"
-            height="18"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -257,40 +254,40 @@ export default function Wallet({ onBack }: WalletProps) {
             <polyline points="14 2 14 8 20 8" />
             <line x1="16" y1="13" x2="8" y2="13" />
             <line x1="16" y1="17" x2="8" y2="17" />
-            <line x1="10" y1="9" x2="8" y2="9" />
+            <polyline points="10 9 9 9 8 9" />
           </svg>
         </button>
       </div>
 
       {/* TAB BUTTONS */}
-      <div className="flex justify-center gap-8 py-1.5 flex-shrink-0 z-20">
+      <div className="flex justify-center gap-12 py-1 flex-shrink-0 z-20">
         <button
           onClick={() => setActiveTab('wallet')}
-          className={`relative pb-1 text-sm font-bold transition-all ${
-            activeTab === 'wallet' ? 'text-white scale-105' : 'text-white/70'
+          className={`relative pb-2 text-sm font-semibold transition-all ${
+            activeTab === 'wallet' ? 'text-gray-900' : 'text-gray-400'
           }`}
         >
-          Wallet
+          Coins
           {activeTab === 'wallet' && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-white rounded-full" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 bg-gray-900 rounded-full" />
           )}
         </button>
         <button
           onClick={() => setActiveTab('diamonds')}
-          className={`relative pb-1 text-sm font-bold transition-all ${
-            activeTab === 'diamonds' ? 'text-white scale-105' : 'text-white/70'
+          className={`relative pb-2 text-sm font-semibold transition-all ${
+            activeTab === 'diamonds' ? 'text-gray-900' : 'text-gray-400'
           }`}
         >
           Diamonds
           {activeTab === 'diamonds' && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-white rounded-full" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 bg-gray-900 rounded-full" />
           )}
         </button>
       </div>
 
       {/* SCROLLABLE BODY */}
       <div
-        className="flex-1 overflow-y-auto px-3 pt-1.5 pb-4 relative"
+        className="flex-1 overflow-y-auto px-4 pt-3 pb-6 relative"
         style={{
           background: 'transparent',
           WebkitOverflowScrolling: 'touch',
@@ -298,91 +295,62 @@ export default function Wallet({ onBack }: WalletProps) {
       >
         {/* COINS TAB CONTENT */}
         {activeTab === 'wallet' && (
-          <div className="flex flex-col min-h-full justify-between" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div className="space-y-3">
-              {/* CURRENT BALANCE BANNER */}
+          <div className="flex flex-col min-h-full justify-between space-y-4" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
+            <div className="space-y-4">
+              {/* CURRENT BALANCE BANNER WITH OVERFLOW IMAGE */}
               <div
-                className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
+                className="rounded-2xl p-4 relative mt-6 flex flex-col justify-center"
                 style={{
-                  background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)',
-                  boxShadow: '0 8px 32px rgba(255, 165, 0, 0.4), inset 0 2px 4px rgba(255,255,255,0.3)',
-                  border: '2px solid rgba(255, 215, 0, 0.8)',
+                  background: 'linear-gradient(135deg, #FFE4B5 0%, #FFD700 100%)',
+                  boxShadow: '0 4px 20px rgba(255, 165, 0, 0.15)',
+                  minHeight: '90px',
                 }}
               >
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)' }}
-                />
-                <div className="relative z-10">
-                  <h2 className="text-sm font-bold text-white mb-0.5">Current balance</h2>
-                  <p className="text-4xl font-black text-white">2,293</p>
-                </div>
-                <div className="relative w-20 h-20 flex-shrink-0">
+                {/* Overflow Coin Image matching 1000183565.jpg */}
+                <div className="absolute -top-7 right-4 w-24 h-24 pointer-events-none z-20 drop-shadow-lg">
                   <WhiteColorRemovalShader
                     imageSrc="/1786855398290.png"
                     className="w-full h-full object-contain"
                     threshold={0.88}
                   />
                 </div>
+                <h2 className="text-xs font-semibold text-amber-900/70 uppercase tracking-wider mb-1">current balance</h2>
+                <p className="text-3xl font-black text-amber-950">1,077,472</p>
               </div>
 
-              {/* 3 SMALL SQUARE CARDS */}
-              <div className="grid grid-cols-3 gap-2.5">
-                {[
-                  { coins: '1,000,000', price: '$ 1.0' },
-                  { coins: '2,000,000', price: '$ 2.0' },
-                  { coins: '3,000,000', price: '$ 3.0' },
-                ].map((item, index) => (
-                  <div
-                    key={index}
-                    className="rounded-xl overflow-hidden shadow-sm flex flex-col items-center justify-between p-2"
-                    style={{
-                      background: 'rgba(255,255,255,0.95)',
-                      border: '1px solid rgba(255, 165, 0, 0.3)',
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                      aspectRatio: '1 / 1',
-                    }}
-                  >
-                    <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center">
-                      <WhiteColorRemovalShader
-                        imageSrc="/1786855398290.png"
-                        className="w-full h-full object-contain"
-                        threshold={0.88}
-                      />
-                    </div>
-                    <span className="text-gray-700 font-extrabold text-[11px] tracking-tight">{item.coins}</span>
-                    <button className="w-full py-1 bg-gradient-to-r from-orange-400 to-orange-600 font-bold text-white active:scale-95 transition-transform text-[11px] rounded-md shadow-xs">
-                      {item.price}
-                    </button>
+              {/* COIN ITEM CARD */}
+              <div className="relative pt-2">
+                <div
+                  className="rounded-2xl p-4 relative flex flex-col items-center justify-between"
+                  style={{
+                    background: '#FFFDF5',
+                    border: '1px solid #FDF0D5',
+                    width: '140px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  }}
+                >
+                  <div className="absolute -top-2.5 left-3 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-md shadow-xs">
+                    +20,000 
                   </div>
-                ))}
-              </div>
+                  
+                  <div className="w-14 h-14 my-2 flex items-center justify-center">
+                    <WhiteColorRemovalShader
+                      imageSrc="/1786855398290.png"
+                      className="w-full h-full object-contain"
+                      threshold={0.88}
+                    />
+                  </div>
 
-              <div className="text-center pt-0.5">
-                <a href="#" className="text-xs text-blue-500 font-medium underline">
-                  Coins not received? Click here
-                </a>
-              </div>
-            </div>
+                  <span className="px-2 py-0.5 bg-red-400 text-white text-[9px] font-bold rounded-full mb-2">
+                    First Recharge
+                  </span>
 
-            {/* Bottom buttons */}
-            <div className="space-y-3 pt-6 pb-2 px-4">
-              <div className="relative">
-                <div className="absolute -top-2 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">
-                  1st Bonus +10% | Then +2%
+                  <span className="text-gray-900 font-extrabold text-sm mb-3">1,000,000</span>
+
+                  <button className="w-full py-2 bg-amber-300 hover:bg-amber-400 font-bold text-amber-950 active:scale-95 transition-transform text-xs rounded-xl shadow-xs">
+                    USD 1
+                  </button>
                 </div>
-                <button className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-orange-600 to-orange-500 shadow-md active:scale-95 transition-transform text-sm">
-                  Local payment methods
-                </button>
-              </div>
-
-              <div className="relative">
-                <div className="absolute -top-2 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-t-md rounded-bl-md">
-                  Biggest Discount 4%-13%
-                </div>
-                <button className="w-full py-3 rounded-xl font-bold text-orange-600 bg-white border-2 border-orange-400 shadow-sm active:scale-95 transition-transform text-sm">
-                  Coin Seller
-                </button>
               </div>
             </div>
           </div>
@@ -390,47 +358,54 @@ export default function Wallet({ onBack }: WalletProps) {
 
         {/* DIAMONDS TAB CONTENT */}
         {activeTab === 'diamonds' && (
-          <div className="flex flex-col min-h-full justify-between" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
-            <div className="space-y-3">
-              {/* CURRENT DIAMONDS BANNER */}
+          <div className="flex flex-col min-h-full justify-between space-y-4" style={{ animation: mounted ? 'fadeInUp 0.4s ease-out 0.1s' : 'none' }}>
+            <div className="space-y-4">
+              {/* CURRENT DIAMONDS BANNER WITH OVERFLOW IMAGE */}
               <div
-                className="rounded-2xl p-4 relative overflow-hidden flex justify-between items-center"
+                className="rounded-2xl p-4 relative mt-6 flex flex-col justify-center"
                 style={{
-                  background: 'linear-gradient(135deg, #FF69B4 0%, #FF1493 50%, #C71585 100%)',
-                  boxShadow: '0 8px 32px rgba(255, 20, 147, 0.4), inset 0 2px 4px rgba(255,255,255,0.3)',
-                  border: '2px solid rgba(255, 105, 180, 0.8)',
+                  background: 'linear-gradient(135deg, #FFC0CB 0%, #FF69B4 100%)',
+                  boxShadow: '0 4px 20px rgba(255, 105, 180, 0.15)',
+                  minHeight: '90px',
                 }}
               >
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%)' }}
-                />
-                <div className="relative z-10">
-                  <h2 className="text-sm font-bold text-white mb-0.5">Diamonds balance</h2>
-                  <p className="text-4xl font-black text-white">4,719</p>
-                </div>
-                <div className="relative w-20 h-20 flex-shrink-0">
+                {/* Overflow Diamond Image matching 1000183569.jpg */}
+                <div className="absolute -top-8 right-2 w-24 h-24 pointer-events-none z-20 drop-shadow-lg">
                   <WhiteColorRemovalShader
                     imageSrc="/1787321690452.png"
                     className="w-full h-full object-contain"
                     threshold={0.88}
                   />
                 </div>
+                <h2 className="text-xs font-semibold text-pink-950/70 uppercase tracking-wider mb-1">current diamonds</h2>
+                <p className="text-3xl font-black text-pink-950">0</p>
               </div>
 
-              {/* Exchange Section */}
+              {/* EXCHANGE BOX */}
               <div
-                className="rounded-2xl p-4"
+                className="rounded-2xl p-4 bg-white/80 backdrop-blur-sm"
                 style={{
-                  background: 'rgba(255,255,255,0.95)',
-                  border: '1px solid rgba(255, 182, 193, 0.8)',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
+                  border: '1px solid #FFE4E1',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
                 }}
               >
-                <h3 className="text-base font-bold text-gray-800 mb-3">Exchange</h3>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-bold text-gray-800">Exchange</h3>
+                  <div className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                    <span>100 =</span>
+                    <div className="w-4 h-4 inline-block align-middle">
+                      <WhiteColorRemovalShader
+                        imageSrc="/1786855398290.png"
+                        className="w-full h-full object-contain"
+                        threshold={0.88}
+                      />
+                    </div>
+                    <span>33</span>
+                  </div>
+                </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-white rounded-lg border border-pink-200 p-2 flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-gray-50/80 p-2 rounded-xl border border-gray-100">
+                  <div className="flex-1 flex items-center gap-2">
                     <div className="w-5 h-5 flex-shrink-0">
                       <WhiteColorRemovalShader
                         imageSrc="/1787321690452.png"
@@ -442,20 +417,21 @@ export default function Wallet({ onBack }: WalletProps) {
                       type="number"
                       value={diamonds}
                       onChange={(e) => handleDiamondChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-sm"
-                      placeholder="Diamonds"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs"
+                      placeholder="Input multiple"
                     />
                   </div>
-                  <div className="text-gray-400 font-bold text-base">=</div>
-                  <div className="flex-1 bg-white rounded-lg border border-gray-200 p-2 flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-400">x100</span>
+                  <div className="text-gray-300 font-bold">=</div>
+                  <div className="w-16 flex items-center justify-end gap-1">
                     <input
                       type="number"
                       value={coins}
                       onChange={(e) => handleCoinChange(e.target.value)}
-                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-sm text-right"
+                      className="bg-transparent outline-none w-full font-medium text-gray-700 text-xs text-right"
                       placeholder="Coins"
                     />
-                    <div className="w-5 h-5 flex-shrink-0">
+                    <div className="w-4 h-4 flex-shrink-0">
                       <WhiteColorRemovalShader
                         imageSrc="/1786855398290.png"
                         className="w-full h-full object-contain"
@@ -465,13 +441,32 @@ export default function Wallet({ onBack }: WalletProps) {
                   </div>
                 </div>
               </div>
+
+              {/* EXCHANGE RATE PERCENTAGE BUTTONS */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-gray-600">exchange rate</h4>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {['20%', '40%', '60%', '80%', '100%'].map((pct) => (
+                    <button
+                      key={pct}
+                      onClick={() => handlePercentageSelect(pct)}
+                      className={`py-2 rounded-xl text-xs font-bold transition-all border ${
+                        selectedPercentage === pct
+                          ? 'bg-cyan-400 text-white border-cyan-400 shadow-sm'
+                          : 'bg-white text-cyan-500 border-cyan-200'
+                      }`}
+                    >
+                      {pct}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Bottom button */}
-            <div className="pt-6 pb-2 px-4">
+            {/* BOTTOM EXCHANGE BUTTON */}
+            <div className="pt-4">
               <button
-                className="w-full py-3 rounded-xl font-bold text-white bg-gray-300 cursor-not-allowed active:scale-95 transition-transform text-sm"
-                disabled
+                className="w-full py-3 rounded-xl font-bold text-white bg-pink-300 active:scale-95 transition-transform text-sm shadow-xs"
               >
                 Exchange
               </button>
