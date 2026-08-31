@@ -1392,7 +1392,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <div 
         className="absolute cursor-pointer z-20"
         style={{
-          bottom: 'calc(var(--footer-btn-size) + 38px)',
+          bottom: 'calc(var(--footer-btn-size) + 30px)',
           right: '10px',
           width: 'calc(var(--footer-btn-size) * 1.1)',
           height: 'calc(var(--footer-btn-size) * 1.1)',
