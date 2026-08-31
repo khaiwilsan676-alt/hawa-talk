@@ -7,8 +7,7 @@ import PublicProfile from './PublicProfile'
 import HurrySupport from './HurrySupport'
 import LanguagePage from './LanguagePage'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
-import { db } from "../src/lib/firebase"
-import { doc, getDoc, collection, addDoc } from "firebase/firestore"
+import { getUser, saveUser } from "../src/lib/googleSheets"
 import Wallet from './Wallet'
 import StorePage from './StorePage'
 import InviteFriends from './InviteFriends'
@@ -556,20 +555,21 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         }
 
         try {
-          const userDocRef = doc(db, "users", uid);
-          const docSnap = await getDoc(userDocRef);
+          const res = await getUser(uid);
+          const sheetData = res && (res.user || res.data || res);
           
           let resolvedName = localStorage.getItem("userName") || "";
           let photo = localStorage.getItem("userPhoto") || "";
           let phone = localStorage.getItem("userPhone") || "";
           let accNum = localStorage.getItem("accountNumber") || "";
 
-          if (docSnap.exists()) {
-            const firebaseData = docSnap.data();
-            if (isValidName(firebaseData.name) && !isValidName(resolvedName)) resolvedName = firebaseData.name;
-            if (firebaseData.photo && !photo) photo = firebaseData.photo;
-            if (firebaseData.phone && !phone) phone = firebaseData.phone;
-            if (firebaseData.accountId && !accNum) accNum = firebaseData.accountId;
+          if (sheetData && (sheetData.id || sheetData.AppLongId || sheetData['App long ID'] || sheetData.Name || sheetData.name)) {
+            const sName = sheetData.name || sheetData.Name;
+            const sPhoto = sheetData.photo || sheetData.avatar || sheetData.Avtar || sheetData.image;
+            const sAcc = sheetData.accountId || sheetData.accountNumber || sheetData['Account Number'];
+            if (isValidName(sName) && !isValidName(resolvedName)) resolvedName = sName;
+            if (sPhoto && !photo) photo = sPhoto;
+            if (sAcc && !accNum) accNum = String(sAcc);
           }
 
           if (!accNum) {
@@ -591,8 +591,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           if (photo) localStorage.setItem("userPhoto", photo);
 
           setUser(finalLockedUser);
-        } catch (firebaseError) {
-          console.warn('Firebase one-time read bypassed/failed:', firebaseError);
+        } catch (sheetError) {
+          console.warn('Google Sheets one-time read bypassed/failed:', sheetError);
         }
 
       } catch (error) {

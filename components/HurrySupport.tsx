@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Send } from "lucide-react";
-import { db } from "../src/lib/supabase";
-import { collection, addDoc, setDoc, doc, deleteDoc, query, where, getDocs } from "../src/lib/supabase";
+import { saveAiChat, getAiChat } from "../src/lib/googleSheets";
 
 interface HurrySupportProps {
   onBack?: () => void;
@@ -23,7 +22,6 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
   const [userId, setUserId] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
-  const [chatDocId, setChatDocId] = useState<string>("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatLoadedRef = useRef(false);
 
@@ -39,59 +37,17 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
     }
   }, []);
 
-  // Auto-clear chats older than 24 hours
-  useEffect(() => {
-    const clearOldChats = async () => {
-      try {
-        const now = Date.now();
-        const twentyFourHours = 24 * 60 * 60 * 1000;
-        const q = query(collection(db, "aiChats"));
-        const querySnapshot = await getDocs(q);
-        
-        const deletePromises: Promise<void>[] = [];
-        querySnapshot.docs.forEach((document: any) => {
-          const data = document.data();
-          const chatTime = data.timestamp || 0;
-          if (now - chatTime > twentyFourHours) {
-            deletePromises.push(deleteDoc(doc(db, "aiChats", document.id)));
-          }
-        });
-
-        await Promise.all(deletePromises);
-      } catch (error) {
-        console.error("Error clearing old chats:", error);
-      }
-    };
-
-    clearOldChats();
-    const interval = setInterval(clearOldChats, 3600000); // Check every hour
-    return () => clearInterval(interval);
-  }, []);
-
-  // Load existing chat or create new one
+  // Load existing chat or create welcome message
   useEffect(() => {
     if (!userId || chatLoadedRef.current) return;
 
     const loadOrCreateChat = async () => {
       try {
-        const q = query(collection(db, "aiChats"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
+        const res = await getAiChat(userId);
+        const data = res && (res.chat || res.data || res);
         
-        if (!querySnapshot.empty) {
-          const docSnap = querySnapshot.docs[0];
-          const data = docSnap.data();
-          setChatDocId(docSnap.id);
-          
-          if (data.messages && data.messages.length > 0) {
-            setMessages(data.messages);
-          } else {
-            const welcomeMessage: MessageType = {
-              text: "Welcome to Hurry Support 👋\n\nI am Daisy, your Official Customer Support Assistant.\n\nHow can I help you today? Aap Hurry App se juda koi bhi sawal pooch sakte hain! 😊",
-              isBot: true,
-              timestamp: Date.now()
-            };
-            setMessages([welcomeMessage]);
-          }
+        if (data && data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
+          setMessages(data.messages);
         } else {
           const welcomeMessage: MessageType = {
             text: "Welcome to Hurry Support 👋\n\nI am Daisy, your Official Customer Support Assistant.\n\nHow can I help you today? Aap Hurry App se juda koi bhi sawal pooch sakte hain! 😊",
@@ -99,15 +55,13 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
             timestamp: Date.now()
           };
           setMessages([welcomeMessage]);
-          
-          const docRef = await addDoc(collection(db, "aiChats"), {
-            userId: userId,
-            userName: userName,
-            userEmail: userEmail,
-            timestamp: Date.now(),
-            messages: [welcomeMessage]
+          await saveAiChat({
+            userId,
+            userName,
+            userEmail,
+            messages: [welcomeMessage],
+            timestamp: Date.now()
           });
-          setChatDocId(docRef.id);
         }
         chatLoadedRef.current = true;
       } catch (error) {
@@ -124,20 +78,20 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
     loadOrCreateChat();
   }, [userId, userName, userEmail]);
 
-  // Save messages to Firestore
-  const saveChatToFirestore = async (updatedMessages: Array<MessageType>) => {
-    if (!chatDocId || !userId) return;
+  // Save messages to Google Sheets
+  const saveChatToGoogleSheets = async (updatedMessages: Array<MessageType>) => {
+    if (!userId) return;
     
     try {
-      await setDoc(doc(db, "aiChats", chatDocId), {
-        userId: userId,
-        userName: userName,
-        userEmail: userEmail,
-        timestamp: Date.now(),
-        messages: updatedMessages
-      }, { merge: true });
+      await saveAiChat({
+        userId,
+        userName,
+        userEmail,
+        messages: updatedMessages,
+        timestamp: Date.now()
+      });
     } catch (error) {
-      console.error("Error saving chat:", error);
+      console.error("Error saving AI chat:", error);
     }
   };
 
@@ -459,7 +413,7 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
     setMessage("");
     setIsTyping(true);
 
-    saveChatToFirestore(updatedMessages);
+    saveChatToGoogleSheets(updatedMessages);
 
     setTimeout(() => {
       const botResponse = generateBotResponse(userMessage.text || "");
@@ -469,7 +423,7 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
       setMessages(finalMessages);
       setIsTyping(false);
       
-      saveChatToFirestore(finalMessages);
+      saveChatToGoogleSheets(finalMessages);
     }, 1000);
   };
 
@@ -573,4 +527,3 @@ export default function HurrySupport({ onBack }: HurrySupportProps) {
     </div>
   );
 }
-
