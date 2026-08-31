@@ -189,9 +189,9 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         <div style={{ height: '5vh' }} className="w-full shrink-0" />
       </div>
 
-      {/* SCROLLABLE SECTION: ONLY TOP 4 TO 50 CARDS */}
-      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pb-8 px-4 flex flex-col items-center">
-        <div className="w-full max-w-md flex flex-col gap-1.5">
+      {/* SCROLLABLE SECTION: ONLY TOP 4 TO 50 CARDS (MADE WIDER HERE) */}
+      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pb-8 px-3 flex flex-col items-center">
+        <div className="w-full max-w-lg flex flex-col gap-1.5 items-center">
           {rankCards.map((rank) => (
             <div
               key={rank}
@@ -200,7 +200,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
               <ChromaImage
                 src="/1787992320047~2.jpg"
                 alt={`Rank ${rank}`}
-                className="w-140 h-auto object-cover"
+                className="w-full max-w-xl h-auto object-cover scale-105"
               />
             </div>
           ))}
