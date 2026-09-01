@@ -1,8 +1,66 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Plus, HelpCircle } from 'lucide-react'
 
+// ==========================================
+// WEBSHADER: GREEN SCREEN REMOVER COMPONENT
+// ==========================================
+// Ye component aapki image ko canvas me draw karega aur green pixels ko transparent kar dega
+const WebShaderImage = ({ src, alt, className, style }: any) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [processedSrc, setProcessedSrc] = useState<string>('')
+
+  useEffect(() => {
+    const img = new Image()
+    img.crossOrigin = 'Anonymous'
+    img.onload = () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (!ctx) return
+
+      canvas.width = img.width
+      canvas.height = img.height
+      ctx.drawImage(img, 0, 0)
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const data = imageData.data
+
+      // Pixel-by-pixel processing (WebShader Logic)
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+
+        // Green detection formula: Agar green component baki sabse high hai
+        if (g > 90 && g > r * 1.1 && g > b * 1.1) {
+          data[i + 3] = 0 // Make alpha (opacity) 0 -> Transparent
+        }
+      }
+      ctx.putImageData(imageData, 0, 0)
+      setProcessedSrc(canvas.toDataURL())
+    }
+    img.src = src
+  }, [src])
+
+  return (
+    <>
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      {/* Agar process ho gayi toh bina green wali image, warna normally fallback */}
+      <img 
+        src={processedSrc || src} 
+        alt={alt} 
+        className={className} 
+        style={style} 
+      />
+    </>
+  )
+}
+
+// ==========================================
+// MAIN COMPONENT LOGIC
+// ==========================================
 interface FamilyMember {
   id: string
   name: string
@@ -16,19 +74,13 @@ interface FamilyProps {
 }
 
 export default function Family({ onBack }: FamilyProps) {
-  // ==========================================
-  // LOGIC SECTION - STRICTLY UNTOUCHED
-  // ==========================================
   const [members, setMembers] = useState<FamilyMember[]>([])
   const [showAddMember, setShowAddMember] = useState(false)
   const [newMemberName, setNewMemberName] = useState('')
   const [newMemberRelation, setNewMemberRelation] = useState('')
   const [familyCode, setFamilyCode] = useState('')
 
-  // State to switch between Main Page and "Join Family" Page
   const [currentView, setCurrentView] = useState<'main' | 'join'>('main')
-
-  // Countdown State for Main Page
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 })
 
   useEffect(() => {
@@ -79,7 +131,6 @@ export default function Family({ onBack }: FamilyProps) {
     setNewMemberRelation('')
     setShowAddMember(false)
   }
-  // ==========================================
 
   // ==========================================
   // VIEW 2: JOIN FAMILY PAGE (Cup Clicked)
@@ -87,8 +138,6 @@ export default function Family({ onBack }: FamilyProps) {
   if (currentView === 'join') {
     return (
       <div className="min-h-screen bg-[#362011] flex flex-col relative overflow-x-hidden font-sans text-white">
-        
-        {/* Top 40vh Background Image fading into Dark Brown */}
         <div 
           className="absolute top-0 left-0 w-full h-[40vh] z-0"
           style={{
@@ -100,45 +149,34 @@ export default function Family({ onBack }: FamilyProps) {
           }}
         />
 
-        {/* Content Container */}
         <div className="relative z-10 flex flex-col w-full min-h-screen pb-10">
-          
-          {/* Header */}
           <div className="flex items-center justify-between p-4 mt-2">
-            {/* Top Left Corner - Back Arrow */}
             <button 
               onClick={() => setCurrentView('main')} 
               className="p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer backdrop-blur-sm"
             >
               <ArrowLeft size={28} className="text-white" />
             </button>
-
-            {/* Middle Heading */}
             <h1 className="text-xl font-bold tracking-wide text-[#FFD700] drop-shadow-md">
               Join Family
             </h1>
-
-            {/* Right Side Question Mark Icon */}
             <button className="p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer backdrop-blur-sm">
               <HelpCircle size={26} className="text-white" />
             </button>
           </div>
 
-          {/* 60vh Dark Brown Sheet Section containing 50 Cards */}
           <div className="flex-1 px-4 mt-[10vh] space-y-4">
             {Array.from({ length: 50 }, (_, index) => {
               const rank = index + 1;
               return (
                 <div key={rank} className="relative w-full h-20 rounded-xl overflow-hidden flex items-center justify-between px-4 shadow-lg border border-white/10">
-                  {/* Card Background Image */}
-                  <img 
+                  <WebShaderImage 
                     src="/1788259008478~2.jpg" 
                     alt="Card Background" 
                     className="absolute inset-0 w-full h-full object-cover opacity-80"
                   />
                   <div className="absolute inset-0 bg-black/30"></div>
                   
-                  {/* Card Left Side Numbering (1 to 50) */}
                   <div className="relative z-10 flex items-center gap-4">
                     <span className="text-2xl font-black text-yellow-400 w-8 text-center drop-shadow-md">
                       {rank}
@@ -154,19 +192,17 @@ export default function Family({ onBack }: FamilyProps) {
                     </div>
                   </div>
 
-                  {/* Top Right Corner Image on each card */}
                   <div className="relative z-10">
-                    <img 
+                    <WebShaderImage 
                       src="/IMG_20260901_160944.png" 
                       alt="Icon" 
-                      className="w-8 h-8 object-contain filter drop-shadow-md"
+                      className="w-8 h-8 object-contain drop-shadow-md"
                     />
                   </div>
                 </div>
               );
             })}
           </div>
-
         </div>
       </div>
     );
@@ -177,8 +213,6 @@ export default function Family({ onBack }: FamilyProps) {
   // ==========================================
   return (
     <div className="min-h-screen bg-[#362011] flex flex-col relative overflow-x-hidden font-sans text-white">
-      
-      {/* 50vh Top Background Image with Mixing */}
       <div 
         className="absolute top-0 left-0 w-full h-[50vh] z-0"
         style={{
@@ -194,12 +228,10 @@ export default function Family({ onBack }: FamilyProps) {
         
         {/* TOP HEADER */}
         <div className="flex items-start justify-between p-4 mt-2">
-          {/* Top Left Corner */}
           <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors cursor-pointer backdrop-blur-sm">
             <ArrowLeft size={28} className="text-white" />
           </button>
 
-          {/* Middle Heading & Countdown */}
           <div className="flex flex-col items-center text-center mt-1">
             <h1 className="text-xl font-bold tracking-wide text-[#FFD700] drop-shadow-md">
               Top families Of the month
@@ -209,16 +241,14 @@ export default function Family({ onBack }: FamilyProps) {
             </div>
           </div>
 
-          {/* Right Side Corner Cup Image - Clicking this opens Join Family page */}
           <button 
             onClick={() => setCurrentView('join')}
             className="cursor-pointer hover:scale-110 transition-transform p-1"
           >
-            <img 
+            <WebShaderImage 
               src="/1788258883971~2.jpg" 
               alt="Cup" 
-              className="w-14 h-14 object-contain filter drop-shadow-lg"
-              style={{ mixBlendMode: 'color-burn' }}
+              className="w-14 h-14 object-contain drop-shadow-lg"
             />
           </button>
         </div>
@@ -226,7 +256,7 @@ export default function Family({ onBack }: FamilyProps) {
         {/* MIDDLE SECTION */}
         <div className="flex flex-col w-full mt-6 px-6 relative">
           <div className="flex justify-center w-full relative z-20">
-            <img 
+            <WebShaderImage 
               src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
               className="w-32 h-32 object-contain drop-shadow-2xl" 
@@ -234,12 +264,12 @@ export default function Family({ onBack }: FamilyProps) {
           </div>
 
           <div className="flex justify-between w-full -mt-8 relative z-10 px-4">
-            <img 
+            <WebShaderImage 
               src="/1788258909655~2.jpg" 
               alt="Left Rank" 
               className="w-24 h-24 object-contain drop-shadow-xl" 
             />
-            <img 
+            <WebShaderImage 
               src="/1788258915366~2.jpg" 
               alt="Right Rank" 
               className="w-24 h-24 object-contain drop-shadow-xl" 
@@ -247,7 +277,6 @@ export default function Family({ onBack }: FamilyProps) {
           </div>
         </div>
 
-        {/* Gap 10Vh */}
         <div className="h-[10vh] w-full"></div>
 
         {/* LIST / CARDS SECTION */}
@@ -265,7 +294,7 @@ export default function Family({ onBack }: FamilyProps) {
 
               return (
                 <div key={member.id} className="relative w-full h-24 rounded-xl overflow-hidden flex items-center justify-between p-4 shadow-lg border border-white/10">
-                  <img 
+                  <WebShaderImage 
                     src={cardImage} 
                     alt="Card Background" 
                     className="absolute inset-0 w-full h-full object-cover opacity-80"
@@ -300,7 +329,7 @@ export default function Family({ onBack }: FamilyProps) {
           onClick={() => setShowAddMember(true)}
           className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl"
         >
-          <img 
+          <WebShaderImage 
             src="/IMG_20260901_161001.png" 
             alt="Add Button" 
             className="w-48 h-auto object-contain"
@@ -308,7 +337,7 @@ export default function Family({ onBack }: FamilyProps) {
         </button>
       </div>
 
-      {/* ADD MEMBER MODAL */}
+      {/* ADD MEMBER MODAL (UNTOUCHED) */}
       {showAddMember && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
@@ -367,3 +396,4 @@ export default function Family({ onBack }: FamilyProps) {
     </div>
   )
 }
+
