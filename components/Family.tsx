@@ -315,32 +315,61 @@ export default function Family({ onBack }: FamilyProps) {
       {/* ======================================= */}
       <div className="relative z-20 flex flex-col w-full flex-shrink-0">
         
-        {/* TOP BAR WITH BACK BUTTON ONLY */}
+        {/* TOP BAR WITH BACK BUTTON ONLY (Removed Heading & Old Countdown) */}
         <div className="flex flex-row items-center w-full px-2 pt-2">
           <button onClick={onBack} className="p-1 cursor-pointer w-10 flex justify-start">
             <ArrowLeft size={28} className="text-white drop-shadow-md" />
           </button>
-          {/* Removed the Heading and old Countdown from here */}
         </div>
 
-        {/* 3 NEW IMAGES IN A ROW */}
-        <div className="flex flex-row items-end justify-center gap-4 w-full mt-10 px-4 relative z-20">
+        {/* ORIGINAL 3 BIG IMAGES (Restored exactly as before) */}
+        <div className="flex flex-col w-full mt-2 relative">
+          
+          {/* Middle Rank */}
+          <div className="flex justify-center w-full relative z-20 -mt-8">
+            <img 
+              src="/IMG_20260901_161023.png" 
+              alt="Middle Rank" 
+              className="w-62 h-62 object-contain drop-shadow-2xl" 
+              style={{ filter: 'url(#remove-green)' }}
+            />
+          </div>
+
+          {/* Left & Right Rank */}
+          <div className="absolute top-27 w-full flex justify-between z-10 px-0">
+            <img 
+              src="/1788258909655~2.jpg" 
+              alt="Left Rank" 
+              className="w-40 h-40 object-contain -ml-4 drop-shadow-xl"
+              style={{ filter: 'url(#remove-green)' }} 
+            />
+            <img 
+              src="/1788258915366~2.jpg" 
+              alt="Right Rank" 
+              className="w-40 h-40 object-contain -mr-4 drop-shadow-xl"
+              style={{ filter: 'url(#remove-green)' }} 
+            />
+          </div>
+        </div>
+
+        {/* 3 NEW IMAGES IN A ROW (Between Big images and Countdown) */}
+        <div className="flex flex-row items-end justify-center gap-4 w-full mt-14 px-4 relative z-20">
           <img 
             src="/IMG_20260901_230303.jpg" 
-            alt="Left" 
-            className="w-[30%] max-w-[120px] h-auto object-contain drop-shadow-xl" 
+            alt="Left New" 
+            className="w-[35%] max-w-[110px] h-auto object-contain drop-shadow-xl" 
             style={{ filter: 'url(#remove-green)' }}
           />
           <img 
             src="/IMG_20260901_230319.jpg" 
-            alt="Middle" 
-            className="w-[35%] max-w-[140px] h-auto object-contain drop-shadow-2xl z-10" 
+            alt="Middle New" 
+            className="w-[35%] max-w-[130px] h-auto object-contain drop-shadow-2xl z-10" 
             style={{ filter: 'url(#remove-green)' }}
           />
           <img 
             src="/IMG_20260901_230330.jpg" 
-            alt="Right" 
-            className="w-[30%] max-w-[120px] h-auto object-contain drop-shadow-xl" 
+            alt="Right New" 
+            className="w-[35%] max-w-[110px] h-auto object-contain drop-shadow-xl" 
             style={{ filter: 'url(#remove-green)' }}
           />
         </div>
@@ -380,7 +409,6 @@ export default function Family({ onBack }: FamilyProps) {
       {/* ======================================= */}
       {/* SCROLLABLE BOTTOM SECTION               */}
       {/* ======================================= */}
-      {/* Scroll area directly starts from here */}
       <div className="relative z-10 flex-1 overflow-y-auto w-full px-4 pt-4 space-y-1.5 pb-32">
         
         {/* 1,2,3 Wali Image (Wide - w-[95%]) */}
@@ -393,7 +421,7 @@ export default function Family({ onBack }: FamilyProps) {
           />
         </div>
 
-        {/* 4 to 50 Cards - Ab poori list yahan aayegi */}
+        {/* 4 to 50 Cards */}
         {Array.from({ length: 47 }, (_, i) => {
           const rank = i + 4;
           return (
@@ -444,3 +472,4 @@ export default function Family({ onBack }: FamilyProps) {
     </div>
   )
 }
+
