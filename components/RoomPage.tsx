@@ -1137,8 +1137,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </div>
           </div>
 
+                    {/* Top Right Header Buttons */}
           <div className="flex items-center gap-1.5">
-            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 cursor-pointer hover:bg-black/60 transition-colors" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
+            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 cursor-pointer hover:bg-white/20 transition-colors shadow-sm" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
@@ -1148,7 +1149,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
 
             {isRoomOwner && (
-              <button onClick={openSettings} aria-label="Settings" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer flex items-center justify-center" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+              <button onClick={openSettings} aria-label="Settings" className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
                 <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                   <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
                   <circle cx="12" cy="12" r="2.8" />
@@ -1156,19 +1157,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </button>
             )}
 
-            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors cursor-pointer flex items-center justify-center" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                 <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
               </svg>
             </button>
 
-            <button onClick={openExitMenu} aria-label="Power" className="bg-black/50 backdrop-blur-md rounded-full hover:bg-black/70 transition-colors flex items-center justify-center cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+            <button onClick={openExitMenu} aria-label="Power" className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                 <path d="M12 4v8" /><path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
               </svg>
             </button>
           </div>
-        </div>
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
@@ -1177,7 +1177,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
-            <div className="mx-0 mb-2 flex justify-start">
+                        <div className="mx-0 mb-2 flex justify-start">
               <div 
                 className="border border-white/5 max-w-[80%]"
                 style={{ 
@@ -1188,11 +1188,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 }}
               >
                 <p 
-                  className="leading-snug font-medium"
+                  className="leading-snug font-bold"
                   style={{ 
                     fontSize: 'var(--announcement-text-size)',
-                    color: '#00BFFF',
-                    textShadow: '0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3), 0 0 40px rgba(0, 191, 255, 0.2)',
+                    color: '#FFD700',
+                    textShadow: '0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3), 0 0 40px rgba(255, 215, 0, 0.2)',
                     fontWeight: '700'
                   }}
                 >
@@ -1204,8 +1204,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       className="font-semibold whitespace-nowrap shrink-0"
                       style={{ 
                         fontSize: 'var(--announcement-label-size)',
-                        color: '#00BFFF',
-                        textShadow: '0 0 10px rgba(0, 191, 255, 0.5)'
+                        color: '#FFFFFF',
+                        textShadow: '0 0 10px rgba(255, 255, 0.8)'
                       }}
                     >
                       ANNOUNCEMENT:
@@ -1214,8 +1214,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       className="leading-snug font-medium"
                       style={{ 
                         fontSize: 'var(--announcement-text-size)',
-                        color: '#00BFFF',
-                        textShadow: '0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(0, 191, 255, 0.3)'
+                        color: '#FFFFFF',
+                        textShadow: '0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3)'
                       }}
                     >
                       {roomAnnouncement}
@@ -1224,6 +1224,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 )}
               </div>
             </div>
+
 
             <div className="space-y-0.5">
               {messages.map((msg) => (
@@ -1282,19 +1283,28 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-        {/* Footer Controls */}
+               {/* Footer Controls */}
         <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-2">
+            
+            {/* SAY HI ICON BUTTON - Modified to match the uploaded image */}
             <button
               onClick={openChatInput}
-              className="bg-black/40 backdrop-blur-md border border-white/10 text-white font-semibold rounded-full hover:bg-black/60 transition-colors shadow-md shrink-0 cursor-pointer"
-              style={{ fontSize: 'var(--footer-sayhi-text)', padding: 'var(--footer-sayhi-padding)' }}
+              aria-label="Say Hi Chat"
+              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-md"
+              style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
             >
-              Say Hi
+              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                <circle cx="8" cy="12" r="1.5" fill="white" stroke="none" />
+                <circle cx="12" cy="12" r="1.5" fill="white" stroke="none" />
+                <circle cx="16" cy="12" r="1.5" fill="white" stroke="none" />
+              </svg>
             </button>
+
             <div className="flex items-center gap-2">
               {hasSeat && (
-                <button onClick={handleBottomMicToggle} className="bg-black/30 backdrop-blur-md rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <button onClick={handleBottomMicToggle} className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-md" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   {currentUserSeat?.isMuted ? (
                     <svg viewBox="0 0 24 24" className="fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
                       <line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
@@ -1307,20 +1317,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </button>
               )}
               
-              {/* EMOJI BUTTON - Sirf tab dikhega jab user seat pe ho */}
               {hasSeat && (
-                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 backdrop-blur-md rounded-full border border-white/20 hover:bg-black/50 transition-colors shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-md" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </button>
               )}
               
-              {/* Message Box Menu */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
                 aria-label="Message Box Menu"
-                className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-md"
                 style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
               >
                 <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
@@ -1328,16 +1336,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </svg>
               </button>
 
-              {/* Gift Icon */}
-              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover" draggable={false} />
+              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer shadow-md" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover p-[2px]" draggable={false} />
               </button>
               
-              {/* Apps Menu (Fourgride) */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
                 aria-label="Apps Menu"
-                className="bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/60 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-md"
                 style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
               >
                 <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
