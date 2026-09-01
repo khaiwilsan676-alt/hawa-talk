@@ -2034,7 +2034,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {isSpeakerOn && <RoomAudioRenderer />}
     </div>
   );
-}
+      }
+     
+      
 
 // SeatItem Component - Fully Unclipped (160% Frame + 125% Overlap GIF without clipping)
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
