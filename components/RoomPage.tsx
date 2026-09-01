@@ -93,7 +93,6 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
 
   const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
   const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
-  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -154,7 +153,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [showFourGride, setShowFourGride] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [localUser, setLocalUser] = useState<{ name: string; image: string; accountId: string }>({ name: 'User', image: '/default-avatar.png', accountId: '' });
 
   // Game Sheet States
   const [showGameSheet, setShowGameSheet] = useState(false);
@@ -184,13 +182,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
 
-  useEffect(() => {
-    const name = localStorage.getItem('userName') || 'User';
-    const image = localStorage.getItem('userPhoto') || '/default-avatar.png';
-    const storedAccNum = localStorage.getItem('accountNumber') || localStorage.getItem('userUID') || '10000000';
-    setLocalUser({ name, image, accountId: storedAccNum });
-  }, []);
-
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<{
     name: string;
@@ -219,12 +210,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
 
   const [showChatInput, setShowChatInput] = useState(false);
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
-  const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([]);
+  const [roomFollowers] = useState<RoomUser[]>([]);
 
   const getInitialSeats = (mode: number): Seat[] => {
     const seats: Seat[] = [];
@@ -347,10 +337,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     });
   }, [micMode]);
 
-  const presenceCollection = `roomPresence/${roomId}/users`;
-  const messagesCollection = `roomMessages/${roomId}/messages`;
-  const seatsCollection = `roomSeats/${roomId}/seats`;
-
   useEffect(() => {
     setMessages([]);
     joinMessageSentRef.current = false;
@@ -409,7 +395,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     };
   }, [roomId]);
 
-  // ROOM MEMBER PRESENCE IN GOOGLE SHEETS
   useEffect(() => {
     if (userAccountId === "guest" || !roomId) return;
 
@@ -1005,7 +990,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // --- BOUNDARY-PROTECTED DRAG & DROP FOR MINIMIZED MUSIC CONTROLLER ---
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
     isDraggingRef.current = true;
     hasMovedRef.current = false;
@@ -1051,7 +1035,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     window.addEventListener('mousemove', handleTouchMove);
     window.addEventListener('mouseup', handleTouchEnd);
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchmove', handleTouchMove);
     window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
@@ -1092,7 +1075,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <div className="relative z-10 flex flex-col h-full px-3 sm:px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }} onClick={(e) => e.stopPropagation()}>
 
-        {/* ORIGINAL Top Header Restored */}
+        {/* Top Header */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -1121,15 +1104,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                     }}
                     title={isFollowed ? 'Unfollow Room' : 'Follow Room'}
                   >
-                    {isFollowed ? (
-                      <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--header-follow-icon-size)', height: 'var(--header-follow-icon-size)' }}>
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--header-follow-icon-size)', height: 'var(--header-follow-icon-size)' }}>
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                    )}
+                    <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--header-follow-icon-size)', height: 'var(--header-follow-icon-size)' }}>
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
                   </button>
                 )}
               </div>
@@ -1137,7 +1114,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </div>
           </div>
 
-                    {/* Top Right Header Buttons */}
           <div className="flex items-center gap-1.5">
             <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 cursor-pointer hover:bg-white/20 transition-colors shadow-sm" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
@@ -1169,6 +1145,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </svg>
             </button>
           </div>
+        </div>
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
@@ -1176,8 +1153,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             {renderSeats()}
           </div>
 
-          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
-                        <div className="mx-0 mb-2 flex justify-start">
+          <div className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
+            {/* Announcement Box with Golden Welcome Text & White Announcement */}
+            <div className="mx-0 mb-2 flex justify-start">
               <div 
                 className="border border-white/5 max-w-[80%]"
                 style={{ 
@@ -1205,7 +1183,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       style={{ 
                         fontSize: 'var(--announcement-label-size)',
                         color: '#FFFFFF',
-                        textShadow: '0 0 10px rgba(255, 255, 0.8)'
+                        textShadow: '0 0 10px rgba(255, 255, 255, 0.8)'
                       }}
                     >
                       ANNOUNCEMENT:
@@ -1224,7 +1202,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 )}
               </div>
             </div>
-
 
             <div className="space-y-0.5">
               {messages.map((msg) => (
@@ -1283,11 +1260,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-               {/* Footer Controls */}
+        {/* Footer Controls */}
         <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-2">
             
-            {/* SAY HI ICON BUTTON - Modified to match the uploaded image */}
+            {/* Say Hi Chat Icon Button (Image Match Style) */}
             <button
               onClick={openChatInput}
               aria-label="Say Hi Chat"
@@ -1394,7 +1371,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         )}
       </div>
 
-      {/* GAMES ICON - Fourgride ke UPAR (Absolute positioned) */}
+      {/* GAMES ICON */}
       <div 
         className="absolute cursor-pointer z-20"
         style={{
@@ -1423,7 +1400,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         />
       </div>
 
-      {/* Modals & Sheets */}
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
           <div className="bg-white rounded-2xl px-5 py-4 shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
@@ -1471,7 +1447,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* ORIGINAL Room Info Sheet Layout Restored */}
       {showRoomInfo && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
@@ -1525,16 +1500,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       </span>
                     </div>
                   </div>
-                  {roomFollowers.map(follower => (
-                    <div key={follower.accountId} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-2">
-                      <div className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }} onClick={() => openProfile({ name: follower.name, image: follower.image || "/default-avatar.png", accountId: follower.accountId })}>
-                        <img src={follower.image || "/default-avatar.png"} alt={follower.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-medium text-gray-800 truncate">{follower.name}</h4>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               )}
             </div>
@@ -1578,10 +1543,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               if (seat) {
                 const updated = seats.map(s => s.number === seat.number ? { ...s, isMuted: !s.isMuted } : s);
                 setSeats(updated);
-                updated.forEach(s => {
-                  const sRef = doc(db, seatsCollection, String(s.number));
-                  updateDoc(sRef, { isMuted: s.isMuted });
-                });
               }
             }
             setShowUserProfile(false);
@@ -1592,10 +1553,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               if (seat) {
                 const updated = seats.map(s => s.number === seat.number ? { ...s, isLocked: !s.isLocked } : s);
                 setSeats(updated);
-                updated.forEach(s => {
-                  const sRef = doc(db, seatsCollection, String(s.number));
-                  updateDoc(sRef, { isLocked: s.isLocked });
-                });
               }
             }
             setShowUserProfile(false);
@@ -1650,7 +1607,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
       
-
       {fullImageModal && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullImageModal(null)}>
           <div className="relative max-w-full max-h-full">
@@ -1707,70 +1663,63 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         />
       )}
 
-       {/* GAME SHEET - Directly in RoomPage */}
-{showGameSheet && (
-  <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-    <div className="absolute inset-0 bg-black/30" onClick={() => setShowGameSheet(false)} />
-    <div
-      className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 pt-4 pb-6 animate-slide-up"
-      style={{ height: '20vh' }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-800">Games</h2>
-        <button onClick={() => setShowGameSheet(false)} className="p-1 hover:bg-gray-100 rounded-full">
-          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2.5]">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Games Grid - Sirf 2 Games */}
-      <div className="grid grid-cols-4 gap-4">
-        {/* 1. Wild party */}
-        <div className="flex flex-col items-center">
-          <button 
-            onClick={() => {
-              setShowGameSheet(false);
-              setShowWildParty(true);   // <-- Wildparty open
-            }} 
-            className="transition-transform hover:scale-105"
+      {showGameSheet && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowGameSheet(false)} />
+          <div
+            className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 pt-4 pb-6 animate-slide-up"
+            style={{ height: '20vh' }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <img src="/1787338085121.png" alt="Wild party" className="w-12 h-12 object-contain" />
-          </button>
-          <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Wild party</span>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Games</h2>
+              <button onClick={() => setShowGameSheet(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-gray-700 stroke-[2.5]">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="flex flex-col items-center">
+                <button 
+                  onClick={() => {
+                    setShowGameSheet(false);
+                    setShowWildParty(true);
+                  }} 
+                  className="transition-transform hover:scale-105"
+                >
+                  <img src="/1787338085121.png" alt="Wild party" className="w-12 h-12 object-contain" />
+                </button>
+                <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Wild party</span>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <button 
+                  onClick={() => {
+                    setShowGameSheet(false);
+                    setShowFruitParty(true);
+                  }} 
+                  className="transition-transform hover:scale-105"
+                >
+                  <img src="/IMG_20260824_232321.png" alt="Fruit party" className="w-12 h-12 object-contain" />
+                </button>
+                <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Fruit party</span>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
 
-        {/* 2. Fruit party */}
-        <div className="flex flex-col items-center">
-          <button 
-            onClick={() => {
-              setShowGameSheet(false);
-              setShowFruitParty(true);   // <-- Fruitparty open
-            }} 
-            className="transition-transform hover:scale-105"
-          >
-            <img src="/IMG_20260824_232321.png" alt="Fruit party" className="w-12 h-12 object-contain" />
-          </button>
-          <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Fruit party</span>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      {showWildParty && (
+        <Wildparty onClose={() => setShowWildParty(false)} />
+      )}
 
-{/* Wildparty Overlay */}
-{showWildParty && (
-  <Wildparty onClose={() => setShowWildParty(false)} />  // <-- Wildparty component
-)}
+      {showFruitParty && (
+        <Fruitparty onClose={() => setShowFruitParty(false)} />
+      )}
 
-{/* Fruitparty Overlay */}
-{showFruitParty && (
-  <Fruitparty onClose={() => setShowFruitParty(false)} />  // <-- Fruitparty component
-)}
-
-      {/* Music Controller - MINIMIZED STATE (Clamped Drag & Drop Floating Widget) */}
       {musicControllerState === 'minimized' && currentTrack && (
         <div
           className="fixed z-[45] cursor-grab active:cursor-grabbing flex items-center gap-2 bg-black/85 backdrop-blur-md border border-white/20 rounded-full pl-2 pr-3 py-1.5 shadow-2xl transition-transform active:scale-95 select-none touch-none"
@@ -1786,7 +1735,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             }
           }}
         >
-          {/* Rotating Music Disc */}
           <div className={`w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 ${isMusicPlaying ? 'music-minimize-icon' : ''}`}>
             <svg viewBox="0 0 24 24" className="fill-white" style={{ width: '14px', height: '14px' }}>
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
@@ -1798,7 +1746,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             <p className="text-blue-400 text-[8px] leading-tight mt-0.5">{isMusicPlaying ? 'Playing' : 'Paused'}</p>
           </div>
 
-          {/* Quick Play/Pause in Minimized view */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -1820,7 +1767,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Music Controller - FULL SIZE (With Minimize & Close Buttons) */}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
         <div 
           className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm px-3"
@@ -1836,7 +1782,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}
           >
-            {/* Minimize Button (Top-Left) */}
             <button
               onClick={() => setMusicControllerState('minimized')}
               className="absolute top-1.5 left-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
@@ -1848,7 +1793,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </svg>
             </button>
 
-            {/* Close Button (Top-Right) */}
             <button
               onClick={handleCloseMusicController}
               className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
@@ -1935,7 +1879,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* Global Theme styles with Android Compact Adjustments retained */}
       <style jsx global>{`
         :root {
           --seat-size: 56px;
@@ -1975,7 +1918,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-volume-width: 28px;
         }
 
-        /* Android Compact Screen Adjustments (max-width: 400px) */
         @media (max-width: 400px) {
           :root {
             --seat-size: 51px;
@@ -2034,11 +1976,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       {isSpeakerOn && <RoomAudioRenderer />}
     </div>
   );
-      }
-     
-      
+}
 
-// SeatItem Component - Fully Unclipped (160% Frame + 125% Overlap GIF without clipping)
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -2072,7 +2011,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 
   return (
     <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
-      {/* 500K Badge on Seat 1 - Chota Sa Card Design */}
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none hidden sm:flex bg-black/40 backdrop-blur-md border border-white/20 px-2 py-1 rounded-full shadow-lg"
@@ -2122,7 +2060,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
         </div>
       )}
 
-      {/* Main Seat Circle - Overflow Visible */}
       <div className="relative overflow-visible">
         {activeSpeaking && (
           <>
@@ -2138,9 +2075,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             </div>
           ) : isOccupied && user ? (
             <>
-              {/* UNCLIPPED AVATAR CONTAINER */}
               <div className="relative w-full h-full rounded-full overflow-visible flex items-center justify-center">
-                {/* 1. Base User Avatar */}
                 <img
                   src={user.image || "/default-avatar.png"}
                   alt={user.name}
@@ -2151,7 +2086,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   style={{ zIndex: 1 }}
                 />
 
-                {/* 2. LARGE OVERLAPPING GIF (Uncut, 125% size) */}
                 {gif && (
                   <div 
                     className="absolute pointer-events-none overflow-visible flex items-center justify-center"
@@ -2177,7 +2111,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   </div>
                 )}
 
-                {/* 3. 160% Avatar Frame (Uncut, overflow-visible) */}
                 <div 
                   className="absolute pointer-events-none"
                   style={{
@@ -2209,7 +2142,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                 </div>
               </div>
 
-              {/* Mute Badge For Occupied Seat */}
               {isMuted && (
                 <div className="absolute -right-2 -bottom-2 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
@@ -2222,7 +2154,6 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                 <g fill="none" stroke="#94a7be" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"><path d="M 28 44 Q 28 74 50 74 Q 72 74 72 44" /><path d="M 50 74 L 50 86" /><path d="M 38 90 L 62 90" /></g>
                 <g fill="#94a7be" stroke="#5a6d89" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round" transform="translate(0, 6)"><path d="M 36 18 Q 36 10 50 10 Q 64 10 64 18 L 64 42 Q 64 52 50 52 Q 36 52 36 42 Z" /></g>
               </svg>
-              {/* Mute Badge For Empty Seat */}
               {isMuted && (
                 <div className="absolute -right-2 -bottom-2 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
@@ -2242,4 +2173,5 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
       </span>
     </div>
   );
-                                                                                           }
+}
+
