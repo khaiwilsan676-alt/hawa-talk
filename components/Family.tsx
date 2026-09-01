@@ -361,7 +361,7 @@ export default function Family({ onBack }: FamilyProps) {
         </div>
 
         {/* 6VH SPACE ADDED HERE */}
-        <div className="w-full h-[10vh]"></div>
+        <div className="w-full h-[15vh]"></div>
 
         {/* 3 NEW IMAGES IN A ROW (Space adjusted accordingly) */}
         <div className="flex flex-row items-end justify-center gap-2 w-full px-4 relative z-20">
