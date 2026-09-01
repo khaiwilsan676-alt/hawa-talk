@@ -333,16 +333,19 @@ export default function Family({ onBack }: FamilyProps) {
 
         {/* 3 BIG IMAGES */}
         <div className="flex flex-col w-full mt-2 relative">
-          <div className="flex justify-center w-full relative z-20">
+          
+          {/* Middle Rank - Moved UP (-mt-8) */}
+          <div className="flex justify-center w-full relative z-20 -mt-8">
             <img 
               src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
-              className="w-62 h-62 object-contain drop-shadow-2xl" 
+              className="w-62 h-52 object-contain drop-shadow-2xl" 
               style={{ filter: 'url(#remove-green)' }}
             />
           </div>
 
-          <div className="absolute top-20 w-full flex justify-between z-10 px-0">
+          {/* Left & Right Rank - Moved DOWN (top-36) */}
+          <div className="absolute top-36 w-full flex justify-between z-10 px-0">
             <img 
               src="/1788258909655~2.jpg" 
               alt="Left Rank" 
@@ -359,13 +362,13 @@ export default function Family({ onBack }: FamilyProps) {
         </div>
 
         {/* 10vh GAP */}
-        <div className="h-[15vh] w-full"></div>
+        <div className="h-[13vh] w-full"></div>
       </div>
 
       {/* ======================================= */}
       {/* SCROLLABLE BOTTOM SECTION               */}
       {/* ======================================= */}
-      <div className="relative z-10 flex-1 overflow-y-auto w-full px-4 space-y-4 pb-32">
+      <div className="relative z-10 flex-1 overflow-y-auto w-full px-4 space-y-1.5 pb-32">
         
         {/* 1,2,3 Wali Image (Wide - w-[95%]) */}
         <div className="relative w-[100%] mx-auto">
