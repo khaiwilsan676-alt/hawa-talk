@@ -28,7 +28,6 @@ export default function Family({ onBack }: FamilyProps) {
   const [currentView, setCurrentView] = useState<'main' | 'join' | 'create'>('main')
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 })
 
-  // New States for Setting Sheet
   const [showApplyMode, setShowApplyMode] = useState(false)
   const [applyModeState, setApplyModeState] = useState<'free' | 'admin'>('free')
 
@@ -82,13 +81,13 @@ export default function Family({ onBack }: FamilyProps) {
   }
 
   // ==========================================
-  // VIEW 3: CREATE FAMILY PAGE (Full White Sheet)
+  // VIEW 3: CREATE FAMILY PAGE (Full Black Sheet)
   // ==========================================
   if (currentView === 'create') {
     return (
-      <div className="min-h-screen bg-white flex flex-col font-sans text-black relative">
+      <div className="min-h-screen bg-black flex flex-col font-sans text-white relative">
         
-        {/* NATIVE SVG SHADER FOR WHITE SCREEN REMOVAL (Image ke white bg ke liye) */}
+        {/* NATIVE SVG SHADER FOR WHITE SCREEN REMOVAL */}
         <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
           <filter id="remove-white" colorInterpolationFilters="sRGB">
             <feColorMatrix type="matrix" values="
@@ -101,89 +100,85 @@ export default function Family({ onBack }: FamilyProps) {
         </svg>
 
         {/* HEADER */}
-        <div className="flex items-center justify-between p-4 mt-2">
+        <div className="flex items-center justify-between p-4 mt-2 border-b border-gray-800">
           <button onClick={() => setCurrentView('main')} className="p-1 cursor-pointer">
-            <ArrowLeft size={28} className="text-black" />
+            <ArrowLeft size={28} className="text-white" />
           </button>
-          <h1 className="text-xl font-bold text-black tracking-wide">
+          <h1 className="text-xl font-bold text-white tracking-wide">
             Create
           </h1>
           <div className="w-8"></div>
         </div>
 
-        <div className="flex-1 overflow-y-auto pb-32">
-          {/* 1st Row - Square Image Upload */}
+        {/* Scroll Area */}
+        <div className="flex-1 overflow-y-auto pb-40">
+          
           <div className="flex flex-col items-center mt-8">
-            <div className="w-24 h-24 border-2 border-[#FFD700] rounded-lg flex items-center justify-center cursor-pointer bg-gray-50/50">
+            <div className="w-24 h-24 border-2 border-[#FFD700] rounded-lg flex items-center justify-center cursor-pointer bg-gray-900">
               <Plus size={36} className="text-gray-400" />
             </div>
-            <p className="mt-2 text-sm font-bold text-gray-500">Upload Image</p>
+            <p className="mt-2 text-sm font-bold text-gray-400">Upload Image</p>
           </div>
 
-          {/* 2nd Row - Family Name Input */}
           <div className="px-5 mt-8">
-            <label className="block text-sm font-bold text-black mb-2">Family name</label>
+            <label className="block text-sm font-bold text-gray-300 mb-2">Family name</label>
             <input 
               type="text" 
-              className="w-full bg-[#F3F4F6] border-none rounded-xl p-4 text-black outline-none font-medium"
-              placeholder=""
+              className="w-full bg-[#1f2937] border-none rounded-xl p-4 text-white outline-none font-medium placeholder-gray-500"
+              placeholder="Enter name"
             />
           </div>
 
-          {/* 3rd Row - Family Announcement Input */}
           <div className="px-5 mt-5">
-            <label className="block text-sm font-bold text-black mb-2">Family Announcement</label>
+            <label className="block text-sm font-bold text-gray-300 mb-2">Family Announcement</label>
             <input 
               type="text" 
-              className="w-full bg-[#F3F4F6] border-none rounded-xl p-4 text-black outline-none font-medium"
-              placeholder=""
+              className="w-full bg-[#1f2937] border-none rounded-xl p-4 text-white outline-none font-medium placeholder-gray-500"
+              placeholder="Enter announcement"
             />
           </div>
 
-          {/* 4th Row - Setting */}
           <div className="px-5 mt-8">
             <h2 className="text-sm font-bold text-gray-500 mb-2">Setting</h2>
             <div 
               onClick={() => setShowApplyMode(true)}
-              className="flex items-center justify-between bg-[#F3F4F6] p-4 rounded-xl cursor-pointer"
+              className="flex items-center justify-between bg-[#1f2937] p-4 rounded-xl cursor-pointer"
             >
-              <span className="font-bold text-black">Apply Mode</span>
+              <span className="font-bold text-white">Apply Mode</span>
               <ChevronRight className="text-gray-400" size={20} />
             </div>
           </div>
         </div>
 
-        {/* 5th Row - Bottom Elements */}
-        <div className="absolute bottom-6 w-full flex flex-col items-center px-6">
-          <button className="w-[85%] bg-[#3b82f6] shadow-[0_5px_0_#2563eb] active:shadow-[0_0px_0_#2563eb] active:translate-y-1 text-white font-bold py-3.5 rounded-full transition-all text-lg tracking-wide cursor-pointer">
-            Create
+        {/* Bottom Element - Button contains text AND image+value */}
+        <div className="fixed bottom-6 w-full flex flex-col items-center px-6 z-40">
+          <button className="w-[85%] bg-[#3b82f6] shadow-[0_5px_0_#2563eb] active:shadow-[0_0px_0_#2563eb] active:translate-y-1 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center py-2">
+            <span className="text-white font-bold text-lg tracking-wide">Create</span>
+            <div className="flex items-center gap-2 mt-1">
+              <img 
+                src="/1786855398290.png" 
+                alt="Coin" 
+                className="w-5 h-5 object-contain"
+                style={{ filter: 'url(#remove-white)' }}
+              />
+              <span className="font-bold text-white/90 text-sm tracking-wider">1500000</span>
+            </div>
           </button>
-          
-          <div className="flex items-center gap-2 mt-6 mb-2">
-            <img 
-              src="/1786855398290.png" 
-              alt="Coin" 
-              className="w-6 h-6 object-contain"
-              style={{ filter: 'url(#remove-white)' }}
-            />
-            <span className="font-bold text-gray-400 tracking-wider">1500000</span>
-          </div>
         </div>
 
         {/* 20vh Apply Mode Bottom Sheet */}
         {showApplyMode && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-            <div className="bg-white w-full h-[22vh] rounded-t-3xl p-6 flex flex-col shadow-2xl relative">
-              
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-end">
+            <div className="bg-[#1f2937] w-full h-[22vh] rounded-t-3xl p-6 flex flex-col shadow-2xl relative">
               <div 
                 onClick={() => {
                   setApplyModeState('free')
                   setTimeout(() => setShowApplyMode(false), 200)
                 }} 
-                className="flex items-center justify-between py-4 border-b border-gray-100 cursor-pointer"
+                className="flex items-center justify-between py-4 border-b border-gray-600 cursor-pointer"
               >
-                <span className="font-bold text-black text-sm">Free mode</span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${applyModeState === 'free' ? 'border-[#3b82f6]' : 'border-gray-300'}`}>
+                <span className="font-bold text-white text-sm">Free mode</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${applyModeState === 'free' ? 'border-[#3b82f6]' : 'border-gray-500'}`}>
                   {applyModeState === 'free' && <div className="w-2.5 h-2.5 bg-[#3b82f6] rounded-full"></div>}
                 </div>
               </div>
@@ -195,12 +190,11 @@ export default function Family({ onBack }: FamilyProps) {
                 }} 
                 className="flex items-center justify-between py-4 cursor-pointer"
               >
-                <span className="font-bold text-black text-sm">Apply Mode / Admin & Owner</span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${applyModeState === 'admin' ? 'border-[#3b82f6]' : 'border-gray-300'}`}>
+                <span className="font-bold text-white text-sm">Apply Mode / Admin & Owner</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${applyModeState === 'admin' ? 'border-[#3b82f6]' : 'border-gray-500'}`}>
                   {applyModeState === 'admin' && <div className="w-2.5 h-2.5 bg-[#3b82f6] rounded-full"></div>}
                 </div>
               </div>
-              
             </div>
           </div>
         )}
@@ -213,7 +207,7 @@ export default function Family({ onBack }: FamilyProps) {
   // ==========================================
   if (currentView === 'join') {
     return (
-      <div className="min-h-screen bg-black flex flex-col relative overflow-x-hidden font-sans text-white">
+      <div className="min-h-screen bg-rose-500 flex flex-col relative overflow-x-hidden font-sans text-white">
         
         <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
           <filter id="remove-green" colorInterpolationFilters="sRGB">
@@ -250,11 +244,12 @@ export default function Family({ onBack }: FamilyProps) {
           </button>
         </div>
 
-        <div className="relative z-10 w-full mt-[50vh] px-4 pb-10 space-y-2">
+        <div className="relative z-10 w-full mt-[50vh] pb-10 space-y-2">
           {Array.from({ length: 50 }, (_, index) => {
             const rank = index + 1;
             return (
-              <div key={rank} className="relative w-full h-20 flex items-center justify-between px-4">
+              // Cards Ekdam Wide
+              <div key={rank} className="relative w-full h-20 flex items-center justify-between px-2">
                 <img 
                   src="/1788259008478~2.jpg" 
                   alt="Row Background" 
@@ -262,13 +257,13 @@ export default function Family({ onBack }: FamilyProps) {
                   style={{ filter: 'url(#remove-green)' }}
                 />
                 
-                <div className="relative z-10 pl-2">
+                <div className="relative z-10 pl-4">
                   <span className="text-lg font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
                     {rank}
                   </span>
                 </div>
 
-                <div className="relative z-10 pr-2">
+                <div className="relative z-10 pr-4">
                   <img 
                     src="/IMG_20260901_160944.png" 
                     alt="Icon" 
@@ -288,7 +283,7 @@ export default function Family({ onBack }: FamilyProps) {
   // VIEW 1: MAIN FAMILY PAGE 
   // ==========================================
   return (
-    <div className="min-h-screen bg-black flex flex-col relative overflow-x-hidden font-sans text-white">
+    <div className="min-h-screen bg-rose-500 flex flex-col relative overflow-x-hidden font-sans text-white">
       
       <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
         <filter id="remove-green" colorInterpolationFilters="sRGB">
@@ -312,7 +307,7 @@ export default function Family({ onBack }: FamilyProps) {
         }}
       />
 
-      <div className="relative z-10 flex flex-col w-full min-h-screen pb-24">
+      <div className="relative z-10 flex flex-col w-full min-h-screen pb-28">
         
         <div className="flex flex-row items-center justify-between w-full px-2 pt-2 relative z-20">
           <button onClick={onBack} className="p-1 cursor-pointer w-10 flex justify-start">
@@ -320,7 +315,6 @@ export default function Family({ onBack }: FamilyProps) {
           </button>
 
           <div className="flex-1 flex flex-col items-center justify-center">
-            {/* Maine Yahan Heading ka color White kar diya hai (text-white) */}
             <h1 className="text-lg font-bold text-white drop-shadow-md whitespace-nowrap leading-tight">
               Top families Of the month
             </h1>
@@ -328,40 +322,43 @@ export default function Family({ onBack }: FamilyProps) {
               {`${timeLeft.days}D : ${timeLeft.hours}H : ${timeLeft.mins}M : ${timeLeft.secs}S`}
             </div>
           </div>
-
           <div className="w-10"></div>
         </div>
 
-        <div className="flex flex-col w-full mt-1 px-6 relative z-10">
+        {/* MIDDLE SECTION - NO GAP from Header, Images pushed to edges */}
+        <div className="flex flex-col w-full mt-2 relative z-10">
+          {/* Middle is BIG (w-52 h-52) */}
           <div className="flex justify-center w-full relative z-20">
             <img 
               src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
-              className="w-50 h-50 object-contain drop-shadow-2xl" 
+              className="w-52 h-52 object-contain drop-shadow-2xl" 
               style={{ filter: 'url(#remove-green)' }}
             />
           </div>
 
-          <div className="flex justify-between w-full -mt-8 relative z-10 px-4">
+          {/* Left and Right are w-40, pushed exactly to corners */}
+          <div className="absolute top-20 w-full flex justify-between z-10 px-0">
             <img 
               src="/1788258909655~2.jpg" 
               alt="Left Rank" 
-              className="w-40 h-40 object-contain drop-shadow-xl"
+              className="w-40 h-40 object-contain -ml-4 drop-shadow-xl"
               style={{ filter: 'url(#remove-green)' }} 
             />
             <img 
               src="/1788258915366~2.jpg" 
               alt="Right Rank" 
-              className="w-40 h-40 object-contain drop-shadow-xl"
+              className="w-40 h-40 object-contain -mr-4 drop-shadow-xl"
               style={{ filter: 'url(#remove-green)' }} 
             />
           </div>
         </div>
 
-        <div className="h-[10vh] w-full"></div>
+        <div className="h-[5vh] w-full"></div>
 
         <div className="flex-1 px-4 space-y-4">
-          <div className="relative w-full">
+          {/* 1,2,3 Wali Image - Thodi choti kar di (w-[85%]) */}
+          <div className="relative w-[85%] mx-auto">
             <img 
               src="/1788258921361~2.jpg" 
               alt="Top 1, 2, 3" 
@@ -370,7 +367,8 @@ export default function Family({ onBack }: FamilyProps) {
             />
           </div>
 
-          <div className="relative w-[90%] mx-auto h-16 flex items-center overflow-hidden">
+          {/* 4 Wali Card - Poori Wide Kar Di (w-full) */}
+          <div className="relative w-full h-16 flex items-center overflow-hidden">
             <img 
               src="/1788259008478~2.jpg" 
               alt="Rank 4" 
@@ -386,6 +384,7 @@ export default function Family({ onBack }: FamilyProps) {
         </div>
       </div>
 
+      {/* BOTTOM SECTION - Left and Right are exactly SAME SIZE now */}
       <div className="fixed bottom-6 w-full px-6 flex items-center justify-between z-50">
         <button 
           onClick={() => setCurrentView('create')}
@@ -406,7 +405,7 @@ export default function Family({ onBack }: FamilyProps) {
           <img 
             src="/1788263346291~2.jpg" 
             alt="Join Family" 
-            className="w-16 h-16 object-contain"
+            className="w-40 h-auto object-contain"
             style={{ filter: 'url(#remove-green)' }}
           />
         </button>
