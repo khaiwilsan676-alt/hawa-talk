@@ -1172,7 +1172,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
             
-            {/* UI UPDATE: Glassmorphism Announcement Box */}
+                        {/* UI UPDATE: Announcement Box */}
             <div className="mx-1 mb-3 flex justify-start">
               <div 
                 className="max-w-[85%] bg-white/10 border border-white/10 shadow-sm"
@@ -1188,10 +1188,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                     color: '#e2c67d',
                   }}
                 >
-                  Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
+                  Official announcement: APP advocates civilized chatting and making friends. If the room name, cover, content, and comments contain vulgarity, temptation, and politics, etc., you will be punished; beware of fraudulent behavior such as depositing value on behalf of you, protect property safety, and avoid losses; inspectors conduct 24-hour online inspections
                 </p>
+                
                 {roomAnnouncement && (
-                  <div className="mt-2">
+                  <div className="mt-2 pt-2 border-t border-white/10">
                     <p 
                       className="leading-snug font-medium"
                       style={{ 
@@ -1199,13 +1200,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                         color: '#e2c67d',
                       }}
                     >
-                      <span className="font-bold mr-1">Official announcement: </span>
+                      <span className="font-bold mr-1">ANNOUNCEMENT: </span>
                       {roomAnnouncement}
                     </p>
                   </div>
                 )}
               </div>
             </div>
+
 
             {/* Chat Messages */}
             <div className="space-y-0.5">
