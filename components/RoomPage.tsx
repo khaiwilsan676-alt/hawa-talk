@@ -1188,7 +1188,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                     color: '#e2c67d',
                   }}
                 >
-                  Official announcement: APP advocates civilized chatting and making friends. If the room name, cover, content, and comments contain vulgarity, temptation, and politics, etc., you will be punished; beware of fraudulent behavior such as depositing value on behalf of you, protect property safety, and avoid losses; inspectors conduct 24-hour online inspections
+                  Official announcement: Welcome to Hurry;Any Content Realted to porn,Froud;Fake Official will Ban! So Respect to each other 
                 </p>
                 
                 {roomAnnouncement && (
