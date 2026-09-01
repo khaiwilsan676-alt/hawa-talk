@@ -1075,19 +1075,21 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <div className="relative z-10 flex flex-col h-full px-3 sm:px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }} onClick={(e) => e.stopPropagation()}>
 
-        {/* Top Header */}
+                {/* Top Header */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3">
+          
+          {/* Left Side: Room Info Capsule (DP & ID) */}
+          <div className="flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-md rounded-full pr-4 p-1 border border-white/10 shadow-sm">
             <button
               onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
-              className="rounded-lg overflow-hidden border-2 border-white/30 flex-shrink-0 cursor-pointer hover:border-white/50 transition-colors"
+              className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
               style={{ width: 'var(--header-room-img-size)', height: 'var(--header-room-img-size)' }}
             >
               <img src={roomImage} alt="Room Cover" className="w-full h-full object-cover" draggable={false} />
             </button>
-            <div className="text-left">
+            <div className="text-left py-0.5">
               <div className="flex items-center gap-1 sm:gap-2">
-                <h2 className="font-bold" style={{ fontSize: 'var(--header-room-name-size)' }}>{displayRoomName}</h2>
+                <h2 className="font-bold leading-tight" style={{ fontSize: 'var(--header-room-name-size)' }}>{displayRoomName}</h2>
                 {!isRoomOwner && (
                   <button
                     onClick={(e) => {
@@ -1110,12 +1112,15 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   </button>
                 )}
               </div>
-              <p className="text-gray-300" style={{ fontSize: 'var(--header-id-size)' }}>ID: {roomOwner.accountId || roomOwner.id || ''}</p>
+              <p className="text-gray-300 opacity-90 leading-tight mt-0.5" style={{ fontSize: 'var(--header-id-size)' }}>ID:{roomOwner.accountId || roomOwner.id || ''}</p>
             </div>
           </div>
 
+          {/* Right Side: Top Header Icons */}
           <div className="flex items-center gap-1.5">
-            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 cursor-pointer hover:bg-white/20 transition-colors shadow-sm" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
+            
+            {/* 1. Active Users Icon */}
+            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors cursor-pointer shadow-sm" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
@@ -1124,8 +1129,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               <span className="text-white font-semibold leading-none" style={{ fontSize: 'var(--header-count-size)' }}>{liveUserCount}</span>
             </button>
 
+            {/* 2. Settings Icon (Only for Room Owner) */}
             {isRoomOwner && (
-              <button onClick={openSettings} aria-label="Settings" className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+              <button onClick={openSettings} aria-label="Settings" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
                 <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                   <polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25" />
                   <circle cx="12" cy="12" r="2.8" />
@@ -1133,69 +1139,63 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </button>
             )}
 
-            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+            {/* 3. Share/Message Icon */}
+            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                 <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
               </svg>
             </button>
 
-            <button onClick={openExitMenu} aria-label="Power" className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+            {/* 4. Power/Exit Icon */}
+            <button onClick={openExitMenu} aria-label="Power" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                 <path d="M12 4v8" /><path d="M18.36 6.64a9 9 0 1 1-12.72 0" />
               </svg>
             </button>
+
           </div>
         </div>
 
-        {/* Middle Section */}
+
+               {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
+          
+          {/* Seats Area */}
           <div className="flex-shrink-0 flex flex-col gap-2 pt-8 sm:pt-6">
             {renderSeats()}
           </div>
 
-          <div className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
+          {/* Messages & Announcement Chat Area */}
+          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
+            
             {/* Announcement Box with Golden Welcome Text & White Announcement */}
-            <div className="mx-0 mb-2 flex justify-start">
+            <div className="mx-1 mb-3 flex justify-start">
               <div 
-                className="border border-white/5 max-w-[80%]"
+                className="max-w-[85%] bg-white/10 backdrop-blur-md border border-white/10 shadow-sm"
                 style={{ 
-                  padding: 'var(--announcement-padding)', 
-                  borderRadius: 'var(--announcement-radius)',
-                  background: 'transparent',
-                  backdropFilter: 'none'
+                  padding: '12px 14px', 
+                  borderRadius: '16px',
                 }}
               >
                 <p 
-                  className="leading-snug font-bold"
+                  className="leading-snug font-medium"
                   style={{ 
                     fontSize: 'var(--announcement-text-size)',
-                    color: '#FFD700',
-                    textShadow: '0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3), 0 0 40px rgba(255, 215, 0, 0.2)',
-                    fontWeight: '700'
+                    color: '#e2c67d', /* Pale golden color */
                   }}
                 >
                   Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
                 </p>
                 {roomAnnouncement && (
-                  <div className="flex items-start gap-1.5 mt-1">
-                    <span 
-                      className="font-semibold whitespace-nowrap shrink-0"
-                      style={{ 
-                        fontSize: 'var(--announcement-label-size)',
-                        color: '#FFFFFF',
-                        textShadow: '0 0 10px rgba(255, 255, 255, 0.8)'
-                      }}
-                    >
-                      ANNOUNCEMENT:
-                    </span>
+                  <div className="mt-2">
                     <p 
                       className="leading-snug font-medium"
                       style={{ 
                         fontSize: 'var(--announcement-text-size)',
-                        color: '#FFFFFF',
-                        textShadow: '0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3)'
+                        color: '#e2c67d', /* Pale golden color */
                       }}
                     >
+                      <span className="font-bold mr-1">Official announcement: </span>
                       {roomAnnouncement}
                     </p>
                   </div>
@@ -1203,35 +1203,36 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </div>
             </div>
 
+            {/* Chat Messages */}
             <div className="space-y-0.5">
               {messages.map((msg) => (
                 <div key={msg.id} className="leading-[1.8rem]">
                   {msg.type === 'join' ? (
                     <div className="flex items-start gap-1.5 px-1">
                       <div
-                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer border border-white/10"
                         style={{ width: 'var(--msg-avatar-size)', height: 'var(--msg-avatar-size)' }}
                         onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || '' })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
-                      <div className="flex flex-col bg-white/8 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/5">
-                        <span className="font-semibold text-white/80 leading-tight" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
-                        <span className="text-white/50 leading-tight mt-0.5" style={{ fontSize: 'var(--msg-jointime-size)' }}>Enter the Room</span>
+                      <div className="flex flex-col bg-white/10 backdrop-blur-sm rounded-md px-2 py-0.5 border border-white/10 shadow-sm">
+                        <span className="font-semibold text-white/90 leading-tight" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
+                        <span className="text-white/70 leading-tight mt-0.5" style={{ fontSize: 'var(--msg-jointime-size)' }}>Enter the Room</span>
                       </div>
                     </div>
                   ) : msg.imageUrl ? (
                     <div className="flex items-start gap-2" style={{ height: 'calc(4 * 1.8rem)' }}>
                       <div
-                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer border border-white/10"
                         style={{ width: 'var(--msg-avatar-size)', height: 'var(--msg-avatar-size)' }}
                         onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-white/70 leading-tight" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
-                        <div onClick={() => setFullImageModal(msg.imageUrl || null)} className="rounded-lg overflow-hidden border border-white/20 cursor-pointer hover:opacity-90 transition-opacity bg-black/40 flex items-center justify-center mt-0.5" style={{ height: 'calc(3.5 * 1.8rem)', width: 'calc(3.5 * 1.8rem)' }}>
+                        <span className="font-semibold text-white/90 leading-tight drop-shadow-sm" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
+                        <div onClick={() => setFullImageModal(msg.imageUrl || null)} className="rounded-xl overflow-hidden border border-white/20 cursor-pointer hover:opacity-90 transition-opacity bg-black/40 flex items-center justify-center mt-0.5 shadow-sm" style={{ height: 'calc(3.5 * 1.8rem)', width: 'calc(3.5 * 1.8rem)' }}>
                           <img src={msg.imageUrl} alt="Shared image" className="w-full h-full object-cover" draggable={false} />
                         </div>
                       </div>
@@ -1239,15 +1240,15 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   ) : (
                     <div className="flex items-start gap-2">
                       <div
-                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer"
+                        className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer border border-white/10"
                         style={{ width: 'var(--msg-avatar-size)', height: 'var(--msg-avatar-size)' }}
                         onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-white/70 leading-tight" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
-                        <div className="px-2 py-1 rounded-lg bg-white/15 text-white rounded-bl-none mt-0.5">
+                        <span className="font-semibold text-white/90 leading-tight drop-shadow-sm" style={{ fontSize: 'var(--msg-name-size)' }}>{msg.sender}</span>
+                        <div className="px-2 py-1.5 rounded-xl bg-white/15 backdrop-blur-sm text-white rounded-tl-sm mt-0.5 border border-white/10 shadow-sm">
                           <p className="break-words leading-tight" style={{ fontSize: 'var(--msg-text-size)' }}>{msg.text}</p>
                         </div>
                       </div>
@@ -1257,18 +1258,24 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               ))}
               <div ref={messagesEndRef} />
             </div>
+
           </div>
         </div>
+
 
         {/* Footer Controls */}
         <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-2">
             
-            {/* Say Hi Chat Icon Button (Image Match Style) */}
+                    {/* Footer Controls */}
+        <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
+          <div className="flex items-center justify-between gap-2">
+            
+            {/* Say Hi Chat Icon Button */}
             <button
               onClick={openChatInput}
               aria-label="Say Hi Chat"
-              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-md"
+              className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
               style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
             >
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
@@ -1280,8 +1287,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
 
             <div className="flex items-center gap-2">
+              {/* Mic Button */}
               {hasSeat && (
-                <button onClick={handleBottomMicToggle} className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-md" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <button onClick={handleBottomMicToggle} className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   {currentUserSeat?.isMuted ? (
                     <svg viewBox="0 0 24 24" className="fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
                       <line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
@@ -1294,18 +1302,20 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </button>
               )}
               
+              {/* Emoji Button */}
               {hasSeat && (
-                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-md" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </button>
               )}
               
+              {/* Message Box Button */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
                 aria-label="Message Box Menu"
-                className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-md"
+                className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
                 style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
               >
                 <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
@@ -1313,14 +1323,16 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </svg>
               </button>
 
-              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer shadow-md" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover p-[2px]" draggable={false} />
+              {/* Gift Button - Perfect Circle Image Match */}
+              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer shadow-sm p-0" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover rounded-full" draggable={false} />
               </button>
               
+              {/* Apps Menu Grid Button */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
                 aria-label="Apps Menu"
-                className="bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-md"
+                className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
                 style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
               >
                 <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
@@ -1330,6 +1342,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </div>
           </div>
         </div>
+
 
         {/* Input container */}
         {showChatInput && (
