@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Plus, HelpCircle } from 'lucide-react'
 
 // ==========================================
-// MAIN COMPONENT LOGIC (STRICTLY UNTOUCHED)
+// MAIN COMPONENT LOGIC
 // ==========================================
 interface FamilyMember {
   id: string
@@ -19,7 +19,14 @@ interface FamilyProps {
 }
 
 export default function Family({ onBack }: FamilyProps) {
-  const [members, setMembers] = useState<FamilyMember[]>([])
+  const [members, setMembers] = useState<FamilyMember[]>([
+    { id: '1', name: 'Aarav', relation: 'Father', isAdmin: true },
+    { id: '2', name: 'Neha', relation: 'Mother' },
+    { id: '3', name: 'Rahul', relation: 'Brother' },
+    { id: '4', name: 'Priya', relation: 'Sister' },
+    { id: '5', name: 'Rohan', relation: 'Son' }
+  ])
+  
   const [showAddMember, setShowAddMember] = useState(false)
   const [newMemberName, setNewMemberName] = useState('')
   const [newMemberRelation, setNewMemberRelation] = useState('')
@@ -30,7 +37,7 @@ export default function Family({ onBack }: FamilyProps) {
 
   useEffect(() => {
     const savedMembers = localStorage.getItem('familyMembers')
-    if (savedMembers) {
+    if (savedMembers && JSON.parse(savedMembers).length > 0) {
       setMembers(JSON.parse(savedMembers))
     }
     
@@ -96,7 +103,7 @@ export default function Family({ onBack }: FamilyProps) {
           </filter>
         </svg>
 
-        {/* Top image changed to 50Vh */}
+        {/* 50vh Top Image */}
         <div 
           className="absolute top-0 left-0 w-full h-[50vh] z-0"
           style={{
@@ -108,74 +115,64 @@ export default function Family({ onBack }: FamilyProps) {
           }}
         />
 
-        <div className="relative z-10 flex flex-col w-full min-h-screen pb-10">
-          {/* Header - No Cards/Backgrounds behind icons */}
-          <div className="flex items-center justify-between p-4 mt-2">
-            <button 
-              onClick={() => setCurrentView('main')} 
-              className="p-2 cursor-pointer"
-            >
-              <ArrowLeft size={28} className="text-white drop-shadow-md" />
-            </button>
-            <h1 className="text-xl font-bold tracking-wide text-[#FFD700] drop-shadow-md whitespace-nowrap">
-              Join Family
-            </h1>
-            <button className="p-2 cursor-pointer">
-              <HelpCircle size={28} className="text-white drop-shadow-md" />
-            </button>
-          </div>
+        {/* Header - Corner Icons, No Heading */}
+        <div className="absolute top-0 left-0 w-full flex flex-row items-center justify-between px-2 pt-2 z-20">
+          <button 
+            onClick={() => setCurrentView('main')} 
+            className="p-1 cursor-pointer flex items-center justify-start"
+          >
+            <ArrowLeft size={28} className="text-white drop-shadow-md" />
+          </button>
+          
+          <button className="p-1 cursor-pointer flex items-center justify-end">
+            <HelpCircle size={28} className="text-white drop-shadow-md" />
+          </button>
+        </div>
 
-          <div className="flex-1 px-4 mt-[10vh] space-y-6">
-            {Array.from({ length: 50 }, (_, index) => {
-              const rank = index + 1;
-              return (
-                // Without any outer card styling - just placing elements over the image
-                <div key={rank} className="relative w-full h-24 flex items-center justify-between px-4">
-                  
-                  {/* The exact background image - no extra colors, green removed */}
+        {/* List Starts Exactly at 50vh, Gap 1.5, Smaller Cards */}
+        <div className="relative z-10 w-full mt-[50vh] px-4 pb-10 space-y-1.5">
+          {Array.from({ length: 50 }, (_, index) => {
+            const rank = index + 1;
+            return (
+              // Chota Card (h-14)
+              <div key={rank} className="relative w-full h-14 flex items-center justify-between px-4">
+                <img 
+                  src="/1788259008478~2.jpg" 
+                  alt="Row Background" 
+                  className="absolute inset-0 w-full h-full object-fill"
+                  style={{ filter: 'url(#remove-green)' }}
+                />
+                
+                {/* Sirf Number */}
+                <div className="relative z-10">
+                  <span className="text-2xl font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                    {rank}
+                  </span>
+                </div>
+
+                {/* Right side icon */}
+                <div className="relative z-10">
                   <img 
-                    src="/1788259008478~2.jpg" 
-                    alt="Row Background" 
-                    className="absolute inset-0 w-full h-full object-fill"
+                    src="/IMG_20260901_160944.png" 
+                    alt="Icon" 
+                    className="w-10 h-10 object-contain"
                     style={{ filter: 'url(#remove-green)' }}
                   />
-                  
-                  <div className="relative z-10 flex items-center gap-4">
-                    <span className="text-3xl font-black text-yellow-400 w-10 text-center drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                      {rank}
-                    </span>
-                    <div>
-                      <h3 className="font-bold text-lg text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                        Family Group #{rank}
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* Right side image - Size Increased */}
-                  <div className="relative z-10">
-                    <img 
-                      src="/IMG_20260901_160944.png" 
-                      alt="Icon" 
-                      className="w-14 h-14 object-contain"
-                      style={{ filter: 'url(#remove-green)' }}
-                    />
-                  </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
   }
 
   // ==========================================
-  // VIEW 1: MAIN FAMILY PAGE (Create Button Screen)
+  // VIEW 1: MAIN FAMILY PAGE 
   // ==========================================
   return (
     <div className="min-h-screen bg-[#362011] flex flex-col relative overflow-x-hidden font-sans text-white">
       
-      {/* NATIVE SVG SHADER FOR GREEN SCREEN REMOVAL */}
       <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
         <filter id="remove-green" colorInterpolationFilters="sRGB">
           <feColorMatrix type="matrix" values="
@@ -200,44 +197,41 @@ export default function Family({ onBack }: FamilyProps) {
 
       <div className="relative z-10 flex flex-col w-full min-h-screen pb-24">
         
-        {/* TOP HEADER */}
-        <div className="flex items-center justify-between p-4 mt-2">
-          {/* Top Header m Icon dee bss no card */}
-          <button onClick={onBack} className="p-2 cursor-pointer">
+        {/* TOP HEADER - Ekdam ek line mein, corner se corner */}
+        <div className="flex flex-row items-center justify-between w-full px-2 pt-2 relative z-20">
+          <button onClick={onBack} className="p-1 cursor-pointer w-10 flex justify-start">
             <ArrowLeft size={28} className="text-white drop-shadow-md" />
           </button>
 
-          {/* Top middle heading One Row Bss & Countdown no card */}
-          <div className="flex flex-col items-center justify-center flex-1">
-            <h1 className="text-xl font-bold text-[#FFD700] drop-shadow-md whitespace-nowrap">
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <h1 className="text-lg font-bold text-[#FFD700] drop-shadow-md whitespace-nowrap leading-tight">
               Top families Of the month
             </h1>
-            <div className="text-sm font-bold mt-1 text-white drop-shadow-md">
+            <div className="text-sm font-bold text-white drop-shadow-md leading-tight">
               {`${timeLeft.days}D : ${timeLeft.hours}H : ${timeLeft.mins}M : ${timeLeft.secs}S`}
             </div>
           </div>
 
-          {/* Top cup icon chota kerr */}
           <button 
             onClick={() => setCurrentView('join')}
-            className="cursor-pointer p-1"
+            className="cursor-pointer p-1 w-10 flex justify-end"
           >
             <img 
               src="/1788258883971~2.jpg" 
               alt="Cup" 
-              className="w-7 h-7 object-contain drop-shadow-lg"
+              className="w-8 h-8 object-contain drop-shadow-lg"
               style={{ filter: 'url(#remove-green)' }}
             />
           </button>
         </div>
 
-        {/* MIDDLE SECTION - 1st and 2nd Row */}
-        <div className="flex flex-col w-full mt-6 px-6 relative">
+        {/* MIDDLE SECTION - Gap hata diya, theek countdown ke neeche */}
+        <div className="flex flex-col w-full mt-1 px-6 relative z-10">
           <div className="flex justify-center w-full relative z-20">
             <img 
               src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
-              className="w-50 h-50 object-contain drop-shadow-2xl" 
+              className="w-32 h-32 object-contain drop-shadow-2xl" 
               style={{ filter: 'url(#remove-green)' }}
             />
           </div>
@@ -246,22 +240,22 @@ export default function Family({ onBack }: FamilyProps) {
             <img 
               src="/1788258909655~2.jpg" 
               alt="Left Rank" 
-              className="w-40 h-40 object-contain drop-shadow-xl"
+              className="w-24 h-24 object-contain drop-shadow-xl"
               style={{ filter: 'url(#remove-green)' }} 
             />
             <img 
               src="/1788258915366~2.jpg" 
               alt="Right Rank" 
-              className="w-40 h-40 object-contain drop-shadow-xl"
+              className="w-24 h-24 object-contain drop-shadow-xl"
               style={{ filter: 'url(#remove-green)' }} 
             />
           </div>
         </div>
 
-        {/* Fir Space dee 10Vh ki */}
+        {/* Gap 10Vh */}
         <div className="h-[10vh] w-full"></div>
 
-        {/* CARDS SECTION (Without extra background styles, only the requested images) */}
+        {/* CARDS SECTION */}
         <div className="flex-1 px-4 space-y-6">
           {members.length === 0 ? (
              <div className="text-center text-white/70 mt-10 font-bold">
@@ -270,14 +264,12 @@ export default function Family({ onBack }: FamilyProps) {
           ) : (
             members.map((member, index) => {
               const rank = index + 1;
-              // top 1,2,3 Cards ye wali image, baaki niche wali ye image
               const cardImage = rank <= 3 
                 ? '/1788258921361~2.jpg' 
                 : '/1788259008478~2.jpg';
 
               return (
                 <div key={member.id} className="relative w-full h-24 flex items-center justify-between px-4">
-                  {/* Image only, without any green */}
                   <img 
                     src={cardImage} 
                     alt={`Rank ${rank} Background`} 
