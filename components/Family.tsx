@@ -220,64 +220,62 @@ export default function Family({ onBack }: FamilyProps) {
           </filter>
         </svg>
 
-        {/* TOP FIXED 50vh Image */}
-        <div 
-          className="absolute top-0 left-0 w-full h-[50vh] z-0"
-          style={{
-            backgroundImage: "url('/IMG_20260901_162148.png')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)'
-          }}
-        />
-
-        {/* HEADER - Fixed at top */}
-        <div className="absolute top-0 left-0 w-full flex flex-row items-center justify-between px-2 pt-2 z-20">
-          <button 
-            onClick={() => setCurrentView('main')} 
-            className="p-1 cursor-pointer flex items-center justify-start"
-          >
-            <ArrowLeft size={28} className="text-white drop-shadow-md" />
-          </button>
-          
-          <button className="p-1 cursor-pointer flex items-center justify-end">
-            <HelpCircle size={28} className="text-white drop-shadow-md" />
-          </button>
+        {/* TOP FIXED 50vh AREA (Doesn't scroll) */}
+        <div className="h-[50vh] w-full flex-shrink-0 relative">
+          <div 
+            className="absolute inset-0 w-full h-full z-0"
+            style={{
+              backgroundImage: "url('/IMG_20260901_162148.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)'
+            }}
+          />
+          <div className="absolute top-0 left-0 w-full flex flex-row items-center justify-between px-2 pt-2 z-20">
+            <button 
+              onClick={() => setCurrentView('main')} 
+              className="p-1 cursor-pointer flex items-center justify-start"
+            >
+              <ArrowLeft size={28} className="text-white drop-shadow-md" />
+            </button>
+            
+            <button className="p-1 cursor-pointer flex items-center justify-end">
+              <HelpCircle size={28} className="text-white drop-shadow-md" />
+            </button>
+          </div>
         </div>
 
-        {/* SCROLL AREA - Strictly limited to bottom section */}
-        <div className="relative z-10 w-full h-full pt-[50vh] overflow-y-auto">
-          <div className="pb-10 space-y-2">
-            {Array.from({ length: 50 }, (_, index) => {
-              const rank = index + 1;
-              return (
-                <div key={rank} className="relative w-full h-20 flex items-center justify-between px-2">
+        {/* SCROLL AREA - The Entire Bottom Area Scrolls Now */}
+        <div className="flex-1 overflow-y-auto w-full pt-2 pb-10 space-y-2 z-10 relative">
+          {Array.from({ length: 50 }, (_, index) => {
+            const rank = index + 1;
+            return (
+              <div key={rank} className="relative w-full h-20 flex items-center justify-between px-2">
+                <img 
+                  src="/1788259008478~2.jpg" 
+                  alt="Row Background" 
+                  className="absolute inset-0 w-full h-full object-fill"
+                  style={{ filter: 'url(#remove-green)' }}
+                />
+                
+                <div className="relative z-10 pl-4">
+                  <span className="text-lg font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                    {rank}
+                  </span>
+                </div>
+
+                <div className="relative z-10 pr-4">
                   <img 
-                    src="/1788259008478~2.jpg" 
-                    alt="Row Background" 
-                    className="absolute inset-0 w-full h-full object-fill"
+                    src="/IMG_20260901_160944.png" 
+                    alt="Icon" 
+                    className="w-18 h-18 object-contain"
                     style={{ filter: 'url(#remove-green)' }}
                   />
-                  
-                  <div className="relative z-10 pl-4">
-                    <span className="text-lg font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                      {rank}
-                    </span>
-                  </div>
-
-                  <div className="relative z-10 pr-4">
-                    <img 
-                      src="/IMG_20260901_160944.png" 
-                      alt="Icon" 
-                      className="w-16 h-16 object-contain"
-                      style={{ filter: 'url(#remove-green)' }}
-                    />
-                  </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -287,7 +285,6 @@ export default function Family({ onBack }: FamilyProps) {
   // VIEW 1: MAIN FAMILY PAGE 
   // ==========================================
   return (
-    // bg-[#1a0d06] gives the Dark Dark Brown color. Screen is h-screen to handle fixed top and scrolling bottom.
     <div className="h-screen bg-[#1a0d06] flex flex-col relative overflow-hidden font-sans text-white">
       
       <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
@@ -301,7 +298,7 @@ export default function Family({ onBack }: FamilyProps) {
         </filter>
       </svg>
 
-      {/* TOP BACKGROUND 50VH IMAGE */}
+      {/* TOP BACKGROUND 50VH IMAGE (Fixed in background) */}
       <div 
         className="absolute top-0 left-0 w-full h-[50vh] z-0"
         style={{
@@ -318,7 +315,6 @@ export default function Family({ onBack }: FamilyProps) {
       {/* ======================================= */}
       <div className="relative z-20 flex flex-col w-full flex-shrink-0">
         
-        {/* HEADER */}
         <div className="flex flex-row items-center justify-between w-full px-2 pt-2">
           <button onClick={onBack} className="p-1 cursor-pointer w-10 flex justify-start">
             <ArrowLeft size={28} className="text-white drop-shadow-md" />
@@ -341,7 +337,7 @@ export default function Family({ onBack }: FamilyProps) {
             <img 
               src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
-              className="w-52 h-52 object-contain drop-shadow-2xl" 
+              className="w-62 h-62 object-contain drop-shadow-2xl" 
               style={{ filter: 'url(#remove-green)' }}
             />
           </div>
@@ -363,7 +359,7 @@ export default function Family({ onBack }: FamilyProps) {
         </div>
 
         {/* 10vh GAP */}
-        <div className="h-[10vh] w-full"></div>
+        <div className="h-[15vh] w-full"></div>
       </div>
 
       {/* ======================================= */}
@@ -371,8 +367,8 @@ export default function Family({ onBack }: FamilyProps) {
       {/* ======================================= */}
       <div className="relative z-10 flex-1 overflow-y-auto w-full px-4 space-y-4 pb-32">
         
-        {/* 1,2,3 Wali Image (Wide - w-95%) */}
-        <div className="relative w-[95%] mx-auto">
+        {/* 1,2,3 Wali Image (Wide - w-[95%]) */}
+        <div className="relative w-[100%] mx-auto">
           <img 
             src="/1788258921361~2.jpg" 
             alt="Top 1, 2, 3" 
@@ -381,44 +377,50 @@ export default function Family({ onBack }: FamilyProps) {
           />
         </div>
 
-        {/* 4 Wali Card (Full Wide) */}
-        <div className="relative w-full h-16 flex items-center overflow-hidden">
-          <img 
-            src="/1788259008478~2.jpg" 
-            alt="Rank 4" 
-            className="absolute inset-0 w-full h-full object-fill"
-            style={{ filter: 'url(#remove-green)' }}
-          />
-          <div className="relative z-10 pl-6">
-            <span className="text-xl font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-              4
-            </span>
-          </div>
-        </div>
+        {/* 4 to 50 Cards - Ab poori list yahan aayegi */}
+        {Array.from({ length: 47 }, (_, i) => {
+          const rank = i + 4;
+          return (
+            <div key={rank} className="relative w-full h-16 flex items-center overflow-hidden">
+              <img 
+                src="/1788259008478~2.jpg" 
+                alt={`Rank ${rank}`} 
+                className="absolute inset-0 w-full h-full object-fill"
+                style={{ filter: 'url(#remove-green)' }}
+              />
+              <div className="relative z-10 pl-6">
+                <span className="text-xl font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                  {rank}
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* BOTTOM FLOATING BUTTONS (Fixed) */}
-      <div className="absolute bottom-6 w-full px-6 flex items-center justify-between z-50">
+      <div className="absolute bottom-6 w-full px-6 flex items-center justify-between z-50 pointer-events-none">
+        {/* Pointer events disabled on container, enabled on buttons so we can still scroll the space between them */}
         <button 
           onClick={() => setCurrentView('create')}
-          className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl"
+          className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl pointer-events-auto"
         >
           <img 
             src="/IMG_20260901_161001.png" 
             alt="Add Button" 
-            className="w-40 h-auto object-contain"
+            className="w-50 h-auto object-contain"
             style={{ filter: 'url(#remove-green)' }}
           />
         </button>
 
         <button 
           onClick={() => setCurrentView('join')}
-          className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl"
+          className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl pointer-events-auto"
         >
           <img 
             src="/1788263346291~2.jpg" 
             alt="Join Family" 
-            className="w-40 h-auto object-contain"
+            className="w-50 h-auto object-contain"
             style={{ filter: 'url(#remove-green)' }}
           />
         </button>
@@ -427,3 +429,4 @@ export default function Family({ onBack }: FamilyProps) {
     </div>
   )
 }
+
