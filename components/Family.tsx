@@ -81,11 +81,11 @@ export default function Family({ onBack }: FamilyProps) {
   }
 
   // ==========================================
-  // VIEW 3: CREATE FAMILY PAGE (Full Black Sheet)
+  // VIEW 3: CREATE FAMILY PAGE (White Sheet)
   // ==========================================
   if (currentView === 'create') {
     return (
-      <div className="min-h-screen bg-black flex flex-col font-sans text-white relative">
+      <div className="h-screen bg-white flex flex-col font-sans text-black relative overflow-hidden">
         
         {/* NATIVE SVG SHADER FOR WHITE SCREEN REMOVAL */}
         <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
@@ -99,42 +99,44 @@ export default function Family({ onBack }: FamilyProps) {
           </filter>
         </svg>
 
-        {/* HEADER */}
-        <div className="flex items-center justify-between p-4 mt-2 border-b border-gray-800">
+        {/* HEADER (White Background, No Line, Save Button on Right) */}
+        <div className="flex items-center justify-between p-4 mt-2 flex-shrink-0">
           <button onClick={() => setCurrentView('main')} className="p-1 cursor-pointer">
-            <ArrowLeft size={28} className="text-white" />
+            <ArrowLeft size={28} className="text-black" />
           </button>
-          <h1 className="text-xl font-bold text-white tracking-wide">
+          <h1 className="text-xl font-bold text-black tracking-wide">
             Create
           </h1>
-          <div className="w-8"></div>
+          <button className="text-black font-bold text-sm cursor-pointer pr-2">
+            Save
+          </button>
         </div>
 
         {/* Scroll Area */}
-        <div className="flex-1 overflow-y-auto pb-40">
+        <div className="flex-1 overflow-y-auto pb-32">
           
           <div className="flex flex-col items-center mt-8">
-            <div className="w-24 h-24 border-2 border-[#FFD700] rounded-lg flex items-center justify-center cursor-pointer bg-gray-900">
+            <div className="w-24 h-24 border-2 border-[#FFD700] rounded-lg flex items-center justify-center cursor-pointer bg-gray-50/50">
               <Plus size={36} className="text-gray-400" />
             </div>
-            <p className="mt-2 text-sm font-bold text-gray-400">Upload Image</p>
+            <p className="mt-2 text-sm font-bold text-gray-500">Upload Image</p>
           </div>
 
           <div className="px-5 mt-8">
-            <label className="block text-sm font-bold text-gray-300 mb-2">Family name</label>
+            <label className="block text-sm font-bold text-black mb-2">Family name</label>
             <input 
               type="text" 
-              className="w-full bg-[#1f2937] border-none rounded-xl p-4 text-white outline-none font-medium placeholder-gray-500"
-              placeholder="Enter name"
+              className="w-full bg-[#F3F4F6] border-none rounded-xl p-4 text-black outline-none font-medium placeholder-gray-400"
+              placeholder=""
             />
           </div>
 
           <div className="px-5 mt-5">
-            <label className="block text-sm font-bold text-gray-300 mb-2">Family Announcement</label>
+            <label className="block text-sm font-bold text-black mb-2">Family Announcement</label>
             <input 
               type="text" 
-              className="w-full bg-[#1f2937] border-none rounded-xl p-4 text-white outline-none font-medium placeholder-gray-500"
-              placeholder="Enter announcement"
+              className="w-full bg-[#F3F4F6] border-none rounded-xl p-4 text-black outline-none font-medium placeholder-gray-400"
+              placeholder=""
             />
           </div>
 
@@ -142,43 +144,41 @@ export default function Family({ onBack }: FamilyProps) {
             <h2 className="text-sm font-bold text-gray-500 mb-2">Setting</h2>
             <div 
               onClick={() => setShowApplyMode(true)}
-              className="flex items-center justify-between bg-[#1f2937] p-4 rounded-xl cursor-pointer"
+              className="flex items-center justify-between bg-[#F3F4F6] p-4 rounded-xl cursor-pointer"
             >
-              <span className="font-bold text-white">Apply Mode</span>
+              <span className="font-bold text-black">Apply Mode</span>
               <ChevronRight className="text-gray-400" size={20} />
             </div>
           </div>
         </div>
 
-        {/* Bottom Element - Button contains text AND image+value */}
-        <div className="fixed bottom-6 w-full flex flex-col items-center px-6 z-40">
-          <button className="w-[85%] bg-[#3b82f6] shadow-[0_5px_0_#2563eb] active:shadow-[0_0px_0_#2563eb] active:translate-y-1 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center py-2">
+        {/* Bottom Element - Single Row Button, Rounded Full */}
+        <div className="absolute bottom-6 w-full flex justify-center px-6 z-40">
+          <button className="w-[90%] bg-[#3b82f6] shadow-[0_5px_0_#2563eb] active:shadow-[0_0px_0_#2563eb] active:translate-y-1 rounded-full transition-all cursor-pointer flex flex-row items-center justify-center py-3.5 gap-2">
             <span className="text-white font-bold text-lg tracking-wide">Create</span>
-            <div className="flex items-center gap-2 mt-1">
-              <img 
-                src="/1786855398290.png" 
-                alt="Coin" 
-                className="w-5 h-5 object-contain"
-                style={{ filter: 'url(#remove-white)' }}
-              />
-              <span className="font-bold text-white/90 text-sm tracking-wider">1500000</span>
-            </div>
+            <img 
+              src="/1786855398290.png" 
+              alt="Coin" 
+              className="w-5 h-5 object-contain"
+              style={{ filter: 'url(#remove-white)' }}
+            />
+            <span className="font-bold text-white/90 text-sm tracking-wider mt-0.5">1500000</span>
           </button>
         </div>
 
         {/* 20vh Apply Mode Bottom Sheet */}
         {showApplyMode && (
-          <div className="fixed inset-0 bg-black/70 z-50 flex items-end">
-            <div className="bg-[#1f2937] w-full h-[22vh] rounded-t-3xl p-6 flex flex-col shadow-2xl relative">
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+            <div className="bg-white w-full h-[22vh] rounded-t-3xl p-6 flex flex-col shadow-2xl relative">
               <div 
                 onClick={() => {
                   setApplyModeState('free')
                   setTimeout(() => setShowApplyMode(false), 200)
                 }} 
-                className="flex items-center justify-between py-4 border-b border-gray-600 cursor-pointer"
+                className="flex items-center justify-between py-4 border-b border-gray-100 cursor-pointer"
               >
-                <span className="font-bold text-white text-sm">Free mode</span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${applyModeState === 'free' ? 'border-[#3b82f6]' : 'border-gray-500'}`}>
+                <span className="font-bold text-black text-sm">Free mode</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${applyModeState === 'free' ? 'border-[#3b82f6]' : 'border-gray-300'}`}>
                   {applyModeState === 'free' && <div className="w-2.5 h-2.5 bg-[#3b82f6] rounded-full"></div>}
                 </div>
               </div>
@@ -190,8 +190,8 @@ export default function Family({ onBack }: FamilyProps) {
                 }} 
                 className="flex items-center justify-between py-4 cursor-pointer"
               >
-                <span className="font-bold text-white text-sm">Apply Mode / Admin & Owner</span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${applyModeState === 'admin' ? 'border-[#3b82f6]' : 'border-gray-500'}`}>
+                <span className="font-bold text-black text-sm">Apply Mode / Admin & Owner</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${applyModeState === 'admin' ? 'border-[#3b82f6]' : 'border-gray-300'}`}>
                   {applyModeState === 'admin' && <div className="w-2.5 h-2.5 bg-[#3b82f6] rounded-full"></div>}
                 </div>
               </div>
@@ -207,7 +207,7 @@ export default function Family({ onBack }: FamilyProps) {
   // ==========================================
   if (currentView === 'join') {
     return (
-      <div className="min-h-screen bg-rose-500 flex flex-col relative overflow-x-hidden font-sans text-white">
+      <div className="h-screen bg-[#1a0d06] flex flex-col relative overflow-hidden font-sans text-white">
         
         <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
           <filter id="remove-green" colorInterpolationFilters="sRGB">
@@ -220,6 +220,7 @@ export default function Family({ onBack }: FamilyProps) {
           </filter>
         </svg>
 
+        {/* TOP FIXED 50vh Image */}
         <div 
           className="absolute top-0 left-0 w-full h-[50vh] z-0"
           style={{
@@ -231,6 +232,7 @@ export default function Family({ onBack }: FamilyProps) {
           }}
         />
 
+        {/* HEADER - Fixed at top */}
         <div className="absolute top-0 left-0 w-full flex flex-row items-center justify-between px-2 pt-2 z-20">
           <button 
             onClick={() => setCurrentView('main')} 
@@ -244,36 +246,38 @@ export default function Family({ onBack }: FamilyProps) {
           </button>
         </div>
 
-        <div className="relative z-10 w-full mt-[50vh] pb-10 space-y-2">
-          {Array.from({ length: 50 }, (_, index) => {
-            const rank = index + 1;
-            return (
-              // Cards Ekdam Wide
-              <div key={rank} className="relative w-full h-20 flex items-center justify-between px-2">
-                <img 
-                  src="/1788259008478~2.jpg" 
-                  alt="Row Background" 
-                  className="absolute inset-0 w-full h-full object-fill"
-                  style={{ filter: 'url(#remove-green)' }}
-                />
-                
-                <div className="relative z-10 pl-4">
-                  <span className="text-lg font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                    {rank}
-                  </span>
-                </div>
-
-                <div className="relative z-10 pr-4">
+        {/* SCROLL AREA - Strictly limited to bottom section */}
+        <div className="relative z-10 w-full h-full pt-[50vh] overflow-y-auto">
+          <div className="pb-10 space-y-2">
+            {Array.from({ length: 50 }, (_, index) => {
+              const rank = index + 1;
+              return (
+                <div key={rank} className="relative w-full h-20 flex items-center justify-between px-2">
                   <img 
-                    src="/IMG_20260901_160944.png" 
-                    alt="Icon" 
-                    className="w-16 h-16 object-contain"
+                    src="/1788259008478~2.jpg" 
+                    alt="Row Background" 
+                    className="absolute inset-0 w-full h-full object-fill"
                     style={{ filter: 'url(#remove-green)' }}
                   />
+                  
+                  <div className="relative z-10 pl-4">
+                    <span className="text-lg font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                      {rank}
+                    </span>
+                  </div>
+
+                  <div className="relative z-10 pr-4">
+                    <img 
+                      src="/IMG_20260901_160944.png" 
+                      alt="Icon" 
+                      className="w-16 h-16 object-contain"
+                      style={{ filter: 'url(#remove-green)' }}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -283,7 +287,8 @@ export default function Family({ onBack }: FamilyProps) {
   // VIEW 1: MAIN FAMILY PAGE 
   // ==========================================
   return (
-    <div className="min-h-screen bg-rose-500 flex flex-col relative overflow-x-hidden font-sans text-white">
+    // bg-[#1a0d06] gives the Dark Dark Brown color. Screen is h-screen to handle fixed top and scrolling bottom.
+    <div className="h-screen bg-[#1a0d06] flex flex-col relative overflow-hidden font-sans text-white">
       
       <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
         <filter id="remove-green" colorInterpolationFilters="sRGB">
@@ -296,6 +301,7 @@ export default function Family({ onBack }: FamilyProps) {
         </filter>
       </svg>
 
+      {/* TOP BACKGROUND 50VH IMAGE */}
       <div 
         className="absolute top-0 left-0 w-full h-[50vh] z-0"
         style={{
@@ -307,9 +313,13 @@ export default function Family({ onBack }: FamilyProps) {
         }}
       />
 
-      <div className="relative z-10 flex flex-col w-full min-h-screen pb-28">
+      {/* ======================================= */}
+      {/* FIXED TOP SECTION (Doesn't Scroll)      */}
+      {/* ======================================= */}
+      <div className="relative z-20 flex flex-col w-full flex-shrink-0">
         
-        <div className="flex flex-row items-center justify-between w-full px-2 pt-2 relative z-20">
+        {/* HEADER */}
+        <div className="flex flex-row items-center justify-between w-full px-2 pt-2">
           <button onClick={onBack} className="p-1 cursor-pointer w-10 flex justify-start">
             <ArrowLeft size={28} className="text-white drop-shadow-md" />
           </button>
@@ -325,9 +335,8 @@ export default function Family({ onBack }: FamilyProps) {
           <div className="w-10"></div>
         </div>
 
-        {/* MIDDLE SECTION - NO GAP from Header, Images pushed to edges */}
-        <div className="flex flex-col w-full mt-2 relative z-10">
-          {/* Middle is BIG (w-52 h-52) */}
+        {/* 3 BIG IMAGES */}
+        <div className="flex flex-col w-full mt-2 relative">
           <div className="flex justify-center w-full relative z-20">
             <img 
               src="/IMG_20260901_161023.png" 
@@ -337,7 +346,6 @@ export default function Family({ onBack }: FamilyProps) {
             />
           </div>
 
-          {/* Left and Right are w-40, pushed exactly to corners */}
           <div className="absolute top-20 w-full flex justify-between z-10 px-0">
             <img 
               src="/1788258909655~2.jpg" 
@@ -354,38 +362,43 @@ export default function Family({ onBack }: FamilyProps) {
           </div>
         </div>
 
-        <div className="h-[5vh] w-full"></div>
+        {/* 10vh GAP */}
+        <div className="h-[10vh] w-full"></div>
+      </div>
 
-        <div className="flex-1 px-4 space-y-4">
-          {/* 1,2,3 Wali Image - Thodi choti kar di (w-[85%]) */}
-          <div className="relative w-[85%] mx-auto">
-            <img 
-              src="/1788258921361~2.jpg" 
-              alt="Top 1, 2, 3" 
-              className="w-full h-auto object-contain"
-              style={{ filter: 'url(#remove-green)' }}
-            />
-          </div>
+      {/* ======================================= */}
+      {/* SCROLLABLE BOTTOM SECTION               */}
+      {/* ======================================= */}
+      <div className="relative z-10 flex-1 overflow-y-auto w-full px-4 space-y-4 pb-32">
+        
+        {/* 1,2,3 Wali Image (Wide - w-95%) */}
+        <div className="relative w-[95%] mx-auto">
+          <img 
+            src="/1788258921361~2.jpg" 
+            alt="Top 1, 2, 3" 
+            className="w-full h-auto object-contain"
+            style={{ filter: 'url(#remove-green)' }}
+          />
+        </div>
 
-          {/* 4 Wali Card - Poori Wide Kar Di (w-full) */}
-          <div className="relative w-full h-16 flex items-center overflow-hidden">
-            <img 
-              src="/1788259008478~2.jpg" 
-              alt="Rank 4" 
-              className="absolute inset-0 w-full h-full object-fill"
-              style={{ filter: 'url(#remove-green)' }}
-            />
-            <div className="relative z-10 pl-6">
-              <span className="text-xl font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                4
-              </span>
-            </div>
+        {/* 4 Wali Card (Full Wide) */}
+        <div className="relative w-full h-16 flex items-center overflow-hidden">
+          <img 
+            src="/1788259008478~2.jpg" 
+            alt="Rank 4" 
+            className="absolute inset-0 w-full h-full object-fill"
+            style={{ filter: 'url(#remove-green)' }}
+          />
+          <div className="relative z-10 pl-6">
+            <span className="text-xl font-black text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+              4
+            </span>
           </div>
         </div>
       </div>
 
-      {/* BOTTOM SECTION - Left and Right are exactly SAME SIZE now */}
-      <div className="fixed bottom-6 w-full px-6 flex items-center justify-between z-50">
+      {/* BOTTOM FLOATING BUTTONS (Fixed) */}
+      <div className="absolute bottom-6 w-full px-6 flex items-center justify-between z-50">
         <button 
           onClick={() => setCurrentView('create')}
           className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl"
@@ -410,7 +423,7 @@ export default function Family({ onBack }: FamilyProps) {
           />
         </button>
       </div>
+
     </div>
   )
 }
-
