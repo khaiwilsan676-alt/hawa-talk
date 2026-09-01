@@ -339,13 +339,13 @@ export default function Family({ onBack }: FamilyProps) {
             <img 
               src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
-              className="w-62 h-52 object-contain drop-shadow-2xl" 
+              className="w-62 h-62 object-contain drop-shadow-2xl" 
               style={{ filter: 'url(#remove-green)' }}
             />
           </div>
 
           {/* Left & Right Rank - Moved DOWN (top-36) */}
-          <div className="absolute top-36 w-full flex justify-between z-10 px-0">
+          <div className="absolute top-27 w-full flex justify-between z-10 px-0">
             <img 
               src="/1788258909655~2.jpg" 
               alt="Left Rank" 
@@ -362,7 +362,7 @@ export default function Family({ onBack }: FamilyProps) {
         </div>
 
         {/* 10vh GAP */}
-        <div className="h-[13vh] w-full"></div>
+        <div className="h-[16vh] w-full"></div>
       </div>
 
       {/* ======================================= */}
