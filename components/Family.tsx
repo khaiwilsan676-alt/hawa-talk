@@ -44,8 +44,16 @@ export default function Family({ onBack }: FamilyProps) {
 
     const timer = setInterval(() => {
       const now = new Date()
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      const diff = endOfMonth.getTime() - now.getTime()
+      // WEEKLY COUNTDOWN LOGIC (Ends on Sunday 23:59:59)
+      const daysUntilSunday = now.getDay() === 0 ? 0 : 7 - now.getDay()
+      const endOfWeek = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + daysUntilSunday
+      )
+      endOfWeek.setHours(23, 59, 59, 999)
+      
+      const diff = endOfWeek.getTime() - now.getTime()
       
       setTimeLeft({
         days: Math.floor(diff / (1000 * 60 * 60 * 24)),
@@ -315,7 +323,7 @@ export default function Family({ onBack }: FamilyProps) {
       {/* ======================================= */}
       <div className="relative z-20 flex flex-col w-full flex-shrink-0">
         
-        {/* TOP BAR WITH BACK BUTTON ONLY (Removed Heading & Old Countdown) */}
+        {/* TOP BAR WITH BACK BUTTON ONLY */}
         <div className="flex flex-row items-center w-full px-2 pt-2">
           <button onClick={onBack} className="p-1 cursor-pointer w-10 flex justify-start">
             <ArrowLeft size={28} className="text-white drop-shadow-md" />
@@ -330,7 +338,7 @@ export default function Family({ onBack }: FamilyProps) {
             <img 
               src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
-              className="w-72 h-72 object-contain drop-shadow-2xl" 
+              className="w-68 h-68 object-contain drop-shadow-2xl" 
               style={{ filter: 'url(#remove-green)' }}
             />
           </div>
@@ -352,8 +360,11 @@ export default function Family({ onBack }: FamilyProps) {
           </div>
         </div>
 
-        {/* 3 NEW IMAGES IN A ROW (Between Big images and Countdown) */}
-        <div className="flex flex-row items-end justify-center gap-2 w-full mt-14 px-4 relative z-20">
+        {/* 6VH SPACE ADDED HERE */}
+        <div className="w-full h-[4vh]"></div>
+
+        {/* 3 NEW IMAGES IN A ROW (Space adjusted accordingly) */}
+        <div className="flex flex-row items-end justify-center gap-2 w-full px-4 relative z-20">
           <img 
             src="/IMG_20260901_230303.jpg" 
             alt="Left New" 
@@ -374,9 +385,8 @@ export default function Family({ onBack }: FamilyProps) {
           />
         </div>
 
-        {/* NEW COUNTDOWN SECTION (Like 1000184892.jpg) */}
+        {/* NEW COUNTDOWN SECTION */}
         <div className="relative w-full py-2.5 mt-4 flex items-center justify-center bg-gradient-to-r from-transparent via-[#ffd700]/10 to-transparent shadow-[0_0_15px_rgba(255,215,0,0.05)_inset]">
-          {/* Top and Bottom glowing borders */}
           <div className="absolute top-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#ffd700]/40 to-transparent shadow-[0_0_8px_rgba(255,215,0,0.8)]"></div>
           <div className="absolute bottom-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#ffd700]/40 to-transparent shadow-[0_0_8px_rgba(255,215,0,0.8)]"></div>
 
@@ -409,10 +419,11 @@ export default function Family({ onBack }: FamilyProps) {
       {/* ======================================= */}
       {/* SCROLLABLE BOTTOM SECTION               */}
       {/* ======================================= */}
-      <div className="relative z-10 flex-1 overflow-y-auto w-full px-4 pt-4 space-y-1.5 pb-32">
+      {/* Padding removed (px-4 hataya) to make it wide edge-to-edge */}
+      <div className="relative z-10 flex-1 overflow-y-auto w-full pt-4 space-y-1.5 pb-32">
         
-        {/* 1,2,3 Wali Image (Wide - w-[95%]) */}
-        <div className="relative w-[100%] mx-auto">
+        {/* 1,2,3 Wali Image (Wide - w-full) */}
+        <div className="relative w-full">
           <img 
             src="/1788258921361~2.jpg" 
             alt="Top 1, 2, 3" 
@@ -421,7 +432,7 @@ export default function Family({ onBack }: FamilyProps) {
           />
         </div>
 
-        {/* 4 to 50 Cards */}
+        {/* 4 to 50 Cards (Wide) */}
         {Array.from({ length: 47 }, (_, i) => {
           const rank = i + 4;
           return (
