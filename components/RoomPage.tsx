@@ -1093,7 +1093,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* UI UPDATE: Glassmorphism Top Header */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-full pr-12 py-0.5 pl-0.5 border border-white/10 shadow-sm min-w-[150px]">
+          <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-full pr-12 py-0.5 pl-0.5 border border-white/10 shadow-sm min-w-[130px]">
             <button
               onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
               className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
@@ -1131,7 +1131,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
 
           <div className="flex items-center gap-1.5">
-            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors cursor-pointer shadow-sm" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
+            <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-white/10 rounded-full border-none hover:bg-white/20 transition-colors cursor-pointer shadow-sm" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                 <circle cx="9" cy="7" r="4" />
                 <path d="M 2 20 C 2 15 5 13 9 13 C 13 13 16 15 16 20" />
@@ -1149,7 +1149,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </button>
             )}
 
-            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
+            <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }} aria-label="Share" className="bg-white/10 rounded-full border-none hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center shadow-sm" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                 <path d="M4 14.5C4.5 10 8 7 14 7V3L21 10.5L14 18V14C9.5 14 6 15.5 4 19.5C4 18 4 16 4 14.5Z" />
               </svg>
@@ -1305,15 +1305,19 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </button>
               )}
               
+                          {/* Premium Mail Box Menu Icon */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
                 aria-label="Message Box Menu"
-                className="bg-white/10 rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
+                className="bg-white/10 rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm relative"
                 style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
               >
                 <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                  <rect x="4" y="4" width="16" height="16" rx="4" /><path d="M7 9.5L12 14.5L17 9.5" />
+                  <rect x="3" y="5" width="18" height="14" rx="3" ry="3" />
+                  <path d="M3 7l7.53 5.54a3 3 0 0 0 2.94 0L21 7" />
                 </svg>
+                {/* Red Notification Dot for Premium Look */}
+                <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[#FF3B30] rounded-full border-2 border-black/40"></span>
               </button>
 
               <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer shadow-sm p-0" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
