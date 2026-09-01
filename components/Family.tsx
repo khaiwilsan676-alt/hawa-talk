@@ -315,60 +315,73 @@ export default function Family({ onBack }: FamilyProps) {
       {/* ======================================= */}
       <div className="relative z-20 flex flex-col w-full flex-shrink-0">
         
-        <div className="flex flex-row items-center justify-between w-full px-2 pt-2">
+        {/* TOP BAR WITH BACK BUTTON ONLY */}
+        <div className="flex flex-row items-center w-full px-2 pt-2">
           <button onClick={onBack} className="p-1 cursor-pointer w-10 flex justify-start">
             <ArrowLeft size={28} className="text-white drop-shadow-md" />
           </button>
+          {/* Removed the Heading and old Countdown from here */}
+        </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <h1 className="text-lg font-bold text-white drop-shadow-md whitespace-nowrap leading-tight">
-              Top families Of the month
-            </h1>
-            <div className="text-sm font-bold text-white drop-shadow-md leading-tight">
-              {`${timeLeft.days}D : ${timeLeft.hours}H : ${timeLeft.mins}M : ${timeLeft.secs}S`}
+        {/* 3 NEW IMAGES IN A ROW */}
+        <div className="flex flex-row items-end justify-center gap-4 w-full mt-10 px-4 relative z-20">
+          <img 
+            src="/IMG_20260901_230303.jpg" 
+            alt="Left" 
+            className="w-[30%] max-w-[120px] h-auto object-contain drop-shadow-xl" 
+            style={{ filter: 'url(#remove-green)' }}
+          />
+          <img 
+            src="/IMG_20260901_230319.jpg" 
+            alt="Middle" 
+            className="w-[35%] max-w-[140px] h-auto object-contain drop-shadow-2xl z-10" 
+            style={{ filter: 'url(#remove-green)' }}
+          />
+          <img 
+            src="/IMG_20260901_230330.jpg" 
+            alt="Right" 
+            className="w-[30%] max-w-[120px] h-auto object-contain drop-shadow-xl" 
+            style={{ filter: 'url(#remove-green)' }}
+          />
+        </div>
+
+        {/* NEW COUNTDOWN SECTION (Like 1000184892.jpg) */}
+        <div className="relative w-full py-2.5 mt-4 flex items-center justify-center bg-gradient-to-r from-transparent via-[#ffd700]/10 to-transparent shadow-[0_0_15px_rgba(255,215,0,0.05)_inset]">
+          {/* Top and Bottom glowing borders */}
+          <div className="absolute top-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#ffd700]/40 to-transparent shadow-[0_0_8px_rgba(255,215,0,0.8)]"></div>
+          <div className="absolute bottom-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#ffd700]/40 to-transparent shadow-[0_0_8px_rgba(255,215,0,0.8)]"></div>
+
+          <div className="relative z-10 flex items-center justify-center space-x-2 text-white font-medium px-4 w-full">
+            <span className="text-[15px] mr-2 tracking-wide text-[#fdf6e3]">Countdown</span>
+            
+            <div className="bg-[#1a0f02] border border-[#a67c00] rounded-md px-1.5 py-0.5 text-sm font-bold min-w-[34px] text-center shadow-inner">
+              {String(timeLeft.days).padStart(2, '0')}
+            </div>
+            <span className="text-[14px] text-[#fdf6e3]">Days</span>
+            
+            <div className="bg-[#1a0f02] border border-[#a67c00] rounded-md px-1.5 py-0.5 text-sm font-bold min-w-[34px] text-center shadow-inner">
+              {String(timeLeft.hours).padStart(2, '0')}
+            </div>
+            <span className="text-[14px] text-[#fdf6e3]">:</span>
+            
+            <div className="bg-[#1a0f02] border border-[#a67c00] rounded-md px-1.5 py-0.5 text-sm font-bold min-w-[34px] text-center shadow-inner">
+              {String(timeLeft.mins).padStart(2, '0')}
+            </div>
+            <span className="text-[14px] text-[#fdf6e3]">:</span>
+            
+            <div className="bg-[#1a0f02] border border-[#a67c00] rounded-md px-1.5 py-0.5 text-sm font-bold min-w-[34px] text-center shadow-inner">
+              {String(timeLeft.secs).padStart(2, '0')}
             </div>
           </div>
-          <div className="w-10"></div>
         </div>
 
-        {/* 3 BIG IMAGES */}
-        <div className="flex flex-col w-full mt-2 relative">
-          
-          {/* Middle Rank - Moved UP (-mt-8) */}
-          <div className="flex justify-center w-full relative z-20 -mt-8">
-            <img 
-              src="/IMG_20260901_161023.png" 
-              alt="Middle Rank" 
-              className="w-62 h-62 object-contain drop-shadow-2xl" 
-              style={{ filter: 'url(#remove-green)' }}
-            />
-          </div>
-
-          {/* Left & Right Rank - Moved DOWN (top-36) */}
-          <div className="absolute top-27 w-full flex justify-between z-10 px-0">
-            <img 
-              src="/1788258909655~2.jpg" 
-              alt="Left Rank" 
-              className="w-40 h-40 object-contain -ml-4 drop-shadow-xl"
-              style={{ filter: 'url(#remove-green)' }} 
-            />
-            <img 
-              src="/1788258915366~2.jpg" 
-              alt="Right Rank" 
-              className="w-40 h-40 object-contain -mr-4 drop-shadow-xl"
-              style={{ filter: 'url(#remove-green)' }} 
-            />
-          </div>
-        </div>
-
-        {/* 10vh GAP */}
-        <div className="h-[16vh] w-full"></div>
       </div>
 
       {/* ======================================= */}
       {/* SCROLLABLE BOTTOM SECTION               */}
       {/* ======================================= */}
-      <div className="relative z-10 flex-1 overflow-y-auto w-full px-4 space-y-1.5 pb-32">
+      {/* Scroll area directly starts from here */}
+      <div className="relative z-10 flex-1 overflow-y-auto w-full px-4 pt-4 space-y-1.5 pb-32">
         
         {/* 1,2,3 Wali Image (Wide - w-[95%]) */}
         <div className="relative w-[100%] mx-auto">
@@ -403,7 +416,6 @@ export default function Family({ onBack }: FamilyProps) {
 
       {/* BOTTOM FLOATING BUTTONS (Fixed) */}
       <div className="absolute bottom-6 w-full px-6 flex items-center justify-between z-50 pointer-events-none">
-        {/* Pointer events disabled on container, enabled on buttons so we can still scroll the space between them */}
         <button 
           onClick={() => setCurrentView('create')}
           className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl pointer-events-auto"
@@ -432,4 +444,3 @@ export default function Family({ onBack }: FamilyProps) {
     </div>
   )
 }
-
