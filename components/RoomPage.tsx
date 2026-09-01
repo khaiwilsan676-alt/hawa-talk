@@ -1175,7 +1175,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                         {/* UI UPDATE: Announcement Box */}
             <div className="mx-1 mb-3 flex justify-start">
               <div 
-                className="max-w-[85%] bg-white/10 border border-white/10 shadow-sm"
+                className="max-w-[75%] bg-white/10 border border-white/10 shadow-sm"
                 style={{ 
                   padding: '12px 14px', 
                   borderRadius: '8px',
@@ -1188,7 +1188,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                     color: '#e2c67d',
                   }}
                 >
-                  Official announcement: Welcome to Hurry;Any Content Realted to porn,Froud;Fake Official will Ban! So Respect to each other 
+                  Official announcement: Welcome to Hurry Any Content Realted to porn,Froud,Fake Official will Ban!
                 </p>
                 
                 {roomAnnouncement && (
