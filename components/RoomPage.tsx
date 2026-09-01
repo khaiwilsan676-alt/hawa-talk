@@ -1904,10 +1904,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --footer-sayhi-text: 12px;
           --footer-sayhi-padding: 8px 16px;
           --footer-input-text: 12px;
-          --announcement-padding: 12px;
-          --announcement-radius: 8px;
+          --announcement-padding: 4px 8px;
+          --announcement-radius: 6px;
           --announcement-text-size: 13px;
-          --announcement-label-size: 10px;
+          --announcement-label-size: 9px;
           --msg-avatar-size: 24px;
           --msg-name-size: 12px;
           --msg-text-size: 12px;
