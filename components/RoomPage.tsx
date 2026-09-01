@@ -1093,7 +1093,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* UI UPDATE: Glassmorphism Top Header */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-full pr-12 py-0.5 pl-0.5 border border-white/10 shadow-sm min-w-[100px]">
+          <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-full pr-4 py-0.5 pl-0.5 border border-white/10 shadow-sm">
+
             <button
               onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
               className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
@@ -1311,12 +1312,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
               >
                 <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--footer-icon-size) + 4px)', height: 'calc(var(--footer-icon-size) + 4px)' }}>
-                  <rect x="3" y="3" width="8" height="8" rx="3" ry="3" />
+                  <rect x="3" y="5" width="18" height="14" rx="3" ry="3" />
                   <path d="M3 7l7.53 5.54a3 3 0 0 0 2.94 0L21 7" />
                 </svg>
               </button>
                 
-
 
               <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer shadow-sm p-0" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                 <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover rounded-full" draggable={false} />
