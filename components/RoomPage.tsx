@@ -26,19 +26,19 @@ import {
 } from "livekit-client";
 
 interface RoomPageProps {
-  roomOwner: {
+  roomOwner?: {
     id?: string;
     uid?: string;
     accountId?: string;
-    name: string;
-    image: string;
+    name?: string;
+    image?: string;
   };
-  currentUser: {
+  currentUser?: {
     id?: string;
     uid?: string;
-    accountId: string;
-    name: string;
-    image: string;
+    accountId?: string;
+    name?: string;
+    image?: string;
   };
   onClose?: () => void;
   onBack?: () => void;
@@ -91,13 +91,15 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
   const [livekitToken, setLivekitToken] = useState<string>("");
   const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
 
-  const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
-  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
+  // ANTI-CRASH CHECKS
+  const roomId = roomOwner?.id || roomOwner?.accountId || 'default-room';
+  const userAccountId = currentUser?.accountId || currentUser?.uid || currentUser?.id || "guest";
+  const currentUserName = currentUser?.name || "User";
 
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const res = await fetch(`/api/livekit?room=${roomId}&username=${encodeURIComponent(currentUser.name)}&identity=${userAccountId}`);
+        const res = await fetch(`/api/livekit?room=${roomId}&username=${encodeURIComponent(currentUserName)}&identity=${userAccountId}`);
         const data = await res.json();
         if (data.token) {
           setLivekitToken(data.token);
@@ -106,10 +108,10 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
         console.error("Error fetching LiveKit token:", err);
       }
     };
-    if (roomId && currentUser.name && userAccountId !== "guest") {
+    if (roomId && currentUserName && userAccountId !== "guest") {
       fetchToken();
     }
-  }, [roomId, currentUser.name, userAccountId]);
+  }, [roomId, currentUserName, userAccountId]);
 
   return (
     <LiveKitRoom
@@ -117,8 +119,9 @@ export default function RoomPage({ roomOwner, currentUser, onClose, onBack, onKe
       video={false}
       token={livekitToken}
       serverUrl={livekitUrl}
-      connect={Boolean(livekitToken)}
-      className="fixed inset-0 z-50 bg-black flex flex-col"
+      connect={Boolean(livekitToken && livekitUrl)}
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ backgroundColor: 'black' }}
       options={{
         adaptiveStream: true,
         dynacast: true,
@@ -190,9 +193,16 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     isInSeat?: boolean;
   } | null>(null);
 
-  const userAccountId = currentUser.accountId || currentUser.uid || currentUser.id || "guest";
-  const roomOwnerId = roomOwner.accountId || roomOwner.uid || roomOwner.id || "";
+  // ANTI-CRASH CHECKS
+  const userAccountId = currentUser?.accountId || currentUser?.uid || currentUser?.id || "guest";
+  const currentUserName = currentUser?.name || "User";
+  const currentUserImage = currentUser?.image || "/default-avatar.png";
+  
+  const roomOwnerId = roomOwner?.accountId || roomOwner?.uid || roomOwner?.id || "";
+  const roomOwnerName = roomOwner?.name || "Host";
+  const roomOwnerImage = roomOwner?.image || "/default-avatar.png";
   const isRoomOwner = userAccountId === roomOwnerId;
+  const roomId = roomOwner?.id || roomOwner?.accountId || 'default-room';
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -202,7 +212,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [roomAnnouncement, setRoomAnnouncement] = useState<string>("");
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [roomPassword, setRoomPassword] = useState<string>("");
-  const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
+  const [roomImage, setRoomImage] = useState<string>(roomOwnerImage);
   const [micMode, setMicMode] = useState<number>(9);
   const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
   const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg");
@@ -230,8 +240,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId);
   const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
-
-  const roomId = roomOwner.id || roomOwner.accountId || 'default-room';
 
   const displayRoomName = roomName
     ? (roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName)
@@ -263,12 +271,13 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     }
   }, [currentUserSeat?.isMuted, hasSeat, localParticipant]);
 
+  // CRASH-FIXED: Removed 'seats' from dependency array to prevent Infinite Loop Crash
   useEffect(() => {
     if (!remoteParticipants || remoteParticipants.length === 0) return;
     
-    const updateSeatsWithRemoteParticipants = async () => {
-      const updatedSeats = [...seats];
+    setSeats(prevSeats => {
       let hasChanges = false;
+      const updatedSeats = [...prevSeats];
       
       for (const participant of remoteParticipants) {
         const seatIndex = updatedSeats.findIndex(s => 
@@ -288,14 +297,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           }
         }
       }
-      
-      if (hasChanges) {
-        setSeats(updatedSeats);
-      }
-    };
-    
-    updateSeatsWithRemoteParticipants();
-  }, [remoteParticipants, seats]);
+      return hasChanges ? updatedSeats : prevSeats;
+    });
+  }, [remoteParticipants]);
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -306,7 +310,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           if (data) {
             setRoomName(data['Room Name'] || data.name || "");
             setRoomAnnouncement(data.message || data.announcement || "");
-            setRoomImage(data['Room dp'] || data.image || roomOwner.image);
+            setRoomImage(data['Room dp'] || data.image || roomOwnerImage);
             if (data['Mic Mode'] || data.micMode) {
               setMicMode(data['Mic Mode'] || data.micMode);
             }
@@ -322,7 +326,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       }
     };
     fetchRoomData();
-  }, [roomId, roomOwner.image]);
+  }, [roomId, roomOwnerImage]);
 
   useEffect(() => {
     setSeats(prev => {
@@ -401,8 +405,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     joinRoom({
       roomId,
       userId: userAccountId,
-      name: currentUser.name,
-      dp: currentUser.image,
+      name: currentUserName,
+      dp: currentUserImage,
       membership: 'member'
     });
 
@@ -411,7 +415,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         leaveRoom(roomId, userAccountId);
       }
     };
-  }, [userAccountId, currentUser.name, currentUser.image, roomId]);
+  }, [userAccountId, currentUserName, currentUserImage, roomId]);
 
   const sendMessageToFirestore = async (text: string, imageUrl?: string, type: 'message' | 'join' | 'leave' = 'message') => {
     if (!roomId) return;
@@ -419,8 +423,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       await sendRoomMessage({
         roomId,
         senderId: userAccountId,
-        senderName: currentUser.name,
-        senderAvatar: currentUser.image,
+        senderName: currentUserName,
+        senderAvatar: currentUserImage,
         text,
         type,
         imageUrl: imageUrl || null,
@@ -436,10 +440,10 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const clearedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (joinMessageSentRef.current || userAccountId === "guest" || !currentUser.name) return;
+    if (joinMessageSentRef.current || userAccountId === "guest" || !currentUserName) return;
     joinMessageSentRef.current = true;
     sendMessageToFirestore('Enter the Room', undefined, 'join');
-  }, [userAccountId, currentUser.name, roomId]);
+  }, [userAccountId, currentUserName, roomId]);
 
   useEffect(() => {
     if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -479,7 +483,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const handleCopyId = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(roomOwner.accountId || '');
+    navigator.clipboard.writeText(roomOwnerId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -548,7 +552,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           return {
             ...s,
             isOccupied: true,
-            user: { name: currentUser.name, image: currentUser.image, accountId: userAccountId },
+            user: { name: currentUserName, image: currentUserImage, accountId: userAccountId },
             isMuted: false,
             isSpeaking: false,
             gif: undefined
@@ -758,8 +762,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const handleKeep = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     isKeepingRef.current = true;
-    const keptAccId = roomOwner.accountId || (roomOwner.id ? generateStableId(roomOwner.id) : '');
-    const roomData = { name: roomOwner.name, image: roomOwner.image, accountId: keptAccId };
+    const keptAccId = roomOwnerId || (roomOwner?.id ? generateStableId(roomOwner.id) : '');
+    const roomData = { name: roomOwnerName, image: roomOwnerImage, accountId: keptAccId };
     localStorage.setItem('keptRoom', JSON.stringify(roomData));
     setShowExitMenu(false);
     if (onKeepRoom) onKeepRoom(roomData);
@@ -1058,10 +1062,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
-        height: '100dvh'
+        height: '100dvh',
+        backgroundColor: 'black'
       }}
     >
       <img
@@ -1077,6 +1082,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Top Header */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
+          
+          {/* Left Side: Room Info Capsule (DP & ID) */}
           <div className="flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-md rounded-full pr-4 p-1 border border-white/10 shadow-sm">
             <button
               onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
@@ -1110,10 +1117,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   </button>
                 )}
               </div>
-              <p className="text-gray-300 opacity-90 leading-tight mt-0.5" style={{ fontSize: 'var(--header-id-size)' }}>ID:{roomOwner.accountId || roomOwner.id || ''}</p>
+              <p className="text-gray-300 opacity-90 leading-tight mt-0.5" style={{ fontSize: 'var(--header-id-size)' }}>ID:{roomOwnerId}</p>
             </div>
           </div>
 
+          {/* Right Side: Top Header Icons */}
           <div className="flex items-center gap-1.5">
             <button onClick={(e) => { e.stopPropagation(); setShowActiveUsers(true); }} className="flex items-center gap-1 bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors cursor-pointer shadow-sm" style={{ height: 'var(--header-btn-size)', padding: 'var(--header-btn-padding)' }}>
               <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
@@ -1156,6 +1164,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
             
+            {/* Announcement Box with Golden Welcome Text & White Announcement */}
             <div className="mx-1 mb-3 flex justify-start">
               <div 
                 className="max-w-[85%] bg-white/10 backdrop-blur-md border border-white/10 shadow-sm"
@@ -1168,7 +1177,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   className="leading-snug font-medium"
                   style={{ 
                     fontSize: 'var(--announcement-text-size)',
-                    color: '#e2c67d',
+                    color: '#e2c67d', /* Pale golden color */
                   }}
                 >
                   Welcome to Hurry any content Related to porn, Froud, Violence fake official will be ban!
@@ -1179,7 +1188,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       className="leading-snug font-medium"
                       style={{ 
                         fontSize: 'var(--announcement-text-size)',
-                        color: '#e2c67d',
+                        color: '#e2c67d', /* Pale golden color */
                       }}
                     >
                       <span className="font-bold mr-1">Official announcement: </span>
@@ -1212,7 +1221,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       <div
                         className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer border border-white/10"
                         style={{ width: 'var(--msg-avatar-size)', height: 'var(--msg-avatar-size)' }}
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUserName ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -1228,7 +1237,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                       <div
                         className="rounded-full overflow-hidden flex-shrink-0 mt-0.5 cursor-pointer border border-white/10"
                         style={{ width: 'var(--msg-avatar-size)', height: 'var(--msg-avatar-size)' }}
-                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUser.name ? userAccountId : '') })}
+                        onClick={() => openProfile({ name: msg.sender, image: msg.senderImage, accountId: msg.senderAccountId || (msg.sender === currentUserName ? userAccountId : '') })}
                       >
                         <img src={msg.senderImage || "/default-avatar.png"} alt={msg.sender} className="w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                       </div>
@@ -1455,7 +1464,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                     <div>
                       <h3 className="font-semibold text-gray-800 text-sm">{roomName || 'Room'}</h3>
                       <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                        <span>ID: {roomOwner.accountId}</span>
+                        <span>ID: {roomOwnerId}</span>
                         <button onClick={handleCopyId} className="p-0.5 hover:bg-gray-100 rounded transition-colors cursor-pointer" title="Copy ID">
                           <svg viewBox="0 0 24 24" className="fill-none stroke-gray-500 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--header-icon-size)', height: 'var(--header-icon-size)' }}>
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -1467,7 +1476,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   </div>
                   <div>
                     <span className="text-[10px] text-gray-400 font-medium">Host</span>
-                    <p className="text-xs font-medium text-gray-800 mt-1">{roomOwner.name || "Unknown"}</p>
+                    <p className="text-xs font-medium text-gray-800 mt-1">{roomOwnerName}</p>
                   </div>
                   <div>
                     <span className="text-[10px] text-gray-400 font-medium">Announcement:</span>
@@ -1477,11 +1486,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-2">
-                    <div className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }} onClick={() => openProfile({ name: roomOwner.name, image: roomOwner.image, accountId: roomOwner.accountId || roomOwner.id || '' })}>
-                      <img src={roomOwner.image || "/default-avatar.png"} alt={roomOwner.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
+                    <div className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer" style={{ width: 'var(--header-btn-size)', height: 'var(--header-btn-size)' }} onClick={() => openProfile({ name: roomOwnerName, image: roomOwnerImage, accountId: roomOwnerId })}>
+                      <img src={roomOwnerImage} alt={roomOwnerName} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }} />
                     </div>
                     <div className="flex-1 min-w-0 flex items-center gap-1">
-                      <h4 className="text-xs font-medium text-gray-800 truncate">{roomOwner.name}</h4>
+                      <h4 className="text-xs font-medium text-gray-800 truncate">{roomOwnerName}</h4>
                       <span className="rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0" style={{ width: 'var(--header-follow-btn-size)', height: 'var(--header-follow-btn-size)' }}>
                         <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--header-follow-icon-size)', height: 'var(--header-follow-icon-size)' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
                       </span>
@@ -1615,7 +1624,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </svg>
             </button>
             <div className="h-full overflow-y-auto">
-              <MessagePage sharedRoomData={{ roomId: roomId, roomName: roomOwner.name, roomImage: roomOwner.image }} />
+              <MessagePage sharedRoomData={{ roomId: roomId, roomName: roomOwnerName, roomImage: roomOwnerImage }} />
             </div>
           </div>
         </div>
