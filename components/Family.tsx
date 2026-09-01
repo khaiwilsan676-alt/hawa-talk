@@ -92,7 +92,7 @@ export default function Family({ onBack }: FamilyProps) {
         <div 
           className="absolute top-0 left-0 w-full h-[40vh] z-0"
           style={{
-            backgroundImage: "url('/public/IMG_20260901_162148.png')",
+            backgroundImage: "url('/IMG_20260901_162148.png')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
@@ -132,7 +132,7 @@ export default function Family({ onBack }: FamilyProps) {
                 <div key={rank} className="relative w-full h-20 rounded-xl overflow-hidden flex items-center justify-between px-4 shadow-lg border border-white/10">
                   {/* Card Background Image */}
                   <img 
-                    src="/public/1788259008478~2.jpg" 
+                    src="/1788259008478~2.jpg" 
                     alt="Card Background" 
                     className="absolute inset-0 w-full h-full object-cover opacity-80"
                   />
@@ -157,7 +157,7 @@ export default function Family({ onBack }: FamilyProps) {
                   {/* Top Right Corner Image on each card */}
                   <div className="relative z-10">
                     <img 
-                      src="/public/IMG_20260901_160944.png" 
+                      src="/IMG_20260901_160944.png" 
                       alt="Icon" 
                       className="w-8 h-8 object-contain filter drop-shadow-md"
                     />
@@ -182,7 +182,7 @@ export default function Family({ onBack }: FamilyProps) {
       <div 
         className="absolute top-0 left-0 w-full h-[50vh] z-0"
         style={{
-          backgroundImage: "url('/public/IMG_20260901_160704.png')",
+          backgroundImage: "url('/IMG_20260901_160704.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
@@ -215,7 +215,7 @@ export default function Family({ onBack }: FamilyProps) {
             className="cursor-pointer hover:scale-110 transition-transform p-1"
           >
             <img 
-              src="/public/1788258883971~2.jpg" 
+              src="/1788258883971~2.jpg" 
               alt="Cup" 
               className="w-14 h-14 object-contain filter drop-shadow-lg"
               style={{ mixBlendMode: 'color-burn' }}
@@ -227,7 +227,7 @@ export default function Family({ onBack }: FamilyProps) {
         <div className="flex flex-col w-full mt-6 px-6 relative">
           <div className="flex justify-center w-full relative z-20">
             <img 
-              src="/public/IMG_20260901_161023.png" 
+              src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
               className="w-32 h-32 object-contain drop-shadow-2xl" 
             />
@@ -235,12 +235,12 @@ export default function Family({ onBack }: FamilyProps) {
 
           <div className="flex justify-between w-full -mt-8 relative z-10 px-4">
             <img 
-              src="/public/1788258909655~2.jpg" 
+              src="/1788258909655~2.jpg" 
               alt="Left Rank" 
               className="w-24 h-24 object-contain drop-shadow-xl" 
             />
             <img 
-              src="/public/1788258915366~2.jpg" 
+              src="/1788258915366~2.jpg" 
               alt="Right Rank" 
               className="w-24 h-24 object-contain drop-shadow-xl" 
             />
@@ -260,8 +260,8 @@ export default function Family({ onBack }: FamilyProps) {
             members.map((member, index) => {
               const rank = index + 1;
               const cardImage = rank <= 3 
-                ? '/public/1788258921361~2.jpg' 
-                : '/public/1788259008478~2.jpg';
+                ? '/1788258921361~2.jpg' 
+                : '/1788259008478~2.jpg';
 
               return (
                 <div key={member.id} className="relative w-full h-24 rounded-xl overflow-hidden flex items-center justify-between p-4 shadow-lg border border-white/10">
@@ -301,7 +301,7 @@ export default function Family({ onBack }: FamilyProps) {
           className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl"
         >
           <img 
-            src="/public/IMG_20260901_161001.png" 
+            src="/IMG_20260901_161001.png" 
             alt="Add Button" 
             className="w-48 h-auto object-contain"
           />
@@ -367,4 +367,3 @@ export default function Family({ onBack }: FamilyProps) {
     </div>
   )
 }
-
