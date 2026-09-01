@@ -326,7 +326,7 @@ export default function Family({ onBack }: FamilyProps) {
         <div className="flex flex-col w-full mt-2 relative">
           
           {/* Middle Rank */}
-          <div className="flex justify-center w-full relative z-20 -mt-13">
+          <div className="flex justify-center w-full relative z-20 -mt-16">
             <img 
               src="/IMG_20260901_161023.png" 
               alt="Middle Rank" 
@@ -336,17 +336,17 @@ export default function Family({ onBack }: FamilyProps) {
           </div>
 
           {/* Left & Right Rank */}
-          <div className="absolute top-32 w-full flex justify-between z-10 px-0">
+          <div className="absolute top-27 w-full flex justify-between z-10 px-0">
             <img 
               src="/1788258909655~2.jpg" 
               alt="Left Rank" 
-              className="w-50 h-50 object-contain -ml-4 drop-shadow-xl"
+              className="w-40 h-40 object-contain -ml-4 drop-shadow-xl"
               style={{ filter: 'url(#remove-green)' }} 
             />
             <img 
               src="/1788258915366~2.jpg" 
               alt="Right Rank" 
-              className="w-50 h-50 object-contain -mr-4 drop-shadow-xl"
+              className="w-40 h-40 object-contain -mr-4 drop-shadow-xl"
               style={{ filter: 'url(#remove-green)' }} 
             />
           </div>
