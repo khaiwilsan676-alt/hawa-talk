@@ -10,6 +10,7 @@ import Fourgride from './Fourgride';
 import Wildparty from './Wildparty';
 import Fruitparty from './Fruitparty';
 import WhiteColorRemovalShader from './WhiteColorRemovalShader';
+import Roomtask from './Roomtask';
 import { generateStableId } from '../lib/hash';
 import { getRoom, updateRoom, getRoomMembers, joinRoom, leaveRoom, sendRoomMessage, getRoomMessages } from "../src/lib/googleSheets";
 
@@ -160,6 +161,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [showGameSheet, setShowGameSheet] = useState(false);
   const [showWildParty, setShowWildParty] = useState(false);
   const [showFruitParty, setShowFruitParty] = useState(false);
+  const [showRoomTask, setShowRoomTask] = useState(false);
+
 
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
@@ -1331,51 +1334,45 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 {hasSeat && (
   <button 
     onClick={handleBottomMicToggle} 
-    className="bg-black/30 rounded-full border-none hover:bg-black/40 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-visible" 
+    className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-visible" 
     style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
   >
     {currentUserSeat?.isMuted ? (
-      <svg 
-        viewBox="-2 -2 28 28" 
-        className="fill-white overflow-visible" 
-        style={{ width: '27px', height: '27px' }}
-      >
-        {/* Solid White Capsule Body */}
-        <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
-        {/* Solid White Base Cradle & Stand */}
+      <svg viewBox="-2 -2 28 28" className="fill-white overflow-visible" style={{ width: '27px', height: '27px' }}>
+        <defs>
+          <mask id="mic-cut-muted">
+            <rect x="-2" y="-2" width="32" height="32" fill="white" />
+            {/* Yeh wo chhota horizontal cut (slit) hai image jaisa */}
+            <rect x="10" y="5.5" width="4" height="1.5" rx="0.5" fill="black" />
+          </mask>
+        </defs>
+
+        {/* Naya Thoda Chauda (Wider) Capsule Cut ke saath */}
+        <rect x="8.5" y="2" width="7" height="12" rx="3.5" fill="#ffffff" mask="url(#mic-cut-muted)" />
+        
+        {/* Base Cradle & Stand */}
         <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
         <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
         <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
         
-        {/* \ Diagonal Cross Line (White with dark stroke border for clarity) */}
-        <line 
-          x1="2" 
-          y1="2" 
-          x2="22" 
-          y2="22" 
-          stroke="#000000" 
-          strokeWidth="3.5" 
-          strokeLinecap="round" 
-        />
-        <line 
-          x1="2" 
-          y1="2" 
-          x2="22" 
-          y2="22" 
-          stroke="#ffffff" 
-          strokeWidth="2.2" 
-          strokeLinecap="round" 
-        />
+        {/* \ Diagonal Cross Line (Muted State) */}
+        <line x1="2" y1="2" x2="22" y2="22" stroke="#000000" strokeWidth="3.5" strokeLinecap="round" />
+        <line x1="2" y1="2" x2="22" y2="22" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" />
       </svg>
     ) : (
-      <svg 
-        viewBox="-2 -2 28 28" 
-        className="fill-white overflow-visible" 
-        style={{ width: '27px', height: '27px' }}
-      >
-        {/* Solid White Capsule Body */}
-        <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
-        {/* Solid White Base Cradle & Stand */}
+      <svg viewBox="-2 -2 28 28" className="fill-white overflow-visible" style={{ width: '27px', height: '27px' }}>
+        <defs>
+          <mask id="mic-cut-unmuted">
+            <rect x="-2" y="-2" width="32" height="32" fill="white" />
+            {/* Yeh wo chhota horizontal cut (slit) hai image jaisa */}
+            <rect x="10" y="5.5" width="4" height="1.5" rx="0.5" fill="black" />
+          </mask>
+        </defs>
+
+        {/* Naya Thoda Chauda (Wider) Capsule Cut ke saath */}
+        <rect x="8.5" y="2" width="7" height="12" rx="3.5" fill="#ffffff" mask="url(#mic-cut-unmuted)" />
+        
+        {/* Base Cradle & Stand */}
         <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
         <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
         <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
@@ -1479,16 +1476,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   {/* 1. AUTO-SCROLL BANNER */}
   <RoomSideBanner />
 
-  {/* 2. BICH WALI IMAGE (Green Removed - Badi + Left Side Shifted) */}
+    {/* 2. BICH WALI IMAGE (Green Removed - Badi + Left Side Shifted) */}
   <div 
+  onClick={() => setShowRoomTask(true)} // <--- YEH LINE ADD KI HAI (CLICK EVENT)
   className="relative cursor-pointer transition-transform hover:scale-105 mt-2 flex items-center justify-center"
   style={{
     width: 'calc(var(--footer-btn-size) * 1.35)',
     height: 'calc(var(--footer-btn-size) * 1.35)',
   }}
 >
+
     <GreenColorRemovalShader
-      imageSrc="/IMG_20260901_160923.png"
+      imageSrc="/IMG-20260902-WA0066.jpg"
       threshold={0.45}
       className="w-full h-full"
       style={{
@@ -1504,8 +1503,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   <div 
     className="relative cursor-pointer transition-transform hover:scale-105 mt-1"
     style={{
-      width: 'calc(var(--footer-btn-size) * 1.3)',
-      height: 'calc(var(--footer-btn-size) * 1.3)',
+      width: 'calc(var(--footer-btn-size) * 1.2)',
+      height: 'calc(var(--footer-btn-size) * 1.2)',
     }}
     onClick={() => setShowGameSheet(true)}
   >
@@ -1846,6 +1845,15 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <Fruitparty onClose={() => setShowFruitParty(false)} />
       )}
 
+      {/* YEH NAYA BLOCK ADD KARO */}
+      {showRoomTask && (
+        <div className="fixed inset-0 z-[11000] bg-black">
+          <Roomtask onBack={() => setShowRoomTask(false)} />
+        </div>
+      )}
+      
+
+
       {musicControllerState === 'minimized' && currentTrack && (
         <div
           className="fixed z-[45] cursor-grab active:cursor-grabbing flex items-center gap-2 bg-black/85 backdrop-blur-md border border-white/20 rounded-full pl-2 pr-3 py-1.5 shadow-2xl transition-transform active:scale-95 select-none touch-none"
@@ -2046,7 +2054,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         @media (max-width: 400px) {
           :root {
-            --seat-size: 58px;
+            --seat-size: 56px;
             --header-btn-size: 38px;
             --header-icon-size: 22px;
             --header-room-img-size: 38px;
