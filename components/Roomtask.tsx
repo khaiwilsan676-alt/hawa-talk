@@ -249,7 +249,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     />
 
     {/* Left Side: White background remove kiya hua cleaned icon image - AB WEBSHADER SE PROCESSED */}
-    <div className="absolute left-[19px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
+    <div className="absolute left-[13px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
       <img 
         src={cleanedTopLeftIconSrc}
         alt="Cleaned Coin Icon" 
@@ -266,40 +266,34 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   </div>
   
-  {/* Room Tasks Heading */}
-  <h1 className="text-white text-xl font-black tracking-wider uppercase mt-15 drop-shadow-md">
-    Room Tasks
-  </h1>
-</div>
-          {/* Exact Countdown Design */}
-<div className="flex items-center justify-center gap-1.5 mt-4 mb-2 z-20 select-none">
-  <span className="text-[#e8b499] text-[13px] font-medium mr-0.5">Countdown</span>
+  // 👇 WEEKLY LIVE COUNTDOWN LOGIC 👇
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-  {/* Day */}
-  <div className="w-6 h-6 rounded-[6px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-    <span className="text-[#f7d6c5] text-[12px] font-bold">0</span>
-  </div>
-  <span className="text-[#e8b499] text-[13px] font-medium">Day</span>
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      // Har hafte Monday 00:00 baje target reset hota hai
+      const dayOfWeek = now.getDay();
+      const daysUntilNextMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+      
+      const nextTarget = new Date(now);
+      nextTarget.setDate(now.getDate() + daysUntilNextMonday);
+      nextTarget.setHours(0, 0, 0, 0);
 
-  {/* Hour */}
-  <div className="w-6 h-6 rounded-[6px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-    <span className="text-[#f7d6c5] text-[12px] font-bold">3</span>
-  </div>
-  <span className="text-[#e8b499] text-[13px] font-medium">Hour</span>
+      const diff = nextTarget.getTime() - now.getTime();
 
-  {/* Minute */}
-  <div className="min-w-[24px] h-6 px-1 rounded-[6px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-    <span className="text-[#f7d6c5] text-[12px] font-bold">37</span>
-  </div>
-  <span className="text-[#e8b499] text-[13px] font-medium">Minute</span>
+      if (diff > 0) {
+        setTimeLeft({
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((diff / 1000 / 60) % 60),
+          seconds: Math.floor((diff / 1000) % 60),
+        });
+      }
+    }, 1000);
 
-  {/* Second */}
-  <div className="w-6 h-6 rounded-[6px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-    <span className="text-[#f7d6c5] text-[12px] font-bold">2</span>
-  </div>
-  <span className="text-[#e8b499] text-[13px] font-medium">Second</span>
-</div>
-
+    return () => clearInterval(timer);
+  }, []);
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
           <div className="w-full flex flex-col items-center -space-y-[50px] mt-10 pb-16 px-4">
