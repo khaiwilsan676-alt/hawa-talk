@@ -1312,7 +1312,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* UI UPDATE: Glassmorphism Footer Controls */}
         <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
-          <div className="flex items-center justify-between gap-1.5">
+          <div className="flex items-center justify-between gap-0.5">
             
             {/* Chat (Say Hi) - Solid bubble with transparent punched-out dots */}
             <button
@@ -1338,7 +1338,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <svg 
         viewBox="-2 -2 28 28" 
         className="fill-white overflow-visible" 
-        style={{ width: '26px', height: '26px' }}
+        style={{ width: '27px', height: '27px' }}
       >
         {/* Solid White Capsule Body */}
         <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
@@ -1371,7 +1371,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <svg 
         viewBox="-2 -2 28 28" 
         className="fill-white overflow-visible" 
-        style={{ width: '26px', height: '26px' }}
+        style={{ width: '27px', height: '27px' }}
       >
         {/* Solid White Capsule Body */}
         <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
@@ -1471,7 +1471,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 <div 
   className="absolute z-20 flex flex-col items-center pointer-events-auto"
   style={{
-    bottom: 'calc(var(--footer-btn-size) + 18px)',
+    bottom: 'calc(var(--footer-btn-size) + 22px)',
     right: '10px',
   }}
   onClick={(e) => e.stopPropagation()}
@@ -1481,12 +1481,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   {/* 2. BICH WALI IMAGE (Green Removed - Badi + Left Side Shifted) */}
   <div 
-    className="relative cursor-pointer transition-transform hover:scale-105 mt-2 self-start -translate-x-3 flex items-center justify-center"
-    style={{
-      width: 'calc(var(--footer-btn-size) * 1.25)',  // Bada size
-      height: 'calc(var(--footer-btn-size) * 1.25)',
-    }}
-  >
+  className="relative cursor-pointer transition-transform hover:scale-105 mt-2 flex items-center justify-center"
+  style={{
+    width: 'calc(var(--footer-btn-size) * 1.25)',
+    height: 'calc(var(--footer-btn-size) * 1.25)',
+  }}
+>
     <GreenColorRemovalShader
       imageSrc="/IMG_20260901_160923.png"
       threshold={0.45}
