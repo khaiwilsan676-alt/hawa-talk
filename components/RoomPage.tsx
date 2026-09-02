@@ -1163,6 +1163,44 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
           </div>
         </div>
+                        {/* NEW TROPHY UI - Directly below Top Room Card */}
+        <div className="flex justify-start mt-2 -ml-3 sm:-ml-4">
+          <button className="bg-black/30 backdrop-blur-sm rounded-r-lg flex items-center pr-2 pl-3 py-1 shadow-sm cursor-pointer hover:bg-black/40 transition-colors border border-transparent border-l-0">
+            
+            {/* Trophy Image with Shader for Green Removal */}
+            <div className="w-5 h-5 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
+              <WhiteColorRemovalShader
+                imageSrc="/1788258883971~2.jpg"
+                threshold={0.85}
+                className="w-full h-full"
+                style={{
+                  width: '130%',
+                  height: '130%',
+                  objectFit: 'contain',
+                  maxWidth: 'none',
+                  maxHeight: 'none',
+                  pointerEvents: 'none',
+                }}
+              />
+            </div>
+            
+            {/* Number 0 */}
+            <span 
+              className="font-bold text-[14px] leading-none" 
+              style={{ color: '#fbe28d', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}
+            >
+              0
+            </span>
+            
+            {/* Right Arrow (>) */}
+            <svg viewBox="0 0 24 24" className="fill-none stroke-[3] ml-1 opacity-90" stroke="#fbe28d" style={{ width: '13px', height: '13px' }}>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+
+          </button>
+        </div>
+
+
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
@@ -1271,18 +1309,15 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-1.5">
             
-            {/* Chat (Say Hi) - Original Outline with SLIGHTLY LARGER ICON */}
+                        {/* Chat (Say Hi) - Solid bubble with transparent punched-out dots */}
             <button
               onClick={openChatInput}
               aria-label="Say Hi Chat"
               className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
               style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
             >
-              <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--footer-icon-size) + 4px)', height: 'calc(var(--footer-icon-size) + 4px)' }}>
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                <circle cx="8" cy="12" r="1.5" fill="white" stroke="none" />
-                <circle cx="12" cy="12" r="1.5" fill="white" stroke="none" />
-                <circle cx="16" cy="12" r="1.5" fill="white" stroke="none" />
+              <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'calc(var(--footer-icon-size) + 4px)', height: 'calc(var(--footer-icon-size) + 4px)' }}>
+                <path d="M12 2C6.48 2 2 5.92 2 10.75c0 2.8 1.5 5.29 3.82 6.84l-1.4 3.7c-.12.33.22.64.53.5l4-1.63c1 .3 2 .46 3.05.46 5.52 0 10-3.92 10-8.75S17.52 2 12 2zm-4 11.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
               </svg>
             </button>
 
@@ -1297,21 +1332,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   ) : (
                     <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
                       {/* Customized shorter solid mic capsule */}
-                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3s-3 1.34-3 3V11c0 1.66 1.34 3 3 3z" />
+                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-1.66-1.34-3-3-3s-3 1.34-3 3V11c0 1.66 1.34 3 3 3z" />
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                     </svg>
                   )}
                 </button>
               )}
               
-                            {/* Emoji - Updated exactly to the image */}
+                             {/* Emoji - Exact Match (Solid white face with transparent eyes & mouth) */}
               {hasSeat && (
                 <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-3-9c.83 0 1.5-.67 1.5-1.5S10.83 8 10 8s-1.5.67-1.5 1.5S8.17 11 9 11zm6 0c.83 0 1.5-.67 1.5-1.5S15.83 8 15 8s-1.5.67-1.5 1.5S14.17 11 15 11zm-3 7c2.76 0 5-2.24 5-5H7c0 2.76 2.24 5 5 5z" />
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2.5 8.5c.83 0 1.5-.67 1.5-1.5S10.33 7.5 9.5 7.5 8 8.17 8 9s.67 1.5 1.5 1.5zm5 0c.83 0 1.5-.67 1.5-1.5S15.33 7.5 14.5 7.5 13 8.17 13 9s.67 1.5 1.5 1.5zm-5 7c2.33 0 4.31-1.46 5.11-3.5H7.39c.8 2.04 2.78 3.5 5.11 3.5z" />
                   </svg>
                 </button>
               )}
+            
 
               
                {/* Message Box - Original Outline */}
