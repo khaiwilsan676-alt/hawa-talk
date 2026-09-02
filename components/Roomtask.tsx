@@ -23,12 +23,12 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           }}
         />
 
-        {/* ================= BOTTOM BACKGROUND (Upar se mix/fade hoga taaki dono smooth judein) ================= */}
+              {/* BOTTOM BACKGROUND */}
         <div 
           className="absolute top-[45vh] left-0 w-full h-[130vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
-            backgroundSize: 'cover',
+            backgroundSize: '100% 100%', // <-- Yahan 'cover' ki jagah '100% 100%' kar de
             backgroundPosition: 'top center',
             maskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
             WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
