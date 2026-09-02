@@ -204,13 +204,13 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           }}
         />
 
-        {/* BOTTOM BACKGROUND (Fixed with 100% auto and repeat to prevent wide/stretch issue) */}
+        {/* BOTTOM BACKGROUND (Strictly 1 single background image with 280vh height) */}
         <div 
           className="absolute top-[50vh] left-0 w-full h-[280vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
-            backgroundSize: '100% auto',
-            backgroundRepeat: 'repeat-y',
+            backgroundSize: '100% 280vh',
+            backgroundRepeat: 'no-repeat',
             backgroundPosition: 'top center',
             maskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
             WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
