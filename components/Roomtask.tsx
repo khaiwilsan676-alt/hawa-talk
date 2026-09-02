@@ -240,7 +240,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           </div>
 
           {/* 22 IMAGES WITH WEBGL SHADER ICON & CLAIM BUTTON */}
-          <div className="w-full flex flex-col items-center -space-y-[135px] mt-6 pb-16 px-4">
+          <div className="w-full flex flex-col items-center -space-y-[35px] mt-6 pb-16 px-4">
             {tasks.map((task, index) => (
               <TaskItem 
                 key={index}
