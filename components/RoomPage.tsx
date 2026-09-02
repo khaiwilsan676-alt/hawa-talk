@@ -1164,36 +1164,54 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-        {/* NEW TROPHY UI - Wrapped in h-0 to prevent pushing seats down */}
-        <div className="h-0 w-full relative z-20">
-          <div className="absolute top-2 left-0 -ml-3 sm:-ml-4">
-            <button className="bg-black/30 backdrop-blur-sm rounded-r-lg flex items-center pr-2 pl-3 py-1 shadow-sm cursor-pointer hover:bg-black/40 transition-colors border border-transparent border-l-0">
-              
-              {/* Trophy Image with Shader for Green BG Removal */}
-              <div className="w-5 h-5 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
-                <GreenColorRemovalShader
-                  imageSrc="/1788258883971~2.jpg"
-                  threshold={0.5}
-                  className="w-full h-full"
-                  style={{ width: '130%', height: '130%', objectFit: 'contain', maxWidth: 'none', maxHeight: 'none', pointerEvents: 'none' }}
-                />
-              </div>
-              
-              <span className="font-bold text-[14px] leading-none" style={{ color: '#fbe28d', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
-                0
-              </span>
-              
-              <svg viewBox="0 0 24 24" className="fill-none stroke-[3] ml-1 opacity-90" stroke="#fbe28d" style={{ width: '13px', height: '13px' }}>
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+        {/* TROPHY CARD UI */}
+<div className="h-0 w-full relative z-20">
+  <div className="absolute top-2 left-0 -ml-3 sm:-ml-4">
+    <button className="bg-[#242b35]/85 hover:bg-[#2c3542] backdrop-blur-sm rounded-r-md flex items-center pl-3 pr-2 py-1 shadow-md transition-colors cursor-pointer border-none">
+      
+      {/* Trophy Image with Green BG Removal */}
+      <div className="w-5 h-5 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
+        <GreenColorRemovalShader
+          imageSrc="/1788258883971~2.jpg"
+          threshold={0.5}
+          className="w-full h-full"
+          style={{ 
+            width: '115%', 
+            height: '115%', 
+            objectFit: 'contain', 
+            maxWidth: 'none', 
+            maxHeight: 'none', 
+            pointerEvents: 'none' 
+          }}
+        />
+      </div>
+      
+      {/* Count */}
+      <span 
+        className="font-bold text-[13px] leading-none tracking-tight" 
+        style={{ color: '#eef3a3' }}
+      >
+        0
+      </span>
+      
+      {/* Arrow Icon */}
+      <svg 
+        viewBox="0 0 24 24" 
+        className="fill-none stroke-[3] ml-1 opacity-90" 
+        stroke="#eef3a3" 
+        style={{ width: '10px', height: '10px' }}
+      >
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
 
-            </button>
-          </div>
-        </div>
+    </button>
+  </div>
+</div>
+
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-2 pt-8 sm:pt-6">
+          <div className="flex-shrink-0 flex flex-col gap-4 pt-8 sm:pt-6">
             {renderSeats()}
           </div>
 
@@ -1312,30 +1330,32 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
             <div className="flex items-center gap-2">
               {/* Mic - Solid & Shorter Capsule for Unmuted, Original for Muted */}
-              {hasSeat && (
+                          {hasSeat && (
                 <button onClick={handleBottomMicToggle} className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   {currentUserSeat?.isMuted ? (
-                    <svg viewBox="0 0 24 24" className="fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                      <line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
+                    <svg viewBox="0 0 24 24" className="fill-white stroke-white stroke-[1.5]" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                      <line x1="2" y1="2" x2="22" y2="22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                     </svg>
                   ) : (
                     <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                      {/* Customized shorter solid mic capsule */}
-                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-1.66-1.34-3-3-3s-3 1.34-3 3V11c0 1.66 1.34 3 3 3z" />
+                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                     </svg>
                   )}
                 </button>
               )}
               
-                             {/* Emoji - Proper Cutout SVG */}
+                           {/* Emoji - Exact Match (Solid face, Cut-out Eyes & Wide Laughing Mouth) */}
               {hasSeat && (
-                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM8.5 8.5C9.32843 8.5 10 9.17157 10 10C10 10.8284 9.32843 11.5 8.5 11.5C7.67157 11.5 7 10.8284 7 10C7 9.17157 7.67157 8.5 8.5 8.5ZM15.5 8.5C16.3284 8.5 17 9.17157 17 10C17 10.8284 16.3284 11.5 15.5 11.5C14.6716 11.5 14 10.8284 14 10C14 9.17157 14.6716 8.5 15.5 8.5ZM15.8291 14.1958C16.1963 14.5939 16.1706 15.2137 15.7725 15.5809C14.7733 16.5028 13.4354 17 12 17C10.5646 17 9.22668 16.5028 8.22749 15.5809C7.8294 15.2137 7.80373 14.5939 8.17088 14.1958C8.53804 13.7977 9.15783 13.772 9.55592 14.1392C10.1873 14.7217 11.0454 15 12 15C12.9546 15 13.8127 14.7217 14.4441 14.1392C14.8422 13.772 15.462 13.7977 15.8291 14.1958Z" />
+                    <path fillRule="evenodd" clipRule="evenodd" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zM8.5 7.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM7 14h10c0 3-2.5 5-5 5s-5-2-5-5z" />
                   </svg>
                 </button>
               )}
+
             
 
               
