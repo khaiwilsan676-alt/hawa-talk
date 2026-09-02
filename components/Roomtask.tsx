@@ -8,14 +8,14 @@ interface RoomtaskProps {
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
   return (
-    /* Yahan 'fixed inset-0 h-[100dvh]' lagaya hai taaki page 100% scroll ho */
-    <div className="fixed inset-0 w-full h-[100dvh] bg-[#120a1f] overflow-x-hidden overflow-y-auto scrollbar-none z-[11000]">
+    {/* Sirf yahan min-h-screen ki jagah h-[100dvh] add kiya hai taaki mobile/desktop pe full page scroll kaam kare */}
+    <div className="relative h-[100dvh] w-full bg-[#120a1f] overflow-x-hidden overflow-y-auto scrollbar-none">
       
-      {/* ================= 1. BACKGROUNDS ================= */}
+      {/* ================= 1. BACKGROUNDS (50vh / 50vh) ================= */}
       
-      {/* BOTTOM BACKGROUND (Thoda niche shift kiya: top-[60vh] kar diya) */}
+      {/* BOTTOM BACKGROUND (Exactly 50vh, starts exactly from middle) */}
       <div 
-        className="fixed top-[60vh] left-0 w-full h-[100vh] z-0 pointer-events-none"
+        className="fixed top-[50vh] left-0 w-full h-[100vh] z-0 pointer-events-none"
         style={{
           backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
           backgroundSize: 'cover',
@@ -23,13 +23,14 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
         }}
       />
 
-      {/* TOP BACKGROUND */}
+      {/* TOP BACKGROUND (55vh rakha hai taaki bottom wale ke upar 5vh ka smooth mix/fade aa sake) */}
       <div 
         className="fixed top-0 left-0 w-full h-[55vh] z-0 pointer-events-none"
         style={{
           backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
+          /* Yeh mask niche se black ko transparent karke fade banayega */
           maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
         }}
@@ -37,10 +38,10 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
       {/* ================= 2. FOREGROUND (Scrollable Content) ================= */}
       
-      {/* BACK ICON */}
+      {/* BACK ICON (Top Left Corner Ekdam) */}
       <button 
         onClick={onBack} 
-        className="fixed z-50 p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95"
+        className="absolute z-50 p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95"
         style={{
           top: 'max(12px, env(safe-area-inset-top))',
           left: '12px'
@@ -54,10 +55,10 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
       <div className="relative z-10 w-full flex flex-col items-center">
         
-        {/* Spacer: Middle image ko niche lane ke liye */}
-        <div className="w-full" style={{ height: 'calc(55vh - 45px)' }}></div>
+        {/* Spacer: Yeh space isliye hai taaki "Middle Image" exact 50vh line par pahuche */}
+        <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
-        {/* MIDDLE IMAGE */}
+        {/* MIDDLE IMAGE (Dono background ke ekdum beech mein) */}
         <div className="w-full flex justify-center px-4">
           <img 
             src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
@@ -67,14 +68,14 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           />
         </div>
 
-        {/* 12 IMAGES (gap-0.5 ke saath ek ke niche ek) */}
-        <div className="w-full flex flex-col items-center gap-0.5 mt-4 pb-24 px-4">
+        {/* 12 IMAGES (Bina kisi Card ke, 1 Row = 1 Image, Gap 0.5 rakha hai) */}
+        <div className="w-full flex flex-col items-center gap-0.5 mt-6 pb-12 px-4">
           {Array.from({ length: 12 }).map((_, index) => (
             <img 
               key={index}
               src="/file_000000004fd0821198ed4e26d5008b16.png"
               alt={`Task Item ${index + 1}`}
-              className="w-full max-w-[340px] object-contain cursor-pointer transition-transform hover:scale-105 active:scale-95"
+              className="w-[100%] max-w-[340px] object-contain cursor-pointer transition-transform hover:scale-105 active:scale-95"
               draggable={false}
             />
           ))}
