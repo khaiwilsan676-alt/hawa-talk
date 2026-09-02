@@ -10,6 +10,18 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   return (
     <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#120a1f] scrollbar-none">
       <div className="relative w-full min-h-full flex flex-col">
+        {/* ================= TOP BACKGROUND (Neeche se fade hoga) ================= */}
+        <div 
+          className="absolute top-0 left-0 w-full h-[55vh] z-0 pointer-events-none"
+          style={{
+            backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            maskImage: 'linear-gradient(to bottom, black 98%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 98%, transparent 100%)',
+          }}
+        />
+
         
                    {/* BOTTOM BACKGROUND */}
         <div 
@@ -18,8 +30,8 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: '100% 100%', // <-- Yahan 'cover' ki jagah '100% 100%' kar de
             backgroundPosition: 'top center',
-            maskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
           }}
         />
 
@@ -59,7 +71,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 key={index}
                 src="/file_000000004fd0821198ed4e26d5008b16.png"
                 alt={`Task Item ${index + 1}`}
-                className="relative z-10 w-[100%] max-w-[310px] h-[110px] object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                className="relative z-10 w-[100%] max-w-[310px] h-[130px] object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95"
                 draggable={false}
               />
             ))}
