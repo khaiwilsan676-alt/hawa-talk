@@ -204,12 +204,13 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           }}
         />
 
-        {/* BOTTOM BACKGROUND */}
+        {/* BOTTOM BACKGROUND (Fixed with 100% auto and repeat to prevent wide/stretch issue) */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[250vh] z-0 pointer-events-none"
+          className="absolute top-[50vh] left-0 w-full h-[280vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
-            backgroundSize: '100% 100%',
+            backgroundSize: '100% auto',
+            backgroundRepeat: 'repeat-y',
             backgroundPosition: 'top center',
             maskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
             WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
@@ -246,7 +247,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
             />
             
             {/* Middle Image ke theek niche Room Task heading */}
-            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-8 drop-shadow-md">
+            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-12 drop-shadow-md">
               Room Task
             </h1>
           </div>
