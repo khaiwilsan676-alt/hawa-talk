@@ -8,8 +8,8 @@ interface RoomtaskProps {
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
   return (
-    {/* Sirf yahan min-h-screen ki jagah h-[100dvh] add kiya hai taaki mobile/desktop pe full page scroll kaam kare */}
     <div className="relative h-[100dvh] w-full bg-[#120a1f] overflow-x-hidden overflow-y-auto scrollbar-none">
+      {/* Sirf main container ko h-[100dvh] kiya hai taaki mobile/desktop pe full page scroll kare */}
       
       {/* ================= 1. BACKGROUNDS (50vh / 50vh) ================= */}
       
