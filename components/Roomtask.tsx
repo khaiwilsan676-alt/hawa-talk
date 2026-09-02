@@ -280,7 +280,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                   {/* Left Side: White background remove kiya hua cleaned icon image */}
     <div 
       className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
-      style={{ left: '25px' }} 
+      style={{ left: '28px' }} 
     >
       <img 
         src={cleanedTopLeftIconSrc}
