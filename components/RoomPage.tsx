@@ -1167,10 +1167,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         {/* TROPHY CARD UI */}
 <div className="h-0 w-full relative z-20">
   <div className="absolute top-2 left-0 -ml-3 sm:-ml-4">
-    <button className="bg-[#242b35]/85 hover:bg-[#2c3542] backdrop-blur-sm rounded-r-md flex items-center pl-3 pr-2 py-1 shadow-md transition-colors cursor-pointer border-none">
+    <button className="bg-gradient-to-r from-[#242b35]/90 via-[#242b35]/60 to-transparent flex items-center pr-3 pl-3 py-1 cursor-pointer border-none">
+
       
       {/* Trophy Image with Green BG Removal */}
-      <div className="w-5 h-5 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
+      <div className="w-4 h-4 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
         <GreenColorRemovalShader
           imageSrc="/1788258883971~2.jpg"
           threshold={0.5}
@@ -1329,12 +1330,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
 
             <div className="flex items-center gap-2">
-              {/* Mic - Solid & Shorter Capsule for Unmuted, Original for Muted */}
-                          {hasSeat && (
-                <button onClick={handleBottomMicToggle} className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+              {/*Mic button*/}
+                           {hasSeat && (
+                <button onClick={handleBottomMicToggle} className="bg-white/10 rounded-full border-none hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   {currentUserSeat?.isMuted ? (
-                    <svg viewBox="0 0 24 24" className="fill-white stroke-white stroke-[1.5]" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                      <line x1="2" y1="2" x2="22" y2="22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                    <svg viewBox="0 0 24 24" className="fill-white stroke-white stroke-[2]" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                      <line x1="1" y1="1" x2="23" y2="23" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
                       <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                     </svg>
@@ -1346,6 +1347,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   )}
                 </button>
               )}
+
               
                            {/* Emoji - Exact Match (Solid face, Cut-out Eyes & Wide Laughing Mouth) */}
               {hasSeat && (
