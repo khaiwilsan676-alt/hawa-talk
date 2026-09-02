@@ -836,37 +836,37 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
     if (micMode === 5) {
       return (
-        <>
+        <div className="flex flex-col gap-5">
           <div className="flex justify-center">{renderSeatItems([1])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
-        </>
+        </div>
       );
     }
     if (micMode === 10) {
       return (
-        <>
+        <div className="flex flex-col gap-5">
           <div className="flex justify-center gap-2 sm:gap-4">{renderSeatItems([1,2])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([3,4,5,6])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([7,8,9,10])}</div>
-        </>
+        </div>
       );
     }
     if (micMode === 13) {
       return (
-        <>
+        <div className="flex flex-col gap-4">
           <div className="flex justify-center">{renderSeatItems([1])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([6,7,8,9])}</div>
           <div className="flex justify-around items-center px-0">{renderSeatItems([10,11,12,13])}</div>
-        </>
+        </div>
       );
     }
     return (
-      <>
+      <div className="flex flex-col gap-5">
         <div className="flex justify-center">{renderSeatItems([1])}</div>
         <div className="flex justify-around items-center px-0">{renderSeatItems([2,3,4,5])}</div>
         <div className="flex justify-around items-center px-0">{renderSeatItems([6,7,8,9])}</div>
-      </>
+      </div>
     );
   };
 
@@ -1165,50 +1165,48 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
 
         {/* TROPHY CARD UI */}
-<div className="h-0 w-full relative z-20">
-  <div className="absolute top-2 left-0 -ml-3 sm:-ml-4">
-    <button className="bg-gradient-to-r from-[#242b35]/90 via-[#242b35]/60 to-transparent flex items-center pr-3 pl-3 py-1 cursor-pointer border-none">
+        <div className="h-0 w-full relative z-20">
+          <div className="absolute top-2 left-0 -ml-3 sm:-ml-4">
+            <button className="bg-gradient-to-r from-[#242b35]/90 via-[#242b35]/60 to-transparent flex items-center pr-3 pl-3 py-1 cursor-pointer border-none">
+              
+              {/* Trophy Image with Green BG Removal */}
+              <div className="w-4 h-4 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
+                <GreenColorRemovalShader
+                  imageSrc="/1788258883971~2.jpg"
+                  threshold={0.5}
+                  className="w-full h-full"
+                  style={{ 
+                    width: '115%', 
+                    height: '115%', 
+                    objectFit: 'contain', 
+                    maxWidth: 'none', 
+                    maxHeight: 'none', 
+                    pointerEvents: 'none' 
+                  }}
+                />
+              </div>
+              
+              {/* Count */}
+              <span 
+                className="font-bold text-[13px] leading-none tracking-tight" 
+                style={{ color: '#eef3a3' }}
+              >
+                0
+              </span>
+              
+              {/* Arrow Icon */}
+              <svg 
+                viewBox="0 0 24 24" 
+                className="fill-none stroke-[3] ml-1 opacity-90" 
+                stroke="#eef3a3" 
+                style={{ width: '10px', height: '10px' }}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
 
-      
-      {/* Trophy Image with Green BG Removal */}
-      <div className="w-4 h-4 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
-        <GreenColorRemovalShader
-          imageSrc="/1788258883971~2.jpg"
-          threshold={0.5}
-          className="w-full h-full"
-          style={{ 
-            width: '115%', 
-            height: '115%', 
-            objectFit: 'contain', 
-            maxWidth: 'none', 
-            maxHeight: 'none', 
-            pointerEvents: 'none' 
-          }}
-        />
-      </div>
-      
-      {/* Count */}
-      <span 
-        className="font-bold text-[13px] leading-none tracking-tight" 
-        style={{ color: '#eef3a3' }}
-      >
-        0
-      </span>
-      
-      {/* Arrow Icon */}
-      <svg 
-        viewBox="0 0 24 24" 
-        className="fill-none stroke-[3] ml-1 opacity-90" 
-        stroke="#eef3a3" 
-        style={{ width: '10px', height: '10px' }}
-      >
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
-
-    </button>
-  </div>
-</div>
-
+            </button>
+          </div>
+        </div>
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
@@ -1218,7 +1216,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
           <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
             
-                       {/* UI UPDATE: Announcement Box */}
+            {/* UI UPDATE: Announcement Box */}
             <div className="mx-1 mb-3 flex justify-start">
               <div 
                 className="max-w-[75%] bg-black/30 border border-none shadow-sm"
@@ -1253,7 +1251,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 )}
               </div>
             </div>
-                        
 
             {/* Chat Messages */}
             <div className="space-y-0.5">
@@ -1313,11 +1310,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           </div>
         </div>
 
-                      {/* UI UPDATE: Glassmorphism Footer Controls */}
+        {/* UI UPDATE: Glassmorphism Footer Controls */}
         <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-1.5">
             
-                        {/* Chat (Say Hi) - Solid bubble with transparent punched-out dots */}
+            {/* Chat (Say Hi) - Solid bubble with transparent punched-out dots */}
             <button
               onClick={openChatInput}
               aria-label="Say Hi Chat"
@@ -1330,38 +1327,37 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
 
             <div className="flex items-center gap-2">
-              {/* Mic Button - Fully visible & centered */}
-{hasSeat && (
-  <button 
-    onClick={handleBottomMicToggle} 
-    className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-hidden" 
-    style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
-  >
-    {currentUserSeat?.isMuted ? (
-      <svg 
-        viewBox="0 0 24 24" 
-        className="fill-white stroke-white stroke-[1.5]" 
-        style={{ width: '22px', height: '22px' }}
-      >
-        <line x1="2" y1="2" x2="22" y2="22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
-        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-      </svg>
-    ) : (
-      <svg 
-        viewBox="0 0 24 24" 
-        className="fill-white" 
-        style={{ width: '22px', height: '22px' }}
-      >
-        <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
-        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-      </svg>
-    )}
-  </button>
-)}
-
+              {/* Mic Button - Fully visible & centered (Fixed viewBox to prevent clipping) */}
+              {hasSeat && (
+                <button 
+                  onClick={handleBottomMicToggle} 
+                  className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-visible" 
+                  style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
+                >
+                  {currentUserSeat?.isMuted ? (
+                    <svg 
+                      viewBox="-2 -2 28 28" 
+                      className="fill-white stroke-white overflow-visible" 
+                      style={{ width: '22px', height: '22px' }}
+                    >
+                      <line x1="1" y1="1" x2="23" y2="23" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                    </svg>
+                  ) : (
+                    <svg 
+                      viewBox="-2 -2 28 28" 
+                      className="fill-white overflow-visible" 
+                      style={{ width: '22px', height: '22px' }}
+                    >
+                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                    </svg>
+                  )}
+                </button>
+              )}
               
-                           {/* Emoji - Exact Match (Solid face, Cut-out Eyes & Wide Laughing Mouth) */}
+              {/* Emoji - Exact Match */}
               {hasSeat && (
                 <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
@@ -1370,11 +1366,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </button>
               )}
 
-            
-
-              
-               {/* Message Box - Original Outline */}
-               <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
+              {/* Message Box */}
+              <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
                 aria-label="Message Box Menu"
                 className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
                 style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
@@ -1385,12 +1378,12 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </svg>
               </button>
                 
-              {/* Gift - Original */}
+              {/* Gift */}
               <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer shadow-sm p-0" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                 <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover rounded-full" draggable={false} />
               </button>
               
-              {/* Apps Menu - Original */}
+              {/* Apps Menu */}
               <button
                 onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
                 aria-label="Apps Menu"
@@ -1445,33 +1438,77 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         )}
       </div>
 
-      {/* GAMES ICON */}
+      {/* RIGHT SIDE FLOATING STACK: Banner + Dots -> Task Image -> Game Icon */}
       <div 
-        className="absolute cursor-pointer z-20"
+        className="absolute z-20 flex flex-col items-center pointer-events-auto"
         style={{
-          bottom: 'calc(var(--footer-btn-size) + 30px)',
+          bottom: 'calc(var(--footer-btn-size) + 18px)',
           right: '10px',
-          width: 'calc(var(--footer-btn-size) * 1.1)',
-          height: 'calc(var(--footer-btn-size) * 1.1)',
         }}
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowGameSheet(true);
-        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <WhiteColorRemovalShader
-          imageSrc="/IMG_20260814_111008.png"
-          threshold={0.85}
-          className="w-full h-full"
+        {/* 1. AUTO-SCROLL BANNER WITH 0.5 (2px) DOTS GAP */}
+        <RoomSideBanner />
+
+        {/* 2. TASK IMAGE (Banner ke theek niche) */}
+        <div 
+          className="relative cursor-pointer transition-transform hover:scale-105 mt-2.5"
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            maxWidth: 'none',
-            maxHeight: 'none',
-            pointerEvents: 'none',
+            width: 'calc(var(--footer-btn-size) * 0.95)',
+            height: 'calc(var(--footer-btn-size) * 0.95)',
           }}
-        />
+        >
+          <WhiteColorRemovalShader
+            imageSrc="/1787158869902.png"
+            threshold={0.85}
+            className="w-full h-full"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
+
+        {/* 3. GAME ICON (With Corner Badge Without Green) */}
+        <div 
+          className="relative cursor-pointer transition-transform hover:scale-105 mt-2"
+          style={{
+            width: 'calc(var(--footer-btn-size) * 1.1)',
+            height: 'calc(var(--footer-btn-size) * 1.1)',
+          }}
+          onClick={() => setShowGameSheet(true)}
+        >
+          {/* Left Top Corner Badge Image */}
+          <div className="absolute -top-1.5 -left-1.5 z-10 w-4 h-4 pointer-events-none flex items-center justify-center">
+            <GreenColorRemovalShader
+              imageSrc="/IMG_20260901_160923.png"
+              threshold={0.45}
+              className="w-full h-full"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          </div>
+
+          {/* Main Game Image */}
+          <WhiteColorRemovalShader
+            imageSrc="/IMG_20260814_111008.png"
+            threshold={0.85}
+            className="w-full h-full"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              maxWidth: 'none',
+              maxHeight: 'none',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
       </div>
 
       {showPublicMsgModal && (
@@ -2084,7 +2121,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
   const activeSpeaking = isSpeaking || isUserSpeaking;
 
   return (
-    <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
+    <div className="relative flex flex-col items-center gap-2.5 cursor-pointer" onClick={onClick}>
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none hidden sm:flex bg-black/40 backdrop-blur-md border border-white/20 px-2 py-1 rounded-full shadow-lg"
@@ -2237,10 +2274,10 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
           )}
         </div>
       </div>
-      <span className="font-medium text-white/80 pointer-events-none flex items-center gap-1" style={{ fontSize: 'calc(var(--seat-size) * 0.17)' }}>
+      <span className="font-medium text-white/90 pointer-events-none flex items-center gap-1.5" style={{ fontSize: 'calc(var(--seat-size) * 0.22)' }}>
         {isRoomOwnerSeat && (
-          <span className="rounded-full bg-blue-500 flex items-center justify-center inline-flex" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}>
-            <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'calc(var(--seat-size) * 0.13)', height: 'calc(var(--seat-size) * 0.13)' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+          <span className="rounded-full bg-blue-500 flex items-center justify-center inline-flex" style={{ width: 'calc(var(--seat-size) * 0.22)', height: 'calc(var(--seat-size) * 0.22)' }}>
+            <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'calc(var(--seat-size) * 0.14)', height: 'calc(var(--seat-size) * 0.14)' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
           </span>
         )}
         {isLocked ? `No ${seatNumber}` : (isOccupied && user ? user.name : `No ${seatNumber}`)}
@@ -2250,7 +2287,69 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 }
 
 // ----------------------------------------------------------------------
-// NEW COMPONENT ADDED DIRECTLY HERE SO YOU DON'T NEED A SEPARATE FILE
+// AUTO-SCROLL ROOM SIDE BANNER (8px Curve Square + 2px Gap Indicator Dots)
+// ----------------------------------------------------------------------
+function RoomSideBanner() {
+  const bannerImages = [
+    '/1788339540059~2.jpg',
+    '/1788339681679~2.jpg',
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % bannerImages.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [bannerImages.length]);
+
+  return (
+    <div className="flex flex-col items-center select-none">
+      <div 
+        className="relative overflow-hidden shadow-lg border border-white/10"
+        style={{
+          width: '52px',
+          height: '52px',
+          borderRadius: '8px',
+        }}
+      >
+        <div 
+          className="flex h-full transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {bannerImages.map((src, i) => (
+            <img 
+              key={i} 
+              src={src} 
+              alt={`Banner ${i + 1}`} 
+              className="w-full h-full object-cover flex-shrink-0 select-none pointer-events-none"
+              draggable={false}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* 0.5 (2px) gap dots right under banner */}
+      <div className="flex items-center gap-[2px] mt-1">
+        {bannerImages.map((_, i) => (
+          <div
+            key={i}
+            className={`transition-all duration-300 rounded-full ${
+              currentIndex === i 
+                ? 'w-1.5 h-1.5 bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)]' 
+                : 'w-1 h-1 bg-white/40'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
+// GREEN COLOR REMOVAL SHADER (CHROMA KEY CANVAS)
 // ----------------------------------------------------------------------
 function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", style = {} }: any) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -2276,7 +2375,7 @@ function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", st
         const g = data[i + 1];
         const b = data[i + 2];
         
-        // Green screen removal logic (Makes green pixels transparent)
+        // Green screen removal logic
         if (g > r * 1.2 && g > b * 1.2 && g > 70) {
           data[i + 3] = 0; 
         }
