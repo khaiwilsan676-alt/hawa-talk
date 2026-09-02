@@ -11,21 +11,9 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#120a1f] scrollbar-none">
       <div className="relative w-full min-h-full flex flex-col">
         
-        {/* ================= TOP BACKGROUND (Neeche se fade hoga) ================= */}
+                   {/* BOTTOM BACKGROUND */}
         <div 
-          className="absolute top-0 left-0 w-full h-[55vh] z-0 pointer-events-none"
-          style={{
-            backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            maskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
-          }}
-        />
-
-              {/* BOTTOM BACKGROUND */}
-        <div 
-          className="absolute top-[55vh] left-0 w-full h-[130vh] z-0 pointer-events-none"
+          className="absolute top-[45vh] left-0 w-full h-[130vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: '100% 100%', // <-- Yahan 'cover' ki jagah '100% 100%' kar de
