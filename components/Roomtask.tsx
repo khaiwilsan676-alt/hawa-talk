@@ -278,7 +278,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               />
 
               {/* Left Side: White background remove kiya hua cleaned icon image - AB WEBSHADER SE PROCESSED */}
-              <div className="absolute left-[13px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
+              <div className="absolute right-[13px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
                 <img 
                   src={cleanedTopLeftIconSrc}
                   alt="Cleaned Coin Icon" 
@@ -295,6 +295,11 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
             
+            {/* 👇 ROOM TASK HEADING (Wapas aa gaya) 👇 */}
+            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-15 drop-shadow-md">
+              Room Task
+            </h1>
+
             {/* 👇 LIVE WEEKLY COUNTDOWN UI 👇 */}
             <div className="flex items-center justify-center gap-1 mt-7 z-20 select-none">
               <span className="text-[#e8b499] text-[11px] font-medium">Countdown</span>
@@ -324,7 +329,6 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <span className="text-[#e8b499] text-[11px] font-medium">Second</span>
             </div>
 
-            {/* Room Task Heading (If you still want it, otherwise skipped based on your latest snippet) */}
           </div>
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
@@ -345,3 +349,4 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   );
 }
+
