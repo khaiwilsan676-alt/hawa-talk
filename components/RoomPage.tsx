@@ -1327,35 +1327,40 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
 
             <div className="flex items-center gap-2">
-              {/* Mic Button - Fully visible & centered (Fixed viewBox to prevent clipping) */}
-              {hasSeat && (
-                <button 
-                  onClick={handleBottomMicToggle} 
-                  className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-visible" 
-                  style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
-                >
-                  {currentUserSeat?.isMuted ? (
-                    <svg 
-                      viewBox="-2 -2 28 28" 
-                      className="fill-white stroke-white overflow-visible" 
-                      style={{ width: '22px', height: '22px' }}
-                    >
-                      <line x1="1" y1="1" x2="23" y2="23" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
-                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                    </svg>
-                  ) : (
-                    <svg 
-                      viewBox="-2 -2 28 28" 
-                      className="fill-white overflow-visible" 
-                      style={{ width: '22px', height: '22px' }}
-                    >
-                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
-                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                    </svg>
-                  )}
-                </button>
-              )}
+             {/* Mic Button - New Sleek Modern Design */}
+{hasSeat && (
+  <button 
+    onClick={handleBottomMicToggle} 
+    className="bg-black/30 rounded-full border-none hover:bg-black/40 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0" 
+    style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
+  >
+    {currentUserSeat?.isMuted ? (
+      <svg 
+        viewBox="0 0 24 24" 
+        className="fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round" 
+        style={{ width: '22px', height: '22px' }}
+      >
+        <line x1="2" y1="2" x2="22" y2="22" stroke="#f87171" strokeWidth="2.2" />
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="23" />
+        <line x1="8" y1="23" x2="16" y2="23" />
+      </svg>
+    ) : (
+      <svg 
+        viewBox="0 0 24 24" 
+        className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" 
+        style={{ width: '22px', height: '22px' }}
+      >
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="23" />
+        <line x1="8" y1="23" x2="16" y2="23" />
+      </svg>
+    )}
+  </button>
+)}
+
               
               {/* Emoji - Exact Match */}
               {hasSeat && (
@@ -1450,27 +1455,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         {/* 1. AUTO-SCROLL BANNER WITH 0.5 (2px) DOTS GAP */}
         <RoomSideBanner />
 
-        {/* 2. TASK IMAGE (Banner ke theek niche) */}
-        <div 
-          className="relative cursor-pointer transition-transform hover:scale-105 mt-2.5"
-          style={{
-            width: 'calc(var(--footer-btn-size) * 0.95)',
-            height: 'calc(var(--footer-btn-size) * 0.95)',
-          }}
-        >
-          <WhiteColorRemovalShader
-            imageSrc="/1787158869902.png"
-            threshold={0.85}
-            className="w-full h-full"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              pointerEvents: 'none',
-            }}
-          />
-        </div>
-
+        
         {/* 3. GAME ICON (With Corner Badge Without Green) */}
         <div 
           className="relative cursor-pointer transition-transform hover:scale-105 mt-2"
@@ -2308,10 +2293,10 @@ function RoomSideBanner() {
   return (
     <div className="flex flex-col items-center select-none">
       <div 
-        className="relative overflow-hidden shadow-lg border border-white/10"
+        className="relative overflow-hidden shadow-lg "
         style={{
           width: '52px',
-          height: '52px',
+          height: '72px',
           borderRadius: '8px',
         }}
       >
