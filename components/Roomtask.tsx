@@ -138,10 +138,10 @@ function TaskItem({
             draggable={false}
           />
           <div className="flex flex-col justify-center">
-            <span className="text-[12px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
+            <span className="text-[13px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
               {title}
             </span>
-            <span className="text-[12px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
+            <span className="text-[13px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
               {reward}
             </span>
           </div>
@@ -163,30 +163,31 @@ function TaskItem({
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
   const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
+  const cleanedTopLeftIconSrc = useProcessedShaderImage('/1786855398290.png');
 
   const tasks = [
-    { title: "10 users enter the room", reward: "10,000 coin" },
-    { title: "5 users enter the room for two consecutive days", reward: "20,000 coin" },
-    { title: "Successfully share on WhatsApp", reward: " 5,000 coins" }, 
-    { title: "Successfully share to Facebook", reward: "5,000 coin" },
-    { title: "3 new users enter the room", reward: "40,000 coin" },
-    { title: "1 new follower of the room", reward: "2,000 coin" },
-    { title: "3 new users follow the room", reward: "10,000 coin" },
-    { title: "spend 10min on mic", reward: "5,000 coin" },
-    { title: "spend 30min on mic", reward: "25,000 coin" },
-    { title: "spend 60min on mic", reward: "60,000 coin" },
-    { title: "10 new users on mic for 10min at sane time", reward: " 50,000 coins "}, 
-    { title: "5 new followers of room", reward: "24,000 coin" },
-    { title: "3 user on mic at same time", reward: "100,000 coin" },
-    { title: "Send gift of 500", reward: "24,000 coin" },
-    { title: "Send gifts of 5000", reward: "32,000 coin" },
-    { title: "successfully invites 1 user on mic", reward: "4,000 coin" },
-    { title: "successfully invites 3 new users on mic", reward: "40,000 coin" },
-    { title: "send 10 gifts on mic", reward: "32,000 coin" },
-    { title: "New User send gift of 1000 on mic", reward: "60,000 coin" },
-    { title: "successfully invites 10 people to the mic", reward: "24,000 coin" },
-    { title: "3 User on mic at same time for 10 min", reward: "20,000 coin" },
-    { title: "send 1 gift", reward: "4,000 coin" },
+    { title: "10 Users Enter the Room", reward: "10,000 Coins" },
+    { title: "5 Users Enter the Room for Two Consecutive Days", reward: "20,000 Coins" },
+    { title: "Successfully Share on WhatsApp", reward: "5,000 Coins" }, 
+    { title: "Successfully Share on Facebook", reward: "5,000 Coins" },
+    { title: "3 New Users Enter the Room", reward: "10,000 Coins" },
+    { title: "1 New Follower of the Room", reward: "2,000 Coins" },
+    { title: "3 New Users Follow the Room", reward: "10,000 Coins" },
+    { title: "Spend 10 Minutes on Mic", reward: "5,000 Coins" },
+    { title: "Spend 30 Minutes on Mic", reward: "25,000 Coins" },
+    { title: "Spend 60 Minutes on Mic", reward: "50,000 Coins" },
+    { title: "10 New Users on Mic for 10 Minutes at the Same Time", reward: "50,000 Coins" }, 
+    { title: "5 New Followers of the Room", reward: "25,000 Coins" },
+    { title: "3 Users on Mic at the Same Time", reward: "10,000 Coins" },
+    { title: "Send a Gift of 500", reward: "2,000 Coins" },
+    { title: "Send Gifts of 5,000", reward: "10,000 Coins" },
+    { title: "Successfully Invite 1 User on Mic", reward: "500 Coins" },
+    { title: "Successfully Invite 3 New Users on Mic", reward: "10,000 Coins" },
+    { title: "Send 10 Gifts on Mic", reward: "20,000 Coins" },
+    { title: "New User Sends a Gift of 1,000 on Mic", reward: "5,000 Coins" },
+    { title: "Successfully Invite 10 People to the Mic", reward: "25,000 Coins" },
+    { title: "3 Users on Mic at the Same Time for 10 Minutes", reward: "10,000 Coins" },
+    { title: "Send 1 Gift", reward: " 1,000 Coins" },
   ];
 
   return (
@@ -206,7 +207,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
         {/* BOTTOM BACKGROUND */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[265vh] z-0 pointer-events-none"
+          className="absolute top-[50vh] left-0 w-full h-[268vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: '100% 100%',
@@ -247,10 +248,10 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
       draggable={false}
     />
 
-    {/* Left Side: Wahi white background remove kiya hua cleaned icon image */}
+    {/* Left Side: White background remove kiya hua cleaned icon image - AB WEBSHADER SE PROCESSED */}
     <div className="absolute left-[16px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
       <img 
-        src="/1786855398290.png"
+        src={cleanedTopLeftIconSrc}
         alt="Cleaned Coin Icon" 
         className="w-8 h-8 object-contain drop-shadow-md select-none"
         draggable={false}
@@ -265,14 +266,14 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   </div>
   
-  {/* Room Task Heading */}
-  <h1 className="text-white text-lg font-black tracking-wider uppercase mt-15 drop-shadow-md">
-    Room Task
+  {/* Room Tasks Heading */}
+  <h1 className="text-white text-xl font-black tracking-wider uppercase mt-15 drop-shadow-md">
+    Room Tasks
   </h1>
 </div>
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
-          <div className="w-full flex flex-col items-center -space-y-[50px] mt-12 pb-16 px-4">
+          <div className="w-full flex flex-col items-center -space-y-[50px] mt-10 pb-16 px-4">
             {tasks.map((task, index) => (
               <TaskItem 
                 key={index}
@@ -288,4 +289,4 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
       </div>
     </div>
   );
-}
+            }
