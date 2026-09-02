@@ -6,32 +6,32 @@ interface RoomtaskProps {
   onBack?: () => void;
 }
 
-export default function Roomtask({onBack}: RoomtaskProps) {
+export default function Roomtask({ onBack }: RoomtaskProps) {
   return (
     <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#120a1f] scrollbar-none">
       <div className="relative w-full min-h-full flex flex-col">
         
-        {/* ================= TOP BACKGROUND ================= */}
-        {/* Yahan 'h-[55vh]' se sirf Top image ki height control hogi */}
+        {/* ================= TOP BACKGROUND (Neeche se fade hoga) ================= */}
         <div 
           className="absolute top-0 left-0 w-full h-[55vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
+            maskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
           }}
         />
 
-        {/* ================= BOTTOM BACKGROUND ================= */}
-        {/* Yahan 'top-[50vh]' se yeh shuru hogi aur 'h-[90vh]' se iski apni alag height control hogi */}
+        {/* ================= BOTTOM BACKGROUND (Upar se mix/fade hoga taaki dono smooth judein) ================= */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[90vh] z-0 pointer-events-none"
+          className="absolute top-[45vh] left-0 w-full h-[130vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'top center',
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 100%)',
           }}
         />
 
@@ -53,7 +53,7 @@ export default function Roomtask({onBack}: RoomtaskProps) {
         {/* FOREGROUND CONTENT */}
         <div className="relative z-10 w-full flex flex-col items-center">
           
-          <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
+          <div className="w-full" style={{ height: 'calc(45vh - 45px)' }}></div>
 
           <div className="w-full flex justify-center px-4">
             <img 
@@ -64,14 +64,14 @@ export default function Roomtask({onBack}: RoomtaskProps) {
             />
           </div>
 
-          {/* 12 IMAGES */}
-          <div className="w-full flex flex-col items-center -space-y-[30px] mt-6 pb-32 px-4">
+          {/* 12 IMAGES (Scroll area ke sath) */}
+          <div className="w-full flex flex-col items-center -space-y-[30px] mt-6 pb-0 px-4">
             {Array.from({ length: 12 }).map((_, index) => (
               <img 
                 key={index}
                 src="/file_000000004fd0821198ed4e26d5008b16.png"
                 alt={`Task Item ${index + 1}`}
-                className="relative z-10 w-[100%] max-w-[380px] h-[95px] object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                className="relative z-10 w-[100%] max-w-[340px] h-[95px] object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95"
                 draggable={false}
               />
             ))}
