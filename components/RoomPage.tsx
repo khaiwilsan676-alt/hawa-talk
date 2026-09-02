@@ -184,6 +184,143 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
 
+  // Native Screen Support - Safe Area Insets
+  const [safeArea, setSafeArea] = useState({
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    isNotch: false,
+  });
+
+  useEffect(() => {
+    // Detect safe area insets
+    const detectSafeArea = () => {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      let top = 0;
+      let bottom = 0;
+      let left = 0;
+      let right = 0;
+      let isNotch = false;
+
+      // Check for CSS safe area support
+      if (typeof window !== 'undefined') {
+        const root = document.documentElement;
+        const safeTop = getComputedStyle(root).getPropertyValue('--safe-area-top');
+        const safeBottom = getComputedStyle(root).getPropertyValue('--safe-area-bottom');
+        
+        if (safeTop) {
+          top = parseInt(safeTop) || 0;
+        }
+        if (safeBottom) {
+          bottom = parseInt(safeBottom) || 0;
+        }
+
+        // iOS notch detection
+        if (isIOS && window.screen.height >= 812) {
+          isNotch = true;
+          top = 47;
+          bottom = 34;
+        }
+        
+        // Android detection
+        if (isAndroid) {
+          // Check for display cutout
+          const displayCutout = (window as any).visualViewport?.offsetTop;
+          if (displayCutout) {
+            top = displayCutout;
+          }
+          // Bottom navigation bar
+          if (window.navigator.userAgent.includes('Android')) {
+            bottom = 24; // Default Android nav bar height
+          }
+        }
+
+        // Try visualViewport API
+        if (window.visualViewport) {
+          const vv = window.visualViewport;
+          if (vv.offsetTop > 0) {
+            top = vv.offsetTop;
+          }
+        }
+      }
+
+      setSafeArea({ top, bottom, left, right, isNotch });
+    };
+
+    detectSafeArea();
+    
+    // Listen for visual viewport changes
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', detectSafeArea);
+      window.visualViewport.addEventListener('scroll', detectSafeArea);
+    }
+    
+    window.addEventListener('resize', detectSafeArea);
+    window.addEventListener('orientationchange', detectSafeArea);
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', detectSafeArea);
+        window.visualViewport.removeEventListener('scroll', detectSafeArea);
+      }
+      window.removeEventListener('resize', detectSafeArea);
+      window.removeEventListener('orientationchange', detectSafeArea);
+    };
+  }, []);
+
+  // Lock screen orientation to portrait
+  useEffect(() => {
+    const lockOrientation = async () => {
+      try {
+        if (screen.orientation && (screen.orientation as any).lock) {
+          await (screen.orientation as any).lock('portrait').catch(() => {
+            // Fallback for iOS
+            console.log('Orientation lock not supported');
+          });
+        }
+      } catch (err) {
+        console.log('Orientation lock failed:', err);
+      }
+    };
+    
+    lockOrientation();
+  }, []);
+
+  // Prevent zoom on double tap
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+    };
+  }, []);
+
+  // Prevent scroll bounce on iOS
+  useEffect(() => {
+    const preventOverscroll = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.overflow-y-auto') || target.closest('.scrollable')) {
+        return;
+      }
+      e.preventDefault();
+    };
+
+    document.addEventListener('touchmove', preventOverscroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventOverscroll);
+    };
+  }, []);
+
   useEffect(() => {
     const name = localStorage.getItem('userName') || 'User';
     const image = localStorage.getItem('userPhoto') || '/default-avatar.png';
@@ -1061,6 +1198,22 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     };
   }, [handleTouchMove, handleTouchEnd]);
 
+  // ========== IMPORTANT: UI Fix ==========
+  // Track if any overlay/sheet is open
+  const isOverlayOpen = 
+    showExitMenu ||
+    showEmojiPicker ||
+    showGiftPicker ||
+    showSeatSheet ||
+    showActiveUsers ||
+    showRoomInfo ||
+    showMessageSheet ||
+    showFourGride ||
+    showGameSheet ||
+    showPublicMsgModal ||
+    showUserProfile ||
+    fullImageModal !== null;
+
   if (showSettingPage) {
     return (
       <RoomSettingPage
@@ -1074,10 +1227,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black flex flex-col"
+      className="fixed inset-0 z-50 bg-black flex flex-col native-screen"
       style={{
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        height: '100dvh'
+        paddingBottom: `max(env(safe-area-inset-bottom), ${safeArea.bottom}px)`,
+        paddingTop: `max(env(safe-area-inset-top), ${safeArea.top}px)`,
+        height: '100dvh',
+        minHeight: '-webkit-fill-available',
+        overflow: 'hidden',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitTapHighlightColor: 'transparent',
       }}
     >
       <img
@@ -1089,7 +1249,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
-      <div className="relative z-10 flex flex-col h-full px-3 sm:px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }} onClick={(e) => e.stopPropagation()}>
+      <div 
+        className="relative z-10 flex flex-col h-full px-3 sm:px-4" 
+        style={{ 
+          paddingTop: `calc(max(env(safe-area-inset-top), ${safeArea.top}px) + 4px)`, 
+          paddingBottom: `calc(max(env(safe-area-inset-bottom), ${safeArea.bottom}px) + 12px)` 
+        }} 
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* UI UPDATE: Glassmorphism Top Header */}
         <div className="flex justify-between items-center text-white flex-shrink-0">
@@ -1214,7 +1381,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             {renderSeats()}
           </div>
 
-          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
+          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none scrollable">
             
             {/* UI UPDATE: Announcement Box */}
             <div className="mx-1 mb-3 flex justify-start">
@@ -1311,129 +1478,131 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
 
         {/* UI UPDATE: Glassmorphism Footer Controls */}
-        <div className={`flex-shrink-0 pt-2 ${showChatInput ? 'hidden' : ''}`}>
-          <div className="flex items-center justify-between gap-0.5">
-            
-            {/* Chat (Say Hi) - Solid bubble with transparent punched-out dots */}
-            <button
-              onClick={openChatInput}
-              aria-label="Say Hi Chat"
-              className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
-              style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
-            >
-              <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'calc(var(--footer-icon-size) + 4px)', height: 'calc(var(--footer-icon-size) + 4px)' }}>
-                <path d="M12 2C6.48 2 2 5.92 2 10.75c0 2.8 1.5 5.29 3.82 6.84l-1.4 3.7c-.12.33.22.64.53.5l4-1.63c1 .3 2 .46 3.05.46 5.52 0 10-3.92 10-8.75S17.52 2 12 2zm-4 11.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-              </svg>
-            </button>
-
-            <div className="flex items-center gap-2">
-             {/* Mic Button - Pure Solid White Capsule with Slash when Muted */}
-{hasSeat && (
-  <button 
-    onClick={handleBottomMicToggle} 
-    className="bg-black/30 rounded-full border-none hover:bg-black/40 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-visible" 
-    style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
-  >
-    {currentUserSeat?.isMuted ? (
-      <svg 
-        viewBox="-2 -2 28 28" 
-        className="fill-white overflow-visible" 
-        style={{ width: '27px', height: '27px' }}
-      >
-        {/* Solid White Capsule Body */}
-        <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
-        {/* Solid White Base Cradle & Stand */}
-        <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
-        <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
-        <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
-        
-        {/* \ Diagonal Cross Line (White with dark stroke border for clarity) */}
-        <line 
-          x1="2" 
-          y1="2" 
-          x2="22" 
-          y2="22" 
-          stroke="#000000" 
-          strokeWidth="3.5" 
-          strokeLinecap="round" 
-        />
-        <line 
-          x1="2" 
-          y1="2" 
-          x2="22" 
-          y2="22" 
-          stroke="#ffffff" 
-          strokeWidth="2.2" 
-          strokeLinecap="round" 
-        />
-      </svg>
-    ) : (
-      <svg 
-        viewBox="-2 -2 28 28" 
-        className="fill-white overflow-visible" 
-        style={{ width: '27px', height: '27px' }}
-      >
-        {/* Solid White Capsule Body */}
-        <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
-        {/* Solid White Base Cradle & Stand */}
-        <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
-        <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
-        <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
-      </svg>
-    )}
-  </button>
-)}
-
-
+        {/* Only show footer buttons if no overlay is open and chat input is not active */}
+        {!isOverlayOpen && !showChatInput && (
+          <div className="flex-shrink-0 pt-2">
+            <div className="flex items-center justify-between gap-0.5">
               
-              {/* Emoji - Exact Match */}
-              {hasSeat && (
-                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                  <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zM8.5 7.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM7 14h10c0 3-2.5 5-5 5s-5-2-5-5z" />
+              {/* Chat (Say Hi) - Solid bubble with transparent punched-out dots */}
+              <button
+                onClick={openChatInput}
+                aria-label="Say Hi Chat"
+                className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
+                style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
+              >
+                <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'calc(var(--footer-icon-size) + 4px)', height: 'calc(var(--footer-icon-size) + 4px)' }}>
+                  <path d="M12 2C6.48 2 2 5.92 2 10.75c0 2.8 1.5 5.29 3.82 6.84l-1.4 3.7c-.12.33.22.64.53.5l4-1.63c1 .3 2 .46 3.05.46 5.52 0 10-3.92 10-8.75S17.52 2 12 2zm-4 11.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+                </svg>
+              </button>
+
+              <div className="flex items-center gap-2">
+              {/* Mic Button - Pure Solid White Capsule with Slash when Muted */}
+  {hasSeat && (
+    <button 
+      onClick={handleBottomMicToggle} 
+      className="bg-black/30 rounded-full border-none hover:bg-black/40 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-visible" 
+      style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
+    >
+      {currentUserSeat?.isMuted ? (
+        <svg 
+          viewBox="-2 -2 28 28" 
+          className="fill-white overflow-visible" 
+          style={{ width: '27px', height: '27px' }}
+        >
+          {/* Solid White Capsule Body */}
+          <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
+          {/* Solid White Base Cradle & Stand */}
+          <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
+          <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
+          <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
+          
+          {/* \ Diagonal Cross Line (White with dark stroke border for clarity) */}
+          <line 
+            x1="2" 
+            y1="2" 
+            x2="22" 
+            y2="22" 
+            stroke="#000000" 
+            strokeWidth="3.5" 
+            strokeLinecap="round" 
+          />
+          <line 
+            x1="2" 
+            y1="2" 
+            x2="22" 
+            y2="22" 
+            stroke="#ffffff" 
+            strokeWidth="2.2" 
+            strokeLinecap="round" 
+          />
+        </svg>
+      ) : (
+        <svg 
+          viewBox="-2 -2 28 28" 
+          className="fill-white overflow-visible" 
+          style={{ width: '27px', height: '27px' }}
+        >
+          {/* Solid White Capsule Body */}
+          <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
+          {/* Solid White Base Cradle & Stand */}
+          <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
+          <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
+          <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
+        </svg>
+      )}
+    </button>
+  )}
+
+                
+                {/* Emoji - Exact Match */}
+                {hasSeat && (
+                  <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                    <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                      <path fillRule="evenodd" clipRule="evenodd" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zM8.5 7.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM7 14h10c0 3-2.5 5-5 5s-5-2-5-5z" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Message Box */}
+                <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
+                  aria-label="Message Box Menu"
+                  className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
+                  style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
+                >
+                  <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--footer-icon-size) + 4px)', height: 'calc(var(--footer-icon-size) + 4px)' }}>
+                    <rect x="3" y="5" width="18" height="14" rx="3" ry="3" />
+                    <path d="M3 7l7.53 5.54a3 3 0 0 0 2.94 0L21 7" />
                   </svg>
                 </button>
-              )}
-
-              {/* Message Box */}
-              <button onClick={(e) => { e.stopPropagation(); setShowMessageSheet(true); }}
-                aria-label="Message Box Menu"
-                className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
-                style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
-              >
-                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--footer-icon-size) + 4px)', height: 'calc(var(--footer-icon-size) + 4px)' }}>
-                  <rect x="3" y="5" width="18" height="14" rx="3" ry="3" />
-                  <path d="M3 7l7.53 5.54a3 3 0 0 0 2.94 0L21 7" />
-                </svg>
-              </button>
+                  
+                {/* Gift */}
+                <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer shadow-sm p-0" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                  <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover rounded-full" draggable={false} />
+                </button>
                 
-              {/* Gift */}
-              <button onClick={(e) => { e.stopPropagation(); setShowGiftPicker(true); }} aria-label="Gift" className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors flex items-center justify-center shrink-0 overflow-hidden cursor-pointer shadow-sm p-0" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                <img src="/file_000000008e508208b1353ae33e2abef9.png" alt="Gift" className="w-full h-full object-cover rounded-full" draggable={false} />
-              </button>
-              
-              {/* Apps Menu */}
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
-                aria-label="Apps Menu"
-                className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
-                style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
-              >
-                <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                  <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
-                </svg>
-              </button>
+                {/* Apps Menu */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowFourGride(true); }}
+                  aria-label="Apps Menu"
+                  className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
+                  style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
+                >
+                  <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
+                    <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Input container */}
-        {showChatInput && (
+        {showChatInput && !isOverlayOpen && (
           <div 
             ref={inputContainerRef} 
             className="fixed bottom-0 left-0 right-0 z-30 flex items-center w-full"
             style={{
-              paddingBottom: 'env(safe-area-inset-bottom)'
+              paddingBottom: `max(env(safe-area-inset-bottom), ${safeArea.bottom}px)`
             }}
           >
             <div className="flex-1 bg-white flex items-center px-3 py-2 w-full rounded-none">
@@ -1467,64 +1636,65 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         )}
       </div>
 
-   {/* RIGHT SIDE FLOATING STACK */}
-<div 
-  className="absolute z-20 flex flex-col items-center pointer-events-auto"
-  style={{
-    bottom: 'calc(var(--footer-btn-size) + 22px)',
-    right: '10px',
-  }}
-  onClick={(e) => e.stopPropagation()}
->
-  {/* 1. AUTO-SCROLL BANNER */}
-  <RoomSideBanner />
+      {/* RIGHT SIDE FLOATING STACK - Only show when no overlay open */}
+      {!isOverlayOpen && !showChatInput && (
+        <div 
+          className="absolute z-20 flex flex-col items-center pointer-events-auto"
+          style={{
+            bottom: `calc(var(--footer-btn-size) + ${safeArea.bottom}px + 22px)`,
+            right: '10px',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 1. AUTO-SCROLL BANNER */}
+          <RoomSideBanner />
 
-  {/* 2. BICH WALI IMAGE (Green Removed - Badi + Left Side Shifted) */}
-  <div 
-  className="relative cursor-pointer transition-transform hover:scale-105 mt-2 flex items-center justify-center"
-  style={{
-    width: 'calc(var(--footer-btn-size) * 1.25)',
-    height: 'calc(var(--footer-btn-size) * 1.25)',
-  }}
->
-    <GreenColorRemovalShader
-      imageSrc="/IMG_20260901_160923.png"
-      threshold={0.45}
-      className="w-full h-full"
-      style={{
-        width: '100%',
-        height: '100%',
-        objectFit: 'contain',
-        pointerEvents: 'none',
-      }}
-    />
-  </div>
+          {/* 2. BICH WALI IMAGE (Green Removed - Badi + Left Side Shifted) */}
+          <div 
+            className="relative cursor-pointer transition-transform hover:scale-105 mt-2 flex items-center justify-center"
+            style={{
+              width: 'calc(var(--footer-btn-size) * 1.25)',
+              height: 'calc(var(--footer-btn-size) * 1.25)',
+            }}
+          >
+            <GreenColorRemovalShader
+              imageSrc="/IMG_20260901_160923.png"
+              threshold={0.45}
+              className="w-full h-full"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                pointerEvents: 'none',
+              }}
+            />
+          </div>
 
-  {/* 3. NICHE WALI (GAME) IMAGE */}
-  <div 
-    className="relative cursor-pointer transition-transform hover:scale-105 mt-1"
-    style={{
-      width: 'calc(var(--footer-btn-size) * 1.2)',
-      height: 'calc(var(--footer-btn-size) * 1.2)',
-    }}
-    onClick={() => setShowGameSheet(true)}
-  >
-    <WhiteColorRemovalShader
-      imageSrc="/IMG_20260814_111008.png"
-      threshold={0.85}
-      className="w-full h-full"
-      style={{
-        width: '100%',
-        height: '100%',
-        objectFit: 'contain',
-        maxWidth: 'none',
-        maxHeight: 'none',
-        pointerEvents: 'none',
-      }}
-    />
-  </div>
-</div>
-
+          {/* 3. NICHE WALI (GAME) IMAGE */}
+          <div 
+            className="relative cursor-pointer transition-transform hover:scale-105 mt-1"
+            style={{
+              width: 'calc(var(--footer-btn-size) * 1.2)',
+              height: 'calc(var(--footer-btn-size) * 1.2)',
+            }}
+            onClick={() => setShowGameSheet(true)}
+          >
+            <WhiteColorRemovalShader
+              imageSrc="/IMG_20260814_111008.png"
+              threshold={0.85}
+              className="w-full h-full"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                maxWidth: 'none',
+                maxHeight: 'none',
+                pointerEvents: 'none',
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
@@ -1542,13 +1712,13 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       )}
 
       {showActiveUsers && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: `max(env(safe-area-inset-bottom), ${safeArea.bottom}px)` }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowActiveUsers(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden flex flex-col" style={{ height: '40vh', maxHeight: '40vh' }} onClick={(e) => e.stopPropagation()}>
             <div className="px-4 pt-4 pb-2 border-b border-gray-200 flex-shrink-0">
               <h2 className="text-base font-bold text-gray-800 text-center">Active Users</h2>
             </div>
-            <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
+            <div className="flex-1 overflow-y-auto px-3 py-2 scrollable" style={{ minHeight: 0 }}>
               {roomUsers.length > 0 ? (
                 <div className="space-y-2 pb-4">
                   {roomUsers.map((user) => (
@@ -1574,7 +1744,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       )}
 
       {showRoomInfo && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: `max(env(safe-area-inset-bottom), ${safeArea.bottom}px)` }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowRoomInfo(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '50vh' }} onClick={(e) => e.stopPropagation()}>
             <div className="px-4 pt-5 pb-2 flex items-center justify-center">
@@ -1584,7 +1754,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               <button onClick={() => setRoomInfoTab('profile')} className={`flex-1 py-2 text-xs font-semibold transition-all cursor-pointer ${roomInfoTab === 'profile' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Profile</button>
               <button onClick={() => setRoomInfoTab('members')} className={`flex-1 py-2 text-xs font-semibold transition-all cursor-pointer ${roomInfoTab === 'members' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}>Members</button>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-3">
+            <div className="flex-1 overflow-y-auto px-4 py-3 scrollable">
               {roomInfoTab === 'profile' ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -1713,9 +1883,9 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       )}
 
       {showSeatSheet && selectedSeat !== null && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: `max(env(safe-area-inset-bottom), ${safeArea.bottom}px)` }}>
           <div className="absolute inset-0 bg-black/30" onClick={closeBottomSheet} />
-          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-3 animate-slide-up max-h-[30vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-white/95 backdrop-blur-xl w-full max-w-md rounded-t-3xl shadow-2xl px-4 py-3 animate-slide-up max-h-[30vh] overflow-y-auto scrollable" onClick={(e) => e.stopPropagation()}>
             <div className="space-y-1">
               {!isSelectedSeatTakenByOther && !isSelectedSeatMySeat && (
                 <button onClick={handleTakeSeat} disabled={selectedSeatData?.isLocked && !selectedSeatData?.isOccupied} className="w-full py-2 text-black font-medium text-sm hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Take Mic</button>
@@ -1745,7 +1915,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       )}
 
       {showMessageSheet && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: `max(env(safe-area-inset-bottom), ${safeArea.bottom}px)` }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowMessageSheet(false)} />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden" style={{ height: '60vh' }} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setShowMessageSheet(false)} className="absolute top-2 left-2 z-20 p-1 bg-white/80 rounded-full shadow hover:bg-white transition-colors">
@@ -1753,7 +1923,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto scrollable">
               <MessagePage sharedRoomData={{ roomId: roomId, roomName: roomOwner.name, roomImage: roomOwner.image }} />
             </div>
           </div>
@@ -1790,7 +1960,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       )}
 
       {showGameSheet && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center" style={{ paddingBottom: `max(env(safe-area-inset-bottom), ${safeArea.bottom}px)` }}>
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowGameSheet(false)} />
           <div
             className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl px-4 pt-4 pb-6 animate-slide-up"
@@ -1897,7 +2067,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <div 
           className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm px-3"
           style={{ 
-            bottom: 'var(--music-controller-bottom)',
+            bottom: `calc(var(--music-controller-bottom) + ${safeArea.bottom}px)`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -2044,16 +2214,36 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --music-volume-width: 28px;
         }
 
-        @media (max-width: 400px) {
-          :root {
-            --seat-size: 51px;
-            --header-btn-size: 30px;
-            --header-icon-size: 19px;
-            --header-room-img-size: 32px;
-            --header-room-name-size: 14px;
-            --footer-btn-size: 38px;
-            --footer-icon-size: 23px;
-          }
+        /* Native Screen Support */
+        .native-screen {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          -webkit-tap-highlight-color: transparent;
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          user-select: none;
+          overscroll-behavior: none;
+          touch-action: manipulation;
+        }
+
+        .native-screen * {
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .scrollable {
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+        }
+
+        /* Prevent text selection in UI elements */
+        button, .cursor-pointer {
+          -webkit-user-select: none;
+          user-select: none;
+        }
+
+        /* Improve touch targets */
+        button {
+          touch-action: manipulation;
         }
 
         .music-volume-slider, .music-progress-slider {
@@ -2401,5 +2591,4 @@ function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", st
   }, [imageSrc, threshold]);
 
   return <canvas ref={canvasRef} className={className} style={style} />;
-}
-
+    }
