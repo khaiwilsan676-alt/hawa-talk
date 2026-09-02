@@ -25,7 +25,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
               {/* BOTTOM BACKGROUND */}
         <div 
-          className="absolute top-[45vh] left-0 w-full h-[130vh] z-0 pointer-events-none"
+          className="absolute top-[55vh] left-0 w-full h-[130vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: '100% 100%', // <-- Yahan 'cover' ki jagah '100% 100%' kar de
@@ -71,7 +71,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 key={index}
                 src="/file_000000004fd0821198ed4e26d5008b16.png"
                 alt={`Task Item ${index + 1}`}
-                className="relative z-10 w-[100%] max-w-[340px] h-[95px] object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                className="relative z-10 w-[100%] max-w-[310px] h-[110px] object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95"
                 draggable={false}
               />
             ))}
