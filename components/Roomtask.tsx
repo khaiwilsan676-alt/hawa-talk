@@ -206,7 +206,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
         {/* BOTTOM BACKGROUND (Strictly 1 single background image with 280vh height) */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[280vh] z-0 pointer-events-none"
+          className="absolute top-[50vh] left-0 w-full h-[260vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: '100% 280vh',
