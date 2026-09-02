@@ -1327,39 +1327,63 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
 
             <div className="flex items-center gap-2">
-             {/* Mic Button - New Sleek Modern Design */}
+             {/* Mic Button - Pure Solid White Capsule with Slash when Muted */}
 {hasSeat && (
   <button 
     onClick={handleBottomMicToggle} 
-    className="bg-black/30 rounded-full border-none hover:bg-black/40 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0" 
+    className="bg-black/30 rounded-full border-none hover:bg-black/40 transition-all shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-visible" 
     style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
   >
     {currentUserSeat?.isMuted ? (
       <svg 
-        viewBox="0 0 24 24" 
-        className="fill-none stroke-red-400 stroke-[2] stroke-linecap-round stroke-linejoin-round" 
+        viewBox="-2 -2 28 28" 
+        className="fill-white overflow-visible" 
         style={{ width: '22px', height: '22px' }}
       >
-        <line x1="2" y1="2" x2="22" y2="22" stroke="#f87171" strokeWidth="2.2" />
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-        <line x1="12" y1="19" x2="12" y2="23" />
-        <line x1="8" y1="23" x2="16" y2="23" />
+        {/* Solid White Capsule Body */}
+        <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
+        {/* Solid White Base Cradle & Stand */}
+        <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
+        <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
+        <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
+        
+        {/* \ Diagonal Cross Line (White with dark stroke border for clarity) */}
+        <line 
+          x1="2" 
+          y1="2" 
+          x2="22" 
+          y2="22" 
+          stroke="#000000" 
+          strokeWidth="3.5" 
+          strokeLinecap="round" 
+        />
+        <line 
+          x1="2" 
+          y1="2" 
+          x2="22" 
+          y2="22" 
+          stroke="#ffffff" 
+          strokeWidth="2.2" 
+          strokeLinecap="round" 
+        />
       </svg>
     ) : (
       <svg 
-        viewBox="0 0 24 24" 
-        className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" 
+        viewBox="-2 -2 28 28" 
+        className="fill-white overflow-visible" 
         style={{ width: '22px', height: '22px' }}
       >
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-        <line x1="12" y1="19" x2="12" y2="23" />
-        <line x1="8" y1="23" x2="16" y2="23" />
+        {/* Solid White Capsule Body */}
+        <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
+        {/* Solid White Base Cradle & Stand */}
+        <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
+        <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
+        <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
       </svg>
     )}
   </button>
 )}
+
 
               
               {/* Emoji - Exact Match */}
@@ -1447,7 +1471,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <div 
         className="absolute z-20 flex flex-col items-center pointer-events-auto"
         style={{
-          bottom: 'calc(var(--footer-btn-size) + 18px)',
+          bottom: 'calc(var(--footer-btn-size) + 30px)',
           right: '10px',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -1460,8 +1484,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <div 
           className="relative cursor-pointer transition-transform hover:scale-105 mt-2"
           style={{
-            width: 'calc(var(--footer-btn-size) * 1.1)',
-            height: 'calc(var(--footer-btn-size) * 1.1)',
+            width: 'calc(var(--footer-btn-size) * 1.5)',
+            height: 'calc(var(--footer-btn-size) * 1.5)',
           }}
           onClick={() => setShowGameSheet(true)}
         >
