@@ -1371,7 +1371,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <svg 
         viewBox="-2 -2 28 28" 
         className="fill-white overflow-visible" 
-        style={{ width: '22px', height: '22px' }}
+        style={{ width: '26px', height: '26px' }}
       >
         {/* Solid White Capsule Body */}
         <rect x="9" y="2" width="6" height="11" rx="3" fill="#ffffff" />
@@ -1467,11 +1467,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         )}
       </div>
 
-     {/* RIGHT SIDE FLOATING STACK */}
+   {/* RIGHT SIDE FLOATING STACK */}
 <div 
   className="absolute z-20 flex flex-col items-center pointer-events-auto"
   style={{
-    bottom: 'calc(var(--footer-btn-size) + 55px)',
+    bottom: 'calc(var(--footer-btn-size) + 18px)',
     right: '10px',
   }}
   onClick={(e) => e.stopPropagation()}
@@ -1479,17 +1479,17 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   {/* 1. AUTO-SCROLL BANNER */}
   <RoomSideBanner />
 
-  {/* 2. BEECH WALI IMAGE (Badi + Left side shift) */}
+  {/* 2. BICH WALI IMAGE (Green Removed - Badi + Left Side Shifted) */}
   <div 
-    className="relative cursor-pointer transition-transform hover:scale-105 mt-2 self-start -translate-x-2.5"
+    className="relative cursor-pointer transition-transform hover:scale-105 mt-2 self-start -translate-x-3 flex items-center justify-center"
     style={{
-      width: 'calc(var(--footer-btn-size) * 1.25)',  // Bada size (pehle 0.95 tha)
+      width: 'calc(var(--footer-btn-size) * 1.25)',  // Bada size
       height: 'calc(var(--footer-btn-size) * 1.25)',
     }}
   >
-    <WhiteColorRemovalShader
-      imageSrc="/1787158869902.png"
-      threshold={0.85}
+    <GreenColorRemovalShader
+      imageSrc="/IMG_20260901_160923.png"
+      threshold={0.45}
       className="w-full h-full"
       style={{
         width: '100%',
@@ -1500,30 +1500,15 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     />
   </div>
 
-  {/* 3. NICHE WALI (GAME) IMAGE (Bada size) */}
+  {/* 3. NICHE WALI (GAME) IMAGE */}
   <div 
     className="relative cursor-pointer transition-transform hover:scale-105 mt-1"
     style={{
-      width: 'calc(var(--footer-btn-size) * 1.2)',  // Bada size (pehle 1.1 tha)
+      width: 'calc(var(--footer-btn-size) * 1.2)',
       height: 'calc(var(--footer-btn-size) * 1.2)',
     }}
     onClick={() => setShowGameSheet(true)}
   >
-    {/* Corner Badge */}
-    <div className="absolute -top-1.5 -left-1.5 z-10 w-4 h-4 pointer-events-none flex items-center justify-center">
-      <GreenColorRemovalShader
-        imageSrc="/IMG_20260901_160923.png"
-        threshold={0.45}
-        className="w-full h-full"
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-        }}
-      />
-    </div>
-
-    {/* Main Game Image */}
     <WhiteColorRemovalShader
       imageSrc="/IMG_20260814_111008.png"
       threshold={0.85}
@@ -1539,6 +1524,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     />
   </div>
 </div>
+
 
       {showPublicMsgModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/50" onClick={() => setShowPublicMsgModal(false)}>
