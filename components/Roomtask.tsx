@@ -25,7 +25,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
         
                    {/* BOTTOM BACKGROUND */}
         <div 
-          className="absolute top-[45vh] left-0 w-full h-[130vh] z-0 pointer-events-none"
+          className="absolute top-[50vh] left-0 w-full h-[160vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: '100% 100%', // <-- Yahan 'cover' ki jagah '100% 100%' kar de
@@ -65,7 +65,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           </div>
 
           {/* 12 IMAGES (Scroll area ke sath) */}
-          <div className="w-full flex flex-col items-center -space-y-[30px] mt-6 pb-0 px-4">
+          <div className="w-full flex flex-col items-center -space-y-[160px] mt-6 pb-0 px-4">
             {Array.from({ length: 12 }).map((_, index) => (
               <img 
                 key={index}
