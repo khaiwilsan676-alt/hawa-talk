@@ -1212,7 +1212,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-4 pt-8 sm:pt-6">
+          <div className="flex-shrink-0 flex flex-col gap-5 pt-8 sm:pt-6">
             {renderSeats()}
           </div>
 
@@ -1330,23 +1330,35 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
 
             <div className="flex items-center gap-2">
-              {/*Mic button*/}
-                           {hasSeat && (
-                <button onClick={handleBottomMicToggle} className="bg-white/10 rounded-full border-none hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
-                  {currentUserSeat?.isMuted ? (
-                    <svg viewBox="0 0 24 24" className="fill-white stroke-white stroke-[2]" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                      <line x1="1" y1="1" x2="23" y2="23" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
-                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                      <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
-                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                    </svg>
-                  )}
-                </button>
-              )}
+              {/* Mic Button - Fully visible & centered */}
+{hasSeat && (
+  <button 
+    onClick={handleBottomMicToggle} 
+    className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm p-0 overflow-hidden" 
+    style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
+  >
+    {currentUserSeat?.isMuted ? (
+      <svg 
+        viewBox="0 0 24 24" 
+        className="fill-white stroke-white stroke-[1.5]" 
+        style={{ width: '22px', height: '22px' }}
+      >
+        <line x1="2" y1="2" x2="22" y2="22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
+        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+      </svg>
+    ) : (
+      <svg 
+        viewBox="0 0 24 24" 
+        className="fill-white" 
+        style={{ width: '22px', height: '22px' }}
+      >
+        <path d="M12 14c1.66 0 3-1.34 3-3V4.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V11c0 1.66 1.34 3 3 3z" />
+        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+      </svg>
+    )}
+  </button>
+)}
 
               
                            {/* Emoji - Exact Match (Solid face, Cut-out Eyes & Wide Laughing Mouth) */}
