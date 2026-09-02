@@ -206,7 +206,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
         {/* BOTTOM BACKGROUND */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[280vh] z-0 pointer-events-none"
+          className="absolute top-[50vh] left-0 w-full h-[250vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: '100% 100%',
@@ -234,7 +234,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
         {/* FOREGROUND CONTENT */}
         <div className="relative z-10 w-full flex flex-col items-center">
           
-          <div className="w-full" style={{ height: 'calc(45vh - 45px)' }}></div>
+          <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
           {/* Middle Decoration Image */}
           <div className="w-full flex justify-center px-4 flex-col items-center">
@@ -246,13 +246,13 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
             />
             
             {/* Middle Image ke theek niche Room Task heading */}
-            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-2 drop-shadow-md">
+            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-8 drop-shadow-md">
               Room Task
             </h1>
           </div>
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
-          <div className="w-full flex flex-col items-center -space-y-[50px] mt-4 pb-16 px-4">
+          <div className="w-full flex flex-col items-center -space-y-[50px] mt-12 pb-16 px-4">
             {tasks.map((task, index) => (
               <TaskItem 
                 key={index}
