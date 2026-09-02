@@ -1,23 +1,20 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface RoomtaskProps {
   onBack?: () => void;
 }
 
-// WebGL WebShader Component to remove white background purely on GPU
-function ShaderImageIcon({ src }: { src: string }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+// Custom Hook jo WebGL Shader se image ka white background ek baar mein strictly remove karke clean URL dega
+function useProcessedShaderImage(src: string) {
+  const [processedSrc, setProcessedSrc] = useState<string>(src);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
+    const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false });
     if (!gl) return;
 
-    // Vertex Shader
     const vsSource = `
       attribute vec2 a_position;
       attribute vec2 a_texCoord;
@@ -28,14 +25,12 @@ function ShaderImageIcon({ src }: { src: string }) {
       }
     `;
 
-    // Fragment Shader (Strictly removes white/near-white background pixels)
     const fsSource = `
       precision mediump float;
       varying vec2 v_texCoord;
       uniform sampler2D u_image;
       void main() {
         vec4 color = texture2D(u_image, v_texCoord);
-        // Agar pixel white ya uske bohot kareeb hai toh alpha 0 (transparent) kar do
         if (color.r > 0.9 && color.g > 0.9 && color.b > 0.9) {
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
@@ -63,7 +58,6 @@ function ShaderImageIcon({ src }: { src: string }) {
     gl.linkProgram(program);
     gl.useProgram(program);
 
-    // Quad coordinates
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -75,7 +69,6 @@ function ShaderImageIcon({ src }: { src: string }) {
     gl.enableVertexAttribArray(posAttrLocation);
     gl.vertexAttribPointer(posAttrLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // Texture coordinates
     const texCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -87,7 +80,6 @@ function ShaderImageIcon({ src }: { src: string }) {
     gl.enableVertexAttribArray(texCoordLocation);
     gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // Load Image and apply texture
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.src = src;
@@ -107,57 +99,71 @@ function ShaderImageIcon({ src }: { src: string }) {
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      setProcessedSrc(dataUrl);
     };
   }, [src]);
 
-  return <canvas ref={canvasRef} className="w-7 h-7 object-contain flex-shrink-0 drop-shadow-md" />;
+  return processedSrc;
 }
 
-// Helper component for task items
+// Helper component for task items (Title aur Icon image ke upar rakhe hain)
 function TaskItem({ 
   title, 
-  reward 
+  reward,
+  iconSrc
 }: { 
   title: string; 
-  reward: string; 
+  reward: string;
+  iconSrc: string;
 }) {
   return (
-    <div className="relative z-10 w-[100%] max-w-[310px] h-[130px]">
+    <div className="relative z-10 w-[100%] max-w-[310px] h-[130px] flex items-center">
       {/* Background Task Image */}
       <img 
         src="/file_000000004fd0821198ed4e26d5008b16.png"
         alt="Task Background"
-        className="w-full h-full object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95 select-none"
+        className="absolute inset-0 w-full h-full object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95 select-none z-0"
         draggable={false}
       />
 
-      {/* Top Left Corner: WebShader Cleaned Icon & Text */}
-      <div className="absolute top-[18px] left-[16px] right-[110px] flex items-center space-x-2 z-20 pointer-events-none">
-        <ShaderImageIcon src="/1786855398290.png" />
-        <div className="flex flex-col justify-center">
-          <span className="text-[11px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
-            {title}
-          </span>
-          <span className="text-[10px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
-            {reward}
-          </span>
+      {/* Image ke upar Left Side: Shader Processed Icon & Text */}
+      <div className="relative z-20 w-full px-4 flex items-center justify-between pointer-events-none">
+        <div className="flex items-center space-x-2.5 pr-2">
+          <img 
+            src={iconSrc} 
+            alt="Task Icon" 
+            className="w-7 h-7 object-contain flex-shrink-0 drop-shadow-md select-none"
+            draggable={false}
+          />
+          <div className="flex flex-col justify-center">
+            <span className="text-[11px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
+              {title}
+            </span>
+            <span className="text-[10px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
+              {reward}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Right Side Corner: Yellow Color 3D Claim Button */}
-      <div className="absolute right-[14px] top-1/2 -translate-y-1/2 z-20">
-        <button 
-          onClick={() => {}}
-          className="px-3.5 py-1.5 rounded-full font-black text-[11px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
-        >
-          Claim
-        </button>
+        {/* Right Side Corner: Yellow Color 3D Claim Button */}
+        <div className="flex-shrink-0 pointer-events-auto">
+          <button 
+            onClick={() => {}}
+            className="px-3.5 py-1.5 rounded-full font-black text-[11px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
+          >
+            Claim
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
+  const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
+
   const tasks = [
     { title: "10 people enter the room", reward: "10,000 coin" },
     { title: "5 people enter the room for two consecutive days", reward: "120,000 coin" },
@@ -230,22 +236,29 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           
           <div className="w-full" style={{ height: 'calc(45vh - 45px)' }}></div>
 
-          <div className="w-full flex justify-center px-4">
+          {/* Middle Decoration Image */}
+          <div className="w-full flex justify-center px-4 flex-col items-center">
             <img 
               src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
               alt="Middle Decoration" 
               className="w-[90%] max-w-[340px] object-contain drop-shadow-2xl select-none"
               draggable={false}
             />
+            
+            {/* Middle Image ke theek niche Room Task heading */}
+            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-2 drop-shadow-md">
+              Room Task
+            </h1>
           </div>
 
-          {/* 22 IMAGES WITH WEBGL SHADER ICON & CLAIM BUTTON */}
-          <div className="w-full flex flex-col items-center -space-y-[35px] mt-6 pb-16 px-4">
+          {/* 22 Task Images with Titles & Claim Buttons inside */}
+          <div className="w-full flex flex-col items-center -space-y-[50px] mt-4 pb-16 px-4">
             {tasks.map((task, index) => (
               <TaskItem 
                 key={index}
                 title={task.title}
                 reward={task.reward}
+                iconSrc={cleanedIconSrc}
               />
             ))}
           </div>
