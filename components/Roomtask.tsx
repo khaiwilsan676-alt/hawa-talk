@@ -138,10 +138,10 @@ function TaskItem({
             draggable={false}
           />
           <div className="flex flex-col justify-center">
-            <span className="text-[11px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
+            <span className="text-[12px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
               {title}
             </span>
-            <span className="text-[10px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
+            <span className="text-[12px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
               {reward}
             </span>
           </div>
@@ -165,28 +165,28 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
 
   const tasks = [
-    { title: "10 people enter the room", reward: "10,000 coin" },
-    { title: "5 people enter the room for two consecutive days", reward: "120,000 coin" },
-    { title: "Successfully share to Facebook", reward: "24,000 coin" },
+    { title: "10 users enter the room", reward: "10,000 coin" },
+    { title: "5 users enter the room for two consecutive days", reward: "20,000 coin" },
+    { title: "Successfully share on WhatsApp", reward: " 5,000 coins" }, 
+    { title: "Successfully share to Facebook", reward: "5,000 coin" },
     { title: "3 new users enter the room", reward: "40,000 coin" },
-    { title: "1 new follower of the room", reward: "4,000 coin" },
-    { title: "3 new users follow the room", reward: "40,000 coin" },
-    { title: "Successfully share to WhatsApp", reward: "24,000 coin" },
-    { title: "Room host is on mice for 10 minutes", reward: "4,000 coin" },
-    { title: "Give people 5 gifts in the room", reward: "40,000 coin" },
-    { title: "10 new followers of the room", reward: "100,000 coin" },
-    { title: "5 new followers of the room", reward: "24,000 coin" },
-    { title: "3 new users are on mice simultaneously for 5 minutes", reward: "100,000 coin" },
-    { title: "Room host is on mice for 30 minutes", reward: "24,000 coin" },
-    { title: "Room host gives gifts to 3 new users", reward: "32,000 coin" },
-    { title: "Room host successfully invites 1 person to the mice", reward: "4,000 coin" },
-    { title: "Room host successfully invites 3 new users to the mice", reward: "40,000 coin" },
-    { title: "Room host gives 10 gifts", reward: "32,000 coin" },
-    { title: "3 new users give gifts in the room", reward: "60,000 coin" },
-    { title: "Room host successfully invites 10 people to the mice", reward: "24,000 coin" },
-    { title: "3 people are on mice simultaneously for 10 minutes", reward: "40,000 coin" },
-    { title: "Room host gives 1 gift", reward: "4,000 coin" },
-    { title: "10 new followers of the room", reward: "100,000 coin" }
+    { title: "1 new follower of the room", reward: "2,000 coin" },
+    { title: "3 new users follow the room", reward: "10,000 coin" },
+    { title: "spend 10min on mic", reward: "5,000 coin" },
+    { title: "spend 30min on mic", reward: "25,000 coin" },
+    { title: "spend 60min on mic", reward: "60,000 coin" },
+    { title: "10 new users on mic for 10min at sane time", reward: " 50,000 coins "}, 
+    { title: "5 new followers of room", reward: "24,000 coin" },
+    { title: "3 user on mic at same time", reward: "100,000 coin" },
+    { title: "Send gift of 500", reward: "24,000 coin" },
+    { title: "Send gifts of 5000", reward: "32,000 coin" },
+    { title: "successfully invites 1 user on mic", reward: "4,000 coin" },
+    { title: "successfully invites 3 new users on mic", reward: "40,000 coin" },
+    { title: "send 10 gifts on mic", reward: "32,000 coin" },
+    { title: "New User send gift of 1000 on mic", reward: "60,000 coin" },
+    { title: "successfully invites 10 people to the mic", reward: "24,000 coin" },
+    { title: "3 User on mic at same time for 10 min", reward: "20,000 coin" },
+    { title: "send 1 gift", reward: "4,000 coin" },
   ];
 
   return (
@@ -206,7 +206,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
         {/* BOTTOM BACKGROUND */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[260vh] z-0 pointer-events-none"
+          className="absolute top-[50vh] left-0 w-full h-[265vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
             backgroundSize: '100% 100%',
@@ -237,19 +237,39 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
           {/* Middle Decoration Image */}
-          <div className="w-full flex justify-center px-4 flex-col items-center">
-            <img 
-              src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
-              alt="Middle Decoration" 
-              className="w-[90%] max-w-[340px] object-contain drop-shadow-2xl select-none"
-              draggable={false}
-            />
-            
-            {/* Middle Image ke theek niche Room Task heading */}
-            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-12 drop-shadow-md">
-              Room Task
-            </h1>
-          </div>
+<div className="w-full flex justify-center px-4 flex-col items-center">
+  {/* Image Container */}
+  <div className="relative w-[90%] max-w-[340px] flex items-center justify-center">
+    <img 
+      src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
+      alt="Middle Decoration" 
+      className="w-full h-auto object-contain drop-shadow-2xl select-none"
+      draggable={false}
+    />
+
+    {/* Left Side: Wahi white background remove kiya hua cleaned icon image */}
+    <div className="absolute left-[16px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
+      <img 
+        src="/1786855398290.png"
+        alt="Cleaned Coin Icon" 
+        className="w-8 h-8 object-contain drop-shadow-md select-none"
+        draggable={false}
+      />
+    </div>
+
+    {/* Center Middle: Yellow color se "0" */}
+    <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+      <span className="text-xl font-extrabold text-[#ffd700] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+        0
+      </span>
+    </div>
+  </div>
+  
+  {/* Room Task Heading */}
+  <h1 className="text-white text-lg font-black tracking-wider uppercase mt-15 drop-shadow-md">
+    Room Task
+  </h1>
+</div>
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
           <div className="w-full flex flex-col items-center -space-y-[50px] mt-12 pb-16 px-4">
