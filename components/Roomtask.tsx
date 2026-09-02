@@ -278,7 +278,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               />
 
               {/* Left Side: White background remove kiya hua cleaned icon image - AB WEBSHADER SE PROCESSED */}
-              <div className="absolute right-[13px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
+              <div className="absolute left-[20px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
                 <img 
                   src={cleanedTopLeftIconSrc}
                   alt="Cleaned Coin Icon" 
@@ -296,12 +296,12 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
             </div>
             
             {/* 👇 ROOM TASK HEADING (Wapas aa gaya) 👇 */}
-            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-15 drop-shadow-md">
+            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-16 drop-shadow-md">
               Room Task
             </h1>
 
             {/* 👇 LIVE WEEKLY COUNTDOWN UI 👇 */}
-            <div className="flex items-center justify-center gap-1 mt-7 z-20 select-none">
+            <div className="flex items-center justify-center gap-1 mt-10 z-20 select-none">
               <span className="text-[#e8b499] text-[11px] font-medium">Countdown</span>
 
               {/* Day */}
@@ -332,7 +332,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           </div>
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
-          <div className="w-full flex flex-col items-center -space-y-[50px] mt-10 pb-16 px-4">
+          <div className="w-full flex flex-col items-center -space-y-[50px] mt-15 pb-16 px-4">
             {tasks.map((task, index) => (
               <TaskItem 
                 key={index}
