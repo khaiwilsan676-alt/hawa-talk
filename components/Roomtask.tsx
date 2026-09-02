@@ -8,24 +8,26 @@ interface RoomtaskProps {
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
   return (
-    <div className="relative h-[100dvh] w-full bg-[#120a1f] overflow-x-hidden overflow-y-auto scrollbar-none">
-      {/* Sirf main container ko h-[100dvh] kiya hai taaki mobile/desktop pe full page scroll kare */}
+    <div className="relative min-h-screen w-full bg-[#120a1f] overflow-x-hidden">
+      {/* 
+        ================= 1. FULL PAGE SCROLLING CONTAINERS ================= 
+        Ab pure background aur content ek single relative container mein hain.
+        Yahan se overflow normal page scroll banega.
+      */}
       
-      {/* ================= 1. BACKGROUNDS (50vh / 50vh) ================= */}
-      
-      {/* BOTTOM BACKGROUND (Exactly 50vh, starts exactly from middle) */}
+      {/* BOTTOM BACKGROUND (Ab position: absolute hai aur bottom: 0 tak stretch hota hai) */}
       <div 
-        className="fixed top-[50vh] left-0 w-full h-[100vh] z-0 pointer-events-none"
+        className="absolute top-[50vh] left-0 w-full bottom-0 z-0 pointer-events-none"
         style={{
           backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
           backgroundSize: 'cover',
-          backgroundPosition: 'top center',
+          backgroundPosition: 'top center', // Isse junction hamesha 50vh par rahega scroll par bhi
         }}
       />
 
-      {/* TOP BACKGROUND (55vh rakha hai taaki bottom wale ke upar 5vh ka smooth mix/fade aa sake) */}
+      {/* TOP BACKGROUND (Position: absolute hai taaki ye content ke sath scroll ho) */}
       <div 
-        className="fixed top-0 left-0 w-full h-[55vh] z-0 pointer-events-none"
+        className="absolute top-0 left-0 w-full h-[55vh] z-0 pointer-events-none"
         style={{
           backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
           backgroundSize: 'cover',
@@ -38,7 +40,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
       {/* ================= 2. FOREGROUND (Scrollable Content) ================= */}
       
-      {/* BACK ICON (Top Left Corner Ekdam) */}
+      {/* BACK ICON (Ab isko absolute top par hi rakha hai, safe area insets ke sath) */}
       <button 
         onClick={onBack} 
         className="absolute z-50 p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95"
@@ -55,7 +57,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
       <div className="relative z-10 w-full flex flex-col items-center">
         
-        {/* Spacer: Yeh space isliye hai taaki "Middle Image" exact 50vh line par pahuche */}
+        {/* Spacer: Yeh space isliye hai taaki "Middle Image" exact 50vh line par pahuche jab page load ho */}
         <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
         {/* MIDDLE IMAGE (Dono background ke ekdum beech mein) */}
@@ -63,13 +65,13 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           <img 
             src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
             alt="Middle Decoration" 
-            className="w-[90%] max-w-[340px] object-contain drop-shadow-2xl"
+            className="w-100%] max-w-[340px] object-contain drop-shadow-2xl"
             draggable={false}
           />
         </div>
 
-        {/* 12 IMAGES (Bina kisi Card ke, 1 Row = 1 Image, Gap 0.5 rakha hai) */}
-        <div className="w-full flex flex-col items-center gap-0.5 mt-6 pb-12 px-4">
+        {/* 12 IMAGES (Bina kisi Card ke, 1 Row = 1 Image, Gap 0.5) */}
+        <div className="w-full flex flex-col items-center -space-y-4 mt-6 pb-12 px-4">
           {Array.from({ length: 12 }).map((_, index) => (
             <img 
               key={index}
