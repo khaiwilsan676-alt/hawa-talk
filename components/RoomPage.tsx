@@ -13,7 +13,7 @@ import WhiteColorRemovalShader from './WhiteColorRemovalShader';
 import { generateStableId } from '../lib/hash';
 import { getRoom, updateRoom, getRoomMembers, joinRoom, leaveRoom, sendRoomMessage, getRoomMessages } from "../src/lib/googleSheets";
 
-// LiveKit imports for Voice Audio - Fixed imports
+// LiveKit imports for Voice Audio
 import { 
   LiveKitRoom, 
   RoomAudioRenderer, 
@@ -1163,44 +1163,33 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </button>
           </div>
         </div>
-                        {/* NEW TROPHY UI - Directly below Top Room Card */}
-        <div className="flex justify-start mt-2 -ml-3 sm:-ml-4">
-          <button className="bg-black/30 backdrop-blur-sm rounded-r-lg flex items-center pr-2 pl-3 py-1 shadow-sm cursor-pointer hover:bg-black/40 transition-colors border border-transparent border-l-0">
-            
-            {/* Trophy Image with Shader for Green Removal */}
-            <div className="w-5 h-5 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
-              <WhiteColorRemovalShader
-                imageSrc="/1788258883971~2.jpg"
-                threshold={0.85}
-                className="w-full h-full"
-                style={{
-                  width: '130%',
-                  height: '130%',
-                  objectFit: 'contain',
-                  maxWidth: 'none',
-                  maxHeight: 'none',
-                  pointerEvents: 'none',
-                }}
-              />
-            </div>
-            
-            {/* Number 0 */}
-            <span 
-              className="font-bold text-[14px] leading-none" 
-              style={{ color: '#fbe28d', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}
-            >
-              0
-            </span>
-            
-            {/* Right Arrow (>) */}
-            <svg viewBox="0 0 24 24" className="fill-none stroke-[3] ml-1 opacity-90" stroke="#fbe28d" style={{ width: '13px', height: '13px' }}>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
 
-          </button>
+        {/* NEW TROPHY UI - Wrapped in h-0 to prevent pushing seats down */}
+        <div className="h-0 w-full relative z-20">
+          <div className="absolute top-2 left-0 -ml-3 sm:-ml-4">
+            <button className="bg-black/30 backdrop-blur-sm rounded-r-lg flex items-center pr-2 pl-3 py-1 shadow-sm cursor-pointer hover:bg-black/40 transition-colors border border-transparent border-l-0">
+              
+              {/* Trophy Image with Shader for Green BG Removal */}
+              <div className="w-5 h-5 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
+                <GreenColorRemovalShader
+                  imageSrc="/1788258883971~2.jpg"
+                  threshold={0.5}
+                  className="w-full h-full"
+                  style={{ width: '130%', height: '130%', objectFit: 'contain', maxWidth: 'none', maxHeight: 'none', pointerEvents: 'none' }}
+                />
+              </div>
+              
+              <span className="font-bold text-[14px] leading-none" style={{ color: '#fbe28d', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                0
+              </span>
+              
+              <svg viewBox="0 0 24 24" className="fill-none stroke-[3] ml-1 opacity-90" stroke="#fbe28d" style={{ width: '13px', height: '13px' }}>
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+
+            </button>
+          </div>
         </div>
-
-
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
@@ -1339,11 +1328,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                 </button>
               )}
               
-                             {/* Emoji - Exact Match (Solid white face with transparent eyes & mouth) */}
+                             {/* Emoji - Proper Cutout SVG */}
               {hasSeat && (
-                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-black/30 rounded-full border-none hover:bg-black/30 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
+                <button onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(true); }} className="bg-white/10 backdrop-blur-md rounded-full border-none hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center cursor-pointer shadow-sm" style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}>
                   <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'var(--footer-icon-size)', height: 'var(--footer-icon-size)' }}>
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2.5 8.5c.83 0 1.5-.67 1.5-1.5S10.33 7.5 9.5 7.5 8 8.17 8 9s.67 1.5 1.5 1.5zm5 0c.83 0 1.5-.67 1.5-1.5S15.33 7.5 14.5 7.5 13 8.17 13 9s.67 1.5 1.5 1.5zm-5 7c2.33 0 4.31-1.46 5.11-3.5H7.39c.8 2.04 2.78 3.5 5.11 3.5z" />
+                    <path fillRule="evenodd" clipRule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM8.5 8.5C9.32843 8.5 10 9.17157 10 10C10 10.8284 9.32843 11.5 8.5 11.5C7.67157 11.5 7 10.8284 7 10C7 9.17157 7.67157 8.5 8.5 8.5ZM15.5 8.5C16.3284 8.5 17 9.17157 17 10C17 10.8284 16.3284 11.5 15.5 11.5C14.6716 11.5 14 10.8284 14 10C14 9.17157 14.6716 8.5 15.5 8.5ZM15.8291 14.1958C16.1963 14.5939 16.1706 15.2137 15.7725 15.5809C14.7733 16.5028 13.4354 17 12 17C10.5646 17 9.22668 16.5028 8.22749 15.5809C7.8294 15.2137 7.80373 14.5939 8.17088 14.1958C8.53804 13.7977 9.15783 13.772 9.55592 14.1392C10.1873 14.7217 11.0454 15 12 15C12.9546 15 13.8127 14.7217 14.4441 14.1392C14.8422 13.772 15.462 13.7977 15.8291 14.1958Z" />
                   </svg>
                 </button>
               )}
@@ -2225,3 +2214,44 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
     </div>
   );
 }
+
+// ----------------------------------------------------------------------
+// NEW COMPONENT ADDED DIRECTLY HERE SO YOU DON'T NEED A SEPARATE FILE
+// ----------------------------------------------------------------------
+function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", style = {} }: any) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Green screen removal logic (Makes green pixels transparent)
+        if (g > r * 1.2 && g > b * 1.2 && g > 70) {
+          data[i + 3] = 0; 
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+    };
+    img.src = imageSrc;
+  }, [imageSrc, threshold]);
+
+  return <canvas ref={canvasRef} className={className} style={style} />;
+}
+
