@@ -8,93 +8,76 @@ interface RoomtaskProps {
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
   return (
-    <div className="relative min-h-screen w-full bg-[#120a1f] overflow-x-hidden overflow-y-auto scrollbar-none">
+    <div className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto scrollbar-none">
       
-      {/* ======================= BACKGROUNDS ======================= */}
-      
-      {/* 1. Bottom Background Image (Starts from top but covers full scrollable height) */}
+      {/* 1. BOTTOM BACKGROUND (Fixed in background so it never disappears) */}
       <div 
-        className="absolute top-0 left-0 w-full h-full min-h-[150dvh]"
+        className="fixed inset-0 w-full h-full z-0 pointer-events-none"
         style={{
           backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
           backgroundSize: 'cover',
-          backgroundPosition: 'top center',
-          backgroundRepeat: 'repeat-y',
-          zIndex: 0,
+          backgroundPosition: 'center',
         }}
       />
 
-      {/* 2. Top Background Image (40vh) with Bottom Fade Mixing */}
+      {/* 2. TOP BACKGROUND (Exact 50vh with fade mixing at bottom) */}
       <div 
-        className="absolute top-0 left-0 w-full h-[45vh]"
+        className="absolute top-0 left-0 w-full h-[50vh] z-0 pointer-events-none"
         style={{
           backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          zIndex: 1,
-          /* Yeh dono line Top image ko niche se transparent karke Bottom image mein mix kar dengi */
-          maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
+          maskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
         }}
       />
 
+      {/* TOP LEFT BACK ICON (Exact Corner) */}
+      <button 
+        onClick={onBack} 
+        className="absolute z-50 p-1 cursor-pointer transition-transform hover:scale-110 active:scale-95"
+        style={{
+          top: 'max(12px, env(safe-area-inset-top))',
+          left: '12px'
+        }}
+      >
+        <svg 
+          viewBox="0 0 24 24" 
+          className="w-8 h-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round drop-shadow-md"
+        >
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </button>
 
-      {/* ======================= FOREGROUND CONTENT ======================= */}
-      
-      <div className="relative z-10 w-full min-h-screen flex flex-col pb-12">
+
+      {/* ================= CONTENT CONTAINER ================= */}
+      <div className="relative z-10 w-full flex flex-col items-center">
         
-        {/* Top Left Arrow Icon (No Background) */}
-        <div className="pt-12 px-4 sticky top-0 z-50">
-          <button 
-            onClick={onBack} 
-            className="p-1 cursor-pointer transition-transform hover:scale-110 active:scale-95"
-          >
-            <svg 
-              viewBox="0 0 24 24" 
-              className="w-8 h-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round drop-shadow-md"
-            >
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-          </button>
-        </div>
+        {/* Spacer to push middle image down near the 50vh mark */}
+        <div className="h-[38vh] w-full"></div>
 
-        {/* Spacer to push middle image down to the 40vh mixing point */}
-        <div className="h-[20vh] sm:h-[25vh]"></div>
-
-        {/* Middle Image (Overlapping Top & Bottom Backgrounds) */}
-        <div className="w-full flex justify-center -mb-6 relative z-20">
+        {/* 3. MIDDLE OVERLAP IMAGE (Between top and bottom) */}
+        <div className="w-full flex justify-center px-4 -mb-2">
           <img 
             src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
-            alt="Middle Decorative Elements" 
-            className="w-[85%] max-w-[320px] object-contain drop-shadow-2xl"
+            alt="Middle Decoration" 
+            className="w-[90%] max-w-[340px] object-contain drop-shadow-2xl"
             draggable={false}
           />
         </div>
 
-        {/* 12 Cards Container (On top of Bottom Image) */}
-        <div className="px-4 mt-10 w-full relative z-20">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            
-            {/* Array of 12 Cards */}
-            {Array.from({ length: 12 }).map((_, index) => (
-              <div 
-                key={index}
-                className="relative aspect-square rounded-2xl overflow-hidden shadow-lg flex items-center justify-center transition-transform hover:scale-[1.02] active:scale-95 cursor-pointer border border-white/10"
-                style={{
-                  backgroundImage: 'url(/file_000000004fd0821198ed4e26d5008b16.png)',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              >
-                {/* Agar Cards ke andar koi text ya icon likhna ho toh yahan add kar sakte ho */}
-                <span className="text-white/80 font-bold text-sm tracking-wider drop-shadow-md">
-                  TASK {index + 1}
-                </span>
-              </div>
-            ))}
-
-          </div>
+        {/* 4. 12 IMAGES (1 ROW = 1 IMAGE, Ek ke niche ek) */}
+        <div className="w-full flex flex-col items-center gap-3 mt-4 pb-12 px-4">
+          {Array.from({ length: 12 }).map((_, index) => (
+            <img 
+              key={index}
+              src="/file_000000004fd0821198ed4e26d5008b16.png"
+              alt={`Task Item ${index + 1}`}
+              className="w-full max-w-[340px] object-contain cursor-pointer transition-transform hover:scale-105 active:scale-95"
+              draggable={false}
+            />
+          ))}
         </div>
 
       </div>
