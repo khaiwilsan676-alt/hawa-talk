@@ -277,15 +277,19 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 draggable={false}
               />
 
-              {/* Left Side: White background remove kiya hua cleaned icon image - AB WEBSHADER SE PROCESSED */}
-              <div className="absolute -left-[20px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
-                <img 
-                  src={cleanedTopLeftIconSrc}
-                  alt="Cleaned Coin Icon" 
-                  className="w-6 h-6 object-contain drop-shadow-md select-none"
-                  draggable={false}
-                />
-              </div>
+                  {/* Left Side: White background remove kiya hua cleaned icon image */}
+    <div 
+      className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
+      style={{ left: '25px' }} 
+    >
+      <img 
+        src={cleanedTopLeftIconSrc}
+        alt="Cleaned Coin Icon" 
+        className="w-6 h-6 object-contain drop-shadow-md select-none"
+        draggable={false}
+      />
+    </div>
+
 
               {/* Center Middle: Yellow color se "0" */}
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
@@ -332,7 +336,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           </div>
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
-          <div className="w-full flex flex-col items-center -space-y-[50px] mt-2 pb-16 px-4">
+          <div className="w-full flex flex-col items-center -space-y-[50px] mt-1 pb-16 px-4">
             {tasks.map((task, index) => (
               <TaskItem 
                 key={index}
