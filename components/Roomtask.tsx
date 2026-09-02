@@ -165,6 +165,35 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
   const cleanedTopLeftIconSrc = useProcessedShaderImage('/1786855398290.png');
 
+  // 👇 YEH LOGIC MISSING THA JO MAINE ADD KAR DIYA HAI 👇
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const daysUntilNextMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+      
+      const nextTarget = new Date(now);
+      nextTarget.setDate(now.getDate() + daysUntilNextMonday);
+      nextTarget.setHours(0, 0, 0, 0);
+
+      const diff = nextTarget.getTime() - now.getTime();
+
+      if (diff > 0) {
+        setTimeLeft({
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((diff / 1000 / 60) % 60),
+          seconds: Math.floor((diff / 1000) % 60),
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+  // 👆 LOGIC END 👆
+
   const tasks = [
     { title: "10 Users Enter the Room", reward: "10,000 Coins" },
     { title: "5 Users Enter the Room for Two Consecutive Days", reward: "20,000 Coins" },
@@ -238,61 +267,64 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
           {/* Middle Decoration Image */}
-<div className="w-full flex justify-center px-4 flex-col items-center">
-  {/* Image Container */}
-  <div className="relative w-[90%] max-w-[340px] flex items-center justify-center">
-    <img 
-      src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
-      alt="Middle Decoration" 
-      className="w-full h-auto object-contain drop-shadow-2xl select-none"
-      draggable={false}
-    />
+          <div className="w-full flex justify-center px-4 flex-col items-center">
+            {/* Image Container */}
+            <div className="relative w-[90%] max-w-[340px] flex items-center justify-center">
+              <img 
+                src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
+                alt="Middle Decoration" 
+                className="w-full h-auto object-contain drop-shadow-2xl select-none"
+                draggable={false}
+              />
 
-    {/* Left Side: White background remove kiya hua cleaned icon image - AB WEBSHADER SE PROCESSED */}
-    <div className="absolute left-[13px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
-      <img 
-        src={cleanedTopLeftIconSrc}
-        alt="Cleaned Coin Icon" 
-        className="w-6 h-6 object-contain drop-shadow-md select-none"
-        draggable={false}
-      />
-    </div>
+              {/* Left Side: White background remove kiya hua cleaned icon image - AB WEBSHADER SE PROCESSED */}
+              <div className="absolute left-[13px] top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none">
+                <img 
+                  src={cleanedTopLeftIconSrc}
+                  alt="Cleaned Coin Icon" 
+                  className="w-6 h-6 object-contain drop-shadow-md select-none"
+                  draggable={false}
+                />
+              </div>
 
-    {/* Center Middle: Yellow color se "0" */}
-    <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-      <span className="text-xl font-extrabold text-[#ffd700] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-        0
-      </span>
-    </div>
-  </div>
-  
+              {/* Center Middle: Yellow color se "0" */}
+              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                <span className="text-xl font-extrabold text-[#ffd700] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                  0
+                </span>
+              </div>
+            </div>
+            
             {/* 👇 LIVE WEEKLY COUNTDOWN UI 👇 */}
-          <div className="flex items-center justify-center gap-1 mt-7 z-20 select-none">
-            <span className="text-[#e8b499] text-[11px] font-medium">Countdown</span>
+            <div className="flex items-center justify-center gap-1 mt-7 z-20 select-none">
+              <span className="text-[#e8b499] text-[11px] font-medium">Countdown</span>
 
-            {/* Day */}
-            <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-              <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.days}</span>
-            </div>
-            <span className="text-[#e8b499] text-[11px] font-medium">Day</span>
+              {/* Day */}
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
+                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.days}</span>
+              </div>
+              <span className="text-[#e8b499] text-[11px] font-medium">Day</span>
 
-            {/* Hour */}
-            <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-              <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.hours}</span>
-            </div>
-            <span className="text-[#e8b499] text-[11px] font-medium">Hour</span>
+              {/* Hour */}
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
+                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.hours}</span>
+              </div>
+              <span className="text-[#e8b499] text-[11px] font-medium">Hour</span>
 
-            {/* Minute */}
-            <div className="min-w-[20px] px-1 h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-              <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.minutes}</span>
-            </div>
-            <span className="text-[#e8b499] text-[11px] font-medium">Minute</span>
+              {/* Minute */}
+              <div className="min-w-[20px] px-1 h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
+                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.minutes}</span>
+              </div>
+              <span className="text-[#e8b499] text-[11px] font-medium">Minute</span>
 
-            {/* Second */}
-            <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-              <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.seconds}</span>
+              {/* Second */}
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
+                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.seconds}</span>
+              </div>
+              <span className="text-[#e8b499] text-[11px] font-medium">Second</span>
             </div>
-            <span className="text-[#e8b499] text-[11px] font-medium">Second</span>
+
+            {/* Room Task Heading (If you still want it, otherwise skipped based on your latest snippet) */}
           </div>
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
@@ -312,4 +344,4 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
       </div>
     </div>
   );
-            }
+}
