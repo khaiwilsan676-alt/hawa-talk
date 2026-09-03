@@ -210,14 +210,14 @@ const WhiteColorRemovalShader = ({
   )
 }
 
-// Rewards data
+// Rewards data updated with your requested images
 const SIGN_IN_REWARDS = [
   { day: 1, reward: '+5000', image: '1786855398290.png', color: '#FF6B6B' },
   { day: 2, reward: '+5000', image: '1786855398290.png', color: '#FFA726' },
-  { day: 3, reward: '×2 Days', image: '1786857172378.png', color: '#66BB6A' },
+  { day: 3, reward: '×2 Days', image: '/file_00000000d808821186c1b7b612eea3fc.png', color: '#66BB6A' },
   { day: 4, reward: '+10,000', image: '1786855398290.png', color: '#42A5F5' },
-  { day: 5, reward: '+10,000', image: '1786855398290.png', color: '#AB47BC' },
-  { day: 6, reward: '+10,000', image: '1786855398290.png', color: '#EF5350', special: true },
+  { day: 5, reward: '×1 Day', image: '/IMG_20260903_141944.png', color: '#AB47BC' },
+  { day: 6, reward: '×2 Days', image: '1786855398290.png', color: '#EF5350', special: true },
   { day: 7, reward: '+15,000', image: '1786855398290.png', color: '#FFD700' },
 ];
 
@@ -265,14 +265,33 @@ export default function DailyCheckInModal({
 
   const renderDay6Special = () => {
     return (
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-1.5">
         <div className="flex flex-col items-center">
-          {renderIcon('1786855398290.png', 'w-7 h-7')}
+          {renderIcon('1786855398290.png', 'w-6 h-6')}
           <span className="text-[9px] font-bold text-gray-700 mt-0.5 whitespace-nowrap">+10,000</span>
         </div>
         <div className="flex flex-col items-center">
-          {renderIcon('/1784875884052~2.jpg', 'w-7 h-7')}
-          <span className="text-[9px] font-bold text-gray-700 mt-0.5 whitespace-nowrap">×3 Days</span>
+          {renderIcon('/IMG-20260903-WA0076.jpg', 'w-6 h-6')}
+          <span className="text-[9px] font-bold text-gray-700 mt-0.5 whitespace-nowrap">×2 Days</span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDay7Special = () => {
+    return (
+      <div className="flex items-center justify-center gap-3">
+        <div className="flex flex-col items-center">
+          {renderIcon('1786855398290.png', 'w-8 h-8')}
+          <span className="text-[10px] font-bold text-gray-700 mt-0.5 whitespace-nowrap">+15,000</span>
+        </div>
+        <div className="flex flex-col items-center">
+          {renderIcon('/file_0000000044388211996656afc9ce9c03.png', 'w-8 h-8')}
+          <span className="text-[10px] font-bold text-gray-700 mt-0.5 whitespace-nowrap">×3 days</span>
+        </div>
+        <div className="flex flex-col items-center">
+          {renderIcon('/IMG-20260903-WA0077.jpg', 'w-8 h-8')}
+          <span className="text-[10px] font-bold text-gray-700 mt-0.5 whitespace-nowrap">Bonus</span>
         </div>
       </div>
     );
@@ -336,7 +355,7 @@ export default function DailyCheckInModal({
                 <span className="absolute top-0 left-0 w-6 h-5 bg-blue-500 rounded-tl-lg rounded-br-lg flex items-center justify-center text-white text-[10px] font-bold">
                   {item.day}
                 </span>
-                <div className="mb-1 mt-2">{renderIcon(item.image, 'w-8 h-8')}</div>
+                <div className="mb-1 mt-2">{renderIcon(item.image, index === 2 ? 'w-10 h-10' : 'w-8 h-8')}</div>
                 <div className="text-[10px] font-semibold text-gray-700 whitespace-nowrap">{item.reward}</div>
                 {index + 1 < currentDay && (
                   <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
@@ -365,7 +384,7 @@ export default function DailyCheckInModal({
               <span className="absolute top-0 left-0 w-6 h-5 bg-blue-500 rounded-tl-lg rounded-br-lg flex items-center justify-center text-white text-[10px] font-bold">
                 5
               </span>
-              <div className="mb-0.5 mt-2">{renderIcon(SIGN_IN_REWARDS[4].image, 'w-7 h-7')}</div>
+              <div className="mb-0.5 mt-2">{renderIcon(SIGN_IN_REWARDS[4].image, 'w-8 h-8')}</div>
               <div className="text-[10px] font-semibold text-gray-700 whitespace-nowrap">{SIGN_IN_REWARDS[4].reward}</div>
               {5 < currentDay && (
                 <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
@@ -415,8 +434,7 @@ export default function DailyCheckInModal({
               <span className="absolute top-0 left-0 px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-tl-lg rounded-br-lg text-white text-[10px] font-bold whitespace-nowrap">
                 7 Days Big Rewards
               </span>
-              <div className="mb-1.5 mt-3">{renderIcon(SIGN_IN_REWARDS[6].image, 'w-10 h-10')}</div>
-              <div className="text-sm font-bold text-gray-800 whitespace-nowrap">{SIGN_IN_REWARDS[6].reward}</div>
+              <div className="mb-1.5 mt-3">{renderDay7Special()}</div>
               {7 < currentDay && (
                 <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -476,4 +494,5 @@ export default function DailyCheckInModal({
       `}</style>
     </div>
   );
-                  }
+}
+
