@@ -236,11 +236,12 @@ export default function Medal({ onBack }: MedalProps) {
       {/* 1. Base Dark WebGL Canvas */}
       <WebGLBackground />
 
-      {/* 2. Top Background Image - Fixed position */}
+      {/* 2. Top Background Image - Updated as per requirement (50vh, fade only from bottom) */}
       <div 
-        className="fixed top-0 left-0 right-0 h-[50vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
+        className="fixed top-0 left-0 right-0 h-[40vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
           backgroundImage: `url('/IMG_20260903_232144.png')`,
+          // Solid at the top (0% to 65%), then smoothly mixes into transparent at the bottom
           maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)'
         }}
@@ -248,132 +249,126 @@ export default function Medal({ onBack }: MedalProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#02050e]/30 to-[#02050e]" />
       </div>
 
-      {/* --- YAHAN SE CHANGES HAIN: FULL PAGE SCROLL WRAPPER --- */}
-      <div className="flex-1 overflow-y-auto w-full relative z-10 scrollbar-thin scrollbar-thumb-blue-900/40">
-        <div className="w-full max-w-md mx-auto flex flex-col min-h-full">
-          
-          {/* TOP AREA (Now scrolls with the whole page) */}
-          <div 
-            className="w-full px-4 pb-2"
-            style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)' }}
+      {/* 3. FIXED TOP AREA - UI Matching Screenshot */}
+      <div 
+        className="relative z-10 flex-none w-full max-w-md mx-auto px-4 pb-2"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)' }}
+      >
+        
+        {/* Header Bar */}
+        <div className="relative flex items-center justify-between pb-4">
+          <button
+            onClick={onBack}
+            className="p-1 text-gray-200 hover:text-white transition-colors cursor-pointer z-10"
           >
-            {/* Header Bar */}
-            <div className="relative flex items-center justify-between pb-4">
-              <button
-                onClick={onBack}
-                className="p-1 text-gray-200 hover:text-white transition-colors cursor-pointer z-10"
+            <ChevronLeft size={28} />
+          </button>
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-xl font-bold text-white tracking-wide drop-shadow-md">Medal</h1>
+          <button className="p-1 text-gray-200 hover:text-white transition-colors cursor-pointer z-10">
+            <HelpCircle size={22} className="opacity-80" />
+          </button>
+        </div>
+
+        {/* Current Medal Section */}
+        <div className="pt-2 pb-1 relative">
+          
+          {/* The Medal I Wear Line Label */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="w-10 h-[1px] bg-[#a89bbf] relative opacity-60">
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rotate-45 bg-[#d4cce6]"></div>
+            </div>
+            <span className="text-[15px] text-gray-100 tracking-wide font-medium mx-1">The Medal I Wear</span>
+            <div className="w-10 h-[1px] bg-[#a89bbf] relative opacity-60">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rotate-45 bg-[#d4cce6]"></div>
+            </div>
+          </div>
+
+          {/* Slots - Solid borders exactly like image */}
+          <div className="grid grid-cols-5 gap-[6px] px-1">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <div
+                key={index}
+                className="aspect-square rounded-[6px] border border-[#5d4a8e] bg-[#281b54]/60 flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm shadow-inner"
               >
-                <ChevronLeft size={28} />
-              </button>
-              <h1 className="absolute left-1/2 -translate-x-1/2 text-xl font-bold text-white tracking-wide drop-shadow-md">Medal</h1>
-              <button className="p-1 text-gray-200 hover:text-white transition-colors cursor-pointer z-10">
-                <HelpCircle size={22} className="opacity-80" />
-              </button>
-            </div>
-
-            {/* Current Medal Section */}
-            <div className="pt-2 pb-1 relative">
-              
-              {/* The Medal I Wear Line Label */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <div className="w-10 h-[1px] bg-[#a89bbf] relative opacity-60">
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rotate-45 bg-[#d4cce6]"></div>
-                </div>
-                <span className="text-[15px] text-gray-100 tracking-wide font-medium mx-1">The Medal I Wear</span>
-                <div className="w-10 h-[1px] bg-[#a89bbf] relative opacity-60">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rotate-45 bg-[#d4cce6]"></div>
-                </div>
+                <Plus size={22} className="text-[#e2d5ff]" strokeWidth={2.5} />
               </div>
-
-              {/* Slots */}
-              <div className="grid grid-cols-5 gap-[6px] px-1">
-                {Array.from({ length: 10 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="aspect-square rounded-[6px] border border-[#5d4a8e] bg-[#281b54]/60 flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm shadow-inner"
-                  >
-                    <Plus size={22} className="text-[#e2d5ff]" strokeWidth={2.5} />
-                  </div>
-                ))}
-              </div>
-
-              {/* Obtained Text */}
-              <div className="relative mt-6 flex flex-col items-center">
-                <div className="flex items-center justify-center text-[15px] font-medium text-gray-200 mb-2 z-10">
-                  Obtained Medal(s): <span className="text-[#facc15] ml-1">3</span> 
-                  <button className="text-[#facc15] cursor-pointer ml-1 hover:text-yellow-400 transition-colors">
-                    Check&gt;
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* 3 Tabs */}
-            <div className="flex items-center justify-between px-2 pb-1 text-sm pt-4">
-              {[
-                { key: 'achievement', label: 'Achievements' },
-                { key: 'activity', label: 'Activities' },
-                { key: 'gift', label: 'gift' },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key as any)}
-                  className={`relative font-semibold transition-colors flex flex-col items-center cursor-pointer w-1/3 text-center ${
-                    activeTab === tab.key
-                      ? 'text-white text-[15px]'
-                      : 'text-[#8b79b5] hover:text-gray-300 text-[15px]'
-                  }`}
-                >
-                  {tab.label}
-                  {activeTab === tab.key && (
-                    <span className="w-[14px] h-[3px] bg-[#facc15] rounded-full mt-2 absolute -bottom-1" />
-                  )}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
 
-          {/* BOTTOM SCROLLABLE AREA (Grid) */}
-          <div className="w-full px-4 pb-8 mt-3">
-            <div className="grid grid-cols-2 gap-4">
-              {filteredMedals.map((medal) => (
-                <div
-                  key={medal.id}
-                  onClick={() => setSelectedMedal(medal)}
-                  className="relative bg-gradient-to-b from-[#312061] to-[#181036] rounded-2xl p-3 flex flex-col items-center justify-between text-center hover:opacity-90 active:scale-95 transition-all duration-200 cursor-pointer h-[190px]"
-                >
-                  {/* Medal Image Area */}
-                  <div className="w-24 h-24 my-auto flex items-center justify-center relative">
-                    <ChromaKeyImage src={medal.image} alt={medal.name} isColorless={true} />
-                  </div>
-
-                  <div className="mt-auto w-full flex flex-col items-center pb-1">
-                    {/* Stars Display matching UI */}
-                    {medal.stars > 0 && (
-                      <div className="flex items-center justify-center gap-[2px] mt-2 mb-1.5">
-                        {Array.from({ length: medal.stars }).map((_, i) => (
-                          <Star
-                            key={i}
-                            size={12}
-                            className="fill-yellow-500 text-yellow-500 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Title */}
-                    <h3 className="text-[14px] font-semibold text-white tracking-wide line-clamp-1 drop-shadow-sm">
-                      {medal.name}
-                    </h3>
-                  </div>
-                </div>
-              ))}
+          {/* Obtained Text ONLY (Podium Removed) */}
+          <div className="relative mt-6 flex flex-col items-center">
+            <div className="flex items-center justify-center text-[15px] font-medium text-gray-200 mb-2 z-10">
+              Obtained Medal(s): <span className="text-[#facc15] ml-1">3</span> 
+              <button className="text-[#facc15] cursor-pointer ml-1 hover:text-yellow-400 transition-colors">
+                Check&gt;
+              </button>
             </div>
           </div>
+        </div>
 
+        {/* 3 Tabs (Achievements, Activities, gift) */}
+        <div className="flex items-center justify-between px-2 pb-1 text-sm pt-4">
+          {[
+            { key: 'achievement', label: 'Achievements' },
+            { key: 'activity', label: 'Activities' },
+            { key: 'gift', label: 'gift' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              className={`relative font-semibold transition-colors flex flex-col items-center cursor-pointer w-1/3 text-center ${
+                activeTab === tab.key
+                  ? 'text-white text-[15px]'
+                  : 'text-[#8b79b5] hover:text-gray-300 text-[15px]'
+              }`}
+            >
+              {tab.label}
+              {activeTab === tab.key && (
+                <span className="w-[14px] h-[3px] bg-[#facc15] rounded-full mt-2 absolute -bottom-1" />
+              )}
+            </button>
+          ))}
         </div>
       </div>
-      {/* --- SCROLL WRAPPER KHATAM --- */}
+
+      {/* 4. SCROLLABLE AREA */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8 relative z-10 w-full max-w-md mx-auto scrollbar-thin scrollbar-thumb-blue-900/40 mt-3">
+        <div className="grid grid-cols-2 gap-4">
+          {filteredMedals.map((medal) => (
+            <div
+              key={medal.id}
+              onClick={() => setSelectedMedal(medal)}
+              // Matching the card background from the image
+              className="relative bg-gradient-to-b from-[#312061] to-[#181036] rounded-2xl p-3 flex flex-col items-center justify-between text-center hover:opacity-90 active:scale-95 transition-all duration-200 cursor-pointer h-[190px]"
+            >
+              {/* Medal Image Area */}
+              <div className="w-24 h-24 my-auto flex items-center justify-center relative">
+                <ChromaKeyImage src={medal.image} alt={medal.name} isColorless={true} />
+              </div>
+
+              <div className="mt-auto w-full flex flex-col items-center pb-1">
+                {/* Stars Display matching UI */}
+                {medal.stars > 0 && (
+                  <div className="flex items-center justify-center gap-[2px] mt-2 mb-1.5">
+                    {Array.from({ length: medal.stars }).map((_, i) => (
+                      <Star
+                        key={i}
+                        size={12}
+                        className="fill-yellow-500 text-yellow-500 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Title */}
+                <h3 className="text-[14px] font-semibold text-white tracking-wide line-clamp-1 drop-shadow-sm">
+                  {medal.name}
+                </h3>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Center Modal with Smooth Zoom, Metallic Shine & Sparkles - UNTOUCHED */}
       {selectedMedal && (
@@ -521,3 +516,4 @@ export default function Medal({ onBack }: MedalProps) {
     </div>
   )
 }
+
