@@ -23,9 +23,9 @@ const tabs = ["Vehicle", "Avatar Frame", "Theme", "Chat Bubble", "ID"];
 const storeItems: StoreItem[] = [
   {
     id: "1",
-    name: "Love Car",
+    name: "Moon Light",
     image: "/1784533036732~2.jpg",
-    stars: 4,
+    stars: 5,
     price: "4,000,000",
     duration: "3D",
     hasDiscount: true,
@@ -61,7 +61,7 @@ const storeItems: StoreItem[] = [
     id: "5",
     name: "Royal Carriage",
     image: "/1784533036732~2.jpg",
-    stars: 3,
+    stars: 5,
     price: "240,000,000",
     duration: "1D",
     hasDiscount: true,
@@ -70,7 +70,7 @@ const storeItems: StoreItem[] = [
     id: "6",
     name: "Neon Bike",
     image: "/1784533036732~2.jpg",
-    stars: 2,
+    stars: 5,
     price: "2,400,000",
     duration: "3D",
     hasDiscount: true,
@@ -79,22 +79,30 @@ const storeItems: StoreItem[] = [
 
 export default function StorePage({ onBack }: StorePageProps) {
   const [activeTab, setActiveTab] = useState("Vehicle");
-  // Bottom sheet ke liye state
   const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
+
+  // Helper to render stars
+  const renderStars = (count: number) => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      <span key={i} className={`text-[13px] ${i < count ? 'text-yellow-400' : 'text-gray-200'}`}>
+        ★
+      </span>
+    ));
+  };
 
   return (
     <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans relative">
       <div className="max-w-md mx-auto min-h-screen flex flex-col">
         
-        {/* Top Header - Sky blue gradient mix kiya hai top pe */}
+        {/* Top Header - Smooth Color Mixing (Sky blue mixing with soft cyan/purple hues) */}
         <div
-          className="relative flex items-center justify-between px-4 pb-3 pt-4 bg-gradient-to-r from-sky-200 to-blue-200 rounded-b-2xl shadow-sm"
+          className="relative flex items-center justify-between px-4 pb-3 pt-4 bg-gradient-to-r from-[#cffafe] via-[#bae6fd] to-[#e0e7ff] shadow-sm rounded-b-2xl"
           style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16px)' }}
         >
           <button
             type="button"
             onClick={onBack}
-            className="p-1 -ml-2 text-black hover:bg-white/50 rounded-full transition-colors z-10"
+            className="p-1 -ml-2 text-black hover:bg-white/40 rounded-full transition-colors z-10"
           >
             <ChevronLeft size={28} strokeWidth={1.5} />
           </button>
@@ -109,13 +117,12 @@ export default function StorePage({ onBack }: StorePageProps) {
           </button>
         </div>
 
-        {/* Category Tabs (Fixed Perfect Circle) */}
+        {/* Category Tabs */}
         <div className="flex items-center gap-6 px-5 mt-3 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
               <div key={tab} className="relative flex items-center justify-center h-[70px]">
-                {/* Perfect Circle Behind Active Text */}
                 {isActive && (
                   <div className="absolute w-[58px] h-[58px] bg-[#1d4ed8] rounded-full shadow-sm"></div>
                 )}
@@ -136,31 +143,31 @@ export default function StorePage({ onBack }: StorePageProps) {
           })}
         </div>
 
-        {/* Items Grid (Edge-to-edge feel ke liye padding tight rakhi hai) */}
-        <div className="grid grid-cols-2 gap-2 px-2 py-2 mt-2 flex-1 content-start">
+        {/* Items Grid - Card ki width kam (gap-4 & px-5 se) aur height jyada (h-[190px]) */}
+        <div className="grid grid-cols-2 gap-x-5 gap-y-4 px-5 py-2 mt-2 flex-1 content-start">
           {storeItems.map((item) => (
             <div
               key={item.id}
-              onClick={() => setSelectedItem(item)} // Click karne par sheet open hoga
-              className="bg-white rounded-[14px] p-2 flex flex-col shadow-[0_2px_10px_rgba(0,0,0,0.03)] cursor-pointer active:scale-95 transition-transform"
+              onClick={() => setSelectedItem(item)} 
+              className="bg-white rounded-[16px] p-2.5 flex flex-col items-center shadow-[0_2px_12px_rgba(0,0,0,0.04)] cursor-pointer active:scale-95 transition-transform h-[190px]"
             >
-              {/* Top Bar (Solid Dark Blue Check & Try) */}
-              <div className="flex items-center justify-between w-full">
+              {/* Top Bar (Check & Try) */}
+              <div className="flex items-center justify-between w-full mb-1">
                 <div className="flex items-center gap-1 text-[#1d4ed8]">
-                  <div className="w-3 h-3 rounded-full bg-[#1d4ed8] flex items-center justify-center">
-                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                  <div className="w-3.5 h-3.5 rounded-full bg-[#1d4ed8] flex items-center justify-center">
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-[10px] font-medium">{item.duration}</span>
+                  <span className="text-[10px] font-bold">{item.duration}</span>
                 </div>
-                <span className="text-[10px] font-medium text-[#1d4ed8] opacity-90">
+                <span className="text-[11px] font-bold text-[#1d4ed8]">
                   Try
                 </span>
               </div>
 
-              {/* Item Image (Thoda height badha diya kyunki buttons hata diye) */}
-              <div className="relative w-full h-[90px] mt-2 mb-2 flex items-center justify-center">
+              {/* Item Image */}
+              <div className="relative w-full h-[65px] mt-1 mb-2 flex items-center justify-center">
                 <Image
                   src={item.image}
                   alt={item.name}
@@ -170,51 +177,83 @@ export default function StorePage({ onBack }: StorePageProps) {
                 />
               </div>
 
-              {/* Coin and Price (Buttons hata diye, sirf yehi bacha hai bottom pe) */}
-              <div className="flex items-center justify-center gap-1 mt-auto pb-1">
-                <div className="relative w-[13px] h-[13px] flex items-center justify-center">
-                  <Image
-                    src="/1786855398290.png"
-                    alt="Coin Icon"
-                    fill
-                    className="object-contain"
-                  />
+              {/* Added Details: Stars, Name, Coins */}
+              <div className="flex flex-col items-center justify-end flex-1 w-full gap-0.5">
+                <div className="flex items-center space-x-[1px]">
+                  {renderStars(item.stars)}
                 </div>
-                <span className="text-[11px] font-medium text-black tracking-tight">
-                  {item.price}
+                <span className="text-[13px] font-bold text-gray-800 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
+                  {item.name}
                 </span>
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <div className="relative w-3.5 h-3.5 flex items-center justify-center">
+                    <Image
+                      src="/1786855398290.png"
+                      alt="Coin Icon"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <span className="text-[11px] font-bold text-black tracking-tight">
+                    {item.price}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* BOTTOM SHEET - 50vh, No Blur, Tight Curve */}
+      {/* BOTTOM SHEET - Same Smooth Mixing Background */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          {/* Overlay - Original background dikhega (no backdrop-blur), click to close */}
+          {/* Background Overlay - No Blur */}
           <div 
             className="absolute inset-0 bg-black/40" 
             onClick={() => setSelectedItem(null)} 
           ></div>
           
-          {/* Bottom Sheet Content (50vh Height & Tight rounded corners) */}
-          <div className="relative w-full max-w-md mx-auto h-[50vh] bg-white rounded-t-lg flex flex-col shadow-2xl">
+          {/* Sheet Body - Tight Curve & Same Smooth Mixing Gradient */}
+          <div className="relative w-full max-w-md mx-auto h-[50vh] bg-gradient-to-br from-[#cffafe] via-[#bae6fd] to-[#e0e7ff] rounded-t-2xl flex flex-col shadow-2xl">
             
-            {/* Image (Card wali exact image yahan show hogi) */}
-            <div className="flex-1 relative w-full flex items-center justify-center p-6">
-              <Image
-                src={selectedItem.image}
-                alt={selectedItem.name}
-                fill
-                className="object-contain p-6"
-              />
+            {/* Main Content inside Sheet */}
+            <div className="flex-1 w-full flex flex-col items-center justify-center p-6 mt-4">
+              <div className="relative w-32 h-32 mb-4">
+                <Image
+                  src={selectedItem.image}
+                  alt={selectedItem.name}
+                  fill
+                  className="object-contain drop-shadow-md"
+                />
+              </div>
+              
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex items-center space-x-[2px]">
+                  {renderStars(selectedItem.stars)}
+                </div>
+                <h2 className="text-[20px] font-bold text-gray-900 tracking-wide">
+                  {selectedItem.name}
+                </h2>
+                <div className="flex items-center justify-center gap-1.5 mt-1">
+                  <div className="relative w-5 h-5 flex items-center justify-center">
+                    <Image
+                      src="/1786855398290.png"
+                      alt="Coin Icon"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <span className="text-[16px] font-bold text-black">
+                    {selectedItem.price}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Bottom Bar inside Sheet */}
-            <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100">
+            {/* Bottom Bar inside Sheet with Solid White Background to pop out the buttons */}
+            <div className="bg-white rounded-t-xl flex items-center justify-between px-6 py-4 shadow-[0_-4px_15px_rgba(0,0,0,0.03)]">
               
-              {/* Left Side: Coins & Value */}
+              {/* Fixed 79282 Coins */}
               <div className="flex items-center gap-1.5">
                 <div className="relative w-5 h-5 flex items-center justify-center">
                   <Image
@@ -224,22 +263,22 @@ export default function StorePage({ onBack }: StorePageProps) {
                     className="object-contain"
                   />
                 </div>
-                <span className="text-[15px] font-bold text-black tracking-tight">
+                <span className="text-[16px] font-bold text-black tracking-tight">
                   79282
                 </span>
               </div>
 
-              {/* Right Side: Send & Buy Buttons (Same pill shape & colors) */}
-              <div className="flex items-center w-[130px] rounded-full border border-[#1d4ed8] overflow-hidden h-[32px]">
+              {/* Send / Buy Buttons */}
+              <div className="flex items-center w-[140px] rounded-full border border-[#1d4ed8] overflow-hidden h-[34px]">
                 <button
                   type="button"
-                  className="flex-1 h-full bg-white text-[#1d4ed8] text-[12px] font-medium flex items-center justify-center hover:bg-[#eff6ff]"
+                  className="flex-1 h-full bg-white text-[#1d4ed8] text-[13px] font-bold flex items-center justify-center hover:bg-[#eff6ff]"
                 >
                   Send
                 </button>
                 <button
                   type="button"
-                  className="flex-1 h-full bg-[#1d4ed8] text-white text-[12px] font-medium flex items-center justify-center hover:bg-[#1e40af]"
+                  className="flex-1 h-full bg-[#1d4ed8] text-white text-[13px] font-bold flex items-center justify-center hover:bg-[#1e40af]"
                 >
                   Buy
                 </button>
@@ -252,4 +291,3 @@ export default function StorePage({ onBack }: StorePageProps) {
     </div>
   );
 }
-
