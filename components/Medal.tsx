@@ -214,11 +214,9 @@ function GoldenSparklesOverlay() {
 }
 
 export default function Medal({ onBack }: MedalProps) {
-  // Added 'gift' to match UI tabs exactly
   const [activeTab, setActiveTab] = useState<'achievement' | 'gift' | 'activity'>('achievement')
   const [selectedMedal, setSelectedMedal] = useState<MedalItem | null>(null)
 
-  // Logic untouched
   const medals: MedalItem[] = [
     { id: '1', name: 'CP-TOP1', image: '/IMG_20260828_003941.png', stars: 5, category: 'achievement' },
     { id: '2', name: 'CP-TOP2', image: '/IMG_20260828_003922.png', stars: 5, category: 'achievement' },
@@ -238,7 +236,7 @@ export default function Medal({ onBack }: MedalProps) {
       {/* 1. Base Dark WebGL Canvas */}
       <WebGLBackground />
 
-      {/* 2. Top Background Image - Updated to exact file requested */}
+      {/* 2. Top Background Image */}
       <div 
         className="fixed top-0 left-0 right-0 h-[50vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
@@ -250,8 +248,11 @@ export default function Medal({ onBack }: MedalProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#02050e]/50 to-[#02050e]" />
       </div>
 
-      {/* 3. FIXED TOP AREA - UI Matches 1000186186.jpg EXACTLY */}
-      <div className="relative z-10 flex-none w-full max-w-md mx-auto px-4 pt-11 pb-2 sm:pt-4">
+      {/* 3. FIXED TOP AREA - Fixed Safe Area Issue */}
+      <div 
+        className="relative z-10 flex-none w-full max-w-md mx-auto px-4 pb-2"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)' }}
+      >
         
         {/* Header Bar */}
         <div className="relative flex items-center justify-center pb-4">
@@ -274,7 +275,7 @@ export default function Medal({ onBack }: MedalProps) {
             <div className="w-8 h-[1px] bg-gradient-to-r from-[#736340] to-transparent"></div>
           </div>
 
-          {/* Slots - Changed to square dashed borders matching UI */}
+          {/* Slots - Dashed borders */}
           <div className="grid grid-cols-5 gap-3 px-3">
             {Array.from({ length: 10 }).map((_, index) => (
               <div
@@ -300,7 +301,7 @@ export default function Medal({ onBack }: MedalProps) {
           </div>
         </div>
 
-        {/* 3 Tabs exactly matching image */}
+        {/* 3 Tabs */}
         <div className="flex items-center justify-between px-2 pb-2 text-sm pt-6">
           {[
             { key: 'achievement', label: 'Achievement' },
@@ -325,7 +326,7 @@ export default function Medal({ onBack }: MedalProps) {
         </div>
       </div>
 
-      {/* 4. SCROLLABLE AREA - 2 Columns Grid to match UI */}
+      {/* 4. SCROLLABLE AREA */}
       <div className="flex-1 overflow-y-auto px-4 pb-8 relative z-10 w-full max-w-md mx-auto scrollbar-thin scrollbar-thumb-blue-900/40 mt-3">
         <div className="grid grid-cols-2 gap-4">
           {filteredMedals.map((medal) => (
@@ -353,7 +354,7 @@ export default function Medal({ onBack }: MedalProps) {
                   </div>
                 )}
 
-                {/* Title matching UI */}
+                {/* Title */}
                 <h3 className="text-sm font-medium text-white tracking-wide line-clamp-1 drop-shadow-sm">
                   {medal.name}
                 </h3>
@@ -509,4 +510,3 @@ export default function Medal({ onBack }: MedalProps) {
     </div>
   )
 }
-
