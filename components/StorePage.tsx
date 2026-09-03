@@ -87,7 +87,7 @@ export default function StorePage({ onBack }: StorePageProps) {
             <button 
               type="button"
               onClick={() => setCurrentView("bag")}
-              className="relative w-[32px] h-[32px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
+              className="relative w-[50px] h-[50px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
             >
               <Image
                 src="/file_0000000050008211a231ccb3937eab0a.png"
@@ -100,7 +100,7 @@ export default function StorePage({ onBack }: StorePageProps) {
             <button 
               type="button"
               onClick={() => setCurrentView("store")}
-              className="relative w-[32px] h-[32px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
+              className="relative w-[50px] h-[50px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
             >
               <Image
                 src="/file_00000000d634821189c7f69b4e3786e8.png"
@@ -113,7 +113,7 @@ export default function StorePage({ onBack }: StorePageProps) {
         </div>
 
         {/* Category Tabs - Exact Circle shape peeche */}
-        <div className="flex items-center gap-3 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
+        <div className="flex items-center gap-6 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -141,7 +141,7 @@ export default function StorePage({ onBack }: StorePageProps) {
         </div>
 
         {/* Items Grid - Card height kam (h-[220px]) & Tight Corners (rounded-xl) */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-4 py-2 mt-4 flex-1 content-start">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-4 py-2 mt-4 flex-1 content-start">
           {currentItems.map((item) => (
             <div
               key={item.id}
