@@ -226,7 +226,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
          {/* TOP BACKGROUND: EKDAM SMOOTH FADING INTO MAROON WITHOUT ANY HARSH LINE */}
         <div 
-          className="absolute top-0 left-0 w-full h-[75vh] z-2 pointer-events-none bg-cover bg-top overflow-hidden"
+          className="absolute top-0 left-0 w-full h-[60vh] z-2 pointer-events-none bg-cover bg-top overflow-hidden"
           style={{
             backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
             maskImage: 'linear-gradient(to bottom, black 40%, rgba(0,0,0,0.6) 65%, rgba(0,0,0,0.2) 85%, transparent 100%)',
