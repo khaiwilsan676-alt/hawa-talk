@@ -1,8 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'interface' in window ? {} : {
-  onBack?: () => void;
-};
+import React, { useEffect, useState } from 'react';
 
 interface RoomtaskProps {
   onBack?: () => void;
@@ -174,7 +172,7 @@ function TaskItem({
 export default function Roomtask({ onBack }: RoomtaskProps) {
   const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
   const cleanedTopLeftIconSrc = useProcessedShaderImage('/1786855398290.png');
-  const cleanedTopRightIconSrc = useProcessedShaderImage('/1786855398290.png'); // Right side ke liye bhi cleaned icon
+  const cleanedTopRightIconSrc = useProcessedShaderImage('/1786855398290.png');
 
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
@@ -279,7 +277,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           
           <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
-          {/* Middle Decoration Images (Left & Right Symmetric Styles) */}
+          {/* Middle Decoration Images */}
           <div className="w-full flex justify-center px-4 flex-col items-center">
             <div className="relative w-[90%] max-w-[360px] flex items-center justify-center">
               {/* Left Side Decoration Image */}
@@ -289,7 +287,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 className="w-1/2 h-auto object-contain drop-shadow-2xl select-none"
                 draggable={false}
               />
-              {/* Right Side Decoration Image (Same style as left, mirrored/flipped) */}
+              {/* Right Side Decoration Image */}
               <img 
                 src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
                 alt="Right Decoration" 
@@ -435,3 +433,4 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   );
 }
+
