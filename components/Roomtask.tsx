@@ -6,7 +6,7 @@ interface RoomtaskProps {
   onBack?: () => void;
 }
 
-// Custom Hook jo WebGL Shader se image ka white background ek baar mein strictly remove karke clean URL dega
+// Custom Hook jo WebGL Shader se image ka white background strictly remove karta hai
 function useProcessedShaderImage(src: string) {
   const [processedSrc, setProcessedSrc] = useState<string>(src);
 
@@ -120,7 +120,6 @@ function TaskItem({
 }) {
   return (
     <div className="relative z-10 w-[100%] max-w-[310px] h-[130px] flex items-center">
-      {/* Background Task Image */}
       <img 
         src="/file_000000004fd0821198ed4e26d5008b16.png"
         alt="Task Background"
@@ -128,7 +127,6 @@ function TaskItem({
         draggable={false}
       />
 
-      {/* Image ke upar Left Side: Shader Processed Icon & Text */}
       <div className="relative z-20 w-full px-4 flex items-center justify-between pointer-events-none">
         <div className="flex items-center space-x-2.5 pr-2">
           <img 
@@ -147,7 +145,6 @@ function TaskItem({
           </div>
         </div>
 
-        {/* Right Side Corner: Yellow Color 3D Claim Button */}
         <div className="flex-shrink-0 pointer-events-auto">
           <button 
             onClick={() => {}}
@@ -218,40 +215,48 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   ];
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#380308] scrollbar-none">
+    <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#380308] scrollbar-none select-none">
       <div className="relative w-full min-h-full flex flex-col">
         
-        {/* TOP BACKGROUND: Pure Image + Strict Bottom Mixing Gradient direct into #380308 (Dark Maroon) */}
+        {/* ANDROID STATUS BAR SAFE AREA FILLER */}
         <div 
-          className="absolute top-0 left-0 w-full h-[58vh] z-0 pointer-events-none bg-cover bg-top"
+          className="fixed top-0 left-0 w-full z-40 pointer-events-none"
+          style={{ height: 'env(safe-area-inset-top, 0px)' }}
+        />
+
+        {/* TOP BACKGROUND WITH ZERO-LINE MAROON BLEND */}
+        <div 
+          className="absolute top-0 left-0 w-full h-[58vh] z-0 pointer-events-none bg-cover bg-top overflow-hidden"
           style={{
-            backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)'
+            backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
+            maskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 95%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 95%)',
           }}
         >
-          {/* Strict Bottom Mixing Layer: Top 60% clear, 60% se 100% tak Dark Maroon m mixing */}
           <div 
             className="absolute inset-0 w-full h-full pointer-events-none"
             style={{
-              background: 'linear-gradient(to bottom, rgba(56,3,8,0) 0%, rgba(56,3,8,0) 55%, rgba(56,3,8,0.7) 80%, #380308 100%)'
+              background: 'linear-gradient(to bottom, rgba(56,3,8,0) 0%, rgba(56,3,8,0) 45%, rgba(56,3,8,0.85) 78%, #380308 96%, #380308 100%)'
             }}
           />
         </div>
 
-        {/* BOTTOM BACKGROUND: Pure Solid Dark Maroon (#380308) */}
+        {/* BOTTOM BACKGROUND */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[280vh] z-0 pointer-events-none bg-[#380308]"
+          className="absolute top-[50vh] left-0 w-full h-[260vh] z-0 pointer-events-none bg-[#380308]"
         />
 
-        {/* BACK ICON */}
+        {/* BACK ICON: Ekdam Screen Ke Corner Se Chipka Hua (Android Status Bar Safe Area Aware) */}
         <button 
           onClick={onBack} 
-          className="absolute z-50 p-2 cursor-pointer transition-transform hover:scale-110 active:scale-95"
+          className="fixed z-50 p-1 flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
           style={{
-            top: 'max(12px, env(safe-area-inset-top))',
-            left: '12px'
+            top: 'calc(env(safe-area-inset-top, 0px) + 2px)',
+            left: '2px'
           }}
+          aria-label="Back"
         >
-          <svg viewBox="0 0 24 24" className="w-8 h-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round drop-shadow-lg">
+          <svg viewBox="0 0 24 24" className="w-8 h-8 fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
@@ -297,16 +302,16 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           {/* FRAME SECTION */}
           <div className="relative w-full flex flex-col items-center mt-1">
             
-            {/* 1. TOP FRAME IMAGE: Full Wide Scale + Overlapping Room Task (Shifted Upper) */}
+            {/* 1. TOP FRAME IMAGE */}
             <div className="relative w-screen flex-shrink-0 z-20 flex justify-center items-center overflow-hidden">
               <img 
                 src="/file_00000000680881faa3dfdb17cce60858.png"
                 alt="Frame Top Border"
-                className="w-full scale-x-125 h-auto object-fill block select-none pointer-events-none"
+                className="w-full scale-x-115 h-auto object-fill block select-none pointer-events-none"
                 draggable={false}
               />
 
-              {/* Room Task Heading: Positioned Upper */}
+              {/* Room Task Heading */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <h1 className="text-white text-base sm:text-lg font-black tracking-wider uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] -mt-4 sm:-mt-6">
                   Room Task
@@ -314,8 +319,8 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
 
-            {/* LIVE DAILY COUNTDOWN UI: Shifted Upper (-mt-3) */}
-            <div className="flex items-center justify-center gap-1 -mt-3 z-30 select-none">
+            {/* LIVE DAILY COUNTDOWN UI */}
+            <div className="flex items-center justify-center gap-1 -mt-5 z-30 select-none">
               <span className="text-[#f5b8b8] text-[11px] font-medium">Countdown</span>
 
               {/* Hour */}
@@ -337,11 +342,11 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <span className="text-[#f5b8b8] text-[11px] font-medium">Second</span>
             </div>
 
-            {/* 2. MIDDLE SECTION: Motti Side Borders Joined High (-top-12) */}
-            <div className="relative w-full flex flex-col items-center mt-2 -mb-3">
-              {/* Left Side Screen Border Strip (Thick w-10 & Shifted High -top-12) */}
+            {/* 2. MIDDLE SECTION: Left/Right Screen Edges */}
+            <div className="relative w-full flex flex-col items-center mt-1 -mb-3">
+              {/* Left Screen Border */}
               <div 
-                className="absolute -top-12 left-0 bottom-0 w-10 sm:w-14 z-20 pointer-events-none"
+                className="absolute -top-12 left-0 bottom-0 w-12 sm:w-16 z-20 pointer-events-none"
                 style={{
                   backgroundImage: 'url(/IMG_20260903_105647.png)',
                   backgroundRepeat: 'repeat-y',
@@ -350,9 +355,9 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 }}
               />
 
-              {/* Right Side Screen Border Strip (Thick w-10 & Shifted High -top-12) */}
+              {/* Right Screen Border */}
               <div 
-                className="absolute -top-12 right-0 bottom-0 w-10 sm:w-14 z-20 pointer-events-none"
+                className="absolute -top-12 right-0 bottom-0 w-12 sm:w-16 z-20 pointer-events-none"
                 style={{
                   backgroundImage: 'url(/IMG_20260903_105705.png)',
                   backgroundRepeat: 'repeat-y',
@@ -362,7 +367,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               />
 
               {/* 22 Task Cards Container */}
-              <div className="w-full flex flex-col items-center -space-y-[50px] px-8 z-10">
+              <div className="w-full flex flex-col items-center -space-y-[50px] px-10 z-10 -mt-2">
                 {tasks.map((task, index) => (
                   <TaskItem 
                     key={index}
@@ -374,12 +379,12 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
 
-            {/* 3. BOTTOM FRAME IMAGE: Wide Scale (scale-x-125) & Shifted Upper (-mt-12) */}
+            {/* 3. BOTTOM FRAME IMAGE */}
             <div className="w-screen flex-shrink-0 z-20 pointer-events-none overflow-hidden -mt-12">
               <img 
                 src="/file_0000000066c88211aa777b1f6da8683f.png"
                 alt="Frame Bottom Border"
-                className="w-full scale-x-125 h-auto object-fill block select-none"
+                className="w-full scale-x-115 h-auto object-fill block select-none"
                 draggable={false}
               />
             </div>
@@ -392,4 +397,3 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   );
 }
-
