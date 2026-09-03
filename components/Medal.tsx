@@ -238,9 +238,9 @@ export default function Medal({ onBack }: MedalProps) {
 
       {/* 2. Top Background Image */}
       <div 
-        className="fixed top-0 left-0 right-0 h-[30vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
+        className="fixed top-0 left-0 right-0 h-[40vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
-          backgroundImage: `url('/file_00000000f1dc821196bf96f688c3b2f6.png')`,
+          backgroundImage: `url('/IMG_20260903_232144.png')`,
           maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
         }}
