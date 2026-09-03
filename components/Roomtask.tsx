@@ -108,7 +108,7 @@ function useProcessedShaderImage(src: string) {
   return processedSrc;
 }
 
-// Helper component for task items (Claim aur Receive buttons ke sath)
+// Helper component for task items
 function TaskItem({ 
   title, 
   reward,
@@ -118,8 +118,6 @@ function TaskItem({
   reward: string;
   iconSrc: string;
 }) {
-  const [isClaimed, setIsClaimed] = useState(false);
-
   return (
     <div className="relative z-20 w-[100%] max-w-[310px] h-[130px] flex items-center">
       <img 
@@ -147,21 +145,12 @@ function TaskItem({
           </div>
         </div>
 
-        <div className="flex-shrink-0 pointer-events-auto flex items-center gap-1.5">
-          {/* Claim Button */}
+        <div className="flex-shrink-0 pointer-events-auto">
           <button 
             onClick={() => {}}
-            className="px-3 py-1.5 rounded-full font-black text-[10px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
+            className="px-3.5 py-1.5 rounded-full font-black text-[11px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
           >
             Claim
-          </button>
-
-          {/* Receive Button (Yellow 3D Styled) */}
-          <button 
-            onClick={() => setIsClaimed(true)}
-            className="px-3 py-1.5 rounded-full font-black text-[10px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
-          >
-            Receive
           </button>
         </div>
       </div>
@@ -172,7 +161,6 @@ function TaskItem({
 export default function Roomtask({ onBack }: RoomtaskProps) {
   const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
   const cleanedTopLeftIconSrc = useProcessedShaderImage('/1786855398290.png');
-  const cleanedTopRightIconSrc = useProcessedShaderImage('/1786855398290.png');
 
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
@@ -236,27 +224,28 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           style={{ height: 'env(safe-area-inset-top, 0px)' }}
         />
 
-        {/* TOP BACKGROUND */}
+        {/* TOP BACKGROUND: Smooth Bottom Mixing in #380308 */}
         <div 
           className="absolute top-0 left-0 w-full h-[58vh] z-0 pointer-events-none bg-cover bg-top overflow-hidden"
           style={{
             backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
           }}
         >
+          {/* Gradient overlay ko aur smooth kar diya taaki line bilkul na aaye */}
           <div 
             className="absolute inset-0 w-full h-full pointer-events-none"
             style={{
-              background: 'linear-gradient(to bottom, rgba(56,3,8,0) 50%, rgba(56,3,8,0.5) 80%, #380308 100%)'
+              background: 'linear-gradient(to bottom, rgba(56,3,8,0) 40%, rgba(56,3,8,0.7) 75%, #380308 100%)'
             }}
           />
         </div>
 
-        {/* BOTTOM BACKGROUND */}
+        {/* BOTTOM BACKGROUND: Solid Dark Maroon */}
         <div 
           className="absolute top-[50vh] left-0 w-full h-[260vh] z-0 pointer-events-none bg-[#380308]"
         />
 
-        {/* BACK ICON */}
+        {/* BACK ICON: Screen Corner Safe Area */}
         <button 
           onClick={onBack} 
           className="fixed z-50 p-1 flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
@@ -277,46 +266,25 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           
           <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
-          {/* Middle Decoration Images */}
+          {/* Middle Decoration Image */}
           <div className="w-full flex justify-center px-4 flex-col items-center">
             <div className="relative w-[90%] max-w-[360px] flex items-center justify-center">
-              {/* Left Side Decoration Image */}
               <img 
                 src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
-                alt="Left Decoration" 
-                className="w-1/2 h-auto object-contain drop-shadow-2xl select-none"
-                draggable={false}
-              />
-              {/* Right Side Decoration Image */}
-              <img 
-                src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
-                alt="Right Decoration" 
-                className="w-1/2 h-auto object-contain drop-shadow-2xl select-none -scale-x-100"
+                alt="Middle Decoration" 
+                className="w-full h-auto object-contain drop-shadow-2xl select-none"
                 draggable={false}
               />
 
-              {/* Left Side Icon & Counter */}
+              {/* Left Side: Cleaned Coin Icon */}
               <div 
                 className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
-                style={{ left: '20px' }} 
+                style={{ left: '28px' }} 
               >
                 <img 
                   src={cleanedTopLeftIconSrc}
-                  alt="Left Icon" 
-                  className="w-5 h-5 object-contain drop-shadow-md select-none"
-                  draggable={false}
-                />
-              </div>
-
-              {/* Right Side Icon & Counter */}
-              <div 
-                className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
-                style={{ right: '20px' }} 
-              >
-                <img 
-                  src={cleanedTopRightIconSrc}
-                  alt="Right Icon" 
-                  className="w-5 h-5 object-contain drop-shadow-md select-none"
+                  alt="Cleaned Coin Icon" 
+                  className="w-6 h-6 object-contain drop-shadow-md select-none"
                   draggable={false}
                 />
               </div>
@@ -333,7 +301,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           {/* FRAME SECTION */}
           <div className="relative w-full flex flex-col items-center mt-1">
             
-            {/* 1. TOP FRAME IMAGE */}
+            {/* 1. TOP FRAME IMAGE: z-30 */}
             <div className="relative w-full flex-shrink-0 z-30 flex justify-center items-center overflow-hidden">
               <img 
                 src="/file_00000000680881faa3dfdb17cce60858.png"
@@ -374,10 +342,10 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <span className="text-[#f5b8b8] text-[11px] font-medium">Second</span>
             </div>
 
-            {/* 2. MIDDLE SECTION */}
+            {/* 2. MIDDLE SECTION: Side walls at z-10 (Strictly edge-to-edge attached to left/right screen) */}
             <div className="relative w-full flex flex-col items-center mt-1 -mb-3">
               
-              {/* Left Screen Border */}
+              {/* Left Screen Border - Ekdum edge par chipka diya */}
               <div 
                 className="absolute -top-14 bottom-0 w-12 sm:w-16 z-10 pointer-events-none"
                 style={{
@@ -385,11 +353,12 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                   backgroundRepeat: 'repeat-y',
                   backgroundSize: '100% auto',
                   backgroundPosition: 'left top',
-                  left: '0px'
+                  left: '0px',
+                  marginLeft: '0px'
                 }}
               />
 
-              {/* Right Screen Border */}
+              {/* Right Screen Border - Ekdum edge par chipka diya */}
               <div 
                 className="absolute -top-14 bottom-0 w-12 sm:w-16 z-10 pointer-events-none"
                 style={{
@@ -397,7 +366,8 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                   backgroundRepeat: 'repeat-y',
                   backgroundSize: '100% auto',
                   backgroundPosition: 'right top',
-                  right: '0px'
+                  right: '0px',
+                  marginRight: '0px'
                 }}
               />
 
@@ -414,7 +384,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
 
-            {/* 3. BOTTOM FRAME IMAGE */}
+            {/* 3. BOTTOM FRAME IMAGE: z-30 */}
             <div className="w-full flex-shrink-0 z-30 pointer-events-none overflow-hidden -mt-12">
               <img 
                 src="/file_0000000066c88211aa777b1f6da8683f.png"
