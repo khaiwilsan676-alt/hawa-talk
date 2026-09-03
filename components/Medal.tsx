@@ -226,7 +226,7 @@ export default function Medal({ onBack }: MedalProps) {
     { id: '6', name: 'VIP2', image: '/IMG_20260828_003958.png', stars: 4, category: 'activity' },
     { id: '7', name: 'VIP3', image: '/IMG_20260828_003941.png', stars: 4, category: 'activity' },
     { id: '8', name: 'Huna', image: '/IMG_20260828_003922.png', stars: 3, category: 'activity' },
-    { id: '9', name: 'I LOVE YOU', image: '/IMG_20260828_003958.png', stars: 1, category: 'gift' },
+    { id: '9', name: 'I LOVE YOU', image: '/IMG_20260828_003958.png', stars: 1, category: 'activity' },
   ]
 
   const filteredMedals = medals.filter((m) => m.category === activeTab)
@@ -238,7 +238,7 @@ export default function Medal({ onBack }: MedalProps) {
 
       {/* 2. Top Background Image */}
       <div 
-        className="fixed top-0 left-0 right-0 h-[50vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
+        className="fixed top-0 left-0 right-0 h-[30vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
           backgroundImage: `url('/file_00000000f1dc821196bf96f688c3b2f6.png')`,
           maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
@@ -255,7 +255,7 @@ export default function Medal({ onBack }: MedalProps) {
       >
         
         {/* Header Bar */}
-        <div className="relative flex items-center justify-center pb-2">
+        <div className="relative flex items-center justify-center pb-4">
           <button
             onClick={onBack}
             className="absolute left-0 p-1 text-gray-200 hover:text-white transition-colors cursor-pointer"
@@ -266,17 +266,17 @@ export default function Medal({ onBack }: MedalProps) {
         </div>
 
         {/* Current Medal Section */}
-        <div className="pt-1 pb-1 relative">
+        <div className="pt-2 pb-1 relative">
           
           {/* Current Medal Line Label */}
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="w-10 h-[1px] bg-gradient-to-l from-[#736340] to-transparent"></div>
-            <span className="text-[13px] text-gray-200 tracking-wide font-medium">The Medal I Wear</span>
-            <div className="w-10 h-[1px] bg-gradient-to-r from-[#736340] to-transparent"></div>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-8 h-[1px] bg-gradient-to-l from-[#736340] to-transparent"></div>
+            <span className="text-[13px] text-gray-200 tracking-wide font-medium">Current Medal</span>
+            <div className="w-8 h-[1px] bg-gradient-to-r from-[#736340] to-transparent"></div>
           </div>
 
-          {/* Slots - Dashed borders (5x2 grid) */}
-          <div className="grid grid-cols-5 gap-2 px-1">
+          {/* Slots - Dashed borders */}
+          <div className="grid grid-cols-5 gap-3 px-3">
             {Array.from({ length: 10 }).map((_, index) => (
               <div
                 key={index}
@@ -288,62 +288,62 @@ export default function Medal({ onBack }: MedalProps) {
           </div>
 
           {/* Glowing Podium Effect & Check Text */}
-          <div className="relative mt-4 flex flex-col items-center">
+          <div className="relative mt-6 flex flex-col items-center">
             {/* Ellipse Podium glowing base */}
-            <div className="absolute bottom-3 w-56 h-7 border-b-2 border-blue-400/40 rounded-[100%] shadow-[0_15px_30px_rgba(59,130,246,0.3)] pointer-events-none"></div>
+            <div className="absolute bottom-4 w-64 h-8 border-b-2 border-blue-400/40 rounded-[100%] shadow-[0_15px_30px_rgba(59,130,246,0.3)] pointer-events-none"></div>
             
-            <div className="flex items-center justify-center gap-1.5 z-10 bg-[#161230]/80 px-4 py-1 rounded-full border border-blue-900/30">
-              <span className="text-blue-200 text-xs font-medium">Obtained Medal(s): 3</span>
+            <div className="flex items-center justify-center gap-1.5 z-10 bg-[#161230]/80 px-4 py-1.5 rounded-full border border-blue-900/30">
+              <span className="text-blue-200 text-xs font-medium">Obtained Medal(s): 0</span>
               <button className="text-yellow-500 text-xs font-medium cursor-pointer flex items-center">
-                Check <span className="ml-0.5 leading-none">&gt;</span>
+                Check <span className="ml-1 leading-none">&gt;</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* 3 Tabs matching exact reference */}
-        <div className="flex items-center justify-around px-4 pb-1 text-sm pt-4">
+        {/* 3 Tabs */}
+        <div className="flex items-center justify-between px-2 pb-2 text-sm pt-6">
           {[
-            { key: 'achievement', label: 'Achievements' },
-            { key: 'activity', label: 'Activities' },
-            { key: 'gift', label: 'gift' },
+            { key: 'achievement', label: 'Achievement' },
+            { key: 'gift', label: 'Gift' },
+            { key: 'activity', label: 'Activity' },
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`relative font-medium transition-colors flex flex-col items-center cursor-pointer text-center ${
+              className={`relative font-medium transition-colors flex flex-col items-center cursor-pointer w-1/3 text-center ${
                 activeTab === tab.key
-                  ? 'text-[#f5d070] text-[14px]'
-                  : 'text-gray-400 hover:text-gray-300 text-[14px]'
+                  ? 'text-[#f5d070] text-[15px]'
+                  : 'text-gray-400 hover:text-gray-300 text-[15px]'
               }`}
             >
               {tab.label}
               {activeTab === tab.key && (
-                <span className="w-4 h-[3px] bg-[#f5d070] rounded-full mt-1 absolute -bottom-1.5" />
+                <span className="w-5 h-[3px] bg-[#f5d070] rounded-full mt-1.5 absolute -bottom-2" />
               )}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 4. SCROLLABLE AREA - Exact rounded vertical cards matching the screenshot */}
-      <div className="flex-1 overflow-y-auto px-4 pb-8 relative z-10 w-full max-w-md mx-auto scrollbar-thin scrollbar-thumb-blue-900/40 mt-2">
-        <div className="grid grid-cols-2 gap-2">
+      {/* 4. SCROLLABLE AREA */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8 relative z-10 w-full max-w-md mx-auto scrollbar-thin scrollbar-thumb-blue-900/40 mt-3">
+        <div className="grid grid-cols-2 gap-4">
           {filteredMedals.map((medal) => (
             <div
               key={medal.id}
               onClick={() => setSelectedMedal(medal)}
-              className="relative bg-[#16122d]/60 border border-[#2e264d] rounded-2xl p-4 flex flex-col items-center justify-between text-center hover:border-yellow-400/30 active:scale-95 transition-all duration-200 cursor-pointer h-[220px] backdrop-blur-md shadow-inner"
+              className="relative bg-[#0d091a] border border-[#26203d] rounded-xl p-3 flex flex-col items-center justify-between text-center hover:border-yellow-400/30 active:scale-95 transition-all duration-200 cursor-pointer h-[200px]"
             >
               {/* Medal Image Area */}
-              <div className="w-28 h-28 my-auto flex items-center justify-center relative">
+              <div className="w-24 h-24 my-auto flex items-center justify-center relative">
                 <ChromaKeyImage src={medal.image} alt={medal.name} isColorless={true} />
               </div>
 
               <div className="mt-auto w-full flex flex-col items-center">
-                {/* Stars Display */}
+                {/* Stars Display matching UI */}
                 {medal.stars > 0 && (
-                  <div className="flex items-center justify-center gap-[2px] mb-1">
+                  <div className="flex items-center justify-center gap-[2px] mt-2 mb-1.5">
                     {Array.from({ length: medal.stars }).map((_, i) => (
                       <Star
                         key={i}
@@ -402,7 +402,7 @@ export default function Medal({ onBack }: MedalProps) {
               <div className="w-52 h-52 sm:w-60 sm:h-60 relative flex items-center justify-center overflow-hidden rounded-full animate-subtle-pulse z-10">
                 <ChromaKeyImage src={selectedMedal.image} alt={selectedMedal.name} isColorless={false} />
                 
-                {/* Metal Shine Sweep Animation */}
+                {/* Metal Shine Sweep Animation Is BACK! */}
                 <div className="absolute inset-0 pointer-events-none animate-shine-sweep z-20">
                   <div className="w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent transform -skew-x-25" />
                 </div>
@@ -510,4 +510,3 @@ export default function Medal({ onBack }: MedalProps) {
     </div>
   )
 }
-
