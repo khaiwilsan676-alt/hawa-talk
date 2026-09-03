@@ -326,6 +326,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
               <span className="text-[#e8b499] text-[11px] font-medium">Second</span>
             </div>
+          </div>
 
           {/* 22 Task Images with Titles & Claim Buttons inside */}
           <div className="w-full flex flex-col items-center -space-y-[50px] mt-1 pb-16 px-4">
