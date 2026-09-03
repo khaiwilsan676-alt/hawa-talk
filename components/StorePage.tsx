@@ -81,12 +81,12 @@ export default function StorePage({ onBack }: StorePageProps) {
   const [activeTab, setActiveTab] = useState("Vehicle");
 
   return (
-    <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans">
-      <div className="max-w-md mx-auto min-h-screen flex flex-col">
+    <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans flex flex-col">
+      <div className="max-w-md w-full mx-auto flex-1 flex flex-col bg-[#f3f8fe] shadow-sm overflow-hidden h-screen">
         
         {/* Top Header */}
         <div
-          className="relative flex items-center justify-between px-4 pb-2 pt-4"
+          className="relative flex items-center justify-between px-4 pb-2 pt-4 shrink-0"
           style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16px)' }}
         >
           <button
@@ -101,104 +101,111 @@ export default function StorePage({ onBack }: StorePageProps) {
             Store
           </h1>
 
-          <button className="flex items-center gap-1.5 bg-[#4dd0e1] text-white px-3.5 py-1.5 rounded-full text-[13px] font-medium z-10 shadow-sm">
+          <button className="flex items-center gap-1.5 bg-[#1d4ed8] text-white px-3.5 py-1.5 rounded-full text-[13px] font-medium z-10 shadow-sm">
             <ShoppingBag size={14} strokeWidth={2.5} />
             Bag
           </button>
         </div>
 
-        {/* Category Tabs (Fixed Perfect Circle) */}
-        <div className="flex items-center gap-6 px-5 mt-3 overflow-x-auto no-scrollbar">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <div key={tab} className="relative flex items-center justify-center h-[70px]">
-                {/* Perfect Circle Behind Active Text */}
-                {isActive && (
-                  <div className="absolute w-[66px] h-[66px] bg-[#4dd0e1] rounded-full shadow-sm"></div>
-                )}
-                
-                <button
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative z-10 whitespace-nowrap text-[15px] transition-colors ${
-                    isActive
-                      ? "text-black font-normal"
-                      : "text-gray-400 font-normal"
-                  }`}
-                >
-                  {tab}
-                </button>
-              </div>
-            );
-          })}
-        </div>
+        {/* Main Content Area (Sidebar on Left, Grid on Right) */}
+        <div className="flex flex-1 overflow-hidden mt-2">
+          
+          {/* Vertical Tabs Sidebar (Left Side) */}
+          <div className="w-[85px] shrink-0 overflow-y-auto no-scrollbar flex flex-col items-center gap-4 py-2 border-r border-gray-200/50">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <div key={tab} className="relative flex items-center justify-center w-full min-h-[64px]">
+                  {/* Dark Blue Circle behind active tab */}
+                  {isActive && (
+                    <div className="absolute w-[56px] h-[56px] bg-[#1d4ed8] rounded-full shadow-sm"></div>
+                  )}
+                  
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`relative z-10 text-[11px] leading-tight px-1 transition-colors w-full text-center ${
+                      isActive
+                        ? "text-white font-medium"
+                        : "text-gray-400 font-medium"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
 
-        {/* Items Grid (Fixed Card Heights - Compact) */}
-        <div className="grid grid-cols-3 gap-3 px-4 py-2 mt-2 flex-1 content-start">
-          {storeItems.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-[14px] p-2 flex flex-col shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
-            >
-              {/* Top Bar (Solid Cyan Check & Try) */}
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-1 text-[#4dd0e1]">
-                  <div className="w-3 h-3 rounded-full bg-[#4dd0e1] flex items-center justify-center">
-                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+          {/* Items Grid Area (Right Side - 2 Columns) */}
+          <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2">
+            <div className="grid grid-cols-2 gap-3 content-start">
+              {storeItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-[14px] p-2 flex flex-col shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
+                >
+                  {/* Top Bar (Solid Dark Blue Check & Try) */}
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-1 text-[#1d4ed8]">
+                      <div className="w-3 h-3 rounded-full bg-[#1d4ed8] flex items-center justify-center">
+                        <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span className="text-[10px] font-medium">{item.duration}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-[#1d4ed8] opacity-90">
+                      Try
+                    </span>
                   </div>
-                  <span className="text-[10px] font-medium">{item.duration}</span>
+
+                  {/* Item Image (Compact Height) */}
+                  <div className="relative w-full h-[60px] mt-2 mb-2 flex items-center justify-center">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 768px) 50vw, 150px"
+                    />
+                  </div>
+
+                  {/* Coin and Price */}
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    <div className="relative w-[13px] h-[13px] flex items-center justify-center">
+                      <Image
+                        src="/1786855398290.png"
+                        alt="Coin Icon"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                    <span className="text-[12px] font-medium text-black tracking-tight">
+                      {item.price}
+                    </span>
+                  </div>
+
+                  {/* Action Buttons (Send / Buy - Perfect Pill Shape in Dark Blue) */}
+                  <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[26px]">
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[11px] font-medium flex items-center justify-center hover:bg-[#eff6ff]"
+                    >
+                      Send
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[11px] font-medium flex items-center justify-center hover:bg-[#1e40af]"
+                    >
+                      Buy
+                    </button>
+                  </div>
                 </div>
-                <span className="text-[10px] font-medium text-[#4dd0e1] opacity-90">
-                  Try
-                </span>
-              </div>
-
-              {/* Item Image (Compact Height) */}
-              <div className="relative w-full h-[52px] mt-1.5 mb-1.5 flex items-center justify-center">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 768px) 33vw, 120px"
-                />
-              </div>
-
-              {/* Coin and Price */}
-              <div className="flex items-center justify-center gap-1 mb-2">
-                <div className="relative w-[13px] h-[13px] flex items-center justify-center">
-                  <Image
-                    src="/1786855398290.png"
-                    alt="Coin Icon"
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-                <span className="text-[11px] font-medium text-black tracking-tight">
-                  {item.price}
-                </span>
-              </div>
-
-              {/* Action Buttons (Send / Buy - Perfect Pill Shape) */}
-              <div className="flex items-center w-full rounded-full border border-[#4dd0e1] overflow-hidden h-[24px]">
-                <button
-                  type="button"
-                  className="flex-1 h-full bg-white text-[#4dd0e1] text-[10px] font-medium flex items-center justify-center"
-                >
-                  Send
-                </button>
-                <button
-                  type="button"
-                  className="flex-1 h-full bg-[#4dd0e1] text-white text-[10px] font-medium flex items-center justify-center"
-                >
-                  Buy
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
+
         </div>
       </div>
     </div>
