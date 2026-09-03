@@ -218,23 +218,23 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   ];
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#130a06] scrollbar-none">
+    <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#2b0507] scrollbar-none">
       <div className="relative w-full min-h-full flex flex-col">
-        {/* TOP BACKGROUND */}
+        {/* TOP BACKGROUND (Bottom 1vh mixing with the dark red background) */}
         <div 
           className="absolute top-0 left-0 w-full h-[55vh] z-0 pointer-events-none"
           style={{
             backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            maskImage: 'linear-gradient(to bottom, black 98%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 98%, transparent 100%)',
+            maskImage: 'linear-gradient(to bottom, black calc(100% - 1vh), transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black calc(100% - 1vh), transparent 100%)',
           }}
         />
 
-        {/* BOTTOM BACKGROUND: Ekdam Dark Brown Solid Background */}
+        {/* BOTTOM BACKGROUND: Ekdam Dark Red Solid Background */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[268vh] z-0 pointer-events-none bg-[#130a06]"
+          className="absolute top-[50vh] left-0 w-full h-[268vh] z-0 pointer-events-none bg-[#2b0507]"
         />
 
         {/* BACK ICON */}
@@ -288,54 +288,56 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 </span>
               </div>
             </div>
-            
-            {/* ROOM TASK HEADING */}
-            <h1 className="text-white text-lg font-black tracking-wider uppercase mt-16 drop-shadow-md">
-              Room Task
-            </h1>
-
-            {/* LIVE DAILY COUNTDOWN UI */}
-            <div className="flex items-center justify-center gap-1 mt-10 z-20 select-none">
-              <span className="text-[#e8b499] text-[11px] font-medium">Countdown</span>
-
-              {/* Hour */}
-              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.hours}</span>
-              </div>
-              <span className="text-[#e8b499] text-[11px] font-medium">Hour</span>
-
-              {/* Minute */}
-              <div className="min-w-[20px] px-1 h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.minutes}</span>
-              </div>
-              <span className="text-[#e8b499] text-[11px] font-medium">Minute</span>
-
-              {/* Second */}
-              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
-                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.seconds}</span>
-              </div>
-              <span className="text-[#e8b499] text-[11px] font-medium">Second</span>
-            </div>
           </div>
 
-          {/* FRAME SECTION (Top Edge-to-Edge, Left/Right Borders & Bottom Frame) */}
-          <div className="relative w-full flex flex-col items-center mt-3">
+          {/* FRAME SECTION (Top Edge-to-Edge with Overlapping Room Task, Left/Right Borders & Bottom Frame) */}
+          <div className="relative w-full flex flex-col items-center mt-1">
             
-            {/* 1. Top Frame Image (Edge-to-Edge, Gap-3 below Middle section) */}
-            <div className="w-full flex-shrink-0 z-20 pointer-events-none">
+            {/* 1. TOP FRAME IMAGE (Edge-to-Edge) + ROOM TASK OVERLAP */}
+            <div className="relative w-full flex-shrink-0 z-20 flex justify-center items-center">
               <img 
                 src="/file_00000000680881faa3dfdb17cce60858.png"
                 alt="Frame Top Border"
-                className="w-full h-auto object-fill block select-none"
+                className="w-full h-auto object-fill block select-none pointer-events-none"
                 draggable={false}
               />
+
+              {/* Room Task Heading Overlapping Top Frame Image Center */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-1">
+                <h1 className="text-white text-base sm:text-lg font-black tracking-wider uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  Room Task
+                </h1>
+              </div>
             </div>
 
-            {/* 2. Middle Border Wrapper: Left & Right Screen Se Chipke Hue Borders */}
-            <div className="relative w-full flex flex-col items-center">
-              {/* Left Side Screen Border Strip */}
+            {/* LIVE DAILY COUNTDOWN UI (Theek Top frame ke neeche) */}
+            <div className="flex items-center justify-center gap-1 mt-3 z-30 select-none">
+              <span className="text-[#f5b8b8] text-[11px] font-medium">Countdown</span>
+
+              {/* Hour */}
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#b82929] to-[#691111] flex items-center justify-center shadow-inner">
+                <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.hours}</span>
+              </div>
+              <span className="text-[#f5b8b8] text-[11px] font-medium">Hour</span>
+
+              {/* Minute */}
+              <div className="min-w-[20px] px-1 h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#b82929] to-[#691111] flex items-center justify-center shadow-inner">
+                <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.minutes}</span>
+              </div>
+              <span className="text-[#f5b8b8] text-[11px] font-medium">Minute</span>
+
+              {/* Second */}
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#b82929] to-[#691111] flex items-center justify-center shadow-inner">
+                <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.seconds}</span>
+              </div>
+              <span className="text-[#f5b8b8] text-[11px] font-medium">Second</span>
+            </div>
+
+            {/* 2. MIDDLE SECTION: Left/Right Screen Strips & 22 Task Cards (Gap-2 below Countdown) */}
+            <div className="relative w-full flex flex-col items-center mt-2">
+              {/* Left Side Screen Border Strip (Screen se ekdam chipka hua) */}
               <div 
-                className="absolute top-0 left-0 bottom-0 w-5 sm:w-7 z-20 pointer-events-none"
+                className="absolute top-0 left-0 bottom-0 w-4 sm:w-6 z-20 pointer-events-none"
                 style={{
                   backgroundImage: 'url(/IMG_20260903_105647.png)',
                   backgroundRepeat: 'repeat-y',
@@ -344,9 +346,9 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 }}
               />
 
-              {/* Right Side Screen Border Strip */}
+              {/* Right Side Screen Border Strip (Screen se ekdam chipka hua) */}
               <div 
-                className="absolute top-0 right-0 bottom-0 w-5 sm:w-7 z-20 pointer-events-none"
+                className="absolute top-0 right-0 bottom-0 w-4 sm:w-6 z-20 pointer-events-none"
                 style={{
                   backgroundImage: 'url(/IMG_20260903_105705.png)',
                   backgroundRepeat: 'repeat-y',
@@ -355,7 +357,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 }}
               />
 
-              {/* 22 Task Cards Container (Frame ke dono borders ke beech mein) */}
+              {/* 22 Task Cards Container */}
               <div className="w-full flex flex-col items-center -space-y-[50px] px-6 z-10">
                 {tasks.map((task, index) => (
                   <TaskItem 
@@ -368,7 +370,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
 
-            {/* 3. Bottom Frame Image (Edge-to-edge frame bottom) */}
+            {/* 3. BOTTOM FRAME IMAGE (Edge-to-Edge) */}
             <div className="w-full flex-shrink-0 z-20 pointer-events-none -mt-4">
               <img 
                 src="/file_0000000066c88211aa777b1f6da8683f.png"
