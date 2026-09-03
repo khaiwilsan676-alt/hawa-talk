@@ -124,17 +124,14 @@ export default function StorePage({ onBack }: StorePageProps) {
             return (
               <div key={tab} className="relative flex items-center justify-center h-[70px]">
                 
-                {/* Custom Zig-Zag Background */}
+                {/* Custom Zig-Zag Background (Less Deep, Pure Buy-Button Blue) */}
                 {isActive && (
                   <div className="absolute w-[62px] h-[62px] flex items-center justify-center">
                     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
                       <g transform="scale(0.92) translate(4.3, 4.3)">
-                        <polygon
-                          points="50,0 57,9 66,5 70,14 80,13 81,23 90,25 88,35 96,39 92,48 99,53 90,57 93,67 84,70 84,80 74,80 72,90 62,87 57,96 50,91 43,96 38,87 28,90 26,80 16,80 16,70 7,67 10,57 1,53 8,48 4,39 12,35 10,25 19,23 20,13 30,14 34,5 43,9"
-                          fill="#eff6ff" // Very light blue fill so black text pops
-                          stroke="#1d4ed8" // Dark blue zig-zag border
-                          strokeWidth="3.5"
-                          strokeLinejoin="round"
+                        <path
+                          d="M50 2 L58 9 L68 5 L73 14 L83 14 L85 24 L94 28 L92 37 L99 44 L94 52 L99 60 L92 65 L94 74 L85 78 L83 88 L73 88 L68 97 L58 93 L50 100 L42 93 L32 97 L27 88 L17 88 L15 78 L6 74 L8 65 L1 60 L6 52 L1 44 L8 37 L6 28 L15 24 L17 14 L27 14 L32 5 L42 9 Z"
+                          fill="#1d4ed8" // Same solid blue as Buy button
                         />
                       </g>
                     </svg>
@@ -146,8 +143,8 @@ export default function StorePage({ onBack }: StorePageProps) {
                   onClick={() => setActiveTab(tab)}
                   className={`relative z-10 whitespace-nowrap text-[15px] transition-colors ${
                     isActive
-                      ? "text-black font-bold" // Changed to Black and Bold
-                      : "text-gray-400 font-normal"
+                      ? "text-black font-bold" // White text for visibility on solid blue
+                      : "text-gray-500 font-normal"
                   }`}
                 >
                   {tab}
@@ -157,13 +154,13 @@ export default function StorePage({ onBack }: StorePageProps) {
           })}
         </div>
 
-        {/* Items Grid */}
+        {/* Items Grid - Card Height aur zyada badha di hai (h-[235px]) */}
         <div className="grid grid-cols-2 gap-x-3 gap-y-4 px-3 py-2 mt-2 flex-1 content-start">
           {storeItems.map((item) => (
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)} 
-              className="bg-white rounded-[16px] p-2.5 flex flex-col items-center shadow-[0_2px_12px_rgba(0,0,0,0.04)] cursor-pointer active:scale-95 transition-transform h-[210px]"
+              className="bg-white rounded-[16px] p-2.5 flex flex-col items-center shadow-[0_2px_12px_rgba(0,0,0,0.04)] cursor-pointer active:scale-95 transition-transform h-[235px]"
             >
               {/* Top Bar (Check & Try) */}
               <div className="flex items-center justify-between w-full mb-2">
@@ -180,8 +177,8 @@ export default function StorePage({ onBack }: StorePageProps) {
                 </span>
               </div>
 
-              {/* Item Image */}
-              <div className="relative w-full h-[75px] mt-1 mb-3 flex items-center justify-center">
+              {/* Item Image - Container height badha di (h-[95px]) taki proportional lage */}
+              <div className="relative w-full h-[95px] mt-2 mb-3 flex items-center justify-center">
                 <Image
                   src={item.image}
                   alt={item.name}
@@ -192,14 +189,14 @@ export default function StorePage({ onBack }: StorePageProps) {
               </div>
 
               {/* Details: Stars, Name, Coins */}
-              <div className="flex flex-col items-center justify-end flex-1 w-full gap-1">
+              <div className="flex flex-col items-center justify-end flex-1 w-full gap-1.5">
                 <div className="flex items-center space-x-[1px]">
                   {renderStars(item.stars)}
                 </div>
                 <span className="text-[14px] font-bold text-gray-800 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
                   {item.name}
                 </span>
-                <div className="flex items-center justify-center gap-1 mt-1">
+                <div className="flex items-center justify-center gap-1 mt-0.5">
                   <div className="relative w-4 h-4 flex items-center justify-center">
                     <Image
                       src="/1786855398290.png"
