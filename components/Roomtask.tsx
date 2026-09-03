@@ -216,31 +216,6 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
   return (
     <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#380308] scrollbar-none select-none m-0 p-0">
-      
-      {/* 🛑 LEFT SCREEN BORDER: Ekdum screen ke left corner par fixed */}
-      <div 
-        className="fixed top-0 bottom-0 w-12 sm:w-16 z-40 pointer-events-none"
-        style={{
-          backgroundImage: 'url(/IMG_20260903_105647.png)',
-          backgroundRepeat: 'repeat-y',
-          backgroundSize: '100% auto',
-          backgroundPosition: 'left top',
-          left: '0px',
-        }}
-      />
-
-      {/* 🛑 RIGHT SCREEN BORDER: Ekdum screen ke right corner par fixed */}
-      <div 
-        className="fixed top-0 bottom-0 w-12 sm:w-16 z-40 pointer-events-none"
-        style={{
-          backgroundImage: 'url(/IMG_20260903_105705.png)',
-          backgroundRepeat: 'repeat-y',
-          backgroundSize: '100% auto',
-          backgroundPosition: 'right top',
-          right: '0px',
-        }}
-      />
-
       <div className="relative w-full min-h-full flex flex-col m-0 p-0">
         
         {/* ANDROID STATUS BAR SAFE AREA FILLER */}
@@ -249,17 +224,19 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           style={{ height: 'env(safe-area-inset-top, 0px)' }}
         />
 
-        {/* TOP BACKGROUND: Smooth Bottom Mixing in #380308 */}
+         {/* TOP BACKGROUND: STRICTLY ONLY BOTTOM 15% FADING INTO MAROON */}
         <div 
           className="absolute top-0 left-0 w-full h-[58vh] z-0 pointer-events-none bg-cover bg-top overflow-hidden"
           style={{
             backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
+            maskImage: 'linear-gradient(to bottom, black 85%, transparent 95%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 95%)',
           }}
         >
           <div 
             className="absolute inset-0 w-full h-full pointer-events-none"
             style={{
-              background: 'linear-gradient(to bottom, rgba(56,3,8,0) 50%, rgba(56,3,8,0.5) 80%, #380308 100%)'
+              background: 'linear-gradient(to bottom, rgba(56,3,8,0) 0%, rgba(56,3,8,0) 85%, rgba(56,3,8,0.7) 93%, #380308 100%)'
             }}
           />
         </div>
@@ -275,7 +252,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           className="fixed z-50 p-1 flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
           style={{
             top: 'calc(env(safe-area-inset-top, 0px) + 2px)',
-            left: '12px'
+            left: '2px'
           }}
           aria-label="Back"
         >
@@ -325,7 +302,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           {/* FRAME SECTION */}
           <div className="relative w-full flex flex-col items-center mt-1">
             
-            {/* 1. TOP FRAME IMAGE: z-30 */}
+            {/* 1. TOP FRAME IMAGE: z-30 (Frames will overlap on top of side border images) */}
             <div className="relative w-full flex-shrink-0 z-30 flex justify-center items-center overflow-hidden">
               <img 
                 src="/file_00000000680881faa3dfdb17cce60858.png"
@@ -366,8 +343,34 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <span className="text-[#f5b8b8] text-[11px] font-medium">Second</span>
             </div>
 
-            {/* 2. MIDDLE SECTION: 22 Task Cards Container */}
+            {/* 2. MIDDLE SECTION: Side walls at z-10 (Borders run underneath top/bottom frames) */}
             <div className="relative w-full flex flex-col items-center mt-1 -mb-3">
+              
+              {/* Left Screen Border */}
+              <div 
+                className="absolute -top-14 bottom-0 w-12 sm:w-16 z-10 pointer-events-none"
+                style={{
+                  backgroundImage: 'url(/IMG_20260903_105647.png)',
+                  backgroundRepeat: 'repeat-y',
+                  backgroundSize: '100% auto',
+                  backgroundPosition: 'left top',
+                  left: '-15px'
+                }}
+              />
+
+              {/* Right Screen Border */}
+              <div 
+                className="absolute -top-14 bottom-0 w-12 sm:w-16 z-10 pointer-events-none"
+                style={{
+                  backgroundImage: 'url(/IMG_20260903_105705.png)',
+                  backgroundRepeat: 'repeat-y',
+                  backgroundSize: '100% auto',
+                  backgroundPosition: 'right top',
+                  right: '-15px'
+                }}
+              />
+
+              {/* 22 Task Cards Container */}
               <div className="w-full max-w-[360px] flex flex-col items-center -space-y-[50px] px-6 z-20 -mt-2">
                 {tasks.map((task, index) => (
                   <TaskItem 
@@ -380,7 +383,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
 
-            {/* 3. BOTTOM FRAME IMAGE: z-30 */}
+            {/* 3. BOTTOM FRAME IMAGE: z-30 (Overlaps side walls perfectly) */}
             <div className="w-full flex-shrink-0 z-30 pointer-events-none overflow-hidden -mt-12">
               <img 
                 src="/file_0000000066c88211aa777b1f6da8683f.png"
@@ -399,4 +402,3 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   );
 }
-
