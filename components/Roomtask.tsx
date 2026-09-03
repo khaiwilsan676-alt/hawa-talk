@@ -224,24 +224,24 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           style={{ height: 'env(safe-area-inset-top, 0px)' }}
         />
 
-         {/* TOP BACKGROUND: STRICTLY ONLY BOTTOM 15% FADING INTO MAROON */}
+         {/* TOP BACKGROUND: EKDAM SMOOTH FADING INTO MAROON WITHOUT ANY HARSH LINE */}
         <div 
-          className="absolute top-0 left-0 w-full h-[65vh] z-0 pointer-events-none bg-cover bg-top overflow-hidden"
+          className="absolute top-0 left-0 w-full h-[75vh] z-2 pointer-events-none bg-cover bg-top overflow-hidden"
           style={{
             backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
-            maskImage: 'linear-gradient(to bottom, black 65%, rgba(0,0,0,0.8) 82%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 65%, rgba(0,0,0,0.8) 82%, transparent 100%)',
+            maskImage: 'linear-gradient(to bottom, black 40%, rgba(0,0,0,0.6) 65%, rgba(0,0,0,0.2) 85%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 40%, rgba(0,0,0,0.6) 65%, rgba(0,0,0,0.2) 85%, transparent 100%)',
           }}
         >
           <div 
             className="absolute inset-0 w-full h-full pointer-events-none"
             style={{
-            background: 'linear-gradient(to bottom, rgba(56,3,8,0) 0%, rgba(56,3,8,0) 65%, rgba(56,3,8,0.7) 82%, #380308 100%)'
+              background: 'linear-gradient(to bottom, rgba(56,3,8,0) 0%, rgba(56,3,8,0.2) 50%, rgba(56,3,8,0.7) 75%, #380308 100%)'
             }}
           />
         </div>
 
-        {/* BOTTOM BACKGROUND: 260vh Solid Dark Maroon */}
+        {/* BOTTOM BACKGROUND: Solid Dark Maroon */}
         <div 
           className="absolute top-[50vh] left-0 w-full h-[260vh] z-0 pointer-events-none bg-[#380308]"
         />
@@ -275,22 +275,9 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 alt="Middle Decoration" 
                 className="w-full h-auto object-contain drop-shadow-2xl select-none"
                 draggable={false}
-                />
-                {/* 3D Receive Button */}
-               <button
-               onClick={() => {}}
-               className="absolute right-1 top-[18%] translate-y-1/2 translate-x-2
-              px-3 py-1.5 rounded-full
-              bg-gradient-to-b from-[#fff45c] via-[#ffc400] to-[#e28b00]
-             text-[#6b3200] text-[11px] font-black
-             border-2 border-[#ffe66b]
-             shadow-[0_3px_0_#9a5b00,0_5px_8px_rgba(0,0,0,0.5)]
-             z-30"
->
-  Receive
-</button>
+              />
+              
                
-
               {/* Left Side: Cleaned Coin Icon */}
               <div 
                 className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
@@ -416,3 +403,4 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   );
 }
+
