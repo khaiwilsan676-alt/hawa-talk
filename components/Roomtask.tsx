@@ -224,21 +224,17 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           style={{ height: 'env(safe-area-inset-top, 0px)' }}
         />
 
-        {/* TOP BACKGROUND: Smooth Bottom Mixing in #380308 */}
+                {/* TOP BACKGROUND: Perfectly Faded & Mixed into #380308 */}
         <div 
-          className="absolute top-0 left-0 w-full h-[58vh] z-0 pointer-events-none bg-cover bg-top overflow-hidden"
+          className="absolute top-0 left-0 w-full h-[60vh] z-0 pointer-events-none bg-cover bg-top overflow-hidden"
           style={{
             backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
+            // Yeh property image ke niche wale hisse ko dheere-dheere gayab (fade) kar degi taaki line na bache
+            WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
+            maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
           }}
-        >
-          {/* Gradient overlay ko aur smooth kar diya taaki line bilkul na aaye */}
-          <div 
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            style={{
-              background: 'linear-gradient(to bottom, rgba(56,3,8,0) 40%, rgba(56,3,8,0.7) 75%, #380308 100%)'
-            }}
-          />
-        </div>
+        />
+
 
         {/* BOTTOM BACKGROUND: Solid Dark Maroon */}
         <div 
@@ -353,8 +349,8 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                   backgroundRepeat: 'repeat-y',
                   backgroundSize: '100% auto',
                   backgroundPosition: 'left top',
-                  left: '0px',
-                  marginLeft: '0px'
+                  left: '-3px',
+                  
                 }}
               />
 
@@ -366,8 +362,8 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                   backgroundRepeat: 'repeat-y',
                   backgroundSize: '100% auto',
                   backgroundPosition: 'right top',
-                  right: '0px',
-                  marginRight: '0px'
+                  right: '-3px',
+                  
                 }}
               />
 
