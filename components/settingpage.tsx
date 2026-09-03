@@ -92,9 +92,9 @@ export default function SettingPage({
   return (
     <div className="w-full min-h-screen bg-white">
       <div
-        className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200"
+        className="flex items-center justify-between px-4 py-3 bg-white"
         style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)'
+          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)'
         }}
       >
         <button onClick={onBack} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
@@ -104,7 +104,7 @@ export default function SettingPage({
         <div className="w-6" />
       </div>
 
-      <div className="bg-white mt-4 border-t border-b border-slate-200">
+      <div className="bg-white mt-4 border-b border-slate-200">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <span className="text-base text-slate-800">{t.messageNotifications}</span>
           <button

@@ -84,7 +84,10 @@ export default function StorePage({ onBack }: StorePageProps) {
     <div className="min-h-screen bg-[#f4f7f9] text-gray-800 pb-10 select-none">
       <div className="max-w-md mx-auto bg-white min-h-screen shadow-sm flex flex-col">
         {/* Top Header */}
-        <div className="relative flex items-center justify-center px-4 py-3.5 bg-white border-b border-gray-100">
+        <div
+          className="relative flex items-center justify-center px-4 pb-3.5 bg-white border-b border-gray-100"
+          style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
+        >
           <button
             type="button"
             onClick={onBack}

@@ -120,7 +120,10 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       </div>
 
       {/* FIXED TOP HEADER */}
-      <header className="relative z-50 flex items-center justify-between px-4 py-3 shrink-0">
+      <header
+        className="relative z-50 flex items-center justify-between px-4 pb-3 shrink-0"
+        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
+      >
         <button
           onClick={onBack}
           className="p-2 text-white active:opacity-60 transition-opacity"

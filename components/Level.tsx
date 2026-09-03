@@ -149,7 +149,10 @@ export default function Level({ onBack }: LevelProps) {
       </div>
 
       {/* Top Header */}
-      <div className="relative z-10 flex items-center justify-center px-4 pt-4 pb-2">
+      <div
+        className="relative z-10 flex items-center justify-center px-4 pb-2"
+        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
+      >
         <button
           onClick={onBack}
           className="absolute left-3 p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"

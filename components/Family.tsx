@@ -108,8 +108,11 @@ export default function Family({ onBack }: FamilyProps) {
         </svg>
 
         {/* HEADER (White Background, No Line, Save Button on Right) */}
-        <div className="flex items-center justify-between p-4 mt-2 flex-shrink-0">
-          <button onClick={() => setCurrentView('main')} className="p-1 cursor-pointer">
+        <div
+          className="flex items-center justify-between p-4 flex-shrink-0"
+          style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
+        >
+          <button onClick={() => setCurrentView('main')} className="p-2 cursor-pointer relative z-30 active:scale-95 transition-transform">
             <ArrowLeft size={28} className="text-black" />
           </button>
           <h1 className="text-xl font-bold text-black tracking-wide">
@@ -240,10 +243,13 @@ export default function Family({ onBack }: FamilyProps) {
               WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)'
             }}
           />
-          <div className="absolute top-0 left-0 w-full flex flex-row items-center justify-between px-2 pt-2 z-20">
+          <div
+            className="absolute top-0 left-0 w-full flex flex-row items-center justify-between px-2 z-20"
+            style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
+          >
             <button 
               onClick={() => setCurrentView('main')} 
-              className="p-1 cursor-pointer flex items-center justify-start"
+              className="p-2 cursor-pointer relative z-30 flex items-center justify-start text-white active:scale-95 transition-transform"
             >
               <ArrowLeft size={28} className="text-white drop-shadow-md" />
             </button>
@@ -324,8 +330,16 @@ export default function Family({ onBack }: FamilyProps) {
       <div className="relative z-20 flex flex-col w-full flex-shrink-0">
         
         {/* TOP BAR WITH BACK BUTTON ONLY */}
-        <div className="flex flex-row items-center w-full px-2 pt-2">
-          <button onClick={onBack} className="p-1 cursor-pointer w-10 flex justify-start">
+        <div
+          className="flex flex-row items-center w-full px-2 relative z-30"
+          style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
+        >
+          <button
+            type="button"
+            onClick={onBack}
+            className="p-2 cursor-pointer relative z-30 flex items-center justify-start active:scale-95 transition-transform"
+            aria-label="Go back"
+          >
             <ArrowLeft size={28} className="text-white drop-shadow-md" />
           </button>
         </div>

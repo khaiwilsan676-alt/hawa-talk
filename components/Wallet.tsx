@@ -139,11 +139,14 @@ function WhiteColorRemovalShader({
 
 interface WalletProps {
   onBack: () => void
+  initialTab?: 'coins' | 'diamond' | 'wallet' | 'diamonds'
 }
 
-export default function Wallet({ onBack }: WalletProps) {
+export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'wallet' | 'diamonds'>('wallet')
+  const [activeTab, setActiveTab] = useState<'wallet' | 'diamonds'>(
+    initialTab === 'diamond' || initialTab === 'diamonds' ? 'diamonds' : 'wallet'
+  )
   const [diamonds, setDiamonds] = useState('')
   const [coins, setCoins] = useState('')
   const [selectedPercentage, setSelectedPercentage] = useState('100%')
