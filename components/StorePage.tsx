@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ShoppingBag, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ShoppingBag } from "lucide-react";
 
 interface StoreItem {
   id: string;
@@ -81,8 +81,8 @@ export default function StorePage({ onBack }: StorePageProps) {
   const [activeTab, setActiveTab] = useState("Vehicle");
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f0f8ff] to-[#f8fbff] text-gray-800 pb-10 select-none">
-      <div className="max-w-md mx-auto bg-transparent min-h-screen flex flex-col">
+    <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans">
+      <div className="max-w-md mx-auto min-h-screen flex flex-col">
         
         {/* Top Header */}
         <div
@@ -92,64 +92,72 @@ export default function StorePage({ onBack }: StorePageProps) {
           <button
             type="button"
             onClick={onBack}
-            className="p-1 -ml-1 text-gray-800 hover:bg-gray-100/50 rounded-full transition-colors z-10"
+            className="p-1 -ml-2 text-black hover:bg-gray-100 rounded-full transition-colors z-10"
           >
-            <ChevronLeft size={26} strokeWidth={2} />
+            <ChevronLeft size={28} strokeWidth={1.5} />
           </button>
           
-          <h1 className="text-lg font-medium text-gray-900 absolute left-1/2 -translate-x-1/2">
+          <h1 className="text-[17px] font-medium text-black absolute left-1/2 -translate-x-1/2">
             Store
           </h1>
 
-          <button className="flex items-center gap-1.5 bg-[#4dd0e1] text-white px-3.5 py-1.5 rounded-full text-[11px] font-semibold shadow-sm z-10">
-            <ShoppingBag size={12} strokeWidth={2.5} />
+          <button className="flex items-center gap-1.5 bg-[#4dd0e1] text-white px-3.5 py-1.5 rounded-full text-[13px] font-medium z-10 shadow-sm">
+            <ShoppingBag size={14} strokeWidth={2.5} />
             Bag
           </button>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex items-center gap-7 px-6 py-4 overflow-x-auto no-scrollbar">
+        {/* Category Tabs (Fixed Perfect Circle) */}
+        <div className="flex items-center gap-6 px-5 mt-3 overflow-x-auto no-scrollbar">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`relative whitespace-nowrap text-[13px] transition-all ${
-                  isActive
-                    ? "text-gray-900 font-medium"
-                    : "text-gray-400 font-normal"
-                }`}
-              >
+              <div key={tab} className="relative flex items-center justify-center h-[70px]">
+                {/* Perfect Circle Behind Active Text */}
                 {isActive && (
-                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-[#4dd0e1] rounded-full -z-10 shadow-sm opacity-90"></span>
+                  <div className="absolute w-[66px] h-[66px] bg-[#4dd0e1] rounded-full shadow-sm"></div>
                 )}
-                {tab}
-              </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`relative z-10 whitespace-nowrap text-[15px] transition-colors ${
+                    isActive
+                      ? "text-black font-normal"
+                      : "text-gray-400 font-normal"
+                  }`}
+                >
+                  {tab}
+                </button>
+              </div>
             );
           })}
         </div>
 
-        {/* Items Grid (3 Columns just like the image) */}
-        <div className="grid grid-cols-3 gap-2.5 px-3 py-2 flex-1">
+        {/* Items Grid (Fixed Card Heights - Compact) */}
+        <div className="grid grid-cols-3 gap-3 px-4 py-2 mt-2 flex-1 content-start">
           {storeItems.map((item) => (
             <div
               key={item.id}
-              className="bg-white/80 backdrop-blur-sm rounded-[1.25rem] p-2 flex flex-col justify-between shadow-[0_4px_10px_rgba(77,208,225,0.06)] border border-[#e0f7fa]/50"
+              className="bg-white rounded-[14px] p-2 flex flex-col shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
             >
-              {/* Top Bar (3D & Try) */}
-              <div className="flex items-center justify-between px-0.5">
-                <div className="flex items-center gap-0.5 text-[#4dd0e1] text-[9px] font-semibold">
-                  <CheckCircle2 size={10} strokeWidth={3} className="text-[#4dd0e1]" />
-                  <span>{item.duration}</span>
+              {/* Top Bar (Solid Cyan Check & Try) */}
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-1 text-[#4dd0e1]">
+                  <div className="w-3 h-3 rounded-full bg-[#4dd0e1] flex items-center justify-center">
+                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-medium">{item.duration}</span>
                 </div>
-                <span className="text-[10px] text-[#4dd0e1] font-medium opacity-80">
+                <span className="text-[10px] font-medium text-[#4dd0e1] opacity-90">
                   Try
                 </span>
               </div>
 
-              {/* Item Image */}
-              <div className="relative w-full h-14 my-1.5 flex items-center justify-center">
+              {/* Item Image (Compact Height) */}
+              <div className="relative w-full h-[52px] mt-1.5 mb-1.5 flex items-center justify-center">
                 <Image
                   src={item.image}
                   alt={item.name}
@@ -160,7 +168,7 @@ export default function StorePage({ onBack }: StorePageProps) {
               </div>
 
               {/* Coin and Price */}
-              <div className="flex items-center justify-center gap-1 mt-auto mb-1.5">
+              <div className="flex items-center justify-center gap-1 mb-2">
                 <div className="relative w-[13px] h-[13px] flex items-center justify-center">
                   <Image
                     src="/1786855398290.png"
@@ -169,22 +177,22 @@ export default function StorePage({ onBack }: StorePageProps) {
                     className="object-contain"
                   />
                 </div>
-                <span className="text-[10px] font-medium text-gray-800">
+                <span className="text-[11px] font-medium text-black tracking-tight">
                   {item.price}
                 </span>
               </div>
 
-              {/* Action Buttons (Send / Buy) */}
-              <div className="flex items-center w-full rounded-full border border-[#4dd0e1] overflow-hidden text-[10px] font-medium">
+              {/* Action Buttons (Send / Buy - Perfect Pill Shape) */}
+              <div className="flex items-center w-full rounded-full border border-[#4dd0e1] overflow-hidden h-[24px]">
                 <button
                   type="button"
-                  className="flex-1 py-1 bg-white text-[#4dd0e1] hover:bg-[#f0fbfb] transition-colors"
+                  className="flex-1 h-full bg-white text-[#4dd0e1] text-[10px] font-medium flex items-center justify-center"
                 >
                   Send
                 </button>
                 <button
                   type="button"
-                  className="flex-1 py-1 bg-[#4dd0e1] text-white hover:bg-[#3bc0d1] transition-colors"
+                  className="flex-1 h-full bg-[#4dd0e1] text-white text-[10px] font-medium flex items-center justify-center"
                 >
                   Buy
                 </button>
