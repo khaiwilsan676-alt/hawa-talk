@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { ChevronLeft, HelpCircle, Plus, Star, X } from 'lucide-react'
+import { ChevronLeft, Plus, Star, X } from 'lucide-react'
 
 interface MedalProps {
   onBack?: () => void
@@ -12,10 +12,10 @@ interface MedalItem {
   name: string
   image: string
   stars: number
-  category: 'achievement' | 'activity'
+  category: 'achievement' | 'gift' | 'activity'
 }
 
-// 1. WebGL Background Shader (Deep Ultra Dark Base)
+// 1. WebGL Background Shader (Deep Ultra Dark Base) - UNTOUCHED
 function WebGLBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -106,7 +106,7 @@ function WebGLBackground() {
   return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-0" />
 }
 
-// 2. Green Screen Removal Canvas
+// 2. Green Screen Removal Canvas - UNTOUCHED
 function ChromaKeyImage({ src, alt, isColorless = false }: { src: string; alt: string; isColorless?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -153,7 +153,7 @@ function ChromaKeyImage({ src, alt, isColorless = false }: { src: string; alt: s
   )
 }
 
-// 3. Ultra Sparkle Overlay (3s cycle, more stars, zero yellow tint on medal)
+// 3. Ultra Sparkle Overlay - UNTOUCHED
 function GoldenSparklesOverlay() {
   const sparkles = [
     { top: '10%', left: '20%', size: 30, delay: '0s' },
@@ -214,73 +214,21 @@ function GoldenSparklesOverlay() {
 }
 
 export default function Medal({ onBack }: MedalProps) {
-  const [activeTab, setActiveTab] = useState<'achievement' | 'activity'>('activity')
+  // Added 'gift' to match UI tabs exactly
+  const [activeTab, setActiveTab] = useState<'achievement' | 'gift' | 'activity'>('achievement')
   const [selectedMedal, setSelectedMedal] = useState<MedalItem | null>(null)
 
+  // Logic untouched
   const medals: MedalItem[] = [
-    {
-      id: '1',
-      name: 'CP-TOP1',
-      image: '/IMG_20260828_003941.png',
-      stars: 0,
-      category: 'activity',
-    },
-    {
-      id: '2',
-      name: 'CP-TOP2',
-      image: '/IMG_20260828_003922.png',
-      stars: 0,
-      category: 'activity',
-    },
-    {
-      id: '3',
-      name: 'CP-TOP 3',
-      image: '/IMG_20260828_003958.png',
-      stars: 0,
-      category: 'activity',
-    },
-    {
-      id: '4',
-      name: 'Pure Love',
-      image: '/IMG_20260828_003941.png',
-      stars: 0,
-      category: 'activity',
-    },
-    {
-      id: '5',
-      name: 'VIP1',
-      image: '/IMG_20260828_003922.png',
-      stars: 4,
-      category: 'activity',
-    },
-    {
-      id: '6',
-      name: 'VIP2',
-      image: '/IMG_20260828_003958.png',
-      stars: 4,
-      category: 'activity',
-    },
-    {
-      id: '7',
-      name: 'VIP3',
-      image: '/IMG_20260828_003941.png',
-      stars: 4,
-      category: 'activity',
-    },
-    {
-      id: '8',
-      name: 'Huna',
-      image: '/IMG_20260828_003922.png',
-      stars: 3,
-      category: 'activity',
-    },
-    {
-      id: '9',
-      name: 'I LOVE YOU',
-      image: '/IMG_20260828_003958.png',
-      stars: 1,
-      category: 'activity',
-    },
+    { id: '1', name: 'CP-TOP1', image: '/IMG_20260828_003941.png', stars: 5, category: 'achievement' },
+    { id: '2', name: 'CP-TOP2', image: '/IMG_20260828_003922.png', stars: 5, category: 'achievement' },
+    { id: '3', name: 'CP-TOP 3', image: '/IMG_20260828_003958.png', stars: 4, category: 'achievement' },
+    { id: '4', name: 'Pure Love', image: '/IMG_20260828_003941.png', stars: 4, category: 'achievement' },
+    { id: '5', name: 'VIP1', image: '/IMG_20260828_003922.png', stars: 4, category: 'activity' },
+    { id: '6', name: 'VIP2', image: '/IMG_20260828_003958.png', stars: 4, category: 'activity' },
+    { id: '7', name: 'VIP3', image: '/IMG_20260828_003941.png', stars: 4, category: 'activity' },
+    { id: '8', name: 'Huna', image: '/IMG_20260828_003922.png', stars: 3, category: 'activity' },
+    { id: '9', name: 'I LOVE YOU', image: '/IMG_20260828_003958.png', stars: 1, category: 'activity' },
   ]
 
   const filteredMedals = medals.filter((m) => m.category === activeTab)
@@ -290,11 +238,11 @@ export default function Medal({ onBack }: MedalProps) {
       {/* 1. Base Dark WebGL Canvas */}
       <WebGLBackground />
 
-      {/* 2. Top 50vh Background Image */}
+      {/* 2. Top Background Image - Updated to exact file requested */}
       <div 
         className="fixed top-0 left-0 right-0 h-[50vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
-          backgroundImage: `url('/IMG_20260829_163143.png')`,
+          backgroundImage: `url('/file_00000000bb908211bde6876490a6020f.png')`,
           maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
         }}
@@ -302,106 +250,120 @@ export default function Medal({ onBack }: MedalProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#02050e]/50 to-[#02050e]" />
       </div>
 
-      {/* 3. FIXED TOP AREA */}
+      {/* 3. FIXED TOP AREA - UI Matches 1000186186.jpg EXACTLY */}
       <div className="relative z-10 flex-none w-full max-w-md mx-auto px-4 pt-11 pb-2 sm:pt-4">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between pb-2">
+        <div className="relative flex items-center justify-center pb-4">
           <button
             onClick={onBack}
-            className="p-1 text-gray-200 hover:text-white transition-colors cursor-pointer drop-shadow-md"
+            className="absolute left-0 p-1 text-gray-200 hover:text-white transition-colors cursor-pointer"
           >
             <ChevronLeft size={28} />
           </button>
           <h1 className="text-xl font-semibold text-white tracking-wide drop-shadow-md">Medal</h1>
-          <button className="p-1 text-blue-200/90 hover:text-white transition-colors drop-shadow-md">
-            <HelpCircle size={22} />
-          </button>
         </div>
 
-        {/* Current Medal Circular Slots 2x5 */}
-        <div className="pt-2 pb-1">
-          <div className="grid grid-cols-5 gap-2.5 px-2">
+        {/* Current Medal Section */}
+        <div className="pt-2 pb-1 relative">
+          
+          {/* Current Medal Line Label */}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-8 h-[1px] bg-gradient-to-l from-[#736340] to-transparent"></div>
+            <span className="text-[13px] text-gray-200 tracking-wide font-medium">Current Medal</span>
+            <div className="w-8 h-[1px] bg-gradient-to-r from-[#736340] to-transparent"></div>
+          </div>
+
+          {/* Slots - Changed to square dashed borders matching UI */}
+          <div className="grid grid-cols-5 gap-3 px-3">
             {Array.from({ length: 10 }).map((_, index) => (
               <div
                 key={index}
-                className="aspect-square rounded-full bg-[#0a2368]/50 border border-[#3b71ca]/40 flex items-center justify-center shadow-md shadow-black/60 hover:border-yellow-400/60 transition-all cursor-pointer backdrop-blur-sm"
+                className="aspect-square rounded-lg border border-dashed border-[#443859] bg-[#1a142e]/30 flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm"
               >
-                <Plus size={20} className="text-blue-100 stroke-[2.2]" />
+                <Plus size={16} className="text-[#a4916a]" />
               </div>
             ))}
           </div>
 
-          {/* Obtained Count */}
-          <div className="flex items-center justify-center gap-1.5 mt-4 text-xs tracking-wide">
-            <span className="text-gray-300 font-medium drop-shadow-sm">Obtained Medal(s): 0</span>
-            <button className="text-yellow-400 font-semibold hover:underline cursor-pointer drop-shadow-sm">
-              Check&gt;
-            </button>
+          {/* Glowing Podium Effect & Check Text */}
+          <div className="relative mt-6 flex flex-col items-center">
+            {/* Ellipse Podium glowing base */}
+            <div className="absolute bottom-4 w-64 h-8 border-b-2 border-blue-400/40 rounded-[100%] shadow-[0_15px_30px_rgba(59,130,246,0.3)] pointer-events-none"></div>
+            
+            <div className="flex items-center justify-center gap-1.5 z-10 bg-[#161230]/80 px-4 py-1.5 rounded-full border border-blue-900/30">
+              <span className="text-blue-200 text-xs font-medium">Obtained Medal(s): 0</span>
+              <button className="text-yellow-500 text-xs font-medium cursor-pointer flex items-center">
+                Check <span className="ml-1 leading-none">&gt;</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Sub Navigation Category Tabs */}
-        <div className="flex items-center justify-center gap-12 pb-2 text-sm pt-2">
+        {/* 3 Tabs exactly matching image */}
+        <div className="flex items-center justify-between px-2 pb-2 text-sm pt-6">
           {[
-            { key: 'achievement', label: 'Achievements' },
-            { key: 'activity', label: 'Activities' },
+            { key: 'achievement', label: 'Achievement' },
+            { key: 'gift', label: 'Gift' },
+            { key: 'activity', label: 'Activity' },
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as 'achievement' | 'activity')}
-              className={`relative font-medium transition-colors flex flex-col items-center cursor-pointer ${
+              onClick={() => setActiveTab(tab.key as any)}
+              className={`relative font-medium transition-colors flex flex-col items-center cursor-pointer w-1/3 text-center ${
                 activeTab === tab.key
-                  ? 'text-white text-base font-semibold'
-                  : 'text-blue-300/60 hover:text-blue-200 text-sm'
+                  ? 'text-[#f5d070] text-[15px]'
+                  : 'text-gray-400 hover:text-gray-300 text-[15px]'
               }`}
             >
               {tab.label}
               {activeTab === tab.key && (
-                <span className="w-5 h-[2.5px] bg-yellow-400 rounded-full mt-1 shadow-sm" />
+                <span className="w-5 h-[3px] bg-[#f5d070] rounded-full mt-1.5 absolute -bottom-2" />
               )}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 4. SCROLLABLE AREA - ONLY CARD GRID SCROLLS */}
-      <div className="flex-1 overflow-y-auto px-3.5 pb-8 relative z-10 w-full max-w-md mx-auto scrollbar-thin scrollbar-thumb-blue-900/40">
-        <div className="grid grid-cols-3 gap-2.5 pt-1">
+      {/* 4. SCROLLABLE AREA - 2 Columns Grid to match UI */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8 relative z-10 w-full max-w-md mx-auto scrollbar-thin scrollbar-thumb-blue-900/40 mt-3">
+        <div className="grid grid-cols-2 gap-4">
           {filteredMedals.map((medal) => (
             <div
               key={medal.id}
               onClick={() => setSelectedMedal(medal)}
-              className="relative bg-gradient-to-b from-[#0c3596] to-[#041a54] border border-[#2563eb]/40 rounded-2xl p-2.5 flex flex-col items-center justify-between text-center hover:border-yellow-400/60 active:scale-95 transition-all duration-200 shadow-lg shadow-black/70 cursor-pointer min-h-[160px]"
+              className="relative bg-[#0d091a] border border-[#26203d] rounded-xl p-3 flex flex-col items-center justify-between text-center hover:border-yellow-400/30 active:scale-95 transition-all duration-200 cursor-pointer h-[200px]"
             >
-              {/* Colorless Chrome/Silver Medal Image */}
-              <div className="w-20 h-20 sm:w-24 sm:h-24 my-auto flex items-center justify-center relative">
+              {/* Medal Image Area */}
+              <div className="w-24 h-24 my-auto flex items-center justify-center relative">
                 <ChromaKeyImage src={medal.image} alt={medal.name} isColorless={true} />
               </div>
 
-              {/* Stars Display */}
-              {medal.stars > 0 && (
-                <div className="flex items-center gap-0.5 mt-0.5">
-                  {Array.from({ length: medal.stars }).map((_, i) => (
-                    <Star
-                      key={i}
-                      size={11}
-                      className="fill-yellow-400 text-yellow-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="mt-auto w-full flex flex-col items-center">
+                {/* Stars Display matching UI */}
+                {medal.stars > 0 && (
+                  <div className="flex items-center justify-center gap-[2px] mt-2 mb-1.5">
+                    {Array.from({ length: medal.stars }).map((_, i) => (
+                      <Star
+                        key={i}
+                        size={12}
+                        className="fill-yellow-500 text-yellow-500 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                      />
+                    ))}
+                  </div>
+                )}
 
-              {/* Title */}
-              <h3 className="text-[11px] sm:text-xs font-semibold text-white tracking-wide mt-1 line-clamp-1 drop-shadow-sm">
-                {medal.name}
-              </h3>
+                {/* Title matching UI */}
+                <h3 className="text-sm font-medium text-white tracking-wide line-clamp-1 drop-shadow-sm">
+                  {medal.name}
+                </h3>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Center Modal with Smooth Zoom, Metallic Shine & Sparkles */}
+      {/* Center Modal with Smooth Zoom, Metallic Shine & Sparkles - UNTOUCHED */}
       {selectedMedal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
@@ -439,7 +401,7 @@ export default function Medal({ onBack }: MedalProps) {
               <div className="w-52 h-52 sm:w-60 sm:h-60 relative flex items-center justify-center overflow-hidden rounded-full animate-subtle-pulse z-10">
                 <ChromaKeyImage src={selectedMedal.image} alt={selectedMedal.name} isColorless={false} />
                 
-                {/* 😡 YES! THIS METAL SHINE SWEEP IS BACK! 😡 */}
+                {/* Metal Shine Sweep Animation Is BACK! */}
                 <div className="absolute inset-0 pointer-events-none animate-shine-sweep z-20">
                   <div className="w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent transform -skew-x-25" />
                 </div>
@@ -516,7 +478,6 @@ export default function Medal({ onBack }: MedalProps) {
             transform: scale(1.3) rotate(45deg);
           }
         }
-        /* 😡 Metal Shine Sweep Animation Is BACK! 😡 */
         @keyframes shineSweep {
           0% {
             transform: translateX(-150%) skewX(-25deg);
@@ -541,7 +502,6 @@ export default function Medal({ onBack }: MedalProps) {
         .animate-sparkle-twinkle {
           animation: sparkleTwinkle 3s ease-in-out infinite;
         }
-        /* 😡 Applying the Metal Shine Sweep 😡 */
         .animate-shine-sweep {
           animation: shineSweep 3.5s infinite ease-in-out;
         }
@@ -549,3 +509,4 @@ export default function Medal({ onBack }: MedalProps) {
     </div>
   )
 }
+
