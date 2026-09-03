@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-// Yahan ShoppingBag ki jagah Backpack (school bag) import kiya hai
-import { ChevronLeft, Backpack } from "lucide-react";
+import { ChevronLeft, ShoppingBag } from "lucide-react";
 
 interface StoreItem {
   id: string;
@@ -82,10 +81,7 @@ export default function StorePage({ onBack }: StorePageProps) {
   const [activeTab, setActiveTab] = useState("Vehicle");
 
   return (
-    <div 
-      className="min-h-screen text-gray-800 pb-10 select-none font-sans"
-      style={{ background: 'linear-gradient(180deg, #1d4ed8 30vh, #f3f8fe 30vh)' }}
-    >
+    <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans">
       <div className="max-w-md mx-auto min-h-screen flex flex-col">
         
         {/* Top Header */}
@@ -96,30 +92,30 @@ export default function StorePage({ onBack }: StorePageProps) {
           <button
             type="button"
             onClick={onBack}
-            className="p-1 -ml-2 text-white hover:bg-white/20 rounded-full transition-colors z-10"
+            className="p-1 -ml-2 text-black hover:bg-gray-100 rounded-full transition-colors z-10"
           >
             <ChevronLeft size={28} strokeWidth={1.5} />
           </button>
           
-          <h1 className="text-[17px] font-medium text-white absolute left-1/2 -translate-x-1/2">
+          <h1 className="text-[17px] font-medium text-black absolute left-1/2 -translate-x-1/2">
             Store
           </h1>
 
-          <button className="flex items-center gap-1.5 bg-white text-[#1d4ed8] px-3.5 py-1.5 rounded-full text-[13px] font-medium z-10 shadow-sm">
-            {/* Yahan Backpack icon use kiya hai */}
-            <Backpack size={14} strokeWidth={2.5} />
+          <button className="flex items-center gap-1.5 bg-[#1d4ed8] text-white px-3.5 py-1.5 rounded-full text-[13px] font-medium z-10 shadow-sm">
+            <ShoppingBag size={14} strokeWidth={2.5} />
             Bag
           </button>
         </div>
 
-        {/* Category Tabs */}
+        {/* Category Tabs (Fixed Perfect Circle) */}
         <div className="flex items-center gap-6 px-5 mt-3 overflow-x-auto no-scrollbar">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
               <div key={tab} className="relative flex items-center justify-center h-[70px]">
+                {/* Perfect Circle Behind Active Text */}
                 {isActive && (
-                  <div className="absolute w-[58px] h-[58px] bg-white rounded-full shadow-sm"></div>
+                  <div className="absolute w-[58px] h-[58px] bg-[#1d4ed8] rounded-full shadow-sm"></div>
                 )}
                 
                 <button
@@ -127,8 +123,8 @@ export default function StorePage({ onBack }: StorePageProps) {
                   onClick={() => setActiveTab(tab)}
                   className={`relative z-10 whitespace-nowrap text-[15px] transition-colors ${
                     isActive
-                      ? "text-[#1d4ed8] font-medium"
-                      : "text-white/70 font-normal"
+                      ? "text-white font-medium"
+                      : "text-gray-400 font-normal"
                   }`}
                 >
                   {tab}
@@ -138,14 +134,14 @@ export default function StorePage({ onBack }: StorePageProps) {
           })}
         </div>
 
-        {/* Items Grid */}
+        {/* Items Grid (Yahan grid-cols-2 kar diya gaya hai bss) */}
         <div className="grid grid-cols-2 gap-3 px-4 py-2 mt-2 flex-1 content-start">
           {storeItems.map((item) => (
             <div
               key={item.id}
               className="bg-white rounded-[14px] p-2 flex flex-col shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
             >
-              {/* Top Bar */}
+              {/* Top Bar (Solid Dark Blue Check & Try) */}
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-1 text-[#1d4ed8]">
                   <div className="w-3 h-3 rounded-full bg-[#1d4ed8] flex items-center justify-center">
@@ -160,8 +156,8 @@ export default function StorePage({ onBack }: StorePageProps) {
                 </span>
               </div>
 
-              {/* Item Image */}
-              <div className="relative w-full h-[52px] mt-1.5 mb-1.5 flex items-center justify-center">
+              {/* Item Image (Compact Height) */}
+              <div className="relative w-full h-[72px] mt-1.5 mb-1.5 flex items-center justify-center">
                 <Image
                   src={item.image}
                   alt={item.name}
@@ -186,7 +182,7 @@ export default function StorePage({ onBack }: StorePageProps) {
                 </span>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons (Send / Buy - Perfect Pill Shape in Dark Blue) */}
               <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[24px]">
                 <button
                   type="button"
