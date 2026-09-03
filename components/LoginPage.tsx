@@ -1345,7 +1345,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </button>
         </div>
 
-        <div className="flex flex-col items-center" style={{ marginTop: '10vh' }}>
+        <div className="flex flex-col items-center" style={{ marginTop: '15vh' }}>
           <div className="mb-0.5">
             <img 
               src="/logo.png" 
