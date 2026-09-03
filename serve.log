@@ -1,0 +1,45 @@
+ INFO  Accepting connections at http://localhost:44079
+ HTTP  9/3/2026 8:05:34 PM ::1 GET /
+ HTTP  9/3/2026 8:05:34 PM ::1 Returned 200 in 387 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /logo.png
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/css/217b3c4f594465cc.css
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/css/8d866b19e5ff1a96.css
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 6 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 9 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 13 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/webpack-291d4e0e92d658bd.js
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/a5e77c88-05bbcf6a40d5e8b9.js
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 4 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 5 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/152-72a1e100ab7100a1.js
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 3 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/main-app-6a1eec9c3997e59f.js
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/437-b03f187c14ae88d1.js
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/app/layout-7011942074be00c8.js
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/64f0e307-2fcb9064b1a40934.js
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/ecf3a7c6-61684b6096da1ec2.js
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 19 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 12 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 11 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 14 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/6ea8a349-09b59e2f685f2811.js
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 26 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 5 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/597-40cec72aef76ade5.js
+ HTTP  9/3/2026 8:05:35 PM ::1 GET /_next/static/chunks/app/page-14588d53c23683db.js
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 7 ms
+ HTTP  9/3/2026 8:05:35 PM ::1 Returned 200 in 14 ms
+ HTTP  9/3/2026 8:05:36 PM ::1 GET /_vercel/insights/script.js
+ HTTP  9/3/2026 8:05:36 PM ::1 Returned 404 in 3 ms
+ HTTP  9/3/2026 8:05:36 PM ::1 GET /video-thumbnail.jpg
+ HTTP  9/3/2026 8:05:36 PM ::1 Returned 404 in 1 ms
+ HTTP  9/3/2026 8:05:36 PM ::1 GET /VID_20260804_011114_027_bsl.mp4
+ HTTP  9/3/2026 8:05:36 PM ::1 Returned 206 in 87 ms
+ HTTP  9/3/2026 8:05:36 PM ::1 GET /VID_20260804_011114_027_bsl.mp4
+ HTTP  9/3/2026 8:05:36 PM ::1 Returned 206 in 1 ms
+ HTTP  9/3/2026 8:05:36 PM ::1 GET /VID_20260804_011114_027_bsl.mp4
+ HTTP  9/3/2026 8:05:36 PM ::1 Returned 206 in 2 ms
+ HTTP  9/3/2026 8:05:36 PM ::1 GET /VID_20260804_011114_027_bsl.mp4
+ HTTP  9/3/2026 8:05:36 PM ::1 Returned 206 in 1 ms
+ HTTP  9/3/2026 8:05:37 PM ::1 GET /VID_20260804_011114_027_bsl.mp4
+ HTTP  9/3/2026 8:05:37 PM ::1 Returned 206 in 1 ms

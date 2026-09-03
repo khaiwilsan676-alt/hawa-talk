@@ -139,8 +139,8 @@ function WebGLCoinIcon({ src }: { src: string }) {
   return <canvas ref={canvasRef} width={64} height={64} className="w-full h-full object-contain" />;
 }
 
-export default function StorePage({ onBack }: { onBack: () => void }) {
-  const [currentView, setCurrentView] = useState<"store" | "bag">("store");
+export default function StorePage({ onBack, initialView = "store" }: { onBack: () => void; initialView?: "store" | "bag" }) {
+  const [currentView, setCurrentView] = useState<"store" | "bag">(initialView);
   const [activeTab, setActiveTab] = useState("Vehicle");
   const [tryThemeItem, setTryThemeItem] = useState<StoreItem | null>(null);
 

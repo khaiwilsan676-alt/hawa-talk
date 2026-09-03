@@ -367,6 +367,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [showWallet, setShowWallet] = useState(false)
   const [walletTab, setWalletTab] = useState<'coins' | 'diamond'>('coins')
   const [showStore, setShowStore] = useState(false)
+  const [storeInitialView, setStoreInitialView] = useState<'store' | 'bag'>('store')
   
   const [showInviteFriends, setShowInviteFriends] = useState(false)
   const [showFamily, setShowFamily] = useState(false)
@@ -631,12 +632,15 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   if (showLevel) return <Level onBack={() => setShowLevel(false)} />
   if (showMedal) return <Medal onBack={() => setShowMedal(false)} />
   if (showWallet) return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
-  if (showStore) return <StorePage onBack={() => setShowStore(false)} />
+  if (showStore) return <StorePage onBack={() => setShowStore(false)} initialView={storeInitialView} />
 
   if (showFeedbackPage) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col pb-[8vh]">
-        <div className="flex items-center p-4 bg-white border-b border-gray-200">
+        <div
+          className="flex items-center p-4 bg-white border-b border-gray-200 safe-top"
+          style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 16px) + 12px)' }}
+        >
           <button
             onClick={() => {
               setShowFeedbackPage(false);
@@ -916,7 +920,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   else if (item.id === '2') setShowFamily(true);
                   else if (item.id === '3') setShowLevel(true);
                   else if (item.id === '4') setShowMedal(true);
-                  else if (item.id === '5') setShowStore(true);
+                  else if (item.id === '5') {
+                    setStoreInitialView('store');
+                    setShowStore(true);
+                  }
+                  else if (item.id === '6') {
+                    setStoreInitialView('bag');
+                    setShowStore(true);
+                  }
                 }}
               >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
