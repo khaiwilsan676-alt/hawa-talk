@@ -238,9 +238,9 @@ export default function Medal({ onBack }: MedalProps) {
 
       {/* 2. Top Background Image - Updated as per requirement (50vh, fade only from bottom) */}
       <div 
-        className="fixed top-0 left-0 right-0 h-[40vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
+        className="fixed top-0 left-0 right-0 h-[48vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
-          backgroundImage: `url('/file_00000000f1dc821196bf96f688c3b2f6.png')`,
+          backgroundImage: `url('/IMG_20260903_232144.png')`,
           // Solid at the top (0% to 65%), then smoothly mixes into transparent at the bottom
           maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)'
