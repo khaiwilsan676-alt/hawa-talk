@@ -79,20 +79,22 @@ const storeItems: StoreItem[] = [
 
 export default function StorePage({ onBack }: StorePageProps) {
   const [activeTab, setActiveTab] = useState("Vehicle");
+  // Bottom sheet ke liye state
+  const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
 
   return (
-    <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans">
+    <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans relative">
       <div className="max-w-md mx-auto min-h-screen flex flex-col">
         
-        {/* Top Header */}
+        {/* Top Header - Sky blue gradient mix kiya hai top pe */}
         <div
-          className="relative flex items-center justify-between px-4 pb-2 pt-4"
+          className="relative flex items-center justify-between px-4 pb-3 pt-4 bg-gradient-to-r from-sky-200 to-blue-200 rounded-b-2xl shadow-sm"
           style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16px)' }}
         >
           <button
             type="button"
             onClick={onBack}
-            className="p-1 -ml-2 text-black hover:bg-gray-100 rounded-full transition-colors z-10"
+            className="p-1 -ml-2 text-black hover:bg-white/50 rounded-full transition-colors z-10"
           >
             <ChevronLeft size={28} strokeWidth={1.5} />
           </button>
@@ -108,7 +110,7 @@ export default function StorePage({ onBack }: StorePageProps) {
         </div>
 
         {/* Category Tabs (Fixed Perfect Circle) */}
-        <div className="flex items-center gap-6 px-5 mt-3 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-6 px-5 mt-3 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -134,12 +136,13 @@ export default function StorePage({ onBack }: StorePageProps) {
           })}
         </div>
 
-        {/* Items Grid (Yahan grid-cols-2 kar diya gaya hai bss) */}
-        <div className="grid grid-cols-2 gap-3 px-4 py-2 mt-2 flex-1 content-start">
+        {/* Items Grid (Edge-to-edge feel ke liye padding tight rakhi hai) */}
+        <div className="grid grid-cols-2 gap-2 px-2 py-2 mt-2 flex-1 content-start">
           {storeItems.map((item) => (
             <div
               key={item.id}
-              className="bg-white rounded-[14px] p-2 flex flex-col shadow-[0_2px_10px_rgba(0,0,0,0.03)]"
+              onClick={() => setSelectedItem(item)} // Click karne par sheet open hoga
+              className="bg-white rounded-[14px] p-2 flex flex-col shadow-[0_2px_10px_rgba(0,0,0,0.03)] cursor-pointer active:scale-95 transition-transform"
             >
               {/* Top Bar (Solid Dark Blue Check & Try) */}
               <div className="flex items-center justify-between w-full">
@@ -156,8 +159,8 @@ export default function StorePage({ onBack }: StorePageProps) {
                 </span>
               </div>
 
-              {/* Item Image (Compact Height) */}
-              <div className="relative w-full h-[72px] mt-1.5 mb-1.5 flex items-center justify-center">
+              {/* Item Image (Thoda height badha diya kyunki buttons hata diye) */}
+              <div className="relative w-full h-[90px] mt-2 mb-2 flex items-center justify-center">
                 <Image
                   src={item.image}
                   alt={item.name}
@@ -167,8 +170,8 @@ export default function StorePage({ onBack }: StorePageProps) {
                 />
               </div>
 
-              {/* Coin and Price */}
-              <div className="flex items-center justify-center gap-1 mb-2">
+              {/* Coin and Price (Buttons hata diye, sirf yehi bacha hai bottom pe) */}
+              <div className="flex items-center justify-center gap-1 mt-auto pb-1">
                 <div className="relative w-[13px] h-[13px] flex items-center justify-center">
                   <Image
                     src="/1786855398290.png"
@@ -181,26 +184,71 @@ export default function StorePage({ onBack }: StorePageProps) {
                   {item.price}
                 </span>
               </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-              {/* Action Buttons (Send / Buy - Perfect Pill Shape in Dark Blue) */}
-              <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[24px]">
+      {/* BOTTOM SHEET - 50vh, No Blur, Tight Curve */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Overlay - Original background dikhega (no backdrop-blur), click to close */}
+          <div 
+            className="absolute inset-0 bg-black/40" 
+            onClick={() => setSelectedItem(null)} 
+          ></div>
+          
+          {/* Bottom Sheet Content (50vh Height & Tight rounded corners) */}
+          <div className="relative w-full max-w-md mx-auto h-[50vh] bg-white rounded-t-lg flex flex-col shadow-2xl">
+            
+            {/* Image (Card wali exact image yahan show hogi) */}
+            <div className="flex-1 relative w-full flex items-center justify-center p-6">
+              <Image
+                src={selectedItem.image}
+                alt={selectedItem.name}
+                fill
+                className="object-contain p-6"
+              />
+            </div>
+
+            {/* Bottom Bar inside Sheet */}
+            <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100">
+              
+              {/* Left Side: Coins & Value */}
+              <div className="flex items-center gap-1.5">
+                <div className="relative w-5 h-5 flex items-center justify-center">
+                  <Image
+                    src="/1786855398290.png"
+                    alt="Coin Icon"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-[15px] font-bold text-black tracking-tight">
+                  79282
+                </span>
+              </div>
+
+              {/* Right Side: Send & Buy Buttons (Same pill shape & colors) */}
+              <div className="flex items-center w-[130px] rounded-full border border-[#1d4ed8] overflow-hidden h-[32px]">
                 <button
                   type="button"
-                  className="flex-1 h-full bg-white text-[#1d4ed8] text-[10px] font-medium flex items-center justify-center hover:bg-[#eff6ff]"
+                  className="flex-1 h-full bg-white text-[#1d4ed8] text-[12px] font-medium flex items-center justify-center hover:bg-[#eff6ff]"
                 >
                   Send
                 </button>
                 <button
                   type="button"
-                  className="flex-1 h-full bg-[#1d4ed8] text-white text-[10px] font-medium flex items-center justify-center hover:bg-[#1e40af]"
+                  className="flex-1 h-full bg-[#1d4ed8] text-white text-[12px] font-medium flex items-center justify-center hover:bg-[#1e40af]"
                 >
                   Buy
                 </button>
               </div>
+
             </div>
-          ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
