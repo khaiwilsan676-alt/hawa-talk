@@ -178,6 +178,13 @@ const bottomMenuItems: MenuItem[] = [
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
+const FEEDBACK_TYPES = [
+  { id: 'bug', label: 'Bug / Glitch', icon: '🐛' },
+  { id: 'account', label: 'Account Issue', icon: '👤' },
+  { id: 'recharge', label: 'Recharge / Coin', icon: '💰' },
+  { id: 'other', label: 'Other Suggestion', icon: '💡' },
+]
+
 export const getOrCreateAccountNumber = (uid: string) => {
   if (!uid || uid === 'N/A') return { fullAccNum: '', displayAccNum: '' }
 
