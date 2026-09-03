@@ -8,8 +8,7 @@ import { getTranslation, LanguageCode } from '../lib/translations'
 interface SettingPageProps {
   onBack?: () => void
   onLogout?: () => void
-  onBlocklistPress?: () => void
-  onAboutPress?: () => void
+  onAboutPress?: () => void // ✅ Removed onBlocklistPress here
 }
 
 const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
@@ -18,11 +17,13 @@ const ADMIN_IDS = ['700001', '700002', '700003']
 export default function SettingPage({
   onBack,
   onLogout,
-  onBlocklistPress,
-  onAboutPress,
+  onAboutPress, // ✅ Removed onBlocklistPress here
 }: SettingPageProps) {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true)
   const [appLang, setAppLang] = useState<LanguageCode>('en')
+  
+  // ✅ State to toggle About Us page view
+  const [showAboutView, setShowAboutView] = useState(false)
 
   useEffect(() => {
     const savedLang = localStorage.getItem('appLanguage') as LanguageCode
@@ -89,6 +90,60 @@ export default function SettingPage({
     window.location.reload()
   }
 
+  // ✅ ABOUT US PAGE RENDER
+  if (showAboutView) {
+    return (
+      <div className="w-full min-h-screen bg-white">
+        {/* Top Header with Safe Area for Android/iOS */}
+        <div
+          className="flex items-center px-4 py-3 bg-white relative"
+          style={{
+            paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)'
+          }}
+        >
+          <button 
+            onClick={() => setShowAboutView(false)} 
+            className="p-1 hover:bg-slate-100 rounded-full transition-colors z-10"
+          >
+            <ChevronLeft size={24} className="text-slate-900" />
+          </button>
+          <h1 className="text-lg font-semibold text-slate-900 absolute left-0 right-0 text-center pointer-events-none">
+            About Us
+          </h1>
+        </div>
+
+        {/* About Us Content */}
+        <div className="px-6 py-8 pb-20">
+          <h2 className="text-3xl font-semibold text-center text-black mb-8 tracking-tight">About Us</h2>
+
+          <div className="text-[#333333] text-[15px] leading-relaxed space-y-6 tracking-wide">
+            <p>
+              Hurry is a real-time group voice chat application for multiple players. There are South Asian users from all over the world. You can find new friends who share the same interests with you, chat with them and enjoy the fun of the party!
+            </p>
+            
+            <p>We have the following functions:</p>
+
+            <div className="space-y-1">
+              <p>-Free</p>
+              <p>You can have free, high-quality and stable voice chat through the Internet.</p>
+            </div>
+
+            <div className="space-y-1">
+              <p>-Online party</p>
+              <p>Here we have various online parties, rooms of topics in birthday party, wedding party, war drum game and so on.</p>
+            </div>
+
+            <div className="space-y-1">
+              <p>-Gorgeous gifts</p>
+              <p>While enjoying chatting with your friends, you can send them gifts. Gorgeous effects are coming with gift sent. You can have so much fun~</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ✅ MAIN SETTINGS PAGE RENDER
   return (
     <div className="w-full min-h-screen bg-white">
       <div
@@ -122,16 +177,13 @@ export default function SettingPage({
           </button>
         </div>
 
-        <div
-          onClick={onBlocklistPress}
-          className="flex items-center justify-between px-5 py-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors"
-        >
-          <span className="text-base text-slate-800">{t.blocklist}</span>
-          <ChevronRight size={20} className="text-slate-400" />
-        </div>
+        {/* ✅ Blocklist UI div is completely removed from here */}
 
         <div
-          onClick={onAboutPress}
+          onClick={() => {
+            if (onAboutPress) onAboutPress()
+            setShowAboutView(true)
+          }}
           className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
         >
           <span className="text-base text-slate-800">{t.about}</span>
@@ -150,3 +202,4 @@ export default function SettingPage({
     </div>
   )
 }
+
