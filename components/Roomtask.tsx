@@ -238,7 +238,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
         <div 
           className="absolute top-[50vh] left-0 w-full h-[268vh] z-0 pointer-events-none"
           style={{
-            backgroundImage: 'url(/file_0000000077748211a3cf580b616ab31b.png)',
+            backgroundImage: 'url(file_000000008e748211aa4aa1e7a2389af8.png)',
             backgroundSize: '100% 100%',
             backgroundPosition: 'top center',
             maskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
