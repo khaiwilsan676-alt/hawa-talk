@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 
 interface StoreItem {
   id: string;
@@ -153,14 +153,14 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
 
   const renderStars = (count: number) => {
     return Array.from({ length: 5 }).map((_, i) => (
-      <span key={i} className={`text-[20px] ${i < count ? 'text-yellow-400' : 'text-gray-300'}`}>
+      <span key={i} className={`text-[16px] leading-none ${i < count ? 'text-yellow-400' : 'text-gray-200'}`}>
         ★
       </span>
     ));
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans relative">
+    <div className="min-h-screen bg-[#f5f6f8] text-gray-800 pb-10 select-none font-sans relative">
       <div className="max-w-md mx-auto min-h-screen flex flex-col">
         
         {/* Top Header */}
@@ -216,42 +216,37 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
           )}
         </div>
 
-        {/* Category Tabs - Gap reduced to 2 */}
-        <div className="flex items-center gap-2 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
+        {/* Category Tabs - Similar to Image */}
+        <div className="flex items-center gap-3 px-4 mt-2 mb-2 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
-              <div key={tab} className="relative flex items-center justify-center h-[46px]">
-                {isActive && (
-                  <div className="absolute w-[44px] h-[44px] bg-[#1d4ed8] rounded-full shadow-sm"></div>
-                )}
-                
-                <button
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative z-10 whitespace-nowrap text-[14px] px-2.5 transition-colors ${
-                    isActive
-                      ? "text-black font-bold"
-                      : "text-gray-400 font-normal hover:text-gray-600"
-                  }`}
-                >
-                  {tab}
-                </button>
-              </div>
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`whitespace-nowrap text-[14px] px-4 py-1.5 rounded-xl transition-colors ${
+                  isActive
+                    ? "bg-[#1d4ed8] text-white font-medium shadow-sm"
+                    : "text-gray-400 font-medium hover:text-gray-600 bg-transparent"
+                }`}
+              >
+                {tab}
+              </button>
             );
           })}
         </div>
 
-        {/* Items Grid - Gap reduced to 2 */}
-        <div className="grid grid-cols-3 gap-2 px-3 py-2 mt-2 flex-1 content-start">
+        {/* Items Grid - Converted to 2 Columns like Image */}
+        <div className="grid grid-cols-2 gap-4 px-4 py-2 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
 
             return (
               <div
                 key={item.id}
-                className={`relative bg-white rounded-xl p-2 flex flex-col items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden ${
-                  isTheme ? "h-[160px]" : ""
+                className={`relative bg-white rounded-2xl p-3 flex flex-col items-center justify-between shadow-sm overflow-hidden ${
+                  isTheme ? "min-h-[220px]" : "h-auto"
                 }`}
               >
                 {isTheme && (
@@ -262,105 +257,92 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
                       fill
                       className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="absolute inset-0 bg-black/20"></div>
                   </div>
                 )}
 
-                {/* Top Bar inside Card */}
-                <div className={`flex items-center justify-between w-full text-[10px] z-10 ${isTheme ? "text-white" : ""}`}>
-                  <div className={`flex items-center gap-0.5 ${isTheme ? "text-white" : "text-[#1d4ed8]"}`}>
-                    <div className={`w-2.5 h-2.5 rounded-full flex items-center justify-center ${isTheme ? "bg-white/30 backdrop-blur-sm text-white" : "bg-[#1d4ed8] text-white"}`}>
-                      <svg className="w-1.5 h-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="font-bold">{item.duration}</span>
-                  </div>
+                {/* Top Bar inside Card (Try Button and Duration) */}
+                <div className="flex items-center justify-between w-full z-10 mb-2">
                   <button 
                     type="button"
                     onClick={(e) => {
-                      e.stopPropagation();
                       if (isTheme) {
+                        e.stopPropagation();
                         setTryThemeItem(item);
                       }
                     }}
-                    className={`font-bold z-20 no-underline ${isTheme ? "text-white" : "text-[#1d4ed8]"}`}
+                    className={`px-3 py-[2px] rounded-full text-[11px] font-medium border ${
+                      isTheme 
+                        ? "text-white border-white bg-white/20" 
+                        : "text-[#1d4ed8] border-[#1d4ed8]"
+                    }`}
                   >
                     Try
                   </button>
+                  <div className={`flex items-center gap-1 text-[11px] font-medium ${isTheme ? "text-white drop-shadow-md" : "text-gray-500"}`}>
+                    <Clock size={12} strokeWidth={2.5} />
+                    <span>{item.duration}</span>
+                  </div>
                 </div>
 
+                {/* Item Image */}
                 {!isTheme && (
-                  <div className="relative w-full h-[52px] my-1.5 flex items-center justify-center z-10">
+                  <div className="relative w-full h-[80px] my-2 flex items-center justify-center z-10">
                     <Image
                       src={item.image}
                       alt={item.name}
                       fill
                       className="object-contain"
-                      sizes="33vw"
+                      sizes="50vw"
                     />
                   </div>
                 )}
 
-                {isTheme && <div className="flex-1"></div>}
+                {isTheme && <div className="flex-1 w-full min-h-[80px]"></div>}
+
+                {/* Stars */}
+                <div className="flex items-center justify-center gap-0.5 mt-2 mb-1 w-full z-10">
+                  {renderStars(item.stars)}
+                </div>
 
                 {/* Price Row using WebGL Shader */}
-                <div className="flex items-center justify-center gap-1 mb-1.5 w-full z-10">
-                  <div className="relative w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                <div className="flex items-center justify-center gap-1.5 mb-3 w-full z-10">
+                  <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
                     <WebGLCoinIcon src="/1786855398290.png" />
                   </div>
-                  <span className={`text-[10px] font-bold tracking-tight truncate ${isTheme ? "text-white drop-shadow" : "text-gray-900"}`}>
+                  <span className={`text-[14px] font-bold tracking-tight truncate ${isTheme ? "text-white drop-shadow-md" : "text-gray-900"}`}>
                     {item.price}
                   </span>
                 </div>
 
-                {/* Bottom Buttons inside Card */}
-                <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[22px] z-10 bg-white">
-                  {currentView === "bag" ? (
-                    <>
-                      <button
-                        type="button"
-                        className="flex-1 h-full bg-white text-[#1d4ed8] text-[9px] font-bold flex items-center justify-center"
-                      >
-                        Send
-                      </button>
-                      <button
-                        type="button"
-                        className="flex-1 h-full bg-[#1d4ed8] text-white text-[9px] font-bold flex items-center justify-center"
-                      >
-                        Equip
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        className="flex-1 h-full bg-white text-[#1d4ed8] text-[9px] font-bold flex items-center justify-center"
-                      >
-                        Send
-                      </button>
-                      <button
-                        type="button"
-                        className="flex-1 h-full bg-[#1d4ed8] text-white text-[9px] font-bold flex items-center justify-center"
-                      >
-                        Buy
-                      </button>
-                    </>
-                  )}
+                {/* Bottom Buttons inside Card (Half-Half style like image) */}
+                <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[30px] z-10 bg-white">
+                  <button
+                    type="button"
+                    className="flex-1 h-full bg-white text-[#1d4ed8] text-[12px] font-bold flex items-center justify-center transition-colors hover:bg-gray-50"
+                  >
+                    Send
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 h-full bg-[#1d4ed8] text-white text-[12px] font-bold flex items-center justify-center transition-colors hover:bg-blue-800"
+                  >
+                    {currentView === "bag" ? "Equip" : "Buy"}
+                  </button>
                 </div>
               </div>
             );
           })}
 
           {displayedItems.length === 0 && (
-            <div className="col-span-3 text-center text-gray-400 mt-12 text-sm font-medium">
+            <div className="col-span-2 text-center text-gray-400 mt-12 text-sm font-medium">
               {currentView === "bag" ? "No items in Bag for this category" : "No items found"}
             </div>
           )}
         </div>
       </div>
 
-      {/* STRICT THEME TRY OVERLAY MODAL (Tall height, narrow width, no 30d/coins/send button, clean stars at bottom) */}
+      {/* STRICT THEME TRY OVERLAY MODAL (Untouched as requested) */}
       {tryThemeItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="relative w-full max-w-[260px] flex flex-col items-center">
@@ -395,4 +377,3 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
     </div>
   );
 }
-
