@@ -218,24 +218,22 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   ];
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#1a0304] scrollbar-none">
+    <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#800000] scrollbar-none">
       <div className="relative w-full min-h-full flex flex-col">
         
-        {/* TOP BACKGROUND: Smooth Gradient Mask bottom mein mix karne ke liye */}
+        {/* TOP BACKGROUND: Bottom overlay jo direct Maroon (#800000) ke sath 100% blend karega */}
         <div 
-          className="absolute top-0 left-0 w-full h-[58vh] z-0 pointer-events-none"
+          className="absolute top-0 left-0 w-full h-[58vh] z-0 pointer-events-none bg-cover bg-top"
           style={{
-            backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'top center',
-            maskImage: 'linear-gradient(to bottom, black 0%, black 75%, rgba(0,0,0,0.6) 88%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 75%, rgba(0,0,0,0.6) 88%, transparent 100%)',
+            backgroundImage: 'url(/file_00000000cb748211bf0120855b80f449.png)'
           }}
-        />
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#800000]/40 to-[#800000]" />
+        </div>
 
-        {/* BOTTOM BACKGROUND: Solid Dark Blood Red */}
+        {/* BOTTOM BACKGROUND: Pure Maroon Solid Background */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[280vh] z-0 pointer-events-none bg-[#1a0304]"
+          className="absolute top-[50vh] left-0 w-full h-[260vh] z-0 pointer-events-none bg-[#800000]"
         />
 
         {/* BACK ICON */}
@@ -268,7 +266,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 draggable={false}
               />
 
-              {/* Left Side Cleaned icon */}
+              {/* Left Side: Cleaned Coin Icon */}
               <div 
                 className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
                 style={{ left: '28px' }} 
@@ -298,11 +296,11 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <img 
                 src="/file_00000000680881faa3dfdb17cce60858.png"
                 alt="Frame Top Border"
-                className="w-full scale-x-105 h-auto object-fill block select-none pointer-events-none"
+                className="w-full scale-x-115 h-auto object-fill block select-none pointer-events-none"
                 draggable={false}
               />
 
-              {/* Room Task Heading Overlap */}
+              {/* Room Task Heading Overlapping Center */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-1">
                 <h1 className="text-white text-base sm:text-lg font-black tracking-wider uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                   Room Task
@@ -311,33 +309,33 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
             </div>
 
             {/* LIVE DAILY COUNTDOWN UI */}
-            <div className="flex items-center justify-center gap-1 mt-3 z-30 select-none">
-              <span className="text-[#f5b8b8] text-[11px] font-medium">Countdown</span>
+            <div className="flex items-center justify-center gap-1 mt-7 z-30 select-none">
+              <span className="text-[#ffcccc] text-[11px] font-medium">Countdown</span>
 
               {/* Hour */}
-              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#8f1a1a] to-[#470a0a] flex items-center justify-center shadow-inner">
-                <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.hours}</span>
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#ff8080] bg-gradient-to-b from-[#a31515] to-[#590000] flex items-center justify-center shadow-inner">
+                <span className="text-white text-[11px] font-bold">{timeLeft.hours}</span>
               </div>
-              <span className="text-[#f5b8b8] text-[11px] font-medium">Hour</span>
+              <span className="text-[#ffcccc] text-[11px] font-medium">Hour</span>
 
               {/* Minute */}
-              <div className="min-w-[20px] px-1 h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#8f1a1a] to-[#470a0a] flex items-center justify-center shadow-inner">
-                <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.minutes}</span>
+              <div className="min-w-[20px] px-1 h-[20px] rounded-[4px] border border-[#ff8080] bg-gradient-to-b from-[#a31515] to-[#590000] flex items-center justify-center shadow-inner">
+                <span className="text-white text-[11px] font-bold">{timeLeft.minutes}</span>
               </div>
-              <span className="text-[#f5b8b8] text-[11px] font-medium">Minute</span>
+              <span className="text-[#ffcccc] text-[11px] font-medium">Minute</span>
 
               {/* Second */}
-              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#8f1a1a] to-[#470a0a] flex items-center justify-center shadow-inner">
-                <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.seconds}</span>
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#ff8080] bg-gradient-to-b from-[#a31515] to-[#590000] flex items-center justify-center shadow-inner">
+                <span className="text-white text-[11px] font-bold">{timeLeft.seconds}</span>
               </div>
-              <span className="text-[#f5b8b8] text-[11px] font-medium">Second</span>
+              <span className="text-[#ffcccc] text-[11px] font-medium">Second</span>
             </div>
 
             {/* 2. MIDDLE SECTION: Thick Side Borders Fully Joined with Top & Bottom Frames */}
             <div className="relative w-full flex flex-col items-center mt-2 -mb-3">
               {/* Left Side Screen Border Strip (Thick & Edge Aligned) */}
               <div 
-                className="absolute -top-3 left-0 bottom-0 w-7 sm:w-10 z-20 pointer-events-none"
+                className="absolute -top-6 left-0 bottom-0 w-7 sm:w-15 z-20 pointer-events-none"
                 style={{
                   backgroundImage: 'url(/IMG_20260903_105647.png)',
                   backgroundRepeat: 'repeat-y',
@@ -348,7 +346,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
               {/* Right Side Screen Border Strip (Thick & Edge Aligned) */}
               <div 
-                className="absolute -top-3 right-0 bottom-0 w-7 sm:w-10 z-20 pointer-events-none"
+                className="absolute -top-6 right-0 bottom-0 w-7 sm:w-15 z-20 pointer-events-none"
                 style={{
                   backgroundImage: 'url(/IMG_20260903_105705.png)',
                   backgroundRepeat: 'repeat-y',
@@ -358,7 +356,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               />
 
               {/* 22 Task Cards Container */}
-              <div className="w-full flex flex-col items-center -space-y-[50px] px-8 z-10">
+              <div className="w-full flex flex-col items-center -space-y-[45px] px-8 z-10">
                 {tasks.map((task, index) => (
                   <TaskItem 
                     key={index}
@@ -375,7 +373,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <img 
                 src="/file_0000000066c88211aa777b1f6da8683f.png"
                 alt="Frame Bottom Border"
-                className="w-full scale-x-105 h-auto object-fill block select-none"
+                className="w-full scale-x-115 h-auto object-fill block select-none"
                 draggable={false}
               />
             </div>
