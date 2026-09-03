@@ -2389,7 +2389,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <>
                   <div
                     ref={bannerRef}
-                    className="rounded-2xl relative overflow-hidden cursor-pointer select-none"
+                    className="rounded-xl relative overflow-hidden cursor-pointer select-none"
                     style={{
                       height: '100px',
                       width: '100%',
