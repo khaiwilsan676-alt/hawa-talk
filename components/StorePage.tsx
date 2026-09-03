@@ -43,7 +43,6 @@ const allStoreItems: StoreItem[] = [
   { id: "i1", name: "ID Badge 8", image: "/1784533036732~2.jpg", tab: "ID", stars: 5, price: "10,000,000", duration: "3D", isOwned: true },
 ];
 
-// WebGL Component for strictly removing white background from coin icon using custom fragment shader
 function WebGLCoinIcon({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -154,7 +153,7 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
 
   const renderStars = (count: number) => {
     return Array.from({ length: 5 }).map((_, i) => (
-      <span key={i} className={`text-[18px] ${i < count ? 'text-yellow-400' : 'text-gray-300'}`}>
+      <span key={i} className={`text-[20px] ${i < count ? 'text-yellow-400' : 'text-gray-300'}`}>
         ★
       </span>
     ));
@@ -166,8 +165,8 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
         
         {/* Top Header */}
         <div
-          className="relative flex items-center justify-between px-4 pb-3 pt-4 bg-transparent"
-          style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16px)' }}
+          className="relative flex items-center justify-between px-4 pb-2 pt-2 bg-transparent"
+          style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 8px)' }}
         >
           <button
             type="button"
@@ -217,20 +216,20 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
           )}
         </div>
 
-        {/* Category Tabs pushed down nicely */}
-        <div className="flex items-center gap-8 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
+        {/* Category Tabs - Gap reduced to 2 */}
+        <div className="flex items-center gap-2 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
-              <div key={tab} className="relative flex items-center justify-center h-[54px]">
+              <div key={tab} className="relative flex items-center justify-center h-[46px]">
                 {isActive && (
-                  <div className="absolute w-[50px] h-[50px] bg-[#1d4ed8] rounded-full shadow-sm"></div>
+                  <div className="absolute w-[44px] h-[44px] bg-[#1d4ed8] rounded-full shadow-sm"></div>
                 )}
                 
                 <button
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`relative z-10 whitespace-nowrap text-[14px] px-3 transition-colors ${
+                  className={`relative z-10 whitespace-nowrap text-[14px] px-2.5 transition-colors ${
                     isActive
                       ? "text-black font-bold"
                       : "text-gray-400 font-normal hover:text-gray-600"
@@ -243,8 +242,8 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
           })}
         </div>
 
-        {/* Items Grid */}
-        <div className="grid grid-cols-3 gap-2 px-3 py-3 mt-4 flex-1 content-start">
+        {/* Items Grid - Gap reduced to 2 */}
+        <div className="grid grid-cols-3 gap-2 px-3 py-2 mt-2 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
 
@@ -263,7 +262,7 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
                       fill
                       className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/20"></div>
+                    <div className="absolute inset-0 bg-black/10"></div>
                   </div>
                 )}
 
@@ -285,7 +284,7 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
                         setTryThemeItem(item);
                       }
                     }}
-                    className={`font-bold z-20 ${isTheme ? "text-white underline" : "text-[#1d4ed8]"}`}
+                    className={`font-bold z-20 no-underline ${isTheme ? "text-white" : "text-[#1d4ed8]"}`}
                   >
                     Try
                   </button>
@@ -303,13 +302,9 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
                   </div>
                 )}
 
-                {isTheme && (
-                  <div className="z-10 text-center my-auto">
-                    <span className="text-white text-sm font-bold drop-shadow">{item.name}</span>
-                  </div>
-                )}
+                {isTheme && <div className="flex-1"></div>}
 
-                {/* Price Row using WebGL Shader for coin icon white background removal */}
+                {/* Price Row using WebGL Shader */}
                 <div className="flex items-center justify-center gap-1 mb-1.5 w-full z-10">
                   <div className="relative w-3.5 h-3.5 flex items-center justify-center shrink-0">
                     <WebGLCoinIcon src="/1786855398290.png" />
@@ -365,10 +360,10 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
         </div>
       </div>
 
-      {/* STRICT THEME TRY OVERLAY MODAL matching screenshot 1000186280.jpg exactly */}
+      {/* STRICT THEME TRY OVERLAY MODAL (Tall height, narrow width, no 30d/coins/send button, clean stars at bottom) */}
       {tryThemeItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="relative w-full max-w-[320px] flex flex-col items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="relative w-full max-w-[260px] flex flex-col items-center">
             
             {/* Close Button top-right */}
             <button
@@ -379,30 +374,14 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
               ✕
             </button>
 
-            {/* Main Phone-like vertical preview card with yellow border */}
-            <div className="relative w-[270px] h-[480px] rounded-3xl border-[4px] border-yellow-300 overflow-hidden shadow-2xl bg-black">
+            {/* Tall & Narrow Preview Card with Yellow Border */}
+            <div className="relative w-[230px] h-[480px] rounded-3xl border-[4px] border-yellow-300 overflow-hidden shadow-2xl bg-black">
               <Image
                 src={tryThemeItem.image}
                 alt={tryThemeItem.name}
                 fill
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 flex flex-col justify-between p-6">
-                <div className="flex items-center justify-between text-white text-xs font-semibold">
-                  <span>30D</span>
-                  <span className="text-yellow-300 font-bold text-base">{tryThemeItem.name}</span>
-                  <span></span>
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <div className="relative w-4 h-4">
-                    <WebGLCoinIcon src="/1786855398290.png" />
-                  </div>
-                  <span className="text-white font-bold text-sm">{tryThemeItem.price}</span>
-                  <button type="button" className="bg-[#60a5fa] text-white text-xs px-4 py-1 rounded-full font-semibold ml-2">
-                    Send
-                  </button>
-                </div>
-              </div>
             </div>
 
             {/* Stars at bottom */}
