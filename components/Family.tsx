@@ -89,11 +89,11 @@ export default function Family({ onBack }: FamilyProps) {
   }
 
   // ==========================================
-  // VIEW 3: CREATE FAMILY PAGE (White Sheet)
+  // VIEW 3: CREATE FAMILY PAGE (Full Scrollable White Sheet)
   // ==========================================
   if (currentView === 'create') {
     return (
-      <div className="h-screen bg-white flex flex-col font-sans text-black relative overflow-hidden">
+      <div className="min-h-screen bg-white flex flex-col font-sans text-black relative overflow-y-auto">
         
         {/* NATIVE SVG SHADER FOR WHITE SCREEN REMOVAL */}
         <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
@@ -107,7 +107,7 @@ export default function Family({ onBack }: FamilyProps) {
           </filter>
         </svg>
 
-        {/* HEADER (White Background, No Line, Save Button on Right) */}
+        {/* HEADER */}
         <div
           className="flex items-center justify-between p-4 flex-shrink-0"
           style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
@@ -123,8 +123,8 @@ export default function Family({ onBack }: FamilyProps) {
           </button>
         </div>
 
-        {/* Scroll Area */}
-        <div className="flex-1 overflow-y-auto pb-32">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 w-full pb-36">
           
           <div className="flex flex-col items-center mt-8">
             <div className="w-24 h-24 border-2 border-[#FFD700] rounded-lg flex items-center justify-center cursor-pointer bg-gray-50/50">
@@ -163,9 +163,9 @@ export default function Family({ onBack }: FamilyProps) {
           </div>
         </div>
 
-        {/* Bottom Element - Single Row Button, Rounded Full */}
-        <div className="absolute bottom-6 w-full flex justify-center px-6 z-40">
-          <button className="w-[90%] bg-[#3b82f6] shadow-[0_5px_0_#2563eb] active:shadow-[0_0px_0_#2563eb] active:translate-y-1 rounded-full transition-all cursor-pointer flex flex-row items-center justify-center py-3.5 gap-2">
+        {/* Bottom Fixed Button */}
+        <div className="fixed bottom-6 left-0 w-full flex justify-center px-6 z-40 pointer-events-none">
+          <button className="w-[90%] max-w-md bg-[#3b82f6] shadow-[0_5px_0_#2563eb] active:shadow-[0_0px_0_#2563eb] active:translate-y-1 rounded-full transition-all cursor-pointer flex flex-row items-center justify-center py-3.5 gap-2 pointer-events-auto">
             <span className="text-white font-bold text-lg tracking-wide">Create</span>
             <img 
               src="/1786855398290.png" 
@@ -177,7 +177,7 @@ export default function Family({ onBack }: FamilyProps) {
           </button>
         </div>
 
-        {/* 20vh Apply Mode Bottom Sheet */}
+        {/* Apply Mode Bottom Sheet */}
         {showApplyMode && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
             <div className="bg-white w-full h-[22vh] rounded-t-3xl p-6 flex flex-col shadow-2xl relative">
@@ -214,11 +214,11 @@ export default function Family({ onBack }: FamilyProps) {
   }
 
   // ==========================================
-  // VIEW 2: JOIN FAMILY PAGE (Cup Sheet)
+  // VIEW 2: JOIN FAMILY PAGE (Full Scrollable Cup Sheet)
   // ==========================================
   if (currentView === 'join') {
     return (
-      <div className="h-screen bg-[#1a0d06] flex flex-col relative overflow-hidden font-sans text-white">
+      <div className="min-h-screen bg-[#1a0d06] flex flex-col relative overflow-y-auto font-sans text-white">
         
         <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
           <filter id="remove-green" colorInterpolationFilters="sRGB">
@@ -231,8 +231,8 @@ export default function Family({ onBack }: FamilyProps) {
           </filter>
         </svg>
 
-        {/* TOP FIXED 50vh AREA (Doesn't scroll) */}
-        <div className="h-[50vh] w-full flex-shrink-0 relative">
+        {/* TOP BANNER AREA (Ab yeh bhi scrollable flow ke andar hai) */}
+        <div className="relative w-full h-[50vh] flex-shrink-0">
           <div 
             className="absolute inset-0 w-full h-full z-0"
             style={{
@@ -260,8 +260,8 @@ export default function Family({ onBack }: FamilyProps) {
           </div>
         </div>
 
-        {/* SCROLL AREA - The Entire Bottom Area Scrolls Now */}
-        <div className="flex-1 overflow-y-auto w-full pt-2 pb-10 space-y-2 z-10 relative">
+        {/* SCROLL AREA - Entire page scrollable */}
+        <div className="w-full pt-2 pb-16 space-y-2 z-10 relative">
           {Array.from({ length: 50 }, (_, index) => {
             const rank = index + 1;
             return (
@@ -296,10 +296,10 @@ export default function Family({ onBack }: FamilyProps) {
   }
 
   // ==========================================
-  // VIEW 1: MAIN FAMILY PAGE 
+  // VIEW 1: MAIN FAMILY PAGE (Full Scrollable)
   // ==========================================
   return (
-    <div className="h-screen bg-[#1a0d06] flex flex-col relative overflow-hidden font-sans text-white">
+    <div className="min-h-screen bg-[#1a0d06] flex flex-col relative overflow-y-auto font-sans text-white">
       
       <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
         <filter id="remove-green" colorInterpolationFilters="sRGB">
@@ -312,7 +312,7 @@ export default function Family({ onBack }: FamilyProps) {
         </filter>
       </svg>
 
-      {/* TOP BACKGROUND 50VH IMAGE (Fixed in background) */}
+      {/* TOP BACKGROUND 50VH IMAGE */}
       <div 
         className="absolute top-0 left-0 w-full h-[50vh] z-0"
         style={{
@@ -325,11 +325,11 @@ export default function Family({ onBack }: FamilyProps) {
       />
 
       {/* ======================================= */}
-      {/* FIXED TOP SECTION (Doesn't Scroll)      */}
+      {/* TOP SECTION (Ab scrollable flow ke sath) */}
       {/* ======================================= */}
-      <div className="relative z-20 flex flex-col w-full flex-shrink-0">
+      <div className="relative z-20 flex flex-col w-full">
         
-        {/* TOP BAR WITH BACK BUTTON ONLY */}
+        {/* TOP BAR WITH BACK BUTTON */}
         <div
           className="flex flex-row items-center w-full px-2 relative z-30"
           style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
@@ -344,7 +344,7 @@ export default function Family({ onBack }: FamilyProps) {
           </button>
         </div>
 
-        {/* ORIGINAL 3 BIG IMAGES (Restored exactly as before) */}
+        {/* 3 BIG IMAGES */}
         <div className="flex flex-col w-full mt-2 relative">
           
           {/* Middle Rank */}
@@ -374,10 +374,10 @@ export default function Family({ onBack }: FamilyProps) {
           </div>
         </div>
 
-        {/* 6VH SPACE ADDED HERE */}
+        {/* SPACE */}
         <div className="w-full h-[15vh]"></div>
 
-        {/* 3 NEW IMAGES IN A ROW (Space adjusted accordingly) */}
+        {/* 3 NEW IMAGES IN A ROW */}
         <div className="flex flex-row items-end justify-center gap-2 w-full px-4 relative z-20">
           <img 
             src="/IMG_20260901_230303.jpg" 
@@ -399,7 +399,7 @@ export default function Family({ onBack }: FamilyProps) {
           />
         </div>
 
-        {/* NEW COUNTDOWN SECTION */}
+        {/* COUNTDOWN SECTION */}
         <div className="relative w-full py-2.5 mt-4 flex items-center justify-center bg-gradient-to-r from-transparent via-[#ffd700]/10 to-transparent shadow-[0_0_15px_rgba(255,215,0,0.05)_inset]">
           <div className="absolute top-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#ffd700]/40 to-transparent shadow-[0_0_8px_rgba(255,215,0,0.8)]"></div>
           <div className="absolute bottom-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#ffd700]/40 to-transparent shadow-[0_0_8px_rgba(255,215,0,0.8)]"></div>
@@ -431,12 +431,11 @@ export default function Family({ onBack }: FamilyProps) {
       </div>
 
       {/* ======================================= */}
-      {/* SCROLLABLE BOTTOM SECTION               */}
+      {/* SCROLLABLE LIST SECTION                 */}
       {/* ======================================= */}
-      {/* Padding removed (px-4 hataya) to make it wide edge-to-edge */}
-      <div className="relative z-10 flex-1 overflow-y-auto w-full pt-4 space-y-1.5 pb-32">
+      <div className="relative z-10 w-full pt-4 space-y-1.5 pb-36">
         
-        {/* 1,2,3 Wali Image (Wide - w-full) */}
+        {/* 1,2,3 Wali Image */}
         <div className="relative w-full">
           <img 
             src="/1788258921361~2.jpg" 
@@ -446,7 +445,7 @@ export default function Family({ onBack }: FamilyProps) {
           />
         </div>
 
-        {/* 4 to 50 Cards (Wide) */}
+        {/* 4 to 50 Cards */}
         {Array.from({ length: 47 }, (_, i) => {
           const rank = i + 4;
           return (
@@ -467,8 +466,8 @@ export default function Family({ onBack }: FamilyProps) {
         })}
       </div>
 
-      {/* BOTTOM FLOATING BUTTONS (Fixed) */}
-      <div className="absolute bottom-6 w-full px-6 flex items-center justify-between z-50 pointer-events-none">
+      {/* BOTTOM FLOATING BUTTONS (Fixed at bottom screen) */}
+      <div className="fixed bottom-6 left-0 w-full px-6 flex items-center justify-between z-50 pointer-events-none">
         <button 
           onClick={() => setCurrentView('create')}
           className="hover:scale-105 transition-transform cursor-pointer drop-shadow-2xl pointer-events-auto"
@@ -476,7 +475,7 @@ export default function Family({ onBack }: FamilyProps) {
           <img 
             src="/IMG_20260901_161001.png" 
             alt="Add Button" 
-            className="w-50 h-auto object-contain"
+            className="w-44 h-auto object-contain"
             style={{ filter: 'url(#remove-green)' }}
           />
         </button>
@@ -488,7 +487,7 @@ export default function Family({ onBack }: FamilyProps) {
           <img 
             src="/1788263346291~2.jpg" 
             alt="Join Family" 
-            className="w-50 h-auto object-contain"
+            className="w-44 h-auto object-contain"
             style={{ filter: 'url(#remove-green)' }}
           />
         </button>
