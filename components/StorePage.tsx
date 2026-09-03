@@ -238,14 +238,14 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Items Grid - Converted to 2 Columns like Image */}
-        <div className="grid grid-cols-2 gap-4 px-4 py-2 flex-1 content-start">
+        <div className="grid grid-cols-2 gap-2 px-4 py-2 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
 
             return (
               <div
                 key={item.id}
-                className={`relative bg-white rounded-2xl p-3 flex flex-col items-center justify-between shadow-sm overflow-hidden ${
+                className={`relative bg-white rounded-xl p-1 flex flex-col items-center justify-between shadow-sm overflow-hidden ${
                   isTheme ? "min-h-[220px]" : "h-auto"
                 }`}
               >
