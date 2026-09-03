@@ -98,7 +98,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-[#1A0204] text-white overflow-hidden flex flex-col select-none"
+      className="min-h-screen bg-[#1A0204] text-white overflow-y-auto overflow-x-hidden flex flex-col select-none relative"
       style={{ touchAction: 'manipulation', WebkitUserSelect: 'none' }}
     >
       {/* BACKGROUND TOP IMAGE: 50vh blended into Ultra-Dark Red */}
@@ -119,21 +119,23 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         />
       </div>
 
-      {/* FIXED TOP HEADER */}
+      {/* FIXED TOP HEADER (Icons strictly at extreme corners) */}
       <header
-        className="relative z-50 flex items-center justify-between px-4 pb-3 shrink-0"
+        className="relative z-50 grid grid-cols-3 items-center px-2 pb-3 shrink-0 w-full"
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
       >
-        <button
-          onClick={onBack}
-          className="p-2 text-white active:opacity-60 transition-opacity"
-          aria-label="Back"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12" />
-            <polyline points="12 19 5 12 12 5" />
-          </svg>
-        </button>
+        <div className="flex justify-start">
+          <button
+            onClick={onBack}
+            className="p-1 text-white active:opacity-60 transition-opacity"
+            aria-label="Back"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+        </div>
 
         <div className="flex items-center justify-center gap-6">
           {tabs.map((tab) => (
@@ -153,15 +155,17 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           ))}
         </div>
 
-        <button
-          className="p-2 text-white active:opacity-60 transition-opacity text-xl font-bold"
-          aria-label="Info"
-        >
-          ?
-        </button>
+        <div className="flex justify-end">
+          <button
+            className="p-1 text-white active:opacity-60 transition-opacity text-xl font-bold"
+            aria-label="Info"
+          >
+            ?
+          </button>
+        </div>
       </header>
 
-      {/* FIXED PODIUM AREA (Top 1, 2, 3) */}
+      {/* PODIUM AREA (Top 1, 2, 3) */}
       <div className="relative z-10 w-full shrink-0 flex flex-col items-center">
         <div className="w-full flex flex-col items-center gap-1 mt-2">
           {/* Row 1: Top 1 (Center) */}
@@ -173,7 +177,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             />
           </div>
 
-          {/* Row 2: Top 2 (Extreme Left Corner) & Top 3 (Extreme Right Corner) */}
+          {/* Row 2: Top 2 & Top 3 */}
           <div className="flex justify-between items-center w-full px-0 -mt-4">
             <ChromaImage
               src="/1787994751636~2.jpg"
@@ -188,22 +192,22 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           </div>
         </div>
 
-        {/* 10vh Fixed Middle Gap */}
+        {/* Middle Gap */}
         <div style={{ height: '5vh' }} className="w-full shrink-0" />
       </div>
 
-      {/* SCROLLABLE SECTION: ONLY TOP 4 TO 50 CARDS (MADE WIDER HERE) */}
-      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pb-8 px-3 flex flex-col items-center">
-        <div className="w-full max-w-lg flex flex-col gap-1.5 items-center">
+      {/* SCROLLABLE SECTION: RANK 4 TO 50 CARDS (Edge-to-Edge Full Width) */}
+      <div className="relative z-10 w-full pb-16 flex flex-col items-center">
+        <div className="w-full flex flex-col gap-1.5 items-center">
           {rankCards.map((rank) => (
             <div
               key={rank}
-              className="relative w-full flex items-center justify-center rounded-xl overflow-hidden shrink-0"
+              className="relative w-full flex items-center justify-center overflow-hidden shrink-0"
             >
               <ChromaImage
                 src="/1787992320047~2.jpg"
                 alt={`Rank ${rank}`}
-                className="w-full max-w-xl h-auto object-cover scale-105"
+                className="w-full h-auto object-cover"
               />
             </div>
           ))}
