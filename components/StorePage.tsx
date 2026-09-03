@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 
@@ -33,7 +33,7 @@ const allStoreItems: StoreItem[] = [
   { id: "a3", name: "Neon Beats", image: "/1784533036732~2.jpg", tab: "Avatar Frame", stars: 5, price: "150,000", duration: "3D" },
 
   // Theme
-  { id: "t1", name: "Summer Beach", image: "/1784533036732~2.jpg", tab: "Theme", stars: 5, price: "2,700,000", duration: "30D" },
+  { id: "t1", name: "Seafood", image: "/1784533036732~2.jpg", tab: "Theme", stars: 4, price: "2,700,000", duration: "30D" },
   { id: "t2", name: "Night Sky", image: "/1784533036732~2.jpg", tab: "Theme", stars: 5, price: "2,400,000", duration: "30D" },
 
   // Chat Bubble
@@ -43,9 +43,107 @@ const allStoreItems: StoreItem[] = [
   { id: "i1", name: "ID Badge 8", image: "/1784533036732~2.jpg", tab: "ID", stars: 5, price: "10,000,000", duration: "3D", isOwned: true },
 ];
 
+// WebGL Component for strictly removing white background from coin icon using custom fragment shader
+function WebGLCoinIcon({ src }: { src: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const gl = canvas.getContext("webgl", { preserveDrawingBuffer: true, alpha: true });
+    if (!gl) return;
+
+    const vsSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `;
+
+    const fsSource = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_image;
+      void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        float lum = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+        if (lum > 0.85 && color.r > 0.8 && color.g > 0.8 && color.b > 0.8) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `;
+
+    const createShader = (gl: WebGLRenderingContext, type: number, source: string) => {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    };
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    if (!vertexShader || !fragmentShader) return;
+
+    const program = gl.createProgram();
+    if (!program) return;
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const positionLocation = gl.getAttribLocation(program, "a_position");
+    const texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,  1, -1, -1,  1,
+      -1,  1,  1, -1,  1,  1,
+    ]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      0, 1,  1, 1,  0, 0,
+      0, 0,  1, 1,  1, 0,
+    ]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(texCoordLocation);
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const texture = gl.createTexture();
+    const image = new window.Image();
+    image.crossOrigin = "anonymous";
+    image.src = src;
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+  }, [src]);
+
+  return <canvas ref={canvasRef} width={64} height={64} className="w-full h-full object-contain" />;
+}
+
 export default function StorePage({ onBack }: { onBack: () => void }) {
   const [currentView, setCurrentView] = useState<"store" | "bag">("store");
   const [activeTab, setActiveTab] = useState("Vehicle");
+  const [tryThemeItem, setTryThemeItem] = useState<StoreItem | null>(null);
 
   const displayedItems = allStoreItems.filter(item => {
     if (currentView === "bag") {
@@ -53,6 +151,14 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
     }
     return item.tab === activeTab;
   });
+
+  const renderStars = (count: number) => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      <span key={i} className={`text-[18px] ${i < count ? 'text-yellow-400' : 'text-gray-300'}`}>
+        ★
+      </span>
+    ));
+  };
 
   return (
     <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans relative">
@@ -81,7 +187,7 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
             {currentView === "store" ? "Store" : "Bag"}
           </h1>
 
-          {/* Top Right Images */}
+          {/* Top Right Icon Images strictly set to 70px */}
           {currentView === "store" ? (
             <button 
               type="button"
@@ -99,7 +205,7 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
             <button 
               type="button"
               onClick={() => setCurrentView("store")}
-              className="relative w-[80px] h-[80px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
+              className="relative w-[70px] h-[70px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
             >
               <Image
                 src="/file_00000000d634821189c7f69b4e3786e8.png"
@@ -111,13 +217,12 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
           )}
         </div>
 
-        {/* Category Tabs (Strict Circle Behind Active Tab) */}
-        <div className="flex items-center gap-3 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
+        {/* Category Tabs pushed down nicely */}
+        <div className="flex items-center gap-8 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
               <div key={tab} className="relative flex items-center justify-center h-[54px]">
-                {/* Active Tab Perfect Circle */}
                 {isActive && (
                   <div className="absolute w-[50px] h-[50px] bg-[#1d4ed8] rounded-full shadow-sm"></div>
                 )}
@@ -139,7 +244,7 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Items Grid */}
-        <div className="grid grid-cols-3 gap-2 px-3 py-3 mt-2 flex-1 content-start">
+        <div className="grid grid-cols-3 gap-2 px-3 py-3 mt-4 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
 
@@ -150,7 +255,6 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
                   isTheme ? "h-[160px]" : ""
                 }`}
               >
-                {/* Theme full image background */}
                 {isTheme && (
                   <div className="absolute inset-0 w-full h-full z-0">
                     <Image
@@ -173,7 +277,18 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
                     </div>
                     <span className="font-bold">{item.duration}</span>
                   </div>
-                  <span className={`font-bold ${isTheme ? "text-white" : "text-[#1d4ed8]"}`}>Try</span>
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isTheme) {
+                        setTryThemeItem(item);
+                      }
+                    }}
+                    className={`font-bold z-20 ${isTheme ? "text-white underline" : "text-[#1d4ed8]"}`}
+                  >
+                    Try
+                  </button>
                 </div>
 
                 {!isTheme && (
@@ -188,17 +303,16 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
                   </div>
                 )}
 
-                {isTheme && <div className="flex-1"></div>}
+                {isTheme && (
+                  <div className="z-10 text-center my-auto">
+                    <span className="text-white text-sm font-bold drop-shadow">{item.name}</span>
+                  </div>
+                )}
 
-                {/* Price Row */}
+                {/* Price Row using WebGL Shader for coin icon white background removal */}
                 <div className="flex items-center justify-center gap-1 mb-1.5 w-full z-10">
-                  <div className="relative w-3 h-3 flex items-center justify-center shrink-0">
-                    <Image
-                      src="/1786855398290.png"
-                      alt="Coin"
-                      fill
-                      className="object-contain"
-                    />
+                  <div className="relative w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                    <WebGLCoinIcon src="/1786855398290.png" />
                   </div>
                   <span className={`text-[10px] font-bold tracking-tight truncate ${isTheme ? "text-white drop-shadow" : "text-gray-900"}`}>
                     {item.price}
@@ -250,6 +364,55 @@ export default function StorePage({ onBack }: { onBack: () => void }) {
           )}
         </div>
       </div>
+
+      {/* STRICT THEME TRY OVERLAY MODAL matching screenshot 1000186280.jpg exactly */}
+      {tryThemeItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="relative w-full max-w-[320px] flex flex-col items-center">
+            
+            {/* Close Button top-right */}
+            <button
+              type="button"
+              onClick={() => setTryThemeItem(null)}
+              className="absolute -top-10 right-0 w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center text-lg font-bold hover:bg-white/40 z-20"
+            >
+              ✕
+            </button>
+
+            {/* Main Phone-like vertical preview card with yellow border */}
+            <div className="relative w-[270px] h-[480px] rounded-3xl border-[4px] border-yellow-300 overflow-hidden shadow-2xl bg-black">
+              <Image
+                src={tryThemeItem.image}
+                alt={tryThemeItem.name}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 flex flex-col justify-between p-6">
+                <div className="flex items-center justify-between text-white text-xs font-semibold">
+                  <span>30D</span>
+                  <span className="text-yellow-300 font-bold text-base">{tryThemeItem.name}</span>
+                  <span></span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="relative w-4 h-4">
+                    <WebGLCoinIcon src="/1786855398290.png" />
+                  </div>
+                  <span className="text-white font-bold text-sm">{tryThemeItem.price}</span>
+                  <button type="button" className="bg-[#60a5fa] text-white text-xs px-4 py-1 rounded-full font-semibold ml-2">
+                    Send
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Stars at bottom */}
+            <div className="flex items-center justify-center gap-1 mt-4">
+              {renderStars(tryThemeItem.stars)}
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
