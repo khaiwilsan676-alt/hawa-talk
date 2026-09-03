@@ -238,7 +238,7 @@ export default function Medal({ onBack }: MedalProps) {
 
       {/* 2. Top Background Image - Updated as per requirement (50vh, fade only from bottom) */}
       <div 
-        className="fixed top-0 left-0 right-0 h-[50vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
+        className="fixed top-0 left-0 right-0 h-[40vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
           backgroundImage: `url('/file_00000000f1dc821196bf96f688c3b2f6.png')`,
           // Solid at the top (0% to 65%), then smoothly mixes into transparent at the bottom
@@ -339,7 +339,7 @@ export default function Medal({ onBack }: MedalProps) {
               key={medal.id}
               onClick={() => setSelectedMedal(medal)}
               // Matching the card background from the image
-              className="relative bg-gradient-to-b from-[#312061] to-[#181036] rounded-2xl p-3 flex flex-col items-center justify-between text-center hover:opacity-90 active:scale-95 transition-all duration-200 cursor-pointer h-[190px]"
+              className="relative bg-gradient-to-b from-[#312061] to-[#181036] rounded-md p-3 flex flex-col items-center justify-between text-center hover:opacity-90 active:scale-95 transition-all duration-200 cursor-pointer h-[190px]"
             >
               {/* Medal Image Area */}
               <div className="w-24 h-24 my-auto flex items-center justify-center relative">
