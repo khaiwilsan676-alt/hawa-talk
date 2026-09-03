@@ -165,7 +165,6 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
   const cleanedTopLeftIconSrc = useProcessedShaderImage('/1786855398290.png');
 
-  // 👇 YEH LOGIC MISSING THA JO MAINE ADD KAR DIYA HAI 👇
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -192,7 +191,6 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
     return () => clearInterval(timer);
   }, []);
-  // 👆 LOGIC END 👆
 
   const tasks = [
     { title: "10 Users Enter the Room", reward: "10,000 Coins" },
@@ -220,7 +218,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   ];
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#120a1f] scrollbar-none">
+    <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#130a06] scrollbar-none">
       <div className="relative w-full min-h-full flex flex-col">
         {/* TOP BACKGROUND */}
         <div 
@@ -234,16 +232,9 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           }}
         />
 
-        {/* BOTTOM BACKGROUND */}
+        {/* BOTTOM BACKGROUND: Ekdam Dark Brown Solid Background */}
         <div 
-          className="absolute top-[50vh] left-0 w-full h-[268vh] z-0 pointer-events-none"
-          style={{
-            backgroundImage: 'url(file_0000000077748211a3cf580b616ab31b.png)',
-            backgroundSize: '250% 100%',
-            backgroundPosition: 'top center',
-            maskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 2%, black 100%)',
-          }}
+          className="absolute top-[50vh] left-0 w-full h-[268vh] z-0 pointer-events-none bg-[#130a06]"
         />
 
         {/* BACK ICON */}
@@ -277,19 +268,18 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 draggable={false}
               />
 
-                  {/* Left Side: White background remove kiya hua cleaned icon image */}
-    <div 
-      className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
-      style={{ left: '28px' }} 
-    >
-      <img 
-        src={cleanedTopLeftIconSrc}
-        alt="Cleaned Coin Icon" 
-        className="w-6 h-6 object-contain drop-shadow-md select-none"
-        draggable={false}
-      />
-    </div>
-
+              {/* Left Side: Cleaned icon image */}
+              <div 
+                className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
+                style={{ left: '28px' }} 
+              >
+                <img 
+                  src={cleanedTopLeftIconSrc}
+                  alt="Cleaned Coin Icon" 
+                  className="w-6 h-6 object-contain drop-shadow-md select-none"
+                  draggable={false}
+                />
+              </div>
 
               {/* Center Middle: Yellow color se "0" */}
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
@@ -299,12 +289,12 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
             
-            {/* 👇 ROOM TASK HEADING (Wapas aa gaya) 👇 */}
+            {/* ROOM TASK HEADING */}
             <h1 className="text-white text-lg font-black tracking-wider uppercase mt-16 drop-shadow-md">
               Room Task
             </h1>
 
-                          {/* 👇 LIVE DAILY COUNTDOWN UI 👇 */}
+            {/* LIVE DAILY COUNTDOWN UI */}
             <div className="flex items-center justify-center gap-1 mt-10 z-20 select-none">
               <span className="text-[#e8b499] text-[11px] font-medium">Countdown</span>
 
@@ -328,16 +318,66 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
             </div>
           </div>
 
-          {/* 22 Task Images with Titles & Claim Buttons inside */}
-          <div className="w-full flex flex-col items-center -space-y-[50px] mt-1 pb-16 px-4">
-            {tasks.map((task, index) => (
-              <TaskItem 
-                key={index}
-                title={task.title}
-                reward={task.reward}
-                iconSrc={cleanedIconSrc}
+          {/* FRAME SECTION (Top Edge-to-Edge, Left/Right Borders & Bottom Frame) */}
+          <div className="relative w-full flex flex-col items-center mt-3">
+            
+            {/* 1. Top Frame Image (Edge-to-Edge, Gap-3 below Middle section) */}
+            <div className="w-full flex-shrink-0 z-20 pointer-events-none">
+              <img 
+                src="/file_00000000680881faa3dfdb17cce60858.png"
+                alt="Frame Top Border"
+                className="w-full h-auto object-fill block select-none"
+                draggable={false}
               />
-            ))}
+            </div>
+
+            {/* 2. Middle Border Wrapper: Left & Right Screen Se Chipke Hue Borders */}
+            <div className="relative w-full flex flex-col items-center">
+              {/* Left Side Screen Border Strip */}
+              <div 
+                className="absolute top-0 left-0 bottom-0 w-5 sm:w-7 z-20 pointer-events-none"
+                style={{
+                  backgroundImage: 'url(/IMG_20260903_105647.png)',
+                  backgroundRepeat: 'repeat-y',
+                  backgroundSize: '100% auto',
+                  backgroundPosition: 'left top'
+                }}
+              />
+
+              {/* Right Side Screen Border Strip */}
+              <div 
+                className="absolute top-0 right-0 bottom-0 w-5 sm:w-7 z-20 pointer-events-none"
+                style={{
+                  backgroundImage: 'url(/IMG_20260903_105705.png)',
+                  backgroundRepeat: 'repeat-y',
+                  backgroundSize: '100% auto',
+                  backgroundPosition: 'right top'
+                }}
+              />
+
+              {/* 22 Task Cards Container (Frame ke dono borders ke beech mein) */}
+              <div className="w-full flex flex-col items-center -space-y-[50px] px-6 z-10">
+                {tasks.map((task, index) => (
+                  <TaskItem 
+                    key={index}
+                    title={task.title}
+                    reward={task.reward}
+                    iconSrc={cleanedIconSrc}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* 3. Bottom Frame Image (Edge-to-edge frame bottom) */}
+            <div className="w-full flex-shrink-0 z-20 pointer-events-none -mt-4">
+              <img 
+                src="/file_0000000066c88211aa777b1f6da8683f.png"
+                alt="Frame Bottom Border"
+                className="w-full h-auto object-fill block select-none"
+                draggable={false}
+              />
+            </div>
+
           </div>
 
         </div>
