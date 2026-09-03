@@ -2,92 +2,93 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react"; // Left arrow icon use kiya hai
+import { ArrowLeft } from "lucide-react";
 
 interface StoreItem {
   id: string;
   name: string;
   image: string;
+  tab: string;
   stars: number;
   price: string;
   duration: string;
-  hasDiscount?: boolean;
-}
-
-interface StorePageProps {
-  onBack: () => void;
+  isOwned?: boolean;
 }
 
 const tabs = ["Vehicle", "Avatar Frame", "Theme", "Chat Bubble", "ID"];
 
-// Store ke sabhi items
-const storeItems: StoreItem[] = [
-  { id: "1", name: "Moon Light", image: "/1784533036732~2.jpg", stars: 5, price: "4,000,000", duration: "3D", hasDiscount: true },
-  { id: "2", name: "Golden Chariot", image: "/1784533036732~2.jpg", stars: 5, price: "800,000,000", duration: "1D", hasDiscount: true },
-  { id: "3", name: "Flame Tiger", image: "/1784533036732~2.jpg", stars: 5, price: "24,000,000,000", duration: "3D", hasDiscount: true },
-  { id: "4", name: "Pegasus Carriage", image: "/1784533036732~2.jpg", stars: 4, price: "400,000,000", duration: "1D", hasDiscount: true },
-  { id: "5", name: "Royal Carriage", image: "/1784533036732~2.jpg", stars: 5, price: "240,000,000", duration: "1D", hasDiscount: true },
-  { id: "6", name: "Neon Bike", image: "/1784533036732~2.jpg", stars: 5, price: "2,400,000", duration: "3D", hasDiscount: true },
+// Saare items ko unke tabs ke hisaab से divide kiya hai
+const allStoreItems: StoreItem[] = [
+  // Vehicle
+  { id: "v1", name: "Gold Fish", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "2,500,000", duration: "3D" },
+  { id: "v2", name: "Scooter Fox", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "4,500,000", duration: "3D" },
+  { id: "v3", name: "Luxury Yacht", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "7,000,000", duration: "3D" },
+  { id: "v4", name: "Magic Swan", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 4, price: "5,000,000", duration: "3D" },
+  { id: "v5", name: "Submarine", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 4, price: "2,500,000", duration: "3D" },
+  { id: "v6", name: "Sports Car", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "5,000,000", duration: "3D" },
+  { id: "v7", name: "Golden Cycle", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 3, price: "1,000,000", duration: "3D" },
+
+  // Avatar Frame
+  { id: "a1", name: "Crystal Crown", image: "/1784533036732~2.jpg", tab: "Avatar Frame", stars: 5, price: "8,000,000", duration: "3D" },
+  { id: "a2", name: "Jellyfish Ring", image: "/1784533036732~2.jpg", tab: "Avatar Frame", stars: 4, price: "500,000", duration: "3D" },
+  { id: "a3", name: "Neon Beats", image: "/1784533036732~2.jpg", tab: "Avatar Frame", stars: 5, price: "150,000", duration: "3D" },
+
+  // Theme
+  { id: "t1", name: "Summer Beach", image: "/1784533036732~2.jpg", tab: "Theme", stars: 5, price: "2,700,000", duration: "30D" },
+  { id: "t2", name: "Night Sky", image: "/1784533036732~2.jpg", tab: "Theme", stars: 5, price: "2,400,000", duration: "30D" },
+
+  // Chat Bubble
+  { id: "c1", name: "Blue Bubble", image: "/1784533036732~2.jpg", tab: "Chat Bubble", stars: 4, price: "500,000", duration: "3D" },
+
+  // ID
+  { id: "i1", name: "ID Badge 8", image: "/1784533036732~2.jpg", tab: "ID", stars: 5, price: "10,000,000", duration: "3D", isOwned: true },
 ];
 
-// Bag me sirf kharide hue items (Demo ke liye 3 items show kar rahe)
-const bagItems: StoreItem[] = [
-  { id: "1", name: "Moon Light", image: "/1784533036732~2.jpg", stars: 5, price: "4,000,000", duration: "3D" },
-  { id: "3", name: "Flame Tiger", image: "/1784533036732~2.jpg", stars: 5, price: "24,000,000,000", duration: "3D" },
-];
-
-export default function StorePage({ onBack }: StorePageProps) {
-  // Page view state: 'store' ya 'bag'
+export default function StorePage({ onBack }: { onBack: () => void }) {
   const [currentView, setCurrentView] = useState<"store" | "bag">("store");
   const [activeTab, setActiveTab] = useState("Vehicle");
   const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
 
-  const renderStars = (count: number) => {
-    return Array.from({ length: 5 }).map((_, i) => (
-      <span key={i} className={`text-[15px] ${i < count ? 'text-yellow-400' : 'text-gray-200'}`}>
-        ★
-      </span>
-    ));
-  };
-
-  // Decide which items to show based on the current view
-  const currentItems = currentView === "store" ? storeItems : bagItems;
+  const displayedItems = allStoreItems.filter(item => {
+    if (currentView === "bag") {
+      return item.isOwned && item.tab === activeTab;
+    }
+    return item.tab === activeTab;
+  });
 
   return (
     <div className="min-h-screen bg-[#f3f8fe] text-gray-800 pb-10 select-none font-sans relative">
       <div className="max-w-md mx-auto min-h-screen flex flex-col">
         
-        {/* Top Header - Store aur Bag ke hisaab se dynamically change hoga */}
+        {/* Top Header */}
         <div
           className="relative flex items-center justify-between px-4 pb-3 pt-4 bg-transparent"
           style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 16px)' }}
         >
-          {/* Back Icon (Left Arrow) */}
           <button
             type="button"
             onClick={() => {
               if (currentView === "bag") {
-                setCurrentView("store"); // Bag se wapasi Store
+                setCurrentView("store");
               } else {
-                onBack(); // Store se main app me wapasi
+                onBack();
               }
             }}
             className="p-1 -ml-2 text-black hover:bg-black/5 rounded-full transition-colors z-10"
           >
-            <ArrowLeft size={28} strokeWidth={2} />
+            <ArrowLeft size={26} strokeWidth={2} />
           </button>
           
-          {/* Heading */}
           <h1 className="text-[18px] font-bold text-black absolute left-1/2 -translate-x-1/2">
             {currentView === "store" ? "Store" : "Bag"}
           </h1>
 
-          {/* Top Right Icon */}
+          {/* Top Right Images (Wapas original images laga di hain) */}
           {currentView === "store" ? (
             <button 
               type="button"
               onClick={() => setCurrentView("bag")}
-              className="relative w-[50px] h-[50px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
+              className="relative w-[36px] h-[36px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
             >
               <Image
                 src="/file_0000000050008211a231ccb3937eab0a.png"
@@ -100,7 +101,7 @@ export default function StorePage({ onBack }: StorePageProps) {
             <button 
               type="button"
               onClick={() => setCurrentView("store")}
-              className="relative w-[50px] h-[50px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
+              className="relative w-[36px] h-[36px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
             >
               <Image
                 src="/file_00000000d634821189c7f69b4e3786e8.png"
@@ -112,116 +113,126 @@ export default function StorePage({ onBack }: StorePageProps) {
           )}
         </div>
 
-        {/* Category Tabs - Exact Circle shape peeche */}
-        <div className="flex items-center gap-6 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
+        {/* Category Tabs */}
+        <div className="flex items-center gap-2 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
-              <div key={tab} className="relative flex items-center justify-center h-[54px] w-[54px]">
-                
-                {/* STRICT CIRCLE Background behind text */}
-                {isActive && (
-                  <div className="absolute w-[50px] h-[50px] bg-[#1d4ed8] rounded-full shadow-sm"></div>
-                )}
-                
-                <button
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative z-10 whitespace-nowrap text-[14px] transition-colors ${
-                    isActive
-                      ? "text-white font-bold" 
-                      : "text-gray-400 font-normal"
-                  }`}
-                >
-                  {tab}
-                </button>
-              </div>
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`relative px-4 py-2 rounded-full whitespace-nowrap text-[14px] transition-all ${
+                  isActive
+                    ? "bg-[#cffafe] text-black font-bold shadow-sm"
+                    : "text-gray-400 font-normal hover:text-gray-600"
+                }`}
+              >
+                {tab}
+              </button>
             );
           })}
         </div>
 
-        {/* Items Grid - Card height kam (h-[220px]) & Tight Corners (rounded-xl) */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-4 py-2 mt-4 flex-1 content-start">
-          {currentItems.map((item) => (
+        {/* Items Grid (3 Columns) */}
+        <div className="grid grid-cols-3 gap-2 px-3 py-3 mt-2 flex-1 content-start">
+          {displayedItems.map((item) => (
             <div
               key={item.id}
-              onClick={() => setSelectedItem(item)} 
-              className="bg-white rounded-xl p-3 flex flex-col items-center shadow-[0_2px_12px_rgba(0,0,0,0.06)] cursor-pointer active:scale-95 transition-transform h-[220px]"
+              onClick={() => setSelectedItem(item)}
+              className="bg-white rounded-xl p-2 flex flex-col items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] cursor-pointer active:scale-95 transition-transform"
             >
-              {/* Top Bar (Check & Try) */}
-              <div className="flex items-center justify-between w-full mb-1">
-                <div className="flex items-center gap-1 text-[#1d4ed8]">
-                  <div className="w-4 h-4 rounded-full bg-[#1d4ed8] flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+              <div className="flex items-center justify-between w-full text-[10px]">
+                <div className="flex items-center gap-0.5 text-[#1d4ed8]">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#1d4ed8] flex items-center justify-center">
+                    <svg className="w-1.5 h-1.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-[12px] font-bold">{item.duration}</span>
+                  <span className="font-bold">{item.duration}</span>
                 </div>
-                <span className="text-[13px] font-bold text-[#1d4ed8]">
-                  Try
-                </span>
+                <span className="font-bold text-[#1d4ed8]">Try</span>
               </div>
 
-              {/* Item Image */}
-              <div className="relative w-full h-[95px] mt-1 mb-2 flex items-center justify-center">
+              <div className="relative w-full h-[52px] my-1.5 flex items-center justify-center">
                 <Image
                   src={item.image}
                   alt={item.name}
                   fill
                   className="object-contain"
-                  sizes="(max-width: 768px) 50vw, 150px"
+                  sizes="33vw"
                 />
               </div>
 
-              {/* Details: Stars, Name, Coins */}
-              <div className="flex flex-col items-center justify-end flex-1 w-full gap-1">
-                <div className="flex items-center space-x-[1px]">
-                  {renderStars(item.stars)}
+              <div className="flex items-center justify-center gap-1 mb-1.5 w-full">
+                <div className="relative w-3 h-3 flex items-center justify-center shrink-0">
+                  <Image
+                    src="/1786855398290.png"
+                    alt="Coin"
+                    fill
+                    className="object-contain"
+                  />
                 </div>
-                <span className="text-[14px] font-bold text-gray-800 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
-                  {item.name}
+                <span className="text-[10px] font-bold text-gray-900 tracking-tight truncate">
+                  {item.price}
                 </span>
-                <div className="flex items-center justify-center gap-1 mt-0.5">
-                  <div className="relative w-4 h-4 flex items-center justify-center">
-                    <Image
-                      src="/1786855398290.png"
-                      alt="Coin Icon"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  <span className="text-[13px] font-bold text-black tracking-tight">
-                    {item.price}
-                  </span>
-                </div>
+              </div>
+
+              <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[22px]">
+                {currentView === "bag" ? (
+                  <>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[9px] font-bold flex items-center justify-center"
+                    >
+                      Send
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[9px] font-bold flex items-center justify-center"
+                    >
+                      Equip
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[9px] font-bold flex items-center justify-center"
+                    >
+                      Send
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[9px] font-bold flex items-center justify-center"
+                    >
+                      Buy
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
-          {/* Agar bag khali ho */}
-          {currentItems.length === 0 && (
-            <div className="col-span-2 text-center text-gray-400 mt-10 font-medium">
-              Bag is empty
+
+          {displayedItems.length === 0 && (
+            <div className="col-span-3 text-center text-gray-400 mt-12 text-sm font-medium">
+              {currentView === "bag" ? "No items in Bag for this category" : "No items found"}
             </div>
           )}
         </div>
       </div>
 
-      {/* BOTTOM SHEET - Wear/Unwear (Bag view) OR Send/Buy (Store view) */}
+      {/* BOTTOM SHEET 50vh */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          {/* Background Overlay */}
           <div 
             className="absolute inset-0 bg-black/40" 
             onClick={() => setSelectedItem(null)} 
           ></div>
           
-          {/* Sheet Body */}
           <div className="relative w-full max-w-md mx-auto h-[50vh] bg-white rounded-t-2xl flex flex-col shadow-2xl">
-            
-            {/* Main Content inside Sheet */}
-            <div className="flex-1 w-full flex flex-col items-center justify-center p-6 mt-2">
-              <div className="relative w-40 h-40 mb-5">
+            <div className="flex-1 w-full flex flex-col items-center justify-center p-6">
+              <div className="relative w-36 h-36 mb-4">
                 <Image
                   src={selectedItem.image}
                   alt={selectedItem.name}
@@ -230,60 +241,53 @@ export default function StorePage({ onBack }: StorePageProps) {
                 />
               </div>
               
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="flex items-center space-x-[2px]">
-                  {renderStars(selectedItem.stars)}
-                </div>
-                <h2 className="text-[24px] font-bold text-gray-900 tracking-wide">
+              <div className="flex flex-col items-center gap-1">
+                <h2 className="text-[20px] font-bold text-gray-900">
                   {selectedItem.name}
                 </h2>
-                <div className="flex items-center justify-center gap-2 mt-1">
-                  <div className="relative w-6 h-6 flex items-center justify-center">
+                <div className="flex items-center justify-center gap-1.5 mt-1">
+                  <div className="relative w-5 h-5 flex items-center justify-center">
                     <Image
                       src="/1786855398290.png"
-                      alt="Coin Icon"
+                      alt="Coin"
                       fill
                       className="object-contain"
                     />
                   </div>
-                  <span className="text-[18px] font-bold text-black">
+                  <span className="text-[16px] font-bold text-black">
                     {selectedItem.price}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Bar inside Sheet */}
-            <div className="bg-white rounded-t-xl flex items-center justify-between px-6 py-4 shadow-[0_-4px_15px_rgba(0,0,0,0.03)] border-t border-gray-100">
-              
-              {/* Fixed 79282 Coins */}
+            <div className="bg-white rounded-t-xl flex items-center justify-between px-6 py-4 border-t border-gray-100">
               <div className="flex items-center gap-1.5">
                 <div className="relative w-5 h-5 flex items-center justify-center">
                   <Image
                     src="/1786855398290.png"
-                    alt="Coin Icon"
+                    alt="Coin"
                     fill
                     className="object-contain"
                   />
                 </div>
-                <span className="text-[16px] font-bold text-black tracking-tight">
+                <span className="text-[16px] font-bold text-black">
                   79282
                 </span>
               </div>
 
-              {/* ACTION BUTTONS */}
               <div className="flex items-center w-[150px] rounded-full border border-[#1d4ed8] overflow-hidden h-[34px]">
                 {currentView === "bag" ? (
                   <>
                     <button
                       type="button"
-                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[13px] font-bold flex items-center justify-center hover:bg-[#eff6ff]"
+                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[13px] font-bold flex items-center justify-center"
                     >
                       Wear
                     </button>
                     <button
                       type="button"
-                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[13px] font-bold flex items-center justify-center hover:bg-[#1e40af]"
+                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[13px] font-bold flex items-center justify-center"
                     >
                       Unwear
                     </button>
@@ -292,13 +296,13 @@ export default function StorePage({ onBack }: StorePageProps) {
                   <>
                     <button
                       type="button"
-                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[13px] font-bold flex items-center justify-center hover:bg-[#eff6ff]"
+                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[13px] font-bold flex items-center justify-center"
                     >
                       Send
                     </button>
                     <button
                       type="button"
-                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[13px] font-bold flex items-center justify-center hover:bg-[#1e40af]"
+                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[13px] font-bold flex items-center justify-center"
                     >
                       Buy
                     </button>
@@ -312,4 +316,3 @@ export default function StorePage({ onBack }: StorePageProps) {
     </div>
   );
 }
-
