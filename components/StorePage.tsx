@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ShoppingBag } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 interface StoreItem {
   id: string;
@@ -79,15 +79,24 @@ const storeItems: StoreItem[] = [
 
 export default function StorePage({ onBack }: StorePageProps) {
   const [activeTab, setActiveTab] = useState("Vehicle");
+  // Store item click ke liye state
   const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
+  // Bag icon click ke liye alag state
+  const [isBagOpen, setIsBagOpen] = useState(false);
 
   // Helper to render stars
   const renderStars = (count: number) => {
     return Array.from({ length: 5 }).map((_, i) => (
-      <span key={i} className={`text-[14px] ${i < count ? 'text-yellow-400' : 'text-gray-200'}`}>
+      <span key={i} className={`text-[15px] ${i < count ? 'text-yellow-400' : 'text-gray-200'}`}>
         ★
       </span>
     ));
+  };
+
+  // Close dono sheet (bag wali aur normal item wali)
+  const closeSheet = () => {
+    setSelectedItem(null);
+    setIsBagOpen(false);
   };
 
   return (
@@ -111,40 +120,39 @@ export default function StorePage({ onBack }: StorePageProps) {
             Store
           </h1>
 
-          <button className="flex items-center gap-1.5 bg-[#1d4ed8] text-white px-3.5 py-1.5 rounded-full text-[13px] font-medium z-10 shadow-sm">
-            <ShoppingBag size={14} strokeWidth={2.5} />
-            Bag
+          {/* NEW BAG ICON IMAGE (Top Right) */}
+          <button 
+            type="button"
+            onClick={() => setIsBagOpen(true)}
+            className="relative w-[32px] h-[32px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
+          >
+            <Image
+              src="/file_0000000050008211a231ccb3937eab0a.png"
+              alt="Bag Icon"
+              fill
+              className="object-contain"
+            />
           </button>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex items-center gap-6 px-4 mt-1 overflow-x-auto no-scrollbar shrink-0">
+        {/* Category Tabs - Circle/Pill shape */}
+        <div className="flex items-center gap-3 px-4 mt-2 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
-              <div key={tab} className="relative flex items-center justify-center h-[70px]">
-                
-                {/* Custom Zig-Zag Background (Less Deep, Pure Buy-Button Blue) */}
+              <div key={tab} className="relative flex items-center justify-center h-[54px]">
+                {/* Background shape that covers the full text */}
                 {isActive && (
-                  <div className="absolute w-[62px] h-[62px] flex items-center justify-center">
-                    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
-                      <g transform="scale(0.92) translate(4.3, 4.3)">
-                        <path
-                          d="M50 2 L58 9 L68 5 L73 14 L83 14 L85 24 L94 28 L92 37 L99 44 L94 52 L99 60 L92 65 L94 74 L85 78 L83 88 L73 88 L68 97 L58 93 L50 100 L42 93 L32 97 L27 88 L17 88 L15 78 L6 74 L8 65 L1 60 L6 52 L1 44 L8 37 L6 28 L15 24 L17 14 L27 14 L32 5 L42 9 Z"
-                          fill="#1d4ed8" // Same solid blue as Buy button
-                        />
-                      </g>
-                    </svg>
-                  </div>
+                  <div className="absolute inset-0 my-1 bg-[#1d4ed8] rounded-full shadow-sm"></div>
                 )}
                 
                 <button
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`relative z-10 whitespace-nowrap text-[15px] transition-colors ${
+                  className={`relative z-10 whitespace-nowrap text-[15px] px-5 py-2 transition-colors ${
                     isActive
-                      ? "text-black font-bold" // White text for visibility on solid blue
-                      : "text-gray-500 font-normal"
+                      ? "text-white font-bold" 
+                      : "text-gray-400 font-normal"
                   }`}
                 >
                   {tab}
@@ -154,13 +162,13 @@ export default function StorePage({ onBack }: StorePageProps) {
           })}
         </div>
 
-        {/* Items Grid - Card Height aur zyada badha di hai (h-[235px]) */}
-        <div className="grid grid-cols-2 gap-x-3 gap-y-4 px-3 py-2 mt-2 flex-1 content-start">
+        {/* Items Grid */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-4 py-2 mt-3 flex-1 content-start">
           {storeItems.map((item) => (
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)} 
-              className="bg-white rounded-[16px] p-2.5 flex flex-col items-center shadow-[0_2px_12px_rgba(0,0,0,0.04)] cursor-pointer active:scale-95 transition-transform h-[235px]"
+              className="bg-white rounded-[18px] p-3 flex flex-col items-center shadow-[0_2px_12px_rgba(0,0,0,0.05)] cursor-pointer active:scale-95 transition-transform h-[260px]"
             >
               {/* Top Bar (Check & Try) */}
               <div className="flex items-center justify-between w-full mb-2">
@@ -170,15 +178,15 @@ export default function StorePage({ onBack }: StorePageProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-[11px] font-bold">{item.duration}</span>
+                  <span className="text-[12px] font-bold">{item.duration}</span>
                 </div>
-                <span className="text-[12px] font-bold text-[#1d4ed8]">
+                <span className="text-[13px] font-bold text-[#1d4ed8]">
                   Try
                 </span>
               </div>
 
-              {/* Item Image - Container height badha di (h-[95px]) taki proportional lage */}
-              <div className="relative w-full h-[95px] mt-2 mb-3 flex items-center justify-center">
+              {/* Item Image */}
+              <div className="relative w-full h-[110px] mt-2 mb-4 flex items-center justify-center">
                 <Image
                   src={item.image}
                   alt={item.name}
@@ -193,10 +201,10 @@ export default function StorePage({ onBack }: StorePageProps) {
                 <div className="flex items-center space-x-[1px]">
                   {renderStars(item.stars)}
                 </div>
-                <span className="text-[14px] font-bold text-gray-800 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
+                <span className="text-[15px] font-bold text-gray-800 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
                   {item.name}
                 </span>
-                <div className="flex items-center justify-center gap-1 mt-0.5">
+                <div className="flex items-center justify-center gap-1 mt-1">
                   <div className="relative w-4 h-4 flex items-center justify-center">
                     <Image
                       src="/1786855398290.png"
@@ -205,7 +213,7 @@ export default function StorePage({ onBack }: StorePageProps) {
                       className="object-contain"
                     />
                   </div>
-                  <span className="text-[12px] font-bold text-black tracking-tight">
+                  <span className="text-[13px] font-bold text-black tracking-tight">
                     {item.price}
                   </span>
                 </div>
@@ -215,13 +223,13 @@ export default function StorePage({ onBack }: StorePageProps) {
         </div>
       </div>
 
-      {/* BOTTOM SHEET */}
-      {selectedItem && (
+      {/* BOTTOM SHEET (Shared for both Store Item & Bag Item) */}
+      {(selectedItem || isBagOpen) && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           {/* Background Overlay */}
           <div 
             className="absolute inset-0 bg-black/40" 
-            onClick={() => setSelectedItem(null)} 
+            onClick={closeSheet} 
           ></div>
           
           {/* Sheet Body */}
@@ -229,10 +237,11 @@ export default function StorePage({ onBack }: StorePageProps) {
             
             {/* Main Content inside Sheet */}
             <div className="flex-1 w-full flex flex-col items-center justify-center p-6 mt-2">
-              <div className="relative w-36 h-36 mb-6">
+              <div className="relative w-40 h-40 mb-6">
                 <Image
-                  src={selectedItem.image}
-                  alt={selectedItem.name}
+                  // Agar bag open hai to apko di hui 2nd image lag jayegi, warna store item ki image
+                  src={isBagOpen ? "/file_00000000d634821189c7f69b4e3786e8.png" : selectedItem?.image || ""}
+                  alt={isBagOpen ? "Bag Item" : selectedItem?.name || ""}
                   fill
                   className="object-contain drop-shadow-md"
                 />
@@ -240,13 +249,13 @@ export default function StorePage({ onBack }: StorePageProps) {
               
               <div className="flex flex-col items-center gap-1.5">
                 <div className="flex items-center space-x-[2px]">
-                  {renderStars(selectedItem.stars)}
+                  {renderStars(isBagOpen ? 5 : selectedItem?.stars || 5)}
                 </div>
-                <h2 className="text-[22px] font-bold text-gray-900 tracking-wide">
-                  {selectedItem.name}
+                <h2 className="text-[24px] font-bold text-gray-900 tracking-wide">
+                  {isBagOpen ? "My Item" : selectedItem?.name}
                 </h2>
-                <div className="flex items-center justify-center gap-1.5 mt-2">
-                  <div className="relative w-5 h-5 flex items-center justify-center">
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <div className="relative w-6 h-6 flex items-center justify-center">
                     <Image
                       src="/1786855398290.png"
                       alt="Coin Icon"
@@ -254,8 +263,9 @@ export default function StorePage({ onBack }: StorePageProps) {
                       className="object-contain"
                     />
                   </div>
-                  <span className="text-[16px] font-bold text-black">
-                    {selectedItem.price}
+                  <span className="text-[18px] font-bold text-black">
+                    {/* Bag me item already owned hota hai toh Owned likh diya (ya purana logic bhi chalega) */}
+                    {isBagOpen ? "Owned" : selectedItem?.price}
                   </span>
                 </div>
               </div>
@@ -279,20 +289,39 @@ export default function StorePage({ onBack }: StorePageProps) {
                 </span>
               </div>
 
-              {/* Send / Buy Buttons */}
-              <div className="flex items-center w-[140px] rounded-full border border-[#1d4ed8] overflow-hidden h-[34px]">
-                <button
-                  type="button"
-                  className="flex-1 h-full bg-white text-[#1d4ed8] text-[13px] font-bold flex items-center justify-center hover:bg-[#eff6ff]"
-                >
-                  Send
-                </button>
-                <button
-                  type="button"
-                  className="flex-1 h-full bg-[#1d4ed8] text-white text-[13px] font-bold flex items-center justify-center hover:bg-[#1e40af]"
-                >
-                  Buy
-                </button>
+              {/* ACTION BUTTONS (Send/Buy OR Equip/Unequip based on what's open) */}
+              <div className="flex items-center w-[150px] rounded-full border border-[#1d4ed8] overflow-hidden h-[34px]">
+                {isBagOpen ? (
+                  <>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[13px] font-bold flex items-center justify-center hover:bg-[#eff6ff]"
+                    >
+                      Equip
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[13px] font-bold flex items-center justify-center hover:bg-[#1e40af]"
+                    >
+                      Unequip
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[13px] font-bold flex items-center justify-center hover:bg-[#eff6ff]"
+                    >
+                      Send
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[13px] font-bold flex items-center justify-center hover:bg-[#1e40af]"
+                    >
+                      Buy
+                    </button>
+                  </>
+                )}
               </div>
 
             </div>
@@ -302,4 +331,3 @@ export default function StorePage({ onBack }: StorePageProps) {
     </div>
   );
 }
-
