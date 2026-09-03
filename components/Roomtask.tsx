@@ -119,7 +119,7 @@ function TaskItem({
   iconSrc: string;
 }) {
   return (
-    <div className="relative z-20 w-[100%] max-w-[310px] h-[130px] flex items-center">
+    <div className="relative z-20 w-[100%] max-w-[330px] h-[140px] flex items-center">
       <img 
         src="/file_000000004fd0821198ed4e26d5008b16.png"
         alt="Task Background"
@@ -136,10 +136,10 @@ function TaskItem({
             draggable={false}
           />
           <div className="flex flex-col justify-center">
-            <span className="text-[13px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
+            <span className="text-[14px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
               {title}
             </span>
-            <span className="text-[13px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
+            <span className="text-[14px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
               {reward}
             </span>
           </div>
@@ -404,3 +404,4 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   );
 }
 
+ 
