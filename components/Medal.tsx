@@ -236,12 +236,11 @@ export default function Medal({ onBack }: MedalProps) {
       {/* 1. Base Dark WebGL Canvas */}
       <WebGLBackground />
 
-      {/* 2. Top Background Image - Updated as per requirement (50vh, fade only from bottom) */}
+      {/* 2. Top Background Image */}
       <div 
         className="fixed top-0 left-0 right-0 h-[48vh] pointer-events-none z-[1] bg-top bg-cover bg-no-repeat"
         style={{
-          backgroundImage: `url('/IMG_20260903_232144.png')`,
-          // Solid at the top (0% to 65%), then smoothly mixes into transparent at the bottom
+          backgroundImage: `url('/file_00000000f1dc821196bf96f688c3b2f6.png')`,
           maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)'
         }}
@@ -249,7 +248,7 @@ export default function Medal({ onBack }: MedalProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#02050e]/30 to-[#02050e]" />
       </div>
 
-      {/* 3. FIXED TOP AREA - UI Matching Screenshot */}
+      {/* 3. FIXED TOP AREA */}
       <div 
         className="relative z-10 flex-none w-full max-w-md mx-auto px-4 pb-2"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)' }}
@@ -272,23 +271,28 @@ export default function Medal({ onBack }: MedalProps) {
         {/* Current Medal Section */}
         <div className="pt-2 pb-1 relative">
           
-          {/* The Medal I Wear Line Label */}
+          {/* The Medal I Wear Line Label - UPDATED TO 3D DESIGN */}
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-10 h-[1px] bg-[#a89bbf] relative opacity-60">
+            <div className="w-8 h-[1px] bg-[#a89bbf] relative opacity-60">
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rotate-45 bg-[#d4cce6]"></div>
             </div>
-            <span className="text-[15px] text-gray-100 tracking-wide font-medium mx-1">The Medal I Wear</span>
-            <div className="w-10 h-[1px] bg-[#a89bbf] relative opacity-60">
+            
+            {/* 3D Wrapper for the text */}
+            <div className="relative px-5 py-1.5 bg-gradient-to-b from-[#55408a] to-[#25184f] rounded-[10px] shadow-[0_6px_12px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.25),inset_0_-2px_4px_rgba(0,0,0,0.4)] border border-[#7b62b5] transform -translate-y-0.5">
+              <span className="text-[15px] text-white tracking-wide font-bold drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]">The Medal I Wear</span>
+            </div>
+
+            <div className="w-8 h-[1px] bg-[#a89bbf] relative opacity-60">
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rotate-45 bg-[#d4cce6]"></div>
             </div>
           </div>
 
-          {/* Slots - Solid borders exactly like image */}
+          {/* Slots - CHANGED CORNERS TO rounded-xl */}
           <div className="grid grid-cols-5 gap-[6px] px-1">
             {Array.from({ length: 10 }).map((_, index) => (
               <div
                 key={index}
-                className="aspect-square rounded-[6px] border border-[#5d4a8e] bg-[#281b54]/60 flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm shadow-inner"
+                className="aspect-square rounded-xl border border-[#5d4a8e] bg-[#281b54]/60 flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm shadow-inner"
               >
                 <Plus size={22} className="text-[#e2d5ff]" strokeWidth={2.5} />
               </div>
