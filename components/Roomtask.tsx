@@ -304,33 +304,29 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               Room Task
             </h1>
 
-              // 👇 DAILY COUNTDOWN LOGIC 👇
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+                          {/* 👇 LIVE DAILY COUNTDOWN UI 👇 */}
+            <div className="flex items-center justify-center gap-1 mt-10 z-20 select-none">
+              <span className="text-[#e8b499] text-[11px] font-medium">Countdown</span>
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      
-      // Target time: Agle din ka raat 12 baje (00:00:00)
-      const nextTarget = new Date(now);
-      nextTarget.setDate(now.getDate() + 1); // Aaj ki date me 1 din add kar diya
-      nextTarget.setHours(0, 0, 0, 0); // Time ko zero (midnight) par set kar diya
+              {/* Hour */}
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
+                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.hours}</span>
+              </div>
+              <span className="text-[#e8b499] text-[11px] font-medium">Hour</span>
 
-      const diff = nextTarget.getTime() - now.getTime();
+              {/* Minute */}
+              <div className="min-w-[20px] px-1 h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
+                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.minutes}</span>
+              </div>
+              <span className="text-[#e8b499] text-[11px] font-medium">Minute</span>
 
-      if (diff > 0) {
-        setTimeLeft({
-          days: Math.floor(diff / (1000 * 60 * 60 * 24)), // Daily me ye hamesha 0 rahega
-          hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((diff / 1000 / 60) % 60),
-          seconds: Math.floor((diff / 1000) % 60),
-        });
-      }
-    }, 1000);
+              {/* Second */}
+              <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d88968] bg-gradient-to-b from-[#b86244] to-[#7f3922] flex items-center justify-center shadow-inner">
+                <span className="text-[#f7d6c5] text-[11px] font-bold">{timeLeft.seconds}</span>
+              </div>
+              <span className="text-[#e8b499] text-[11px] font-medium">Second</span>
+            </div>
 
-    return () => clearInterval(timer);
-  }, []);
-  // 👆 LOGIC END 👆
           {/* 22 Task Images with Titles & Claim Buttons inside */}
           <div className="w-full flex flex-col items-center -space-y-[50px] mt-1 pb-16 px-4">
             {tasks.map((task, index) => (
