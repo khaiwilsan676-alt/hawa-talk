@@ -163,16 +163,14 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
     return (
       <div className="w-full min-h-screen bg-white font-sans text-gray-800 flex flex-col">
         {/* Header */}
-<div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
-  <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
-    {/* YAHAN NAYA SVG DAAL */}
-    <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-      <line x1="19" y1="12" x2="5" y2="12"></line>
-      <polyline points="12 19 5 12 12 5"></polyline>
-    </svg>
-  </button>
- 
-
+        <div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
+          <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
+            <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+              {/* Strict Left Arrow */}
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
           <h1 className="text-[17px] font-bold text-gray-800 tracking-wide flex-1 text-center pr-6">
             Details
           </h1>
@@ -234,27 +232,26 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
     );
   }
 
-  // 2. SELLER CENTER VIEW (Main UI)
+  // 2. SELLER CENTER VIEW (Flat Pure White UI - No Cards)
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-gray-50 font-sans text-gray-800 flex flex-col">
+    <div className="w-full min-h-screen bg-white font-sans text-gray-800 flex flex-col">
       
-     {/* Header */}
-<div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
-  <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
-    {/* YAHAN NAYA SVG DAAL */}
-    <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-      <line x1="19" y1="12" x2="5" y2="12"></line>
-      <polyline points="12 19 5 12 12 5"></polyline>
-    </svg>
-  </button>
- 
+      {/* Header */}
+      <div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
+        <button onClick={onBack} className="p-1 cursor-pointer">
+          <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+            {/* Strict Left Arrow */}
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
         <h1 className="text-[17px] font-bold tracking-wide flex-1 text-center pr-6">Coin Seller Center</h1>
       </div>
 
-      <div className="px-4 pb-8 space-y-4">
+      <div className="px-4 pb-8 space-y-2">
         
-        {/* Profile Card */}
-        <div className="w-full bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)]">
+        {/* Profile Info Section (No Card) */}
+        <div className="w-full py-4 flex flex-col">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
               <img src="https://i.pravatar.cc/150?u=nawab" alt="Profile" className="w-full h-full object-cover" />
@@ -287,7 +284,7 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
           <div className="flex items-center justify-between py-1.5 mt-1">
             <span className="text-[14px] text-gray-800 font-medium">Payment Method</span>
             <div className="flex items-center text-gray-800 text-[14px] font-medium">
-              {/* Added Real Emoji Flag Here */}
+              {/* Real Emoji Flag */}
               <span className="mr-1 text-[18px] leading-none">🇮🇳</span>
               <svg viewBox="0 0 24 24" className="w-4 h-4 ml-1 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 {/* Right chevron for navigation */}
@@ -297,8 +294,11 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
           </div>
         </div>
 
-        {/* Transfer Action Card */}
-        <div className="w-full bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] flex flex-col">
+        {/* Divider to separate Profile and Transfer Form clearly */}
+        <div className="w-full h-2 bg-gray-50 rounded-full my-2"></div>
+
+        {/* Transfer Action Section (No Card) */}
+        <div className="w-full py-4 flex flex-col">
           
           {/* Top Balance Area & Details Button */}
           <div className="flex items-start justify-between mb-4">
@@ -322,7 +322,7 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
 
           <div className="w-full h-px bg-gray-100 mb-4"></div>
 
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-6">
             <span className="text-[13px] text-gray-500 font-medium">Total Balance:</span>
             <div className="flex items-center space-x-1">
               <img src={cleanedCoinIcon} alt="Coin" className="w-4 h-4 object-contain" />
@@ -385,7 +385,7 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
             </div>
           </div>
 
-          <button className="w-10/12 mx-auto bg-blue-300 hover:bg-blue-400 text-white font-bold text-[16px] py-3 rounded-full transition-colors cursor-pointer">
+          <button className="w-full bg-blue-300 hover:bg-blue-400 text-white font-bold text-[16px] py-3.5 rounded-full transition-colors cursor-pointer">
             Transfer
           </button>
 
