@@ -2320,48 +2320,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
               }}
             >
               <div className="w-full flex justify-between items-center py-1 box-border mb-4">
-                
-                {/* Left side: Tabs "Me" and "Popular" */}
-<div className="flex items-center gap-3">
-  <button
-    type="button"
-    onClick={() => setActiveTab('mine')}
-    className={`font-bold text-lg tracking-[0.2px] transition-colors relative pb-1 ${
-      activeTab === 'mine'
-        ? 'font-extrabold text-[#1E1E1E]'
-        : 'text-[#6E6E6E]'
-    }`}
-  >
-    {t.mine}
-  </button>
-
-  <button
-    type="button"
-    onClick={() => setActiveTab('popular')}
-    className={`font-bold text-lg tracking-[0.2px] transition-colors relative pb-1 ${
-      activeTab === 'popular'
-        ? 'font-extrabold text-[#1E1E1E]'
-        : 'text-[#6E6E6E]'
-    }`}
-  >
-    {t.popular}
-  </button>
-</div>
-
-                {/* Right side: Search and House icons */}
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsSearchOpen(true)}
-                    className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-                    aria-label="Search"
-                  >
-                    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-                      <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-
+                {/* Left side: House icon */}
+                <div className="flex items-center">
                   <button
                     type="button"
                     onClick={handleHouseClick}
@@ -2383,6 +2343,47 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   </button>
                 </div>
 
+                {/* Middle: Tabs "Me" and "Popular" */}
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('mine')}
+                    className={`font-bold text-lg tracking-[0.2px] transition-colors relative pb-1 ${
+                      activeTab === 'mine'
+                        ? 'font-extrabold text-[#1E1E1E]'
+                        : 'text-[#6E6E6E]'
+                    }`}
+                  >
+                    {t.mine}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('popular')}
+                    className={`font-bold text-lg tracking-[0.2px] transition-colors relative pb-1 ${
+                      activeTab === 'popular'
+                        ? 'font-extrabold text-[#1E1E1E]'
+                        : 'text-[#6E6E6E]'
+                    }`}
+                  >
+                    {t.popular}
+                  </button>
+                </div>
+
+                {/* Right side: Search icon */}
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                    aria-label="Search"
+                  >
+                    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+                      <circle cx="12.5" cy="12.5" r="7" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M18.2 18.2 L24 24" stroke="#2D2D2D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {activeTab === 'popular' && (
@@ -2424,7 +2425,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       <img
                         src={BANNERS[currentBanner].image}
                         alt="Banner"
-                        className="w-full h-full object-cover rounded-2xl pointer-events-none"
+                        className="w-full h-full object-cover rounded-md pointer-events-none"
                         draggable="false"
                       />
                     </div>
