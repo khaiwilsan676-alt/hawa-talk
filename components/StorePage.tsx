@@ -168,7 +168,8 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
     <div className="min-h-screen bg-[#f5f6f8] text-gray-800 pb-10 select-none font-sans relative">
       <div 
         className="max-w-md mx-auto min-h-screen flex flex-col"
-        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}
+        /* YAHAN FIX KIYA HAI: max() hata kar direct env lagaya taaki Android mein niche na bhage */
+        style={{ paddingTop: 'env(safe-area-inset-top, 12px)' }}
       >
         
         {/* Top Header */}
