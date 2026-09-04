@@ -132,11 +132,10 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
       {/* FIXED TOP HEADER */}
       <header
-        className="relative z-50 flex flex-col w-full mt-4"
-        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
+        className="relative z-50 flex flex-col w-full"
+        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px))' }}
       >
         {/* Row 1: Back Icon (Corner) - Tabs Card (Center) - Info Icon (Corner) */}
-        {/* Yahan mb-1.5 kar diya hai gap kam karne ke liye */}
         <div className="relative flex items-center justify-center w-full h-[45px] mb-1.5">
           
           {/* Back Button as Image - Ekdam Left Corner */}
@@ -269,4 +268,4 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       </div>
     </div>
   )
-            }
+}
