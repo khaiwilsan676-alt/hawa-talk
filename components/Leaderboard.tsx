@@ -101,6 +101,9 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
     room: { top: '/file_00000000619c822f8a1577f69e039527.png' },
   }
 
+  // Find index of active sub-tab for the moveable highlight
+  const activeSubTabIndex = subTabs.findIndex(st => st.id === activeSubTab)
+
   // Rank 4 to 50
   const rankCards = Array.from({ length: 47 }, (_, i) => i + 4)
 
@@ -132,8 +135,9 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         className="relative z-50 flex flex-col w-full mt-4"
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
       >
-        {/* Row 1: Back Icon (Corner) - Tabs Card (Center) - Info Icon (Corner) ALL IN SAME ROW */}
-        <div className="relative flex items-center justify-center w-full h-[45px] mb-6">
+        {/* Row 1: Back Icon (Corner) - Tabs Card (Center) - Info Icon (Corner) */}
+        {/* Yahan mb-1.5 kar diya hai gap kam karne ke liye */}
+        <div className="relative flex items-center justify-center w-full h-[45px] mb-1.5">
           
           {/* Back Button as Image - Ekdam Left Corner */}
           <button
@@ -176,24 +180,31 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           </button>
         </div>
 
-        {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) - Black Text */}
-        <div className="relative w-[75%] h-[30px] z-10 flex items-center justify-between shrink-0 mb-2 mx-auto">
+        {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) - Ekdam Left Side Aligned */}
+        <div className="relative w-[240px] h-[40px] z-10 flex items-center justify-start gap-1.5 ml-2 shrink-0 self-start">
           {subTabs.map((st) => (
             <button
               key={st.id}
               onClick={() => setActiveSubTab(st.id)}
-              className={`relative z-10 flex-1 flex flex-col items-center justify-center text-[16px] font-extrabold transition-colors ${
-                activeSubTab === st.id ? 'text-black drop-shadow-sm' : 'text-black/60'
-              }`}
+              className="relative z-10 flex-1 flex items-center justify-center text-[15px] font-bold transition-colors"
+              style={{
+                color: activeSubTab === st.id ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)',
+              }}
             >
-              <span>{st.label}</span>
-              
-              {/* Line Underneath Active Tab */}
-              {activeSubTab === st.id && (
-                <div className="absolute -bottom-2 w-[80%] h-[3px] bg-black rounded-full opacity-80" />
-              )}
+              {st.label}
             </button>
           ))}
+
+          {/* Moveable Golden Highlight Shape - Adjusted math for fixed width left alignment */}
+          <span
+            className="absolute z-0 bottom-0 top-[2px] h-full w-[calc(33.33%-4px)] bg-gradient-to-b from-[#D4AF37]/40 via-[#D4AF37]/15 to-transparent rounded-md transition-transform duration-300 ease-out"
+            style={{
+              transform: `translateX(calc(${activeSubTabIndex * 100}% + ${activeSubTabIndex * 6}px))`,
+              boxShadow: '0 -2px 5px rgba(212, 175, 55, 0.4)',
+            }}
+          >
+            <span className="absolute left-[30%] right-[30%] top-[-1px] h-[3px] bg-[#FFF] rounded-full scale-y-[1.2] blur-[0.5px]" />
+          </span>
         </div>
       </header>
 
@@ -214,12 +225,12 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             <ChromaImage
               src="/1787994751636~2.jpg"
               alt="Top 2"
-              className="w-50 h-auto object-contain drop-shadow-lg -ml-1"
+              className="w-40 h-auto object-contain drop-shadow-lg -ml-1"
             />
             <ChromaImage
               src="/1787994761762~2.jpg"
               alt="Top 3"
-              className="w-50 h-auto object-contain drop-shadow-lg -mr-1"
+              className="w-40 h-auto object-contain drop-shadow-lg -mr-1"
             />
           </div>
         </div>
@@ -230,7 +241,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
       {/* 5. SCROLLABLE SECTION: RANK 4 TO 50 CARDS WIDE */}
       <div className="relative z-10 w-full flex-grow overflow-y-auto overflow-x-hidden pt-2 pb-[100px]">
-        <div className="w-full flex flex-col gap-1.5 items-center">
+        <div className="w-full flex flex-col gap-1 items-center">
           {rankCards.map((rank) => (
             <div
               key={rank}
