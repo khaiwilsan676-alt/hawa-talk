@@ -33,13 +33,18 @@ const allStoreItems: StoreItem[] = [
   { id: "a3", name: "Neon Beats", image: "/1784533036732~2.jpg", tab: "Avatar Frame", stars: 5, price: "150,000", duration: "3D" },
 
   // Theme
-  { id: "t1", name: "Seafood", image: "/1784533036732~2.jpg", tab: "Theme", stars: 4, price: "2,700,000", duration: "30D" },
-  { id: "t2", name: "Night Sky", image: "/1784533036732~2.jpg", tab: "Theme", stars: 5, price: "2,400,000", duration: "30D" },
-
+  { id: "t1", name: "Seafood", image: "/IMG-20260904-WA0004.jpg", tab: "Theme", stars: 4, price: "2,700,000", duration: "30D" },
+  { id: "t2", name: "Night Sky", image: "/IMG-20260904-WA0005.jpg ", tab: "Theme", stars: 5, price: "2,400,000", duration: "30D" },
+  { id: "t3", name: "Seafood", image: "/IMG-20260904-WA0006.jpg", tab: "Theme", stars: 4, price: "2,700,000", duration: "30D" },
+  { id: "t4", name: "Night Sky", image: "/IMG-20260904-WA0007.jpg ", tab: "Theme", stars: 5, price: "2,400,000", duration: "30D" },
+  { id: "t5", name: "Seafood", image: "/IMG-20260904-WA0040.jpg", tab: "Theme", stars: 4, price: "2,700,000", duration: "30D" },
+  { id: "t6", name: "Night Sky", image: "/IMG-20260904-WA0041.jpg ", tab: "Theme", stars: 5, price: "2,400,000", duration: "30D" },
+  
   // Chat Bubble
-  { id: "c1", name: "Blue Bubble", image: "/1784533036732~2.jpg", tab: "Chat Bubble", stars: 4, price: "500,000", duration: "3D" },
-
-  // ID
+  { id: "c1", name: "1", image: "/file_000000003d888211822aa6837fe5013c.png", tab: "Chat Bubble", stars: 4, price: "500,000", duration: "3D" },
+  { id: "c2", name: "2", image: "/file_000000006044821186ff566329797142.png", tab: "Chat Bubble", starts: 4, price: "250,000", duration: "2D" }, 
+  { Id: "c3", name: " 3", image: "/file_00000000c44c81f598f62ae8a45e13a7.png", tab: " Chat Bubble ", starts: 5 price: "300,000", duration: " 3D" }, 
+   // ID
   { id: "i1", name: "ID Badge 8", image: "/1784533036732~2.jpg", tab: "ID", stars: 5, price: "10,000,000", duration: "3D", isOwned: true },
 ];
 
