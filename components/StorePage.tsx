@@ -42,8 +42,8 @@ const allStoreItems: StoreItem[] = [
   
   // Chat Bubble
   { id: "c1", name: "1", image: "/file_000000003d888211822aa6837fe5013c.png", tab: "Chat Bubble", stars: 4, price: "500,000", duration: "3D" },
-  { id: "c2", name: "2", image: "/file_000000006044821186ff566329797142.png", tab: "Chat Bubble", starts: 4, price: "250,000", duration: "2D" }, 
-  { Id: "c3", name: "3", image: "/file_00000000c44c81f598f62ae8a45e13a7.png", tab: "Chat Bubble", starts: 5, price: "300,000", duration: "3D" }, 
+  { id: "c2", name: "2", image: "/file_000000006044821186ff566329797142.png", tab: "Chat Bubble", stars: 4, price: "250,000", duration: "2D" }, 
+  { id: "c3", name: "3", image: "/file_00000000c44c81f598f62ae8a45e13a7.png", tab: "Chat Bubble", stars: 5, price: "300,000", duration: "3D" }, 
    // ID
   { id: "i1", name: "ID Badge 8", image: "/1784533036732~2.jpg", tab: "ID", stars: 5, price: "10,000,000", duration: "3D", isOwned: true },
 ];
@@ -166,13 +166,13 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
 
   return (
     <div className="min-h-screen bg-[#f5f6f8] text-gray-800 pb-10 select-none font-sans relative">
-      <div className="max-w-md mx-auto min-h-screen flex flex-col">
+      <div 
+        className="max-w-md mx-auto min-h-screen flex flex-col"
+        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}
+      >
         
         {/* Top Header */}
-        <div
-          className="relative flex items-center justify-between px-4 pb-2 pt-2 bg-transparent"
-          style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 8px)' }}
-        >
+        <div className="relative flex items-center justify-between px-4 pb-2 pt-1 bg-transparent">
           <button
             type="button"
             onClick={() => {
@@ -222,7 +222,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
         </div>
 
         {/* Category Tabs - Similar to Image */}
-        <div className="flex items-center gap-3 px-4 mt-2 mb-2 overflow-x-auto no-scrollbar shrink-0">
+        <div className="flex items-center gap-3 px-4 mt-1 mb-2 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -243,7 +243,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
         </div>
 
         {/* Items Grid - Converted to 2 Columns like Image */}
-        <div className="grid grid-cols-2 gap-2 px-4 py-2 flex-1 content-start">
+        <div className="grid grid-cols-2 gap-2 px-4 py-1 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
 
@@ -382,3 +382,4 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
     </div>
   );
 }
+
