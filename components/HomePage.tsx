@@ -463,6 +463,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
   const t = getTranslation(appLang)
   const [activeMineTab, setActiveMineTab] = useState<MineTab>('following')
   const [currentPage, setCurrentPage] = useState<Page>('home')
+  const [leaderboardTab, setLeaderboardTab] = useState<'honour' | 'charm' | 'room'>('honour')
   const [mounted, setMounted] = useState(false)
   const [currentBanner, setCurrentBanner] = useState(0)
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -1801,7 +1802,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
             {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
-                onClick={() => setCurrentPage('leaderboard')}
+                onClick={() => {
+                  const targetTab = card.label.toLowerCase() as 'honour' | 'charm' | 'room'
+                  setLeaderboardTab(targetTab)
+                  setCurrentPage('leaderboard')
+                }}
                 className="group flex-1 cursor-pointer"
                 style={{
                   height: '90px',
@@ -2513,7 +2518,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
         )}
 
         {currentPage === 'leaderboard' && (
-          <Leaderboard onBack={() => setCurrentPage('home')} />
+          <Leaderboard initialTab={leaderboardTab} onBack={() => setCurrentPage('home')} />
         )}
       </div>
 

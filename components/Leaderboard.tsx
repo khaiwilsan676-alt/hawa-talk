@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 
+type LeaderboardTab = 'honour' | 'charm' | 'room'
+
 interface LeaderboardProps {
   onBack: () => void
+  initialTab?: LeaderboardTab
 }
-
-type LeaderboardTab = 'honour' | 'charm' | 'room'
 type LeaderboardSubTab = 'daily' | 'weekly' | 'monthly'
 
 // Global in-memory cache to prevent re-processing same image multiple times
@@ -79,8 +80,8 @@ function ChromaImage({
   )
 }
 
-export default function Leaderboard({ onBack }: LeaderboardProps) {
-  const [activeTab, setActiveTab] = useState<LeaderboardTab>('honour')
+export default function Leaderboard({ onBack, initialTab = 'honour' }: LeaderboardProps) {
+  const [activeTab, setActiveTab] = useState<LeaderboardTab>(initialTab)
   const [activeSubTab, setActiveSubTab] = useState<LeaderboardSubTab>('daily')
 
   const tabs: { id: LeaderboardTab; label: string }[] = [
