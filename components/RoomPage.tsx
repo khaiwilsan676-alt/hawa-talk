@@ -1329,8 +1329,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </svg>
             </button>
 
-            <div className="flex items-center gap-0.5">
-             {/* Mic Button - Pure Solid White Capsule with Slash when Muted */}
+            <div className="flex items-center gap-0.8">
+            {/* Mic Button - Pure Solid White Capsule with Slash when Muted */}
 {hasSeat && (
   <button 
     onClick={handleBottomMicToggle} 
@@ -1338,48 +1338,49 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     style={{ width: 'var(--footer-btn-size)', height: 'var(--footer-btn-size)' }}
   >
     {currentUserSeat?.isMuted ? (
-      <svg viewBox="-2 -2 28 28" className="fill-white overflow-visible" style={{ width: '27px', height: '27px' }}>
+      <svg viewBox="-2 -2 28 28" className="fill-white overflow-visible" style={{ width: '32px', height: '32px' }}>
         <defs>
           <mask id="mic-cut-muted">
             <rect x="-2" y="-2" width="32" height="32" fill="white" />
-            {/* Yeh wo chhota horizontal cut (slit) hai image jaisa */}
-            <rect x="10" y="5.5" width="4" height="1.5" rx="0.5" fill="black" />
+            {/* Center cut slit */}
+            <rect x="9" y="6" width="6" height="2" rx="1" fill="black" />
           </mask>
         </defs>
 
-        {/* Naya Thoda Chauda (Wider) Capsule Cut ke saath */}
-        <rect x="8.5" y="2" width="7" height="12" rx="3.5" fill="#ffffff" mask="url(#mic-cut-muted)" />
+        {/* Mota & Bada Capsule */}
+        <rect x="7.5" y="1" width="9" height="14" rx="4.5" fill="#ffffff" mask="url(#mic-cut-muted)" />
         
-        {/* Base Cradle & Stand */}
-        <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
-        <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
-        <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
+        {/* Thicker Base Cradle (Bottom line removed) */}
+        <path d="M4 11 a8 8 0 0 0 16 0 h-3 a5 5 0 0 1 -10 0 Z" fill="#ffffff" />
+        {/* Thicker Vertical Stem */}
+        <rect x="10.5" y="18" width="3" height="5" fill="#ffffff" />
         
         {/* \ Diagonal Cross Line (Muted State) */}
-        <line x1="2" y1="2" x2="22" y2="22" stroke="#000000" strokeWidth="3.5" strokeLinecap="round" />
-        <line x1="2" y1="2" x2="22" y2="22" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="1" y1="1" x2="23" y2="23" stroke="#000000" strokeWidth="3.5" strokeLinecap="round" />
+        <line x1="1" y1="1" x2="23" y2="23" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" />
       </svg>
     ) : (
-      <svg viewBox="-2 -2 28 28" className="fill-white overflow-visible" style={{ width: '27px', height: '27px' }}>
+      <svg viewBox="-2 -2 28 28" className="fill-white overflow-visible" style={{ width: '32px', height: '32px' }}>
         <defs>
           <mask id="mic-cut-unmuted">
             <rect x="-2" y="-2" width="32" height="32" fill="white" />
-            {/* Yeh wo chhota horizontal cut (slit) hai image jaisa */}
-            <rect x="10" y="5.5" width="4" height="1.5" rx="0.5" fill="black" />
+            {/* Center cut slit */}
+            <rect x="9" y="6" width="6" height="2" rx="1" fill="black" />
           </mask>
         </defs>
 
-        {/* Naya Thoda Chauda (Wider) Capsule Cut ke saath */}
-        <rect x="8.5" y="2" width="7" height="12" rx="3.5" fill="#ffffff" mask="url(#mic-cut-unmuted)" />
+        {/* Mota & Bada Capsule */}
+        <rect x="7.5" y="1" width="9" height="14" rx="4.5" fill="#ffffff" mask="url(#mic-cut-unmuted)" />
         
-        {/* Base Cradle & Stand */}
-        <path d="M5 10a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5z" fill="#ffffff" />
-        <rect x="11" y="17" width="2" height="4" fill="#ffffff" />
-        <rect x="7" y="21" width="10" height="2" rx="1" fill="#ffffff" />
+        {/* Thicker Base Cradle (Bottom line removed) */}
+        <path d="M4 11 a8 8 0 0 0 16 0 h-3 a5 5 0 0 1 -10 0 Z" fill="#ffffff" />
+        {/* Thicker Vertical Stem */}
+        <rect x="10.5" y="18" width="3" height="5" fill="#ffffff" />
       </svg>
     )}
   </button>
 )}
+
 
 
               
@@ -1468,7 +1469,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 <div 
   className="absolute z-20 flex flex-col items-center pointer-events-auto"
   style={{
-    bottom: 'calc(var(--footer-btn-size) + 28px)',
+    top: 'calc(100lvh - 310px)', 
     right: '10px',
   }}
   onClick={(e) => e.stopPropagation()}
