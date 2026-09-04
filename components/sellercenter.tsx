@@ -162,18 +162,21 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
   if (currentView === 'record') {
     return (
       <div className="w-full min-h-screen bg-white font-sans text-gray-800 flex flex-col">
-        {/* Header */}
-        <div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
-          <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
-            <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-              {/* Strict Left Arrow */}
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-          </button>
-          <h1 className="text-[17px] font-bold text-gray-800 tracking-wide flex-1 text-center pr-6">
-            Details
-          </h1>
+        {/* Header with Safe Area applied for Android/iOS Status Bar */}
+        <div className="bg-white sticky top-0 z-50">
+          <div className="w-full h-[env(safe-area-inset-top)] bg-white"></div>
+          <div className="flex items-center px-4 py-3">
+            <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+                {/* Strict Left Arrow */}
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+            <h1 className="text-[17px] font-bold text-gray-800 tracking-wide flex-1 text-center pr-6">
+              Details
+            </h1>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -236,16 +239,19 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
   return (
     <div className="w-full min-h-screen bg-white font-sans text-gray-800 flex flex-col">
       
-      {/* Header */}
-      <div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
-        <button onClick={onBack} className="p-1 cursor-pointer">
-          <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
-            {/* Strict Left Arrow */}
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-        </button>
-        <h1 className="text-[17px] font-bold tracking-wide flex-1 text-center pr-6">Coin Seller Center</h1>
+      {/* Header with Safe Area applied for Android/iOS Status Bar */}
+      <div className="bg-white sticky top-0 z-50">
+        <div className="w-full h-[env(safe-area-inset-top)] bg-white"></div>
+        <div className="flex items-center px-4 py-3">
+          <button onClick={onBack} className="p-1 cursor-pointer">
+            <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+              {/* Strict Left Arrow */}
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <h1 className="text-[17px] font-bold tracking-wide flex-1 text-center pr-6">Coin Seller Center</h1>
+        </div>
       </div>
 
       <div className="px-4 pb-8 space-y-2">
