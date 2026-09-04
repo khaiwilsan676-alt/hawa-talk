@@ -319,7 +319,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               
               <div 
                 className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
-                style={{ left: '15%' }} 
+                style={{ left: '12%' }} 
               >
                 <img 
                   src={cleanedIconSrc}
