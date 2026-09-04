@@ -6,7 +6,7 @@ interface LeaderboardProps {
   onBack: () => void
 }
 
-type LeaderboardTab = 'wealth' | 'charm' | 'room'
+type LeaderboardTab = 'honour' | 'charm' | 'room'
 type LeaderboardSubTab = 'daily' | 'weekly' | 'monthly'
 
 // Global in-memory cache to prevent re-processing same image multiple times
@@ -80,11 +80,11 @@ function ChromaImage({
 }
 
 export default function Leaderboard({ onBack }: LeaderboardProps) {
-  const [activeTab, setActiveTab] = useState<LeaderboardTab>('wealth')
+  const [activeTab, setActiveTab] = useState<LeaderboardTab>('honour')
   const [activeSubTab, setActiveSubTab] = useState<LeaderboardSubTab>('daily')
 
   const tabs: { id: LeaderboardTab; label: string }[] = [
-    { id: 'wealth', label: 'Wealth' },
+    { id: 'honour', label: 'Honour' },
     { id: 'charm', label: 'Charm' },
     { id: 'room', label: 'Room' },
   ]
@@ -96,13 +96,10 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
   ]
 
   const tabImages: Record<LeaderboardTab, { top: string }> = {
-    wealth: { top: '/IMG-20260820-WA0068.jpg' },
-    charm: { top: '/file_000000006adc82118aca1654ab78b34a.png' },
-    room: { top: '/file_000000006f4082119aa31cd73d4211e2.png' },
+    honour: { top: '/file_00000000b83c81fa93d3e53e046c1b81.png' },
+    charm: { top: '/file_0000000086f481fa8653fc12d2577596.png' },
+    room: { top: '/file_00000000619c822f8a1577f69e039527.png' },
   }
-
-  // Find index of active sub-tab for the moveable highlight
-  const activeSubTabIndex = subTabs.findIndex(st => st.id === activeSubTab)
 
   // Rank 4 to 50
   const rankCards = Array.from({ length: 47 }, (_, i) => i + 4)
@@ -112,11 +109,11 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       className="min-h-screen bg-[#1A0204] text-white overflow-y-auto overflow-x-hidden flex flex-col select-none relative"
       style={{ touchAction: 'manipulation', WebkitUserSelect: 'none' }}
     >
-      {/* BACKGROUND TOP IMAGE: 50vh blended into Ultra-Dark Red */}
+      {/* BACKGROUND TOP IMAGE: 60vh blended into Ultra-Dark Red */}
       <div
         className="absolute top-0 left-0 w-full pointer-events-none z-0 overflow-hidden"
         style={{
-          height: '50vh',
+          height: '60vh',
           maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)',
         }}
@@ -130,46 +127,51 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         />
       </div>
 
-      {/* FIXED TOP HEADER (Icons and Tabs styled exactly like image) */}
+      {/* FIXED TOP HEADER (Redesigned exactly based on your reference) */}
       <header
-        className="relative z-50 flex flex-col items-center px-4 pb-3 shrink-0 w-full"
+        className="relative z-50 flex flex-col items-center px-4 pb-3 shrink-0 w-full mt-4"
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
       >
         {/* Main Row: Back - Tabs - Info */}
-        <div className="flex items-center justify-between w-full h-[40px] mb-4">
+        <div className="flex items-center justify-between w-full h-[45px] mb-6 px-1">
+          {/* Back Button as Image */}
           <div className="flex justify-start">
             <button
               onClick={onBack}
-              className="w-9 h-9 rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#8E1F27]/80 active:opacity-60 transition-opacity shadow-[0_0_8px_rgba(212,175,55,0.4)]"
+              className="w-11 h-11 flex items-center justify-center active:opacity-70 transition-opacity"
               aria-label="Back"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M15 19l-7-7 7-7" stroke="#FFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <img 
+                src="/file_0000000051d881f5af4f9cf84a56dcd3.png" 
+                alt="Back" 
+                className="w-full h-full object-contain"
+                draggable="false"
+              />
             </button>
           </div>
 
-          {/* Main Tabs - Pill style with single border and gold highlight for active exactly like image */}
-          <div className="flex items-center justify-center h-full border-[1.5px] border-[#D4AF37] rounded-full p-[2px] bg-black/60 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+          {/* Main Tabs Container */}
+          <div className="flex items-center justify-between h-[42px] border-[1px] border-[#D4AF37] rounded-full bg-[#110A07]/80 w-[60%] max-w-[280px] overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.6)] px-[2px]">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative text-sm font-bold transition-colors px-5 py-1.5 rounded-full ${
-                  activeTab === tab.id ? 'text-[#5C2B09]' : 'text-[#D4AF37]'
+                className={`relative flex-1 text-[15px] font-semibold h-[38px] rounded-full transition-all flex items-center justify-center ${
+                  activeTab === tab.id ? 'text-white' : 'text-[#8A857D]'
                 }`}
               >
                 {activeTab === tab.id && (
-                  <span className="absolute inset-0 bg-gradient-to-r from-[#FCEABB] to-[#F8B500] rounded-full" />
+                  <span className="absolute inset-0 bg-gradient-to-b from-[#E7B865] via-[#BA7627] to-[#743410] rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)]" />
                 )}
-                <span className="relative z-10">{tab.label}</span>
+                <span className="relative z-10 drop-shadow-md">{tab.label}</span>
               </button>
             ))}
           </div>
 
+          {/* Info Button */}
           <div className="flex justify-end">
             <button
-              className="w-8 h-8 rounded-full border-2 border-[#D4AF37] flex items-center justify-center text-[#D4AF37] bg-black/50 active:opacity-60 transition-opacity font-bold text-sm shadow-[0_0_8px_rgba(212,175,55,0.4)]"
+              className="w-9 h-9 rounded-full border-[1.5px] border-[#D4AF37] flex items-center justify-center text-white bg-[#110A07]/70 active:opacity-60 transition-opacity font-bold text-[18px] shadow-[0_0_10px_rgba(0,0,0,0.5)]"
               aria-label="Info"
             >
               ?
@@ -178,30 +180,23 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         </div>
 
         {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) */}
-        <div className="relative w-full h-[40px] z-10 flex items-center justify-center gap-1.5 px-4 mb-2 shrink-0">
-          {subTabs.map((st, index) => (
+        <div className="relative w-[75%] h-[30px] z-10 flex items-center justify-between shrink-0 mb-2">
+          {subTabs.map((st) => (
             <button
               key={st.id}
               onClick={() => setActiveSubTab(st.id)}
-              className="relative z-10 flex-1 flex items-center justify-center text-[15px] font-bold transition-colors"
-              style={{
-                color: activeSubTab === st.id ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)',
-              }}
+              className={`relative z-10 flex-1 flex flex-col items-center justify-center text-[16px] font-medium transition-colors ${
+                activeSubTab === st.id ? 'text-[#F9DFC1] drop-shadow-lg' : 'text-[#8A857D]'
+              }`}
             >
-              {st.label}
+              <span>{st.label}</span>
+              
+              {/* Glowing Line Underneath Active Tab */}
+              {activeSubTab === st.id && (
+                <div className="absolute -bottom-2 w-[80%] h-[3px] bg-gradient-to-r from-transparent via-[#FDE3A7] to-transparent rounded-full shadow-[0_0_5px_#FDE3A7] blur-[0.5px]" />
+              )}
             </button>
           ))}
-
-          {/* Moveable Golden Highlight Shape */}
-          <span
-            className="absolute z-0 bottom-0 top-[2px] h-full w-[calc(33.33%-6px)] bg-gradient-to-b from-[#D4AF37]/40 via-[#D4AF37]/15 to-transparent rounded-md transition-transform duration-300 ease-out"
-            style={{
-              transform: `translateX(calc(${activeSubTabIndex * 100}% + ${activeSubTabIndex * 8}px))`,
-              boxShadow: '0 -2px 5px rgba(212, 175, 55, 0.4)',
-            }}
-          >
-            <span className="absolute left-[35%] right-[35%] top-[-1px] h-[3px] bg-[#FFF] rounded-full scale-y-[1.2] blur-[0.5px]" />
-          </span>
         </div>
       </header>
 
@@ -236,29 +231,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       {/* 3. SPACE (5vh) */}
       <div style={{ height: '5vh' }} className="w-full shrink-0 relative z-10" />
 
-      {/* 4. TUMHARI IMAGE THEEK SPACE KE BAAD (Edge to Edge with Corners) YAHI HAT GAYI THI */}
-      <div className="relative w-full z-20 flex h-[35px] sm:h-[45px] shrink-0 mt-2">
-        {/* Main Center Image Edge to Edge */}
-        <img
-          src="/IMG_20260904_125516.png"
-          alt="Frame Border"
-          className="absolute inset-0 w-full h-full object-fill"
-        />
-        {/* Left Corner */}
-        <img
-          src="/IMG_20260904_125547.png"
-          alt="Left Corner"
-          className="absolute left-0 top-0 h-full w-auto object-contain"
-        />
-        {/* Right Corner (Flipped to face inwards) */}
-        <img
-          src="/IMG_20260904_125547.png"
-          alt="Right Corner"
-          className="absolute right-0 top-0 h-full w-auto object-contain scale-x-[-1]"
-        />
-      </div>
-
-      {/* 5. SCROLLABLE SECTION: RANK 4 TO 50 CARDS (Padding added for bottom fixed card) */}
+      {/* 5. SCROLLABLE SECTION: RANK 4 TO 50 CARDS */}
       <div className="relative z-10 w-full flex-grow overflow-y-auto overflow-x-hidden pt-2 pb-[100px]">
         <div className="w-full flex flex-col gap-1.5 items-center">
           {rankCards.map((rank) => (
@@ -277,26 +250,16 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         </div>
       </div>
 
-      {/* 6. FIXED BOTTOM USER CARD (Same as image UI at the exact bottom) */}
-      <div className="fixed bottom-0 left-0 w-full h-[90px] px-0 py-0 z-50 pointer-events-auto">
-        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-          {/* Card background / Frame */}
-          <ChromaImage
-            src="/1787992320047~2.jpg" 
-            alt="My Rank Frame"
-            className="w-full h-full object-cover"
-          />
-          {/* Dark Overlay inside card */}
-          <div className="absolute inset-0 bg-[#0F0102]/60 z-1" />
-
-          {/* User Details */}
-          <div className="absolute inset-0 flex items-center justify-start px-6 z-10 gap-4">
-             <span className="text-[#D4AF37] font-bold text-xl drop-shadow-md">100+</span>
-             <div className="w-12 h-12 rounded-full border-2 border-[#D4AF37] bg-black/60 shadow-[0_0_5px_rgba(212,175,55,0.6)]" /> 
-          </div>
+      {/* 6. FIXED BOTTOM USER CARD (Dark Glossy Brown with NO Background Image) */}
+      <div className="fixed bottom-0 left-0 w-full h-[90px] px-0 py-0 z-50 pointer-events-auto shadow-[0_-5px_20px_rgba(0,0,0,0.8)] border-t-[1.5px] border-[#694B2E] bg-gradient-to-b from-[#3E2114] via-[#2A1309] to-[#120703]">
+        <div className="relative w-full h-full flex items-center justify-start px-6 gap-5">
+           <span className="text-[#D4AF37] font-bold text-2xl drop-shadow-md">100+</span>
+           <div className="w-[52px] h-[52px] rounded-full border-2 border-[#D4AF37] bg-black/60 shadow-[0_0_8px_rgba(212,175,55,0.6)]" /> 
+           {/* Yahan par user ki details ayengi later... */}
         </div>
       </div>
 
     </div>
   )
 }
+
