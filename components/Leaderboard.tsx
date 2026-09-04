@@ -171,7 +171,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             ))}
           </div>
 
-                    {/* Info Button - Image, Ekdam Right Corner */}
+          {/* Info Button - Image, Ekdam Right Corner */}
           <button
             className="absolute right-2 flex items-center justify-center active:opacity-70 transition-opacity p-1"
             aria-label="Info"
@@ -183,9 +183,9 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
               draggable="false"
             />
           </button>
+        </div>
 
-
-                       {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) */}
+        {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) */}
         <div className="relative w-[180px] h-[40px] z-10 flex items-center justify-start gap-0.5 ml-4 shrink-0 self-start">
           {subTabs.map((st, index) => (
             <button
@@ -212,63 +212,61 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           </span>
         </div>
 
-      {/* 2. TOP IMAGES PODIUM (Top 1, 2, 3) */}
-      <div className="relative z-10 w-full shrink-0 flex flex-col items-center">
-        <div className="w-full flex flex-col items-center gap-0.5 mt-1">
-          {/* Row 1: Top 1 (Center) */}
-          <div className="flex justify-center w-full">
-            <ChromaImage
-              src="/1787994771034~2.jpg"
-              alt="Top 1"
-              className="w-45 h-auto object-contain drop-shadow-2xl"
-            />
-          </div>
-
-          {/* Row 2: Top 2 & Top 3 */}
-          <div className="flex justify-between items-center w-full px-0 mt-4">
-            <ChromaImage
-              src="/1787994751636~2.jpg"
-              alt="Top 2"
-              className="w-40 h-auto object-contain drop-shadow-lg -ml-1"
-            />
-            <ChromaImage
-              src="/1787994761762~2.jpg"
-              alt="Top 3"
-              className="w-40 h-auto object-contain drop-shadow-lg -mr-1"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 3. SPACE (5vh) */}
-      <div style={{ height: '5vh' }} className="w-full shrink-0 relative z-10" />
-
-         
-
-     
-          {/* Tere 4 to 50 Cards (Bina kisi shift ke apni jagah par aayenge) */}
-          {rankCards.map((rank) => (
-            <div
-              key={rank}
-              className="relative w-full flex items-center justify-start overflow-hidden shrink-0 h-[80px]"
-            >
+        {/* 2. TOP IMAGES PODIUM (Top 1, 2, 3) */}
+        <div className="relative z-10 w-full shrink-0 flex flex-col items-center">
+          <div className="w-full flex flex-col items-center gap-0.5 mt-1">
+            {/* Row 1: Top 1 (Center) */}
+            <div className="flex justify-center w-full">
               <ChromaImage
-                src="/1787992320047~2.jpg"
-                alt={`Rank ${rank}`}
-                className="absolute inset-0 w-full h-full object-fill"
+                src="/1787994771034~2.jpg"
+                alt="Top 1"
+                className="w-45 h-auto object-contain drop-shadow-2xl"
               />
-              <span className="relative z-10 left-10 text-white font-bold text-lg">{rank}</span>
             </div>
-          ))}
+
+            {/* Row 2: Top 2 & Top 3 */}
+            <div className="flex justify-between items-center w-full px-0 mt-4">
+              <ChromaImage
+                src="/1787994751636~2.jpg"
+                alt="Top 2"
+                className="w-40 h-auto object-contain drop-shadow-lg -ml-1"
+              />
+              <ChromaImage
+                src="/1787994761762~2.jpg"
+                alt="Top 3"
+                className="w-40 h-auto object-contain drop-shadow-lg -mr-1"
+              />
+            </div>
+          </div>
         </div>
+
+        {/* 3. SPACE (5vh) */}
+        <div style={{ height: '5vh' }} className="w-full shrink-0 relative z-10" />
+      </header>
+
+      {/* 4. RANK CARDS 4 TO 50 */}
+      <div className="relative z-10 flex-1">
+        {rankCards.map((rank) => (
+          <div
+            key={rank}
+            className="relative w-full flex items-center justify-start overflow-hidden shrink-0 h-[80px]"
+          >
+            <ChromaImage
+              src="/1787992320047~2.jpg"
+              alt={`Rank ${rank}`}
+              className="absolute inset-0 w-full h-full object-fill"
+            />
+            <span className="relative z-10 left-10 text-white font-bold text-lg">{rank}</span>
+          </div>
+        ))}
       </div>
 
-
-           {/* 6. FIXED BOTTOM USER CARD */}
+      {/* 5. FIXED BOTTOM USER CARD */}
       <div className="fixed bottom-0 left-0 w-full h-[90px] px-0 py-0 z-50 pointer-events-auto shadow-[0_-5px_20px_rgba(0,0,0,0.8)] border-t-[1.5px] border-[#694B2E] bg-gradient-to-b from-[#3E2114] via-[#2A1309] to-[#120703]">
         <div className="relative w-full h-full flex items-center justify-start px-6 gap-5">
-           {/* Yahan se 100+ aur circle hata diya gaya hai bss khali space hai ab */}
+          {/* Yahan se 100+ aur circle hata diya gaya hai bss khali space hai ab */}
         </div>
       </div>
-)
- }
+    </div>
+  )
+        }
