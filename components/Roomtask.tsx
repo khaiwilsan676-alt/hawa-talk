@@ -130,7 +130,7 @@ function TaskItem({
     iconSize = "w-20 h-20";
   } else if (lowerTitle.includes('share')) {
     leftIconSrc = '/file_0000000019a0821193463686d6fc9184.png';
-    iconSize = "w-12 h-12";
+    iconSize = "w-14 h-14";
   } else if (lowerTitle.includes('gift')) {
     leftIconSrc = '/file_0000000081f48211afe58f6348196b55.png';
     iconSize = "w-20 h-20";
@@ -319,7 +319,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               
               <div 
                 className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
-                style={{ left: '8%' }} 
+                style={{ left: '6%' }} 
               >
                 <img 
                   src={cleanedIconSrc}
@@ -341,7 +341,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               >
                 <button 
                   onClick={() => {}}
-                  className="px-4 py-1.5 rounded-full font-black text-[12px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
+                  className="px-2 py-1 rounded-full font-black text-[9px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
                 >
                   Claim
                 </button>
