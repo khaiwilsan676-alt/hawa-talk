@@ -91,7 +91,7 @@ export default function Page() {
           alt="Hurry Logo"
           className="w-24 h-24 rounded-2xl object-cover shadow-md"
         />
-        <h1 className="mt-2 text-2xl font-extrabold text-white tracking-wide">
+        <h1 className="mt-1 text-2xl font-extrabold text-white tracking-wide">
           Hurry
         </h1>
       </div>
