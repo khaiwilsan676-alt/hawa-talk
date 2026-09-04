@@ -96,9 +96,9 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
   ]
 
   const tabImages: Record<LeaderboardTab, { top: string }> = {
-    honour: { top: '/file_00000000b83c81fa93d3e53e046c1b81.png' },
-    charm: { top: '/file_0000000086f481fa8653fc12d2577596.png' },
-    room: { top: '/file_00000000619c822f8a1577f69e039527.png' },
+    honour: { top: '/IMG-20260820-WA0068.jpg' },
+    charm: { top: '/file_000000006adc82118aca1654ab78b34a.png' },
+    room: { top: '/file_000000006f4082119aa31cd73d4211e2.png' },
   }
 
   // Find index of active sub-tab for the moveable highlight
