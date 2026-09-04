@@ -210,7 +210,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
       {/* 2. TOP IMAGES PODIUM (Top 1, 2, 3) */}
       <div className="relative z-10 w-full shrink-0 flex flex-col items-center">
-        <div className="w-full flex flex-col items-center gap-1 mt-2">
+        <div className="w-full flex flex-col items-center gap-0.5 mt-1">
           {/* Row 1: Top 1 (Center) */}
           <div className="flex justify-center w-full">
             <ChromaImage
@@ -221,7 +221,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           </div>
 
           {/* Row 2: Top 2 & Top 3 */}
-          <div className="flex justify-between items-center w-full px-0 -mt-4">
+          <div className="flex justify-between items-center w-full px-0 mt-4">
             <ChromaImage
               src="/1787994751636~2.jpg"
               alt="Top 2"
