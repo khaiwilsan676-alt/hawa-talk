@@ -83,11 +83,10 @@ export default function Page() {
 
     setIsLoggedIn(false)
   }
-
-   if (loading) {
+    if (loading) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-b from-[#3b82f6] via-[#eff6ff] to-white flex flex-col items-center pt-[30vh] safe-top z-50">
-        <img
+      <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex flex-col items-center pt-[16vh]">
+            <img
           src="/logo.png"
           alt="Hurry Logo"
           className="w-24 h-24 rounded-2xl object-cover shadow-md"
