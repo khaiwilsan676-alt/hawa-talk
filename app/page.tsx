@@ -86,7 +86,7 @@ export default function Page() {
 
    if (loading) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-b from-[#3b82f6] via-[#eff6ff] to-white flex flex-col items-center pt-[16vh] safe-top z-50">
+      <div className="fixed inset-0 bg-gradient-to-b from-[#3b82f6] via-[#eff6ff] to-white flex flex-col items-center pt-[30vh] safe-top z-50">
         <img
           src="/logo.png"
           alt="Hurry Logo"
