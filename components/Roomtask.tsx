@@ -118,8 +118,24 @@ function TaskItem({
   reward: string;
   iconSrc: string;
 }) {
+  
+  // Title ke basis par Left Icon Decide karna
+  const lowerTitle = title.toLowerCase();
+  let leftIconSrc = iconSrc; // Default cleaned coin icon
+
+  if (lowerTitle.includes('mic')) {
+    leftIconSrc = '/file_00000000f8d88211ba5ff45c06383e5f.png';
+  } else if (lowerTitle.includes('share')) {
+    leftIconSrc = '/file_0000000019a0821193463686d6fc9184.png';
+  } else if (lowerTitle.includes('gift')) {
+    leftIconSrc = '/file_0000000081f48211afe58f6348196b55.png';
+  } else if (lowerTitle.includes('user')) {
+    leftIconSrc = '/file_00000000858082118b5c81b85cd6d2a8.png';
+  }
+
   return (
-    <div className="relative z-20 w-[100%] max-w-[330px] h-[140px] flex items-center">
+    // Height aur width increase ki gayi hai (h-[155px], max-w-[350px])
+    <div className="relative z-20 w-[100%] max-w-[350px] h-[155px] flex items-center">
       <img 
         src="/file_000000004fd0821198ed4e26d5008b16.png"
         alt="Task Background"
@@ -128,30 +144,51 @@ function TaskItem({
       />
 
       <div className="relative z-30 w-full px-4 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center space-x-2.5 pr-2">
+        
+        {/* Left Side: Dynamic Icon and Title */}
+        <div className="flex items-center space-x-3 pr-2 flex-1">
           <img 
-            src={iconSrc} 
+            src={leftIconSrc} 
             alt="Task Icon" 
-            className="w-7 h-7 object-contain flex-shrink-0 drop-shadow-md select-none"
+            className="w-10 h-10 object-contain flex-shrink-0 drop-shadow-md select-none"
             draggable={false}
           />
           <div className="flex flex-col justify-center">
-            <span className="text-[14px] font-bold text-white leading-tight drop-shadow-md line-clamp-2">
+            <span className="text-[14px] font-bold text-white leading-tight drop-shadow-md line-clamp-3">
               {title}
-            </span>
-            <span className="text-[14px] font-extrabold text-[#ffd700] drop-shadow-md mt-0.5">
-              {reward}
             </span>
           </div>
         </div>
 
-        <div className="flex-shrink-0 pointer-events-auto">
+        {/* Right Side: Cleaned Coin + Value aur naya image Button */}
+        <div className="flex-shrink-0 pointer-events-auto flex flex-col items-center justify-center space-y-1.5 pl-2">
+          
+          {/* Coin Icon without white bg aur uski value */}
+          <div className="flex items-center space-x-1">
+            <img 
+              src={iconSrc} 
+              alt="Coins" 
+              className="w-5 h-5 object-contain flex-shrink-0 drop-shadow-md select-none"
+              draggable={false}
+            />
+            <span className="text-[13px] font-extrabold text-[#ffd700] drop-shadow-md whitespace-nowrap">
+              {reward}
+            </span>
+          </div>
+
+          {/* Image Button */}
           <button 
             onClick={() => {}}
-            className="px-3.5 py-1.5 rounded-full font-black text-[11px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
+            className="transition-transform hover:scale-105 active:scale-95 cursor-pointer outline-none"
           >
-            Claim
+            <img 
+              src="/file_00000000196c8208b7ea093e8d7f56c8.png"
+              alt="Claim Action"
+              className="w-[85px] h-auto object-contain select-none"
+              draggable={false}
+            />
           </button>
+
         </div>
       </div>
     </div>
@@ -224,7 +261,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           style={{ height: 'env(safe-area-inset-top, 0px)' }}
         />
 
-         {/* TOP BACKGROUND: EKDAM SMOOTH FADING INTO MAROON WITHOUT ANY HARSH LINE */}
+         {/* TOP BACKGROUND */}
         <div 
           className="absolute top-0 left-0 w-full h-[60vh] z-2 pointer-events-none bg-cover bg-top overflow-hidden"
           style={{
@@ -246,7 +283,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           className="absolute top-[50vh] left-0 w-full h-[260vh] z-0 pointer-events-none bg-[#380308]"
         />
 
-        {/* BACK ICON: Screen Corner Safe Area */}
+        {/* BACK ICON */}
         <button 
           onClick={onBack} 
           className="fixed z-50 p-1 flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
@@ -269,7 +306,8 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
           {/* Middle Decoration Image */}
           <div className="w-full flex justify-center px-4 flex-col items-center">
-            <div className="relative w-[90%] max-w-[390px] flex items-center justify-center">
+            {/* Yaha Width (max-w-[450px]) badha di gayi hai image ko bada karne ke liye */}
+            <div className="relative w-[95%] max-w-[450px] flex items-center justify-center mt-2">
               <img 
                 src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
                 alt="Middle Decoration" 
@@ -277,33 +315,46 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 draggable={false}
               />
               
-               
               {/* Left Side: Cleaned Coin Icon */}
               <div 
                 className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
-                style={{ left: '28px' }} 
+                style={{ left: '8%' }} 
               >
                 <img 
                   src={cleanedTopLeftIconSrc}
                   alt="Cleaned Coin Icon" 
-                  className="w-6 h-6 object-contain drop-shadow-md select-none"
+                  className="w-7 h-7 object-contain drop-shadow-md select-none"
                   draggable={false}
                 />
               </div>
 
               {/* Center Middle: "0" */}
-              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                <span className="text-xl font-extrabold text-[#ffd700] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none pr-4">
+                <span className="text-2xl font-extrabold text-[#ffd700] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                   0
                 </span>
               </div>
+
+              {/* NEW: Right Side Corner 3D Yellow Claim Button */}
+              <div 
+                className="absolute top-1/2 -translate-y-1/2 z-20"
+                style={{ right: '5%' }} 
+              >
+                <button 
+                  onClick={() => {}}
+                  className="px-4 py-1.5 rounded-full font-black text-[12px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
+                >
+                  Receive
+                </button>
+              </div>
+
             </div>
           </div>
 
           {/* FRAME SECTION */}
-          <div className="relative w-full flex flex-col items-center mt-1">
+          <div className="relative w-full flex flex-col items-center mt-3">
             
-            {/* 1. TOP FRAME IMAGE: z-30 (Frames will overlap on top of side border images) */}
+            {/* 1. TOP FRAME IMAGE */}
             <div className="relative w-full flex-shrink-0 z-30 flex justify-center items-center overflow-hidden">
               <img 
                 src="/file_00000000680881faa3dfdb17cce60858.png"
@@ -344,7 +395,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <span className="text-[#f5b8b8] text-[11px] font-medium">Second</span>
             </div>
 
-            {/* 2. MIDDLE SECTION: Side walls at z-10 (Borders run underneath top/bottom frames) */}
+            {/* 2. MIDDLE SECTION */}
             <div className="relative w-full flex flex-col items-center mt-1 -mb-3">
               
               {/* Left Screen Border */}
@@ -384,7 +435,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
 
-            {/* 3. BOTTOM FRAME IMAGE: z-30 (Overlaps side walls perfectly) */}
+            {/* 3. BOTTOM FRAME IMAGE */}
             <div className="w-full flex-shrink-0 z-30 pointer-events-none overflow-hidden -mt-12">
               <img 
                 src="/file_0000000066c88211aa777b1f6da8683f.png"
@@ -404,4 +455,3 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   );
 }
 
- 
