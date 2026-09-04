@@ -179,10 +179,10 @@ const OFFICIAL_IDS = ['500001', '500002', '500003', '500004', '500005']
 const ADMIN_IDS = ['700001', '700002', '700003']
 
 const FEEDBACK_TYPES = [
-  { id: 'bug', label: 'Bug / Glitch', icon: '🐛' },
-  { id: 'account', label: 'Account Issue', icon: '👤' },
-  { id: 'recharge', label: 'Recharge / Coin', icon: '💰' },
-  { id: 'other', label: 'Other Suggestion', icon: '💡' },
+  { id: 'bug', label: 'Bug', icon: '' },
+  { id: 'account', label: 'Account Issue', icon: '' },
+  { id: 'recharge', label: 'Recharge', icon: '' },
+  { id: 'other', label: 'Other Suggestion', icon: '' },
 ]
 
 export const getOrCreateAccountNumber = (uid: string) => {
@@ -660,7 +660,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="max-w-md mx-auto">
             {feedbackSuccess ? (
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
+              <div className="bg-green-50 border border-green-200 rounded-md p-8 text-center">
                 <div className="text-4xl mb-4">✅</div>
                 <h2 className="text-xl font-bold text-green-700 mb-2">Thank You!</h2>
                 <p className="text-green-600">Your feedback has been submitted successfully.</p>
@@ -705,7 +705,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       placeholder="Describe your issue or suggestion..."
                       maxLength={400}
                       rows={5}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white resize-none"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white resize-none"
                     />
                     <div className="absolute bottom-3 right-3 text-xs text-gray-400">
                       {problemDescription.length}/400
