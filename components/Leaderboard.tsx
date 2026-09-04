@@ -181,7 +181,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         </div>
 
         {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) - Ekdam Left Side Aligned */}
-        <div className="relative w-[240px] h-[40px] z-10 flex items-center justify-start gap-1.5 ml-2 shrink-0 self-start">
+        <div className="relative w-[240px] h-[40px] z-10 flex items-center justify-start gap-0.5 ml-2 shrink-0 self-start">
           {subTabs.map((st) => (
             <button
               key={st.id}
