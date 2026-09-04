@@ -637,8 +637,9 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   if (showFeedbackPage) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col pb-[8vh]">
+        {/* Changed 1: Removed border-b border-gray-200 */}
         <div
-          className="flex items-center p-4 bg-white border-b border-gray-200 safe-top"
+          className="flex items-center p-4 bg-white safe-top"
           style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 16px) + 12px)' }}
         >
           <button
@@ -675,13 +676,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                         key={type.id}
                         type="button"
                         onClick={() => setSelectedType(type.id)}
-                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                        /* Changed 3: rounded-2xl to rounded-md */
+                        className={`p-4 rounded-md border-2 transition-all cursor-pointer ${
                           selectedType === type.id
                             ? 'border-blue-500 bg-blue-50 shadow-md'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
-                        <div className="text-2xl mb-1">{type.icon}</div>
+                        {/* Changed 2: Removed Icon completely from here */}
                         <div className={`text-sm font-medium ${
                           selectedType === type.id ? 'text-blue-700' : 'text-gray-700'
                         }`}>
@@ -705,7 +707,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       placeholder="Describe your issue or suggestion..."
                       maxLength={400}
                       rows={5}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white resize-none"
+                      /* Changed 5: rounded-xl to rounded-md */
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-md focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white resize-none"
                     />
                     <div className="absolute bottom-3 right-3 text-xs text-gray-400">
                       {problemDescription.length}/400
@@ -720,7 +723,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     value={contactInfo}
                     onChange={(e) => setContactInfo(e.target.value)}
                     placeholder="Enter your email, Gmail or App ID"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white"
+                    /* Changed 4: rounded-2xl to rounded-md */
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-md focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white"
                   />
                 </div>
 
@@ -730,10 +734,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 )}
 
+                {/* Changed 6 & 7: Width w-2/3 mx-auto block, rounded-full, text to 'Submit' */}
                 <button
                   type="submit"
                   disabled={feedbackSubmitting}
-                  className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-2xl transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 text-base"
+                  className="w-2/3 mx-auto block bg-blue-600 text-white font-semibold py-3.5 rounded-full transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-blue-600/20 text-base"
                 >
                   {feedbackSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -744,7 +749,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       Submitting...
                     </span>
                   ) : (
-                    'Submit Feedback'
+                    'Submit'
                   )}
                 </button>
               </form>
@@ -1000,3 +1005,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     </div>
   )
 }
+
