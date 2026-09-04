@@ -84,20 +84,21 @@ export default function Page() {
     setIsLoggedIn(false)
   }
 
-  if (loading) {
+   if (loading) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-b from-[#3b82f6] via-[#eff6ff] to-white flex flex-col items-center justify-center safe-top z-50">
+      <div className="fixed inset-0 bg-gradient-to-b from-[#3b82f6] via-[#eff6ff] to-white flex flex-col items-center pt-[16vh] safe-top z-50">
         <img
           src="/logo.png"
           alt="Hurry Logo"
           className="w-24 h-24 rounded-2xl object-cover shadow-md"
         />
-        <h1 className="mt-2 text-2xl font-bold text-white tracking-wide">
+        <h1 className="mt-2 text-2xl font-extrabold text-white tracking-wide">
           Hurry
         </h1>
       </div>
     )
   }
+
 
   if (!isLoggedIn) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />
