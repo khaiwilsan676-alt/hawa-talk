@@ -130,7 +130,7 @@ function TaskItem({
     iconSize = "w-20 h-20";
   } else if (lowerTitle.includes('share')) {
     leftIconSrc = '/file_0000000019a0821193463686d6fc9184.png';
-    iconSize = "w-14 h-14";
+    iconSize = "w-14.5 h-14.5 ml-2";
   } else if (lowerTitle.includes('gift')) {
     leftIconSrc = '/file_0000000081f48211afe58f6348196b55.png';
     iconSize = "w-20 h-20";
@@ -319,7 +319,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               
               <div 
                 className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
-                style={{ left: '6%' }} 
+                style={{ left: '3%' }} 
               >
                 <img 
                   src={cleanedIconSrc}
@@ -337,7 +337,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
 
               <div 
                 className="absolute top-1/2 -translate-y-1/2 z-20"
-                style={{ right: '5%' }} 
+                style={{ right: '9%' }} 
               >
                 <button 
                   onClick={() => {}}
