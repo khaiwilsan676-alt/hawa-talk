@@ -43,7 +43,7 @@ const allStoreItems: StoreItem[] = [
   // Chat Bubble
   { id: "c1", name: "1", image: "/file_000000003d888211822aa6837fe5013c.png", tab: "Chat Bubble", stars: 4, price: "500,000", duration: "3D" },
   { id: "c2", name: "2", image: "/file_000000006044821186ff566329797142.png", tab: "Chat Bubble", starts: 4, price: "250,000", duration: "2D" }, 
-  { Id: "c3", name: " 3", image: "/file_00000000c44c81f598f62ae8a45e13a7.png", tab: " Chat Bubble ", starts: 5 price: "300,000", duration: " 3D" }, 
+  { Id: "c3", name: "3", image: "/file_00000000c44c81f598f62ae8a45e13a7.png", tab: "Chat Bubble", starts: 5, price: "300,000", duration: "3D" }, 
    // ID
   { id: "i1", name: "ID Badge 8", image: "/1784533036732~2.jpg", tab: "ID", stars: 5, price: "10,000,000", duration: "3D", isOwned: true },
 ];
