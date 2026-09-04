@@ -213,7 +213,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
 
         {/* 2. TOP IMAGES PODIUM (Top 1, 2, 3) */}
         <div className="relative z-10 w-full shrink-0 flex flex-col items-center">
-          <div className="w-full flex flex-col items-center gap-0.5 mt-3">
+          <div className="w-full flex flex-col items-center gap-0.5 mt-5">
             {/* Row 1: Top 1 (Center) */}
             <div className="flex justify-center w-full">
               <ChromaImage
