@@ -185,43 +185,32 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           </button>
 
 
-                {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) */}
-        {/* Yahan gap-4 likha hai, isko gap-2 ya gap-1 karke apne hisaab se space set kar lena bss */}
-        <div className="relative h-[40px] z-10 flex items-center justify-start gap-1 ml-4 shrink-0 self-start">
-          {subTabs.map((st) => (
+                       {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) */}
+        <div className="relative w-[180px] h-[40px] z-10 flex items-center justify-start gap-0.5 ml-4 shrink-0 self-start">
+          {subTabs.map((st, index) => (
             <button
               key={st.id}
               onClick={() => setActiveSubTab(st.id)}
-              className="relative z-10 px-3 flex items-center justify-center text-[15px] font-bold transition-colors"
+              className="relative z-10 flex-1 flex items-center justify-center text-[15px] font-bold transition-colors"
               style={{
                 color: activeSubTab === st.id ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)',
               }}
             >
-              <span className="relative z-10">{st.label}</span>
-              
-              {/* Golden Highlight sidha active tab ke andar laga diya, ab math ki zarurat nahi */}
-              {activeSubTab === st.id && (
-                <span className="absolute z-0 bottom-0 top-[2px] left-0 right-0 bg-gradient-to-b from-[#D4AF37]/40 via-[#D4AF37]/15 to-transparent rounded-md shadow-[0_-2px_5px_rgba(212,175,55,0.4)]">
-                   <span className="absolute left-[20%] right-[20%] top-[-1px] h-[3px] bg-[#FFF] rounded-full blur-[0.5px]" />
-                </span>
-              )}
+              {st.label}
             </button>
           ))}
-        </div>
 
-
-          {/* Moveable Golden Highlight Shape - Adjusted math for fixed width left alignment */}
+          {/* EK HI Moveable Golden Highlight Shape */}
           <span
-            className="absolute z-0 bottom-0 top-[2px] h-full w-[calc(33.33%-4px)] bg-gradient-to-b from-[#D4AF37]/40 via-[#D4AF37]/15 to-transparent rounded-md transition-transform duration-300 ease-out"
+            className="absolute z-0 bottom-0 top-[2px] h-full w-[33.33%] bg-gradient-to-b from-[#D4AF37]/40 via-[#D4AF37]/15 to-transparent rounded-md transition-transform duration-300 ease-out"
             style={{
-              transform: `translateX(calc(${activeSubTabIndex * 100}% + ${activeSubTabIndex * 6}px))`,
+              transform: `translateX(calc(${activeSubTabIndex * 100}%))`,
               boxShadow: '0 -2px 5px rgba(212, 175, 55, 0.4)',
             }}
           >
             <span className="absolute left-[30%] right-[30%] top-[-1px] h-[3px] bg-[#FFF] rounded-full scale-y-[1.2] blur-[0.5px]" />
           </span>
         </div>
-      </header>
 
       {/* 2. TOP IMAGES PODIUM (Top 1, 2, 3) */}
       <div className="relative z-10 w-full shrink-0 flex flex-col items-center">
@@ -254,35 +243,9 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       {/* 3. SPACE (5vh) */}
       <div style={{ height: '5vh' }} className="w-full shrink-0 relative z-10" />
 
-            {/* 4. FRAME AFTER SPACE (Sirf Top Wali Image, Apni jagah fix rahegi) */}
-      <div className="relative w-full z-20 flex h-[35px] sm:h-[45px] shrink-0 mt-2">
-        <img
-          src="/IMG_20260904_125516.png"
-          alt="Frame Border"
-          className="absolute inset-0 w-full h-full object-fill"
-        />
-      </div>
+         
 
-      {/* 5. SCROLLABLE SECTION: RANK 4 TO 50 CARDS WIDE */}
-      <div className="relative z-10 w-full flex-grow overflow-y-auto overflow-x-hidden pt-2 pb-[100px]">
-        
-        {/* Is div ko relative rakha hai taaki side frames iske andar fix rahein */}
-        <div className="relative w-full flex flex-col gap-1.5 items-center">
-          
-          {/* LEFT CORNER IMAGE - Absolute hai toh cards ko touch/shift nahi karegi */}
-          <img
-            src="/IMG_20260904_125547.png"
-            alt="Left Frame"
-            className="absolute left-0 top-0 h-full w-[25px] sm:w-[35px] object-fill z-20 pointer-events-none"
-          />
-          
-          {/* RIGHT CORNER IMAGE - Absolute hai toh cards ko touch/shift nahi karegi */}
-          <img
-            src="/IMG_20260904_125547.png"
-            alt="Right Frame"
-            className="absolute right-0 top-0 h-full w-[25px] sm:w-[35px] object-fill z-20 pointer-events-none scale-x-[-1]"
-          />
-
+     
           {/* Tere 4 to 50 Cards (Bina kisi shift ke apni jagah par aayenge) */}
           {rankCards.map((rank) => (
             <div
@@ -301,15 +264,11 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       </div>
 
 
-      {/* 6. FIXED BOTTOM USER CARD */}
+           {/* 6. FIXED BOTTOM USER CARD */}
       <div className="fixed bottom-0 left-0 w-full h-[90px] px-0 py-0 z-50 pointer-events-auto shadow-[0_-5px_20px_rgba(0,0,0,0.8)] border-t-[1.5px] border-[#694B2E] bg-gradient-to-b from-[#3E2114] via-[#2A1309] to-[#120703]">
         <div className="relative w-full h-full flex items-center justify-start px-6 gap-5">
-           <span className="text-[#D4AF37] font-bold text-2xl drop-shadow-md">100+</span>
-           <div className="w-[52px] h-[52px] rounded-full border-2 border-[#D4AF37] bg-black/60 shadow-[0_0_8px_rgba(212,175,55,0.6)]" /> 
+           {/* Yahan se 100+ aur circle hata diya gaya hai bss khali space hai ab */}
         </div>
       </div>
-
-    </div>
-  )
-}
-
+);
+      }
