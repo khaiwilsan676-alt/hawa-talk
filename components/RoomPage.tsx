@@ -1467,13 +1467,14 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
    {/* RIGHT SIDE FLOATING STACK */}
 <div 
-  className="absolute z-20 flex flex-col items-center pointer-events-auto"
+  className={`absolute z-20 flex flex-col items-center pointer-events-auto ${showChatInput ? 'hidden' : ''}`}
   style={{
-    top: 'calc(100lvh - 310px)', 
+    top: 'calc(100lvh - 310px)',
     right: '10px',
   }}
   onClick={(e) => e.stopPropagation()}
 >
+
   {/* 1. AUTO-SCROLL BANNER */}
   <RoomSideBanner />
 
