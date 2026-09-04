@@ -6,6 +6,108 @@ interface RoomtaskProps {
   onBack?: () => void;
 }
 
+// Custom Hook jo WebGL Shader se image ka white background strictly remove karta hai (PURE ORIGINAL)
+function useProcessedShaderImage(src: string) {
+  const [processedSrc, setProcessedSrc] = useState<string>(src);
+
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false });
+    if (!gl) return;
+
+    const vsSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `;
+
+    const fsSource = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_image;
+      void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        if (color.r > 0.9 && color.g > 0.9 && color.b > 0.9) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        } else {
+          gl_FragColor = color;
+        }
+      }
+    `;
+
+    const createShader = (gl: WebGLRenderingContext, type: number, source: string) => {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    };
+
+    const vertShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fragShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    if (!vertShader || !fragShader) return;
+
+    const program = gl.createProgram();
+    if (!program) return;
+    gl.attachShader(program, vertShader);
+    gl.attachShader(program, fragShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,  1, -1, -1,  1,
+      -1,  1,  1, -1,  1,  1,
+    ]), gl.STATIC_DRAW);
+
+    const posAttrLocation = gl.getAttribLocation(program, 'a_position');
+    gl.enableVertexAttribArray(posAttrLocation);
+    gl.vertexAttribPointer(posAttrLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      0, 1,  1, 1,  0, 0,
+      0, 0,  1, 1,  1, 0,
+    ]), gl.STATIC_DRAW);
+
+    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
+    gl.enableVertexAttribArray(texCoordLocation);
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.src = src;
+    image.onload = () => {
+      canvas.width = image.width;
+      canvas.height = image.height;
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      setProcessedSrc(dataUrl);
+    };
+  }, [src]);
+
+  return processedSrc;
+}
+
 // Helper component for task items
 function TaskItem({ 
   title, 
@@ -20,44 +122,44 @@ function TaskItem({
   // Title ke basis par Left Icon aur uska size decide karna
   const lowerTitle = title.toLowerCase();
   
-  let leftIconSrc = iconSrc; // Default coin icon
-  let iconSize = "w-10 h-10"; // DEFAULT size
+  let leftIconSrc = iconSrc; 
+  let iconSize = "w-10 h-10"; 
 
   if (lowerTitle.includes('mic')) {
     leftIconSrc = '/file_00000000f8d88211ba5ff45c06383e5f.png';
     iconSize = "w-20 h-20";
   } else if (lowerTitle.includes('share')) {
     leftIconSrc = '/file_0000000019a0821193463686d6fc9184.png';
-    iconSize = "w-15 h-15";
+    iconSize = "w-12 h-12";
   } else if (lowerTitle.includes('gift')) {
     leftIconSrc = '/file_0000000081f48211afe58f6348196b55.png';
-    iconSize = "w-18 h-18";
+    iconSize = "w-20 h-20";
   } else if (lowerTitle.includes('user') || lowerTitle.includes('follower')) {
     leftIconSrc = '/file_00000000858082118b5c81b85cd6d2a8.png';
-    iconSize = "w-18 h-18";
+    iconSize = "w-20 h-20";
   }
 
   const rewardValue = reward.replace(/coins/gi, '').trim();
 
   return (
-    <div className="relative z-20 w-[100%] max-w-[410px] h-[175px] flex items-center">
+    // Explicitly added rounded-none to ensure NO curves at all
+    <div className="relative z-20 w-[100%] max-w-[410px] h-[175px] flex items-center rounded-none">
       <img 
         src="/file_000000004fd0821198ed4e26d5008b16.png"
         alt="Task Background"
-        className="absolute inset-0 w-full h-full object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95 select-none z-0"
+        // Force rounded-none on image so original square/rectangle shape remains
+        className="absolute inset-0 w-full h-full object-fill cursor-pointer transition-transform hover:scale-105 active:scale-95 select-none z-0 rounded-none"
         draggable={false}
       />
 
-      {/* Yaha pl-1 kiya hai taaki icon ekdam left corner mein chala jaye */}
-      <div className="relative z-30 w-full pl-2 pr-4 flex items-center justify-between pointer-events-none">
+      <div className="relative z-30 w-full pl-2 pr-4 flex items-center justify-between pointer-events-none rounded-none">
         
-        {/* Left Side: Yaha space-x-0.5 kar diya hai 0.5 gap ke liye */}
+        {/* Left Side: 0.5 gap */}
         <div className="flex items-center space-x-0.5 flex-1">
           <img 
             src={leftIconSrc} 
             alt="Task Icon" 
-            className={`${iconSize} object-contain flex-shrink-0 ${leftIconSrc === iconSrc ? '' : 'drop-shadow-md'} select-none`}
-            style={leftIconSrc === iconSrc ? { filter: 'url(#remove-white-bg)' } : {}}
+            className={`${iconSize} object-contain flex-shrink-0 ${leftIconSrc === iconSrc ? '' : 'drop-shadow-md'} select-none rounded-none`}
             draggable={false}
           />
           <div className="flex flex-col justify-center">
@@ -74,8 +176,7 @@ function TaskItem({
             <img 
               src={iconSrc} 
               alt="Coins" 
-              className="w-6 h-6 object-contain flex-shrink-0 select-none"
-              style={{ filter: 'url(#remove-white-bg)' }}
+              className="w-6 h-6 object-contain flex-shrink-0 select-none rounded-none"
               draggable={false}
             />
             <span className="text-[15px] font-extrabold text-[#ffd700] drop-shadow-md whitespace-nowrap">
@@ -85,13 +186,12 @@ function TaskItem({
 
           <button 
             onClick={() => {}}
-            className="transition-transform hover:scale-105 active:scale-95 cursor-pointer outline-none"
+            className="transition-transform hover:scale-105 active:scale-95 cursor-pointer outline-none rounded-none"
           >
-            {/* Yaha andar wali Claim image ka size bada kar diya (w-[85px]) */}
             <img 
               src="/file_00000000196c8208b7ea093e8d7f56c8.png"
               alt="Claim Action"
-              className="w-[85px] h-auto object-contain select-none"
+              className="w-[85px] h-auto object-contain select-none rounded-none"
               draggable={false}
             />
           </button>
@@ -103,7 +203,10 @@ function TaskItem({
 }
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
-  const iconSrc = '/1786855398290.png';
+  
+  // Yaha original WebGL hook se clean image aayegi (base64 data URL)
+  const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
+
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -159,21 +262,6 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   return (
     <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#380308] scrollbar-none select-none m-0 p-0">
       
-      <svg width="0" height="0" className="absolute pointer-events-none">
-        <defs>
-          <filter id="remove-white-bg" colorInterpolationFilters="sRGB">
-            <feColorMatrix 
-              type="matrix" 
-              values="
-                1 0 0 0 0
-                0 1 0 0 0
-                0 0 1 0 0
-                -4 -4 -4 1 11" 
-            />
-          </filter>
-        </defs>
-      </svg>
-
       <div className="relative w-full min-h-full flex flex-col m-0 p-0">
         
         <div 
@@ -225,7 +313,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <img 
                 src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
                 alt="Middle Decoration" 
-                className="w-full h-70 object-contain drop-shadow-2xl select-none"
+                className="w-full h-auto object-contain drop-shadow-2xl select-none rounded-none"
                 draggable={false}
               />
               
@@ -234,10 +322,9 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 style={{ left: '8%' }} 
               >
                 <img 
-                  src={iconSrc}
+                  src={cleanedIconSrc}
                   alt="Cleaned Coin Icon" 
-                  className="w-7 h-7 object-contain select-none"
-                  style={{ filter: 'url(#remove-white-bg)' }}
+                  className="w-7 h-7 object-contain select-none rounded-none"
                   draggable={false}
                 />
               </div>
@@ -269,7 +356,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <img 
                 src="/file_00000000680881faa3dfdb17cce60858.png"
                 alt="Frame Top Border"
-                className="w-full h-auto object-fill block select-none pointer-events-none"
+                className="w-full h-auto object-fill block select-none pointer-events-none rounded-none"
                 style={{ transform: 'scaleX(1.12)' }}
                 draggable={false}
               />
@@ -330,7 +417,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                     key={index}
                     title={task.title}
                     reward={task.reward}
-                    iconSrc={iconSrc}
+                    iconSrc={cleanedIconSrc}
                   />
                 ))}
               </div>
@@ -340,7 +427,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               <img 
                 src="/file_0000000066c88211aa777b1f6da8683f.png"
                 alt="Frame Bottom Border"
-                className="w-full h-auto object-fill block select-none"
+                className="w-full h-auto object-fill block select-none rounded-none"
                 style={{ transform: 'scaleX(1.12)' }}
                 draggable={false}
               />
