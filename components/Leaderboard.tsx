@@ -136,41 +136,40 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
       >
         {/* Main Row: Back - Tabs - Info */}
-        <div className="flex items-center justify-between w-full h-[38px] mb-4">
+        <div className="flex items-center justify-between w-full h-[40px] mb-4">
           <div className="flex justify-start">
             <button
               onClick={onBack}
-              className="w-8 h-8 rounded-full border-[1.5px] border-[#D4AF37] flex items-center justify-center text-[#D4AF37] bg-black/40 active:opacity-60 transition-opacity"
+              className="w-9 h-9 rounded-full border-2 border-[#D4AF37] flex items-center justify-center bg-[#8E1F27]/80 active:opacity-60 transition-opacity shadow-[0_0_8px_rgba(212,175,55,0.4)]"
               aria-label="Back"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M15 19l-7-7 7-7" stroke="#FFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>
 
-          <div className="flex items-center justify-center h-full bg-black/50 border border-[#D4AF37] rounded-full px-6 py-1">
+          {/* Main Tabs - Pill style with single border and gold highlight for active exactly like image */}
+          <div className="flex items-center justify-center h-full border-[1.5px] border-[#D4AF37] rounded-full p-[2px] bg-black/60 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="relative text-sm font-semibold transition-colors px-1"
-                style={{
-                  color: activeTab === tab.id ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
-                }}
+                className={`relative text-sm font-bold transition-colors px-5 py-1.5 rounded-full ${
+                  activeTab === tab.id ? 'text-[#5C2B09]' : 'text-[#D4AF37]'
+                }`}
               >
-                {tab.label}
                 {activeTab === tab.id && (
-                  <span className="absolute -bottom-[2px] left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
+                  <span className="absolute inset-0 bg-gradient-to-r from-[#FCEABB] to-[#F8B500] rounded-full" />
                 )}
+                <span className="relative z-10">{tab.label}</span>
               </button>
             ))}
           </div>
 
           <div className="flex justify-end">
             <button
-              className="w-8 h-8 rounded-full border-[1.5px] border-[#D4AF37] flex items-center justify-center text-[#D4AF37] bg-black/40 active:opacity-60 transition-opacity font-bold text-sm"
+              className="w-8 h-8 rounded-full border-2 border-[#D4AF37] flex items-center justify-center text-[#D4AF37] bg-black/50 active:opacity-60 transition-opacity font-bold text-sm shadow-[0_0_8px_rgba(212,175,55,0.4)]"
               aria-label="Info"
             >
               ?
@@ -178,13 +177,13 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
           </div>
         </div>
 
-        {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly with moveable complex highlight) */}
+        {/* 1. SUB-TABS SECTION (Daily, Weekly, Monthly) */}
         <div className="relative w-full h-[40px] z-10 flex items-center justify-center gap-1.5 px-4 mb-2 shrink-0">
           {subTabs.map((st, index) => (
             <button
               key={st.id}
               onClick={() => setActiveSubTab(st.id)}
-              className="relative z-10 flex-1 flex items-center justify-center text-sm font-bold transition-colors"
+              className="relative z-10 flex-1 flex items-center justify-center text-[15px] font-bold transition-colors"
               style={{
                 color: activeSubTab === st.id ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)',
               }}
@@ -193,7 +192,7 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
             </button>
           ))}
 
-          {/* Moveable Golden Highlight Shape (Semi-transparent gold with subtle top decoration) */}
+          {/* Moveable Golden Highlight Shape */}
           <span
             className="absolute z-0 bottom-0 top-[2px] h-full w-[calc(33.33%-6px)] bg-gradient-to-b from-[#D4AF37]/40 via-[#D4AF37]/15 to-transparent rounded-md transition-transform duration-300 ease-out"
             style={{
@@ -201,16 +200,15 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
               boxShadow: '0 -2px 5px rgba(212, 175, 55, 0.4)',
             }}
           >
-            {/* Subtle stylized top element, approximating the arch in reference */}
-            <span className="absolute left-[35%] right-[35%] top-[-1px] h-[3px] bg-[#D4AF37] rounded-full scale-y-[1.2] blur-[0.3px]" />
+            <span className="absolute left-[35%] right-[35%] top-[-1px] h-[3px] bg-[#FFF] rounded-full scale-y-[1.2] blur-[0.5px]" />
           </span>
         </div>
       </header>
 
       {/* 2. TOP IMAGES PODIUM (Top 1, 2, 3) */}
       <div className="relative z-10 w-full shrink-0 flex flex-col items-center">
-        <div className="w-full flex flex-col items-center gap-1 mt-0">
-          {/* Row 1: Top 1 (Center) - Adjusted height for visual balance with header */}
+        <div className="w-full flex flex-col items-center gap-1 mt-2">
+          {/* Row 1: Top 1 (Center) */}
           <div className="flex justify-center w-full">
             <ChromaImage
               src="/1787994771034~2.jpg"
@@ -238,47 +236,67 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
       {/* 3. SPACE (5vh) */}
       <div style={{ height: '5vh' }} className="w-full shrink-0 relative z-10" />
 
-      {/* 4. TUMHARI IMAGE THEEK SPACE KE BAAD (Edge to Edge with Corners) */}
+      {/* 4. TUMHARI IMAGE THEEK SPACE KE BAAD (Edge to Edge with Corners) YAHI HAT GAYI THI */}
       <div className="relative w-full z-20 flex h-[35px] sm:h-[45px] shrink-0 mt-2">
         {/* Main Center Image Edge to Edge */}
         <img
-          src="/public/IMG_20260904_125516.png"
+          src="/IMG_20260904_125516.png"
           alt="Frame Border"
           className="absolute inset-0 w-full h-full object-fill"
         />
         {/* Left Corner */}
         <img
-          src="/public/IMG_20260904_125547.png"
+          src="/IMG_20260904_125547.png"
           alt="Left Corner"
           className="absolute left-0 top-0 h-full w-auto object-contain"
         />
         {/* Right Corner (Flipped to face inwards) */}
         <img
-          src="/public/IMG_20260904_125547.png"
+          src="/IMG_20260904_125547.png"
           alt="Right Corner"
           className="absolute right-0 top-0 h-full w-auto object-contain scale-x-[-1]"
         />
       </div>
 
-      {/* 5. SCROLLABLE SECTION: RANK 4 TO 50 CARDS (Edge-to-Edge Full Width) */}
-      <div className="relative z-10 w-full pb-16 pt-2 flex flex-col items-center bg-[#1A0204]">
+      {/* 5. SCROLLABLE SECTION: RANK 4 TO 50 CARDS (Padding added for bottom fixed card) */}
+      <div className="relative z-10 w-full flex-grow overflow-y-auto overflow-x-hidden pt-2 pb-[100px]">
         <div className="w-full flex flex-col gap-1.5 items-center">
           {rankCards.map((rank) => (
             <div
               key={rank}
-              className="relative w-full flex items-center justify-center overflow-hidden shrink-0"
+              className="relative w-full flex items-center justify-center overflow-hidden shrink-0 h-[80px]"
             >
               <ChromaImage
                 src="/1787992320047~2.jpg"
                 alt={`Rank ${rank}`}
                 className="w-full h-auto object-cover"
               />
+              <span className="absolute left-10 text-white font-bold text-lg">{rank}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 6. FIXED BOTTOM USER CARD (Same as image UI at the exact bottom) */}
+      <div className="fixed bottom-0 left-0 w-full h-[90px] px-0 py-0 z-50 pointer-events-auto">
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+          {/* Card background / Frame */}
+          <ChromaImage
+            src="/1787992320047~2.jpg" 
+            alt="My Rank Frame"
+            className="w-full h-full object-cover"
+          />
+          {/* Dark Overlay inside card */}
+          <div className="absolute inset-0 bg-[#0F0102]/60 z-1" />
+
+          {/* User Details */}
+          <div className="absolute inset-0 flex items-center justify-start px-6 z-10 gap-4">
+             <span className="text-[#D4AF37] font-bold text-xl drop-shadow-md">100+</span>
+             <div className="w-12 h-12 rounded-full border-2 border-[#D4AF37] bg-black/60 shadow-[0_0_5px_rgba(212,175,55,0.6)]" /> 
+          </div>
         </div>
       </div>
 
     </div>
   )
 }
-
