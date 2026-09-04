@@ -14,6 +14,7 @@ import InviteFriends from './InviteFriends'
 import Family from './Family'
 import Level from './Level'
 import Medal from './Medal'
+import SellerCenter from './sellercenter' // <--- Small letters me import
 import { saveFeedback, getUsers } from '../src/lib/googleSheet'
 
 // ============ IndexedDB Functions for User Data ============
@@ -107,7 +108,7 @@ const saveFeedbackToDB = async (feedbackData: any) => {
 
 interface MenuItem {
   id: string
-  labelKey: keyof typeof translations['en']
+  labelKey: keyof typeof translations['en'] | string
   src?: string
   icon?: React.ReactNode
   action?: string
@@ -125,7 +126,8 @@ const menuItems: MenuItem[] = [
   { id: '3', labelKey: 'level', src: '/IMG_20260720_211413.png' },
   { id: '4', labelKey: 'medal', src: '/1784621763019.png' },
   { id: '5', labelKey: 'store', src: '/IMG_20260720_142332.png' },
-  { id: '6', labelKey: 'bag', src: '/IMG_20260720_142227.png' }
+  { id: '6', labelKey: 'bag', src: '/IMG_20260720_142227.png' },
+  { id: '11', labelKey: 'Seller Center', src: '/1786855398290.png' }
 ]
 
 const bottomMenuItems: MenuItem[] = [
@@ -373,6 +375,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [showFamily, setShowFamily] = useState(false)
   const [showLevel, setShowLevel] = useState(false)
   const [showMedal, setShowMedal] = useState(false)
+  const [showSellerCenter, setShowSellerCenter] = useState(false)
 
   useEffect(() => {
     if (onPublicProfileChange) {
@@ -384,10 +387,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         showInviteFriends ||
         showFamily ||
         showLevel ||
-        showMedal
+        showMedal ||
+        showSellerCenter
       )
     }
-  }, [showFeedbackPage, currentView, showWallet, showStore, showInviteFriends, showFamily, showLevel, showMedal])
+  }, [showFeedbackPage, currentView, showWallet, showStore, showInviteFriends, showFamily, showLevel, showMedal, showSellerCenter])
   
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
@@ -414,7 +418,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const t = getTranslation(appLang)
 
-  // Aggressive Local Storage & State Lock
   const [user, setUser] = useState(() => {
     if (typeof window === 'undefined') {
       return { name: "", uid: "", accountNumber: "", displayAccountNumber: "", phone: "", photo: "" }
@@ -436,7 +439,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     }
   })
 
-  // Poll localStorage continuously to instantly reflect edits made in PublicProfile/Edit Sheet
   useEffect(() => {
     const syncLocalInterval = setInterval(() => {
       const currentStoredName = localStorage.getItem("userName") || "";
@@ -468,7 +470,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         showInviteFriends || 
         showFamily || 
         showLevel || 
-        showMedal
+        showMedal ||
+        showSellerCenter
       )
     }
   }
@@ -503,10 +506,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     try {
-      // Google Sheets API mein save karo
       await saveFeedback(feedbackData);
-      
-      // IndexedDB mein bhi save karo (backup)
       await saveFeedbackToDB(feedbackData);
       
       setFeedbackSuccess(true);
@@ -521,8 +521,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     } catch (error) {
       console.error("Error submitting feedback to Google Sheets:", error);
-      
-      // Agar API fail ho jaye to IndexedDB mein save karo (offline mode)
       try {
         await saveFeedbackToDB(feedbackData);
         setFeedbackSuccess(true);
@@ -615,7 +613,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
     };
 
     fetchUserData();
-  }, []); // Only run once when component mounts
+  }, []);
 
   const handleCopyAccountNumber = () => {
     if (user.displayAccountNumber) {
@@ -633,11 +631,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   if (showMedal) return <Medal onBack={() => setShowMedal(false)} />
   if (showWallet) return <Wallet onBack={() => setShowWallet(false)} initialTab={walletTab} />
   if (showStore) return <StorePage onBack={() => setShowStore(false)} initialView={storeInitialView} />
+  if (showSellerCenter) return <SellerCenter onBack={() => setShowSellerCenter(false)} />
 
   if (showFeedbackPage) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col pb-[8vh]">
-        {/* Changed 1: Removed border-b border-gray-200 */}
         <div
           className="flex items-center p-4 bg-white safe-top"
           style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px), 16px) + 12px)' }}
@@ -676,14 +674,12 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                         key={type.id}
                         type="button"
                         onClick={() => setSelectedType(type.id)}
-                        /* Changed 3: rounded-2xl to rounded-md */
                         className={`p-4 rounded-md border-2 transition-all cursor-pointer ${
                           selectedType === type.id
                             ? 'border-blue-500 bg-blue-50 shadow-md'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
-                        {/* Changed 2: Removed Icon completely from here */}
                         <div className={`text-sm font-medium ${
                           selectedType === type.id ? 'text-blue-700' : 'text-gray-700'
                         }`}>
@@ -707,7 +703,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                       placeholder="Describe your issue or suggestion..."
                       maxLength={400}
                       rows={5}
-                      /* Changed 5: rounded-xl to rounded-md */
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-md focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white resize-none"
                     />
                     <div className="absolute bottom-3 right-3 text-xs text-gray-400">
@@ -723,7 +718,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     value={contactInfo}
                     onChange={(e) => setContactInfo(e.target.value)}
                     placeholder="Enter your email, Gmail or App ID"
-                    /* Changed 4: rounded-2xl to rounded-md */
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-md focus:outline-none focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-400 bg-white"
                   />
                 </div>
@@ -734,7 +728,6 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   </div>
                 )}
 
-                {/* Changed 6 & 7: Width w-2/3 mx-auto block, rounded-full, text to 'Submit' */}
                 <button
                   type="submit"
                   disabled={feedbackSubmitting}
@@ -933,18 +926,25 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                     setStoreInitialView('bag');
                     setShowStore(true);
                   }
+                  else if (item.id === '11') {
+                    setShowSellerCenter(true);
+                  }
                 }}
               >
                 <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <img
                     src={item.src}
-                    alt={t[item.labelKey]}
+                    alt={typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] ? t[item.labelKey as keyof typeof translations['en']] : String(item.labelKey)}
                     className="w-full h-full object-cover"
                   />
                 </div>
 
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{t[item.labelKey]}</p>
+                  <p className="font-semibold text-gray-900">
+                    {typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] 
+                      ? t[item.labelKey as keyof typeof translations['en']] 
+                      : String(item.labelKey)}
+                  </p>
                 </div>
                 {item.action && (
                   <span className="text-sm font-medium text-gray-500">{item.action}</span>
@@ -982,7 +982,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 </div>
 
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{t[item.labelKey]}</p>
+                  <p className="font-semibold text-gray-900">
+                    {typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] 
+                      ? t[item.labelKey as keyof typeof translations['en']] 
+                      : String(item.labelKey)}
+                  </p>
                 </div>
                 {item.action && (
                   <span className="text-sm font-medium text-gray-500">{item.action}</span>
