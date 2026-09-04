@@ -158,17 +158,21 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
     }
   ];
 
-  // 1. RECORD VIEW (Refers to 1000187477.jpg details UI)
+  // 1. RECORD VIEW (Details UI)
   if (currentView === 'record') {
     return (
       <div className="w-full min-h-screen bg-white font-sans text-gray-800 flex flex-col">
         {/* Header */}
-        <div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
-          <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
-            <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
+<div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
+  <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
+    {/* YAHAN NAYA SVG DAAL */}
+    <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+  </button>
+ 
+
           <h1 className="text-[17px] font-bold text-gray-800 tracking-wide flex-1 text-center pr-6">
             Details
           </h1>
@@ -230,17 +234,20 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
     );
   }
 
-  // 2. SELLER CENTER VIEW (Refers to 1000187457.jpg main UI)
+  // 2. SELLER CENTER VIEW (Main UI)
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-gray-50 font-sans text-gray-800 flex flex-col">
       
-      {/* Header */}
-      <div className="flex items-center px-4 py-3 sticky top-0 z-50">
-        <button onClick={onBack} className="p-1 cursor-pointer">
-          <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
+     {/* Header */}
+<div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
+  <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
+    {/* YAHAN NAYA SVG DAAL */}
+    <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2.5] stroke-linecap-round stroke-linejoin-round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+  </button>
+ 
         <h1 className="text-[17px] font-bold tracking-wide flex-1 text-center pr-6">Coin Seller Center</h1>
       </div>
 
@@ -271,7 +278,8 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
             <div className="flex items-center text-gray-800 text-[14px] font-medium">
               +91 9837152239
               <svg viewBox="0 0 24 24" className="w-4 h-4 ml-1 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <polyline points="9 18 15 12 9 6"></polyline>
+                {/* Right chevron for navigation */}
+                <path d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>
@@ -279,16 +287,11 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
           <div className="flex items-center justify-between py-1.5 mt-1">
             <span className="text-[14px] text-gray-800 font-medium">Payment Method</span>
             <div className="flex items-center text-gray-800 text-[14px] font-medium">
-              {/* Fake Indian Flag icon representation */}
-              <div className="w-5 h-3.5 bg-gray-200 flex flex-col mr-1 rounded-[1px] overflow-hidden">
-                <div className="h-1/3 bg-orange-500"></div>
-                <div className="h-1/3 bg-white flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full border border-blue-800"></div>
-                </div>
-                <div className="h-1/3 bg-green-600"></div>
-              </div>
+              {/* Added Real Emoji Flag Here */}
+              <span className="mr-1 text-[18px] leading-none">🇮🇳</span>
               <svg viewBox="0 0 24 24" className="w-4 h-4 ml-1 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <polyline points="9 18 15 12 9 6"></polyline>
+                {/* Right chevron for navigation */}
+                <path d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>
@@ -326,8 +329,6 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
               <span className="text-[14px] font-bold text-gray-800">2,167</span>
             </div>
           </div>
-
-          {/* Security Deposit ommitted as requested */}
 
           <div className="flex items-center space-x-6 mb-6">
             <span className="text-[13px] text-gray-800 font-bold">Sales method:</span>
