@@ -270,5 +270,5 @@ export default function Leaderboard({ onBack }: LeaderboardProps) {
            {/* Yahan se 100+ aur circle hata diya gaya hai bss khali space hai ab */}
         </div>
       </div>
-);
-      }
+)
+ }
