@@ -6,108 +6,6 @@ interface RoomtaskProps {
   onBack?: () => void;
 }
 
-// Custom Hook jo WebGL Shader se image ka white background strictly remove karta hai
-function useProcessedShaderImage(src: string) {
-  const [processedSrc, setProcessedSrc] = useState<string>(src);
-
-  useEffect(() => {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false });
-    if (!gl) return;
-
-    const vsSource = `
-      attribute vec2 a_position;
-      attribute vec2 a_texCoord;
-      varying vec2 v_texCoord;
-      void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
-        v_texCoord = a_texCoord;
-      }
-    `;
-
-    const fsSource = `
-      precision mediump float;
-      varying vec2 v_texCoord;
-      uniform sampler2D u_image;
-      void main() {
-        vec4 color = texture2D(u_image, v_texCoord);
-        if (color.r > 0.9 && color.g > 0.9 && color.b > 0.9) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-        } else {
-          gl_FragColor = color;
-        }
-      }
-    `;
-
-    const createShader = (gl: WebGLRenderingContext, type: number, source: string) => {
-      const shader = gl.createShader(type);
-      if (!shader) return null;
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      return shader;
-    };
-
-    const vertShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
-    const fragShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
-    if (!vertShader || !fragShader) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertShader);
-    gl.attachShader(program, fragShader);
-    gl.linkProgram(program);
-    gl.useProgram(program);
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      -1, -1,  1, -1, -1,  1,
-      -1,  1,  1, -1,  1,  1,
-    ]), gl.STATIC_DRAW);
-
-    const posAttrLocation = gl.getAttribLocation(program, 'a_position');
-    gl.enableVertexAttribArray(posAttrLocation);
-    gl.vertexAttribPointer(posAttrLocation, 2, gl.FLOAT, false, 0, 0);
-
-    const texCoordBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      0, 1,  1, 1,  0, 0,
-      0, 0,  1, 1,  1, 0,
-    ]), gl.STATIC_DRAW);
-
-    const texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
-    gl.enableVertexAttribArray(texCoordLocation);
-    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.src = src;
-    image.onload = () => {
-      canvas.width = image.width;
-      canvas.height = image.height;
-      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-      const texture = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-      const dataUrl = canvas.toDataURL('image/png');
-      setProcessedSrc(dataUrl);
-    };
-  }, [src]);
-
-  return processedSrc;
-}
-
 // Helper component for task items
 function TaskItem({ 
   title, 
@@ -119,23 +17,34 @@ function TaskItem({
   iconSrc: string;
 }) {
   
-  // Title ke basis par Left Icon Decide karna
+  // Title ke basis par Left Icon aur uska PARTICULAR SIZE Decide karna
   const lowerTitle = title.toLowerCase();
-  let leftIconSrc = iconSrc; // Default cleaned coin icon
+  
+  let leftIconSrc = iconSrc; // Default coin icon
+  let iconSize = "w-14 h-14"; // DEFAULT COIN ka size (Yaha change karein)
 
   if (lowerTitle.includes('mic')) {
     leftIconSrc = '/file_00000000f8d88211ba5ff45c06383e5f.png';
+    iconSize = "w-20 h-20"; // MIC icon ka size (Yaha change karein)
+    
   } else if (lowerTitle.includes('share')) {
     leftIconSrc = '/file_0000000019a0821193463686d6fc9184.png';
+    iconSize = "w-20 h-20"; // SHARE icon ka size (Yaha change karein)
+    
   } else if (lowerTitle.includes('gift')) {
     leftIconSrc = '/file_0000000081f48211afe58f6348196b55.png';
-  } else if (lowerTitle.includes('user')) {
+    iconSize = "w-20 h-20"; // GIFT icon ka size (Yaha px me bhi de sakte hain)
+    
+  } else if (lowerTitle.includes('user') || lowerTitle.includes('follower')) {
     leftIconSrc = '/file_00000000858082118b5c81b85cd6d2a8.png';
+    iconSize = "w-25 h-25"; // USER/FOLLOWER icon ka size
   }
 
+  // Remove "Coins" text from reward
+  const rewardValue = reward.replace(/coins/gi, '').trim();
+
   return (
-    // Height aur width increase ki gayi hai (h-[155px], max-w-[350px])
-    <div className="relative z-20 w-[100%] max-w-[350px] h-[155px] flex items-center">
+    <div className="relative z-20 w-[100%] max-w-[380px] h-[175px] flex items-center">
       <img 
         src="/file_000000004fd0821198ed4e26d5008b16.png"
         alt="Task Background"
@@ -147,36 +56,37 @@ function TaskItem({
         
         {/* Left Side: Dynamic Icon and Title */}
         <div className="flex items-center space-x-3 pr-2 flex-1">
+          {/* Yaha class me iconSize variable pass kar diya hai */}
           <img 
             src={leftIconSrc} 
             alt="Task Icon" 
-            className="w-10 h-10 object-contain flex-shrink-0 drop-shadow-md select-none"
+            className={`${iconSize} object-contain flex-shrink-0 drop-shadow-md select-none`}
+            style={leftIconSrc === iconSrc ? { filter: 'url(#remove-white-bg)' } : {}}
             draggable={false}
           />
           <div className="flex flex-col justify-center">
-            <span className="text-[14px] font-bold text-white leading-tight drop-shadow-md line-clamp-3">
+            <span className="text-[15px] sm:text-[16px] font-bold text-white leading-tight drop-shadow-md line-clamp-3">
               {title}
             </span>
           </div>
         </div>
 
-        {/* Right Side: Cleaned Coin + Value aur naya image Button */}
+        {/* Right Side: Coin + Value aur chota button */}
         <div className="flex-shrink-0 pointer-events-auto flex flex-col items-center justify-center space-y-1.5 pl-2">
           
-          {/* Coin Icon without white bg aur uski value */}
           <div className="flex items-center space-x-1">
             <img 
               src={iconSrc} 
               alt="Coins" 
-              className="w-5 h-5 object-contain flex-shrink-0 drop-shadow-md select-none"
+              className="w-6 h-6 object-contain flex-shrink-0 drop-shadow-md select-none"
+              style={{ filter: 'url(#remove-white-bg)' }}
               draggable={false}
             />
-            <span className="text-[13px] font-extrabold text-[#ffd700] drop-shadow-md whitespace-nowrap">
-              {reward}
+            <span className="text-[15px] font-extrabold text-[#ffd700] drop-shadow-md whitespace-nowrap">
+              {rewardValue}
             </span>
           </div>
 
-          {/* Image Button */}
           <button 
             onClick={() => {}}
             className="transition-transform hover:scale-105 active:scale-95 cursor-pointer outline-none"
@@ -184,7 +94,7 @@ function TaskItem({
             <img 
               src="/file_00000000196c8208b7ea093e8d7f56c8.png"
               alt="Claim Action"
-              className="w-[85px] h-auto object-contain select-none"
+              className="w-[65px] h-auto object-contain select-none"
               draggable={false}
             />
           </button>
@@ -196,8 +106,7 @@ function TaskItem({
 }
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
-  const cleanedIconSrc = useProcessedShaderImage('/1786855398290.png');
-  const cleanedTopLeftIconSrc = useProcessedShaderImage('/1786855398290.png');
+  const iconSrc = '/1786855398290.png';
 
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
@@ -227,41 +136,56 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   }, []);
 
   const tasks = [
-    { title: "10 Users Enter the Room", reward: "10,000 Coins" },
-    { title: "5 Users Enter the Room for Two Consecutive Days", reward: "20,000 Coins" },
-    { title: "Successfully Share on WhatsApp", reward: "5,000 Coins" }, 
-    { title: "Successfully Share on Facebook", reward: "5,000 Coins" },
-    { title: "3 New Users Enter the Room", reward: "10,000 Coins" },
-    { title: "1 New Follower of the Room", reward: "2,000 Coins" },
-    { title: "3 New Users Follow the Room", reward: "10,000 Coins" },
-    { title: "Spend 10 Minutes on Mic", reward: "5,000 Coins" },
-    { title: "Spend 30 Minutes on Mic", reward: "25,000 Coins" },
-    { title: "Spend 60 Minutes on Mic", reward: "50,000 Coins" },
-    { title: "10 New Users on Mic for 10 Minutes at the Same Time", reward: "50,000 Coins" }, 
-    { title: "5 New Followers of the Room", reward: "25,000 Coins" },
-    { title: "3 Users on Mic at the Same Time", reward: "10,000 Coins" },
-    { title: "Send a Gift of 500", reward: "2,000 Coins" },
-    { title: "Send Gifts of 5,000", reward: "10,000 Coins" },
-    { title: "Successfully Invite 1 User on Mic", reward: "500 Coins" },
-    { title: "Successfully Invite 3 New Users on Mic", reward: "10,000 Coins" },
-    { title: "Send 10 Gifts on Mic", reward: "20,000 Coins" },
-    { title: "New User Sends a Gift of 1,000 on Mic", reward: "5,000 Coins" },
-    { title: "Successfully Invite 10 People to the Mic", reward: "25,000 Coins" },
-    { title: "3 Users on Mic at the Same Time for 10 Minutes", reward: "10,000 Coins" },
-    { title: "Send 1 Gift", reward: " 1,000 Coins" },
+    { title: "10 Users Enter the Room", reward: "10,000" },
+    { title: "5 Users Enter the Room for Two Consecutive Days", reward: "20,000" },
+    { title: "Successfully Share on WhatsApp", reward: "5,000" }, 
+    { title: "Successfully Share on Facebook", reward: "5,000" },
+    { title: "3 New Users Enter the Room", reward: "10,000" },
+    { title: "1 New Follower of the Room", reward: "2,000" },
+    { title: "3 New Users Follow the Room", reward: "10,000" },
+    { title: "Spend 10 Minutes on Mic", reward: "5,000" },
+    { title: "Spend 30 Minutes on Mic", reward: "25,000" },
+    { title: "Spend 60 Minutes on Mic", reward: "50,000" },
+    { title: "10 New Users on Mic for 10 Minutes at the Same Time", reward: "50,000" }, 
+    { title: "5 New Followers of the Room", reward: "25,000" },
+    { title: "3 Users on Mic at the Same Time", reward: "10,000" },
+    { title: "Send a Gift of 500", reward: "2,000" },
+    { title: "Send Gifts of 5,000", reward: "10,000" },
+    { title: "Successfully Invite 1 User on Mic", reward: "500" },
+    { title: "Successfully Invite 3 New Users on Mic", reward: "10,000" },
+    { title: "Send 10 Gifts on Mic", reward: "20,000" },
+    { title: "New User Sends a Gift of 1,000 on Mic", reward: "5,000" },
+    { title: "Successfully Invite 10 People to the Mic", reward: "25,000" },
+    { title: "3 Users on Mic at the Same Time for 10 Minutes", reward: "10,000" },
+    { title: "Send 1 Gift", reward: " 1,000" },
   ];
 
   return (
     <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#380308] scrollbar-none select-none m-0 p-0">
+      
+      {/* NATIVE WEB SHADER (NO CANVAS) */}
+      <svg width="0" height="0" className="absolute pointer-events-none">
+        <defs>
+          <filter id="remove-white-bg" colorInterpolationFilters="sRGB">
+            <feColorMatrix 
+              type="matrix" 
+              values="
+                1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                -3.333 -3.333 -3.333 1 9" 
+            />
+          </filter>
+        </defs>
+      </svg>
+
       <div className="relative w-full min-h-full flex flex-col m-0 p-0">
         
-        {/* ANDROID STATUS BAR SAFE AREA FILLER */}
         <div 
           className="fixed top-0 left-0 w-full z-50 pointer-events-none"
           style={{ height: 'env(safe-area-inset-top, 0px)' }}
         />
 
-         {/* TOP BACKGROUND */}
         <div 
           className="absolute top-0 left-0 w-full h-[60vh] z-2 pointer-events-none bg-cover bg-top overflow-hidden"
           style={{
@@ -278,12 +202,10 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           />
         </div>
 
-        {/* BOTTOM BACKGROUND: Solid Dark Maroon */}
         <div 
           className="absolute top-[50vh] left-0 w-full h-[260vh] z-0 pointer-events-none bg-[#380308]"
         />
 
-        {/* BACK ICON */}
         <button 
           onClick={onBack} 
           className="fixed z-50 p-1 flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
@@ -299,14 +221,11 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           </svg>
         </button>
 
-        {/* FOREGROUND CONTENT */}
         <div className="relative z-10 w-full flex flex-col items-center">
           
           <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
-          {/* Middle Decoration Image */}
           <div className="w-full flex justify-center px-4 flex-col items-center">
-            {/* Yaha Width (max-w-[450px]) badha di gayi hai image ko bada karne ke liye */}
             <div className="relative w-[95%] max-w-[450px] flex items-center justify-center mt-2">
               <img 
                 src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
@@ -315,27 +234,25 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 draggable={false}
               />
               
-              {/* Left Side: Cleaned Coin Icon */}
               <div 
                 className="absolute top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none"
                 style={{ left: '8%' }} 
               >
                 <img 
-                  src={cleanedTopLeftIconSrc}
+                  src={iconSrc}
                   alt="Cleaned Coin Icon" 
                   className="w-7 h-7 object-contain drop-shadow-md select-none"
+                  style={{ filter: 'url(#remove-white-bg)' }}
                   draggable={false}
                 />
               </div>
 
-              {/* Center Middle: "0" */}
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none pr-4">
                 <span className="text-2xl font-extrabold text-[#ffd700] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                   0
                 </span>
               </div>
 
-              {/* NEW: Right Side Corner 3D Yellow Claim Button */}
               <div 
                 className="absolute top-1/2 -translate-y-1/2 z-20"
                 style={{ right: '5%' }} 
@@ -344,17 +261,15 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                   onClick={() => {}}
                   className="px-4 py-1.5 rounded-full font-black text-[12px] text-[#5a2c00] bg-gradient-to-b from-[#ffe853] via-[#ffc107] to-[#e09b00] shadow-[0_4px_0_#9c6500,0_6px_8px_rgba(0,0,0,0.4)] active:translate-y-[2px] active:shadow-[0_2px_0_#9c6500,0_4px_6px_rgba(0,0,0,0.4)] transition-all cursor-pointer uppercase tracking-wider"
                 >
-                  Receive
+                  Claim
                 </button>
               </div>
 
             </div>
           </div>
 
-          {/* FRAME SECTION */}
           <div className="relative w-full flex flex-col items-center mt-3">
             
-            {/* 1. TOP FRAME IMAGE */}
             <div className="relative w-full flex-shrink-0 z-30 flex justify-center items-center overflow-hidden">
               <img 
                 src="/file_00000000680881faa3dfdb17cce60858.png"
@@ -364,7 +279,6 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 draggable={false}
               />
 
-              {/* Room Task Heading */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <h1 className="text-white text-base sm:text-lg font-black tracking-wider uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] -mt-4 sm:-mt-6">
                   Room Task
@@ -372,33 +286,27 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
               </div>
             </div>
 
-            {/* LIVE DAILY COUNTDOWN UI */}
             <div className="flex items-center justify-center gap-1 -mt-5 z-40 select-none">
               <span className="text-[#f5b8b8] text-[11px] font-medium">Countdown</span>
 
-              {/* Hour */}
               <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#8f1a1a] to-[#470a0a] flex items-center justify-center shadow-inner">
                 <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.hours}</span>
               </div>
               <span className="text-[#f5b8b8] text-[11px] font-medium">Hour</span>
 
-              {/* Minute */}
               <div className="min-w-[20px] px-1 h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#8f1a1a] to-[#470a0a] flex items-center justify-center shadow-inner">
                 <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.minutes}</span>
               </div>
               <span className="text-[#f5b8b8] text-[11px] font-medium">Minute</span>
 
-              {/* Second */}
               <div className="w-[20px] h-[20px] rounded-[4px] border border-[#d85858] bg-gradient-to-b from-[#8f1a1a] to-[#470a0a] flex items-center justify-center shadow-inner">
                 <span className="text-[#ffe0e0] text-[11px] font-bold">{timeLeft.seconds}</span>
               </div>
               <span className="text-[#f5b8b8] text-[11px] font-medium">Second</span>
             </div>
 
-            {/* 2. MIDDLE SECTION */}
             <div className="relative w-full flex flex-col items-center mt-1 -mb-3">
               
-              {/* Left Screen Border */}
               <div 
                 className="absolute -top-14 bottom-0 w-12 sm:w-16 z-10 pointer-events-none"
                 style={{
@@ -410,7 +318,6 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 }}
               />
 
-              {/* Right Screen Border */}
               <div 
                 className="absolute -top-14 bottom-0 w-12 sm:w-16 z-10 pointer-events-none"
                 style={{
@@ -422,20 +329,18 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 }}
               />
 
-              {/* 22 Task Cards Container */}
-              <div className="w-full max-w-[360px] flex flex-col items-center -space-y-[50px] px-6 z-20 -mt-2">
+              <div className="w-full max-w-[390px] flex flex-col items-center -space-y-[60px] px-6 z-20 -mt-2">
                 {tasks.map((task, index) => (
                   <TaskItem 
                     key={index}
                     title={task.title}
                     reward={task.reward}
-                    iconSrc={cleanedIconSrc}
+                    iconSrc={iconSrc}
                   />
                 ))}
               </div>
             </div>
 
-            {/* 3. BOTTOM FRAME IMAGE */}
             <div className="w-full flex-shrink-0 z-30 pointer-events-none overflow-hidden -mt-12">
               <img 
                 src="/file_0000000066c88211aa777b1f6da8683f.png"
@@ -454,4 +359,3 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   );
 }
-
