@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'interface';
+import React, { useEffect, useState } from 'react';
 
 interface SellerCenterProps {
   onBack?: () => void;
