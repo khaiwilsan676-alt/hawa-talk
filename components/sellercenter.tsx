@@ -109,13 +109,16 @@ function useProcessedShaderImage(src: string) {
 }
 
 export default function SellerCenter({ onBack }: SellerCenterProps) {
-  // State to toggle between 'seller' and 'record' pages inside the same file
+  // State to toggle between 'seller' and 'record' (Details) pages
   const [currentView, setCurrentView] = useState<'seller' | 'record'>('seller');
+  
+  // State for Sales Method selection (User or Seller)
+  const [salesMethod, setSalesMethod] = useState<'user' | 'seller'>('user');
 
-  // WebGL Shader se white background hataya hua coin image
+  // WebGL Shader se white background hataya hua coin image (Logic ekdam same)
   const cleanedCoinIcon = useProcessedShaderImage('/1786855398290.png');
 
-  // Dummy transactions for Record View
+  // Dummy transactions logic unchanged
   const transactions = [
     {
       id: 1,
@@ -123,7 +126,8 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
       nameColor: "text-yellow-500",
       date: "09/04/2026 19:16",
       amount: "-6,450,000",
-      balance: "2,204,251,179"
+      balance: "2,204,251,179",
+      userId: "116943047"
     },
     {
       id: 2,
@@ -131,7 +135,8 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
       nameColor: "text-green-500",
       date: "09/04/2026 19:10",
       amount: "-2,150,000",
-      balance: "2,210,701,179"
+      balance: "2,210,701,179",
+      userId: "116943047"
     },
     {
       id: 3,
@@ -139,7 +144,8 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
       nameColor: "text-yellow-400",
       date: "09/04/2026 19:06",
       amount: "-2,150,000",
-      balance: "2,212,851,179"
+      balance: "2,212,851,179",
+      userId: "116943047"
     },
     {
       id: 4,
@@ -147,346 +153,242 @@ export default function SellerCenter({ onBack }: SellerCenterProps) {
       nameColor: "text-yellow-500",
       date: "09/04/2026 18:52",
       amount: "-2,150,000",
-      balance: "2,215,001,179"
+      balance: "2,215,001,179",
+      userId: "116943047"
     }
   ];
 
-  // 1. RECORD VIEW
+  // 1. RECORD VIEW (Refers to 1000187477.jpg details UI)
   if (currentView === 'record') {
     return (
       <div className="w-full min-h-screen bg-white font-sans text-gray-800 flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 bg-white sticky top-0 z-50">
+        {/* Header */}
+        <div className="flex items-center px-4 py-3 bg-white sticky top-0 z-50">
           <button onClick={() => setCurrentView('seller')} className="p-1 cursor-pointer">
-            {/* Left Arrow Icon */}
             <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
           </button>
-          <h1 className="text-[17px] font-medium text-gray-800 tracking-wide flex-1 text-center pr-6">
-            Record
+          <h1 className="text-[17px] font-bold text-gray-800 tracking-wide flex-1 text-center pr-6">
+            Details
           </h1>
         </div>
 
-        <div className="flex flex-col pb-8">
-          <div className="flex items-center justify-between px-4 py-2 space-x-2">
-            <div className="flex-1 flex items-center justify-between border border-gray-500 rounded-md px-3 py-2 bg-white">
-              <span className="text-[13px] text-gray-800">09/04/2026</span>
-              <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-gray-600 fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-            </div>
-            
-            <span className="text-gray-400 font-medium">-</span>
-            
-            <div className="flex-1 flex items-center justify-between border border-gray-500 rounded-md px-3 py-2 bg-white">
-              <span className="text-[13px] text-gray-800">09/04/2026</span>
-              <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-gray-600 fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-            </div>
+        {/* Search Bar */}
+        <div className="px-4 py-2">
+          <div className="relative flex items-center">
+            <input 
+              type="text" 
+              placeholder="Please input the user id"
+              className="w-full bg-[#f2f2f2] rounded-full px-5 py-2.5 text-sm outline-none text-gray-800 placeholder-gray-500"
+            />
+            <svg viewBox="0 0 24 24" className="w-5 h-5 absolute right-4 stroke-gray-500 fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
           </div>
+        </div>
 
-          <div className="px-4 mt-4">
-            <h2 className="text-[15px] font-bold text-gray-800 mb-3">summary</h2>
-            <div className="grid grid-cols-2 gap-y-5 gap-x-2">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-11 h-11 rounded-xl bg-yellow-50 flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-yellow-400 fill-none stroke-[2]">
-                    <circle cx="12" cy="12" r="9"></circle>
-                    <path d="M12 7v10M10 9h4M10 15h4"></path>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-400 leading-tight">total sold coins</span>
-                  <span className="text-[14px] font-bold text-gray-800">6,709,065,000</span>
-                </div>
-              </div>
+        {/* Filter Area */}
+        <div className="px-4 py-3 flex items-center">
+          <span className="text-[15px] font-bold text-gray-800">Order Type</span>
+          <span className="text-[15px] font-bold text-gray-800 ml-2 cursor-pointer flex items-center">
+            All
+            <svg viewBox="0 0 24 24" className="w-4 h-4 ml-0.5 fill-black">
+              <path d="M7 10l5 5 5-5z"></path>
+            </svg>
+          </span>
+        </div>
 
-              <div className="flex items-center space-x-2.5">
-                <div className="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-indigo-400 fill-none stroke-[2]">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <path d="M20 8v6M17 11h6"></path>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-400 leading-tight">total sold times</span>
-                  <span className="text-[14px] font-bold text-gray-800">615</span>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2.5">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 stroke-blue-400 fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                    <circle cx="9" cy="21" r="1"></circle>
-                    <circle cx="20" cy="21" r="1"></circle>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-400 leading-tight">total purchased coins</span>
-                  <span className="text-[14px] font-bold text-gray-800">7,505,000,000</span>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2.5">
-                <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-green-400 fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-400 leading-tight">team members</span>
-                  <span className="text-[14px] font-bold text-gray-800">1</span>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2.5">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-blue-500 fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-400 leading-tight">my sold coins</span>
-                  <span className="text-[14px] font-bold text-gray-800">6,673,315,000</span>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2.5">
-                <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-orange-400 fill-none stroke-[2]">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <rect x="16" y="8" width="6" height="4" rx="1"></rect>
-                    <path d="M22 10l2-1.5v5L22 12"></path>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-400 leading-tight">member sold coins</span>
-                  <span className="text-[14px] font-bold text-gray-800">35,750,000</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full h-px bg-gray-100 my-6"></div>
-
-          <div className="px-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-bold text-gray-800">coin details</h2>
-              <div className="relative border border-gray-400 rounded-md px-2 py-1 bg-white flex items-center cursor-pointer">
-                <span className="text-[12px] text-gray-700 pr-2">transfer out</span>
-                <svg viewBox="0 0 24 24" className="w-3 h-3 stroke-black fill-none stroke-[2]">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-[12px] font-semibold text-gray-400 flex-1">action</span>
-              <span className="text-[12px] font-semibold text-gray-400 flex-1 text-center pl-2">int</span>
-              <span className="text-[12px] font-semibold text-gray-400 flex-1 text-right">detail</span>
-            </div>
-
-            <div className="flex flex-col space-y-5">
-              {transactions.map((tx) => (
-                <div key={tx.id} className="flex justify-between items-start border-b border-gray-50 pb-4">
-                  <div className="flex flex-col flex-1">
-                    <span className="text-[13px] font-bold text-gray-800 mb-0.5">transfer to:</span>
-                    <span className={`text-[14px] font-extrabold ${tx.nameColor} drop-shadow-sm`}>{tx.transferTo}</span>
-                    <span className="text-[10px] text-gray-400 mt-0.5">{tx.date}</span>
-                  </div>
-
-                  <div className="flex flex-col items-center flex-1 pt-1">
-                    <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center mb-1">
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-purple-500">
-                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.64-2.25 1.64-1.74 0-2.1-.96-2.17-1.92H8.01c.06 1.81 1.25 3.1 2.89 3.49V20h2.34v-1.7c1.47-.31 2.72-1.36 2.72-2.86 0-1.81-1.33-2.71-3.65-3.3z"/>
-                      </svg>
-                    </div>
-                    <span className="text-[10px] text-gray-500 font-medium whitespace-nowrap">user purchase</span>
-                  </div>
-
-                  <div className="flex flex-col flex-1 items-end pt-1">
-                    <span className="text-[14.5px] font-bold text-[#1ca3ff] mb-0.5">{tx.amount}</span>
-                    <span className="text-[10px] text-gray-600">account balance</span>
-                    <span className="text-[11px] text-gray-800 font-medium mt-0.5">{tx.balance}</span>
+        {/* Transaction List */}
+        <div className="flex flex-col px-4 pb-8">
+          {transactions.map((tx) => (
+            <div key={tx.id} className="flex justify-between items-start border-b border-gray-100 py-4">
+              <div className="flex flex-col">
+                <span className="inline-block bg-blue-100 text-blue-600 text-[10px] font-bold px-1.5 py-0.5 rounded w-max mb-3">
+                  Transfer
+                </span>
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-[14px] font-bold text-gray-800 w-16">To User</span>
+                  <img src="https://i.pravatar.cc/150?u=nawab" alt="Profile" className="w-8 h-8 rounded-full border border-gray-200" />
+                  <div className="flex flex-col">
+                    <span className="text-[13px] font-bold text-gray-800">{tx.transferTo}</span>
+                    <span className="text-[10px] text-gray-400 leading-tight">{tx.userId}</span>
                   </div>
                 </div>
-              ))}
+                <span className="text-[12px] text-gray-400 mt-1">{tx.date}</span>
+              </div>
+
+              <div className="flex items-center space-x-1 pt-8">
+                <img src={cleanedCoinIcon} alt="Coin" className="w-4 h-4 object-contain" />
+                <span className="text-[14px] font-bold text-gray-800">{tx.amount}</span>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
     );
   }
 
-  // 2. SELLER CENTER VIEW (Default - Matched with Image)
+  // 2. SELLER CENTER VIEW (Refers to 1000187457.jpg main UI)
   return (
-    <div className="w-full min-h-screen bg-[#f7fcfd] font-sans text-gray-800 flex flex-col">
+    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-gray-50 font-sans text-gray-800 flex flex-col">
       
-      {/* Top Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#f7fcfd] sticky top-0 z-50">
+      {/* Header */}
+      <div className="flex items-center px-4 py-3 sticky top-0 z-50">
         <button onClick={onBack} className="p-1 cursor-pointer">
-          {/* Left Arrow Icon */}
           <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
-        
-        <h1 className="text-[17px] font-bold text-gray-900 tracking-wide">Coin Seller Center</h1>
-        
-        <div className="w-6"></div>
+        <h1 className="text-[17px] font-bold tracking-wide flex-1 text-center pr-6">Coin Seller Center</h1>
       </div>
 
       <div className="px-4 pb-8 space-y-4">
         
-        {/* Profile Card Container */}
-        <div className="w-full bg-white rounded-2xl p-4 flex flex-col space-y-3 shadow-sm border border-gray-100">
-          
-          {/* Top Profile Info Row */}
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden border border-gray-200 flex-shrink-0">
-                <img src="https://i.pravatar.cc/150?u=nawab" alt="Profile" className="w-full h-full object-cover" />
-              </div>
-              
-              <div className="flex flex-col">
-                <div className="flex items-center space-x-1">
-                  <span className="text-[14px] font-bold text-gray-900 tracking-wide">꧁pks ࿆prad...</span>
-                </div>
-                <div className="flex items-center space-x-1 text-[12px] text-gray-400 mt-0.5">
-                  <span>ID:116943047</span>
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-gray-400 cursor-pointer">
-                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0-2-.9-2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                  </svg>
-                </div>
+        {/* Profile Card */}
+        <div className="w-full bg-white rounded-2xl p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)]">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+              <img src="https://i.pravatar.cc/150?u=nawab" alt="Profile" className="w-full h-full object-cover" />
+            </div>
+            
+            <div className="flex flex-col">
+              <span className="text-[15px] font-bold text-gray-800">꧁Ks༒Prad...</span>
+              <div className="flex items-center space-x-1 mt-0.5">
+                <span className="text-[12px] text-gray-400">ID:116943047</span>
+                <svg viewBox="0 0 24 24" className="w-3 h-3 fill-gray-400">
+                  <path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                </svg>
               </div>
             </div>
           </div>
 
-          {/* WhatsApp Row */}
-          <div className="flex items-center justify-between py-1 text-[14px]">
-            <span className="text-gray-800 font-medium">WhatsApp</span>
-            <div className="flex items-center space-x-1 text-gray-900 font-medium cursor-pointer">
-              <span>+91 9837152239</span>
-              <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-gray-400 fill-none stroke-[2]">
+          <div className="w-full h-px bg-gray-100 mb-3"></div>
+
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-[14px] text-gray-800 font-medium">WhatsApp</span>
+            <div className="flex items-center text-gray-800 text-[14px] font-medium">
+              +91 9837152239
+              <svg viewBox="0 0 24 24" className="w-4 h-4 ml-1 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>
           </div>
 
-          {/* Payment Method Row */}
-          <div className="flex items-center justify-between pt-1 border-t border-gray-100 pb-1 text-[14px]">
-            <span className="text-gray-800 font-medium">Payment Method</span>
-            <div className="flex items-center space-x-1 text-gray-900 font-medium cursor-pointer">
-              <span className="text-lg">🇮🇳</span>
-              <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-gray-400 fill-none stroke-[2]">
+          <div className="flex items-center justify-between py-1.5 mt-1">
+            <span className="text-[14px] text-gray-800 font-medium">Payment Method</span>
+            <div className="flex items-center text-gray-800 text-[14px] font-medium">
+              {/* Fake Indian Flag icon representation */}
+              <div className="w-5 h-3.5 bg-gray-200 flex flex-col mr-1 rounded-[1px] overflow-hidden">
+                <div className="h-1/3 bg-orange-500"></div>
+                <div className="h-1/3 bg-white flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full border border-blue-800"></div>
+                </div>
+                <div className="h-1/3 bg-green-600"></div>
+              </div>
+              <svg viewBox="0 0 24 24" className="w-4 h-4 ml-1 stroke-black fill-none stroke-[2] stroke-linecap-round stroke-linejoin-round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>
           </div>
-
         </div>
 
-        {/* Balance & Form Card Container */}
-        <div className="w-full bg-white rounded-2xl p-4 flex flex-col space-y-4 shadow-sm border border-gray-100">
+        {/* Transfer Action Card */}
+        <div className="w-full bg-white rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] flex flex-col">
           
-          {/* Balance Header & Details Button */}
-          <div className="flex items-start justify-between">
+          {/* Top Balance Area & Details Button */}
+          <div className="flex items-start justify-between mb-4">
             <div className="flex flex-col">
-              <div className="flex items-center space-x-1.5">
-                <img src={cleanedCoinIcon} alt="Coin" className="w-5 h-5 object-contain" />
-                <span className="text-[20px] font-bold text-gray-900">2,167</span>
+              <div className="flex items-center space-x-1.5 mb-1">
+                <img src={cleanedCoinIcon} alt="Coin" className="w-6 h-6 object-contain" />
+                <span className="text-[22px] font-extrabold text-gray-800">2,167</span>
               </div>
-              <span className="text-[12px] text-gray-400 mt-0.5">Available Balance</span>
+              <span className="text-[12px] text-gray-400 font-medium">Available Balance</span>
             </div>
-
-            {/* Details Button -> Switches to Record View */}
             <button 
-              onClick={() => setCurrentView('record')}
-              className="flex items-center space-x-1 text-[12px] text-[#2acfd1] font-medium bg-[#e6fbfb] px-2.5 py-1 rounded-md cursor-pointer"
+              onClick={() => setCurrentView('record')} 
+              className="flex items-center text-blue-400 text-[13px] font-bold cursor-pointer"
             >
-              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 stroke-[#2acfd1] fill-none stroke-[2]">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
+              <svg viewBox="0 0 24 24" className="w-4 h-4 mr-0.5 fill-current">
+                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
               </svg>
-              <span>Details</span>
+              Details
             </button>
           </div>
 
-          <div className="w-full h-px bg-gray-100"></div>
+          <div className="w-full h-px bg-gray-100 mb-4"></div>
 
-          {/* Balance Breakdown Row */}
-          <div className="flex items-center justify-between text-[13px]">
-            <span className="text-gray-500">Total Balance:</span>
-            <div className="flex items-center space-x-1 font-semibold text-gray-800">
-              <img src={cleanedCoinIcon} alt="Coin" className="w-3.5 h-3.5 object-contain" />
-              <span>2,167</span>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[13px] text-gray-500 font-medium">Total Balance:</span>
+            <div className="flex items-center space-x-1">
+              <img src={cleanedCoinIcon} alt="Coin" className="w-4 h-4 object-contain" />
+              <span className="text-[14px] font-bold text-gray-800">2,167</span>
             </div>
           </div>
 
-          {/* Sales Method Row */}
-          <div className="flex items-center space-x-3 text-[13px] pt-1">
-            <span className="text-gray-500">Sales method:</span>
-            <div className="flex items-center space-x-2">
-              <input type="radio" checked readOnly className="accent-[#2acfd1] w-4 h-4 cursor-pointer" />
-              <span className="text-gray-800 font-medium">User</span>
+          {/* Security Deposit ommitted as requested */}
+
+          <div className="flex items-center space-x-6 mb-6">
+            <span className="text-[13px] text-gray-800 font-bold">Sales method:</span>
+            
+            <div className="flex items-center space-x-4">
+              {/* User Radio */}
+              <label 
+                className="flex items-center space-x-1.5 cursor-pointer"
+                onClick={() => setSalesMethod('user')}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${salesMethod === 'user' ? 'border-blue-400' : 'border-gray-300'}`}>
+                  {salesMethod === 'user' && <div className="w-2 h-2 bg-blue-400 rounded-full"></div>}
+                </div>
+                <span className="text-[14px] text-gray-800 font-medium">User</span>
+              </label>
+
+              {/* Seller Radio */}
+              <label 
+                className="flex items-center space-x-1.5 cursor-pointer"
+                onClick={() => setSalesMethod('seller')}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${salesMethod === 'seller' ? 'border-blue-400' : 'border-gray-300'}`}>
+                  {salesMethod === 'seller' && <div className="w-2 h-2 bg-blue-400 rounded-full"></div>}
+                </div>
+                <span className="text-[14px] text-gray-800 font-medium">Seller</span>
+              </label>
             </div>
           </div>
 
-          <div className="w-full h-px bg-gray-100"></div>
-
-          {/* User ID Field */}
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-semibold text-gray-800">User ID:</label>
-            <div className="w-full flex items-center bg-[#f7f8fa] rounded-xl px-3 py-2.5 border border-transparent focus-within:border-gray-200">
+          <div className="flex flex-col mb-4 space-y-2">
+            <label className="text-[13px] font-bold text-gray-800">
+              {salesMethod === 'user' ? 'User ID:' : 'Seller ID:'}
+            </label>
+            <div className="relative flex items-center bg-[#f7f8fa] rounded-xl overflow-hidden px-4 py-3.5">
               <input 
                 type="text" 
                 placeholder="Please input the id"
-                className="flex-1 text-[13px] outline-none bg-transparent text-gray-800 placeholder-gray-400"
+                className="flex-1 bg-transparent text-[14px] outline-none text-gray-800 placeholder-gray-400"
               />
-              <button className="text-[#2acfd1] text-[13px] font-semibold px-2 cursor-pointer">
+              <button className="text-blue-400 font-medium text-[14px] cursor-pointer ml-2">
                 Check
               </button>
             </div>
           </div>
 
-          {/* Amount Field */}
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-semibold text-gray-800">Amount:</label>
-            <div className="w-full flex items-center bg-[#f7f8fa] rounded-xl px-3 py-2.5">
+          <div className="flex flex-col mb-8 space-y-2">
+            <label className="text-[13px] font-bold text-gray-800">Amount:</label>
+            <div className="relative flex items-center bg-[#f7f8fa] rounded-xl overflow-hidden px-4 py-3.5">
               <input 
                 type="number" 
                 placeholder="Please input the number"
-                className="flex-1 text-[13px] outline-none bg-transparent text-gray-800 placeholder-gray-400"
+                className="flex-1 bg-transparent text-[14px] outline-none text-gray-800 placeholder-gray-400"
               />
             </div>
           </div>
 
-          {/* Transfer Button */}
-          <div className="pt-2">
-            <button className="w-full bg-[#5be4e6] text-white font-bold text-[15px] py-3.5 rounded-full shadow-sm hover:opacity-95 active:scale-[0.98] transition-transform cursor-pointer">
-              Transfer
-            </button>
-          </div>
+          <button className="w-10/12 mx-auto bg-blue-300 hover:bg-blue-400 text-white font-bold text-[16px] py-3 rounded-full transition-colors cursor-pointer">
+            Transfer
+          </button>
 
         </div>
-
       </div>
     </div>
   );
