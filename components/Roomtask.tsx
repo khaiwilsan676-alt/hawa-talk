@@ -17,34 +17,30 @@ function TaskItem({
   iconSrc: string;
 }) {
   
-  // Title ke basis par Left Icon aur uska PARTICULAR SIZE Decide karna
+  // Title ke basis par Left Icon aur uska size decide karna
   const lowerTitle = title.toLowerCase();
   
   let leftIconSrc = iconSrc; // Default coin icon
-  let iconSize = "w-14 h-14"; // DEFAULT COIN ka size (Yaha change karein)
+  let iconSize = "w-10 h-10"; // DEFAULT size
 
   if (lowerTitle.includes('mic')) {
     leftIconSrc = '/file_00000000f8d88211ba5ff45c06383e5f.png';
-    iconSize = "w-20 h-20"; // MIC icon ka size (Yaha change karein)
-    
+    iconSize = "w-20 h-20";
   } else if (lowerTitle.includes('share')) {
     leftIconSrc = '/file_0000000019a0821193463686d6fc9184.png';
-    iconSize = "w-20 h-20"; // SHARE icon ka size (Yaha change karein)
-    
+    iconSize = "w-15 h-15";
   } else if (lowerTitle.includes('gift')) {
     leftIconSrc = '/file_0000000081f48211afe58f6348196b55.png';
-    iconSize = "w-20 h-20"; // GIFT icon ka size (Yaha px me bhi de sakte hain)
-    
+    iconSize = "w-18 h-18";
   } else if (lowerTitle.includes('user') || lowerTitle.includes('follower')) {
     leftIconSrc = '/file_00000000858082118b5c81b85cd6d2a8.png';
-    iconSize = "w-25 h-25"; // USER/FOLLOWER icon ka size
+    iconSize = "w-18 h-18";
   }
 
-  // Remove "Coins" text from reward
   const rewardValue = reward.replace(/coins/gi, '').trim();
 
   return (
-    <div className="relative z-20 w-[100%] max-w-[380px] h-[175px] flex items-center">
+    <div className="relative z-20 w-[100%] max-w-[410px] h-[175px] flex items-center">
       <img 
         src="/file_000000004fd0821198ed4e26d5008b16.png"
         alt="Task Background"
@@ -52,15 +48,15 @@ function TaskItem({
         draggable={false}
       />
 
-      <div className="relative z-30 w-full px-4 flex items-center justify-between pointer-events-none">
+      {/* Yaha pl-1 kiya hai taaki icon ekdam left corner mein chala jaye */}
+      <div className="relative z-30 w-full pl-2 pr-4 flex items-center justify-between pointer-events-none">
         
-        {/* Left Side: Dynamic Icon and Title */}
-        <div className="flex items-center space-x-3 pr-2 flex-1">
-          {/* Yaha class me iconSize variable pass kar diya hai */}
+        {/* Left Side: Yaha space-x-0.5 kar diya hai 0.5 gap ke liye */}
+        <div className="flex items-center space-x-0.5 flex-1">
           <img 
             src={leftIconSrc} 
             alt="Task Icon" 
-            className={`${iconSize} object-contain flex-shrink-0 drop-shadow-md select-none`}
+            className={`${iconSize} object-contain flex-shrink-0 ${leftIconSrc === iconSrc ? '' : 'drop-shadow-md'} select-none`}
             style={leftIconSrc === iconSrc ? { filter: 'url(#remove-white-bg)' } : {}}
             draggable={false}
           />
@@ -71,14 +67,14 @@ function TaskItem({
           </div>
         </div>
 
-        {/* Right Side: Coin + Value aur chota button */}
-        <div className="flex-shrink-0 pointer-events-auto flex flex-col items-center justify-center space-y-1.5 pl-2">
+        {/* Right Side */}
+        <div className="flex-shrink-0 pointer-events-auto flex flex-col items-center justify-center space-y-1.5 pl-1">
           
           <div className="flex items-center space-x-1">
             <img 
               src={iconSrc} 
               alt="Coins" 
-              className="w-6 h-6 object-contain flex-shrink-0 drop-shadow-md select-none"
+              className="w-6 h-6 object-contain flex-shrink-0 select-none"
               style={{ filter: 'url(#remove-white-bg)' }}
               draggable={false}
             />
@@ -91,10 +87,11 @@ function TaskItem({
             onClick={() => {}}
             className="transition-transform hover:scale-105 active:scale-95 cursor-pointer outline-none"
           >
+            {/* Yaha andar wali Claim image ka size bada kar diya (w-[85px]) */}
             <img 
               src="/file_00000000196c8208b7ea093e8d7f56c8.png"
               alt="Claim Action"
-              className="w-[65px] h-auto object-contain select-none"
+              className="w-[85px] h-auto object-contain select-none"
               draggable={false}
             />
           </button>
@@ -107,7 +104,6 @@ function TaskItem({
 
 export default function Roomtask({ onBack }: RoomtaskProps) {
   const iconSrc = '/1786855398290.png';
-
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -163,7 +159,6 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
   return (
     <div className="relative w-full h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#380308] scrollbar-none select-none m-0 p-0">
       
-      {/* NATIVE WEB SHADER (NO CANVAS) */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <defs>
           <filter id="remove-white-bg" colorInterpolationFilters="sRGB">
@@ -173,7 +168,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 1 0 0 0 0
                 0 1 0 0 0
                 0 0 1 0 0
-                -3.333 -3.333 -3.333 1 9" 
+                -4 -4 -4 1 11" 
             />
           </filter>
         </defs>
@@ -226,11 +221,11 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
           <div className="w-full" style={{ height: 'calc(50vh - 45px)' }}></div>
 
           <div className="w-full flex justify-center px-4 flex-col items-center">
-            <div className="relative w-[95%] max-w-[450px] flex items-center justify-center mt-2">
+            <div className="relative w-[100%] max-w-[450px] flex items-center justify-center mt-2">
               <img 
                 src="/file_00000000f2908208a7b6a2b73c3bbf36.png" 
                 alt="Middle Decoration" 
-                className="w-full h-auto object-contain drop-shadow-2xl select-none"
+                className="w-full h-70 object-contain drop-shadow-2xl select-none"
                 draggable={false}
               />
               
@@ -241,7 +236,7 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
                 <img 
                   src={iconSrc}
                   alt="Cleaned Coin Icon" 
-                  className="w-7 h-7 object-contain drop-shadow-md select-none"
+                  className="w-7 h-7 object-contain select-none"
                   style={{ filter: 'url(#remove-white-bg)' }}
                   draggable={false}
                 />
@@ -359,3 +354,4 @@ export default function Roomtask({ onBack }: RoomtaskProps) {
     </div>
   );
 }
+
