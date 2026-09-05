@@ -24,12 +24,12 @@ const allStoreItems: StoreItem[] = [
   { 
     id: "v1", 
     name: "Leopard Roar", 
-    image: "/IMG_20260905_213710.jpg", 
-    tryVideo: "/VID_20260905_090530_315_bsl.mp4", 
+    image: "/IMG_20260905_222412.jpg", 
+    tryVideo: "/VID_20260905_095157_269_bsl.mp4", 
     removeGreen: true, 
     tab: "Vehicle", 
     stars: 5, 
-    price: "100,000", 
+    price: "1,000,000", 
     duration: "5D" 
   },
 
@@ -51,7 +51,7 @@ const allStoreItems: StoreItem[] = [
   { id: "c2", name: "2", image: "/file_000000006044821186ff566329797142.png", tab: "Chat Bubble", stars: 4, price: "250,000", duration: "2D" }, 
   { id: "c3", name: "3", image: "/file_00000000c44c81f598f62ae8a45e13a7.png", tab: "Chat Bubble", stars: 5, price: "300,000", duration: "3D" }, 
   
-  // ID
+  // ID (Placeholder owned item so it doesn't break bag/store switch logic)
   { id: "i1", name: "ID Badge 8", image: "/1784533036732~2.jpg", tab: "ID", stars: 5, price: "10,000,000", duration: "3D", isOwned: true },
 ];
 
@@ -479,134 +479,150 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
           })}
         </div>
 
-        {/* Items Grid */}
-        <div className="grid grid-cols-2 gap-2 px-4 py-1 flex-1 content-start">
-          {displayedItems.map((item) => {
-            const isTheme = item.tab === "Theme";
-            const isVehicle = item.tab === "Vehicle";
-            const isAvatarFrame = item.tab === "Avatar Frame";
+        {/* Items Grid or ID Tab Custom View */}
+        {activeTab === "ID" ? (
+          <div className="px-4 py-2 flex-1 flex flex-col gap-3">
+            {/* Customize ID Card Box */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+              <h2 className="text-[17px] font-bold text-gray-900">Customize ID</h2>
+              <div className="w-full bg-[#f3f4f6] text-gray-400 text-[14px] font-medium py-3 px-4 rounded-2xl text-center">
+                Start Your Customization Journey
+              </div>
+            </div>
 
-            return (
-              <div
-                key={item.id}
-                className={`relative bg-white rounded-xl p-1 flex flex-col items-center justify-between shadow-sm overflow-hidden ${
-                  isTheme ? "min-h-[220px]" : "h-auto"
-                }`}
-              >
-                {isTheme && (
-                  <div className="absolute inset-0 w-full h-full z-0">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/20"></div>
-                  </div>
-                )}
+            {/* Bottom Customize Button */}
+            <button 
+              type="button"
+              className="w-full bg-[#f3f4f6] text-gray-400 font-semibold py-3.5 rounded-2xl text-[15px] shadow-sm text-center"
+            >
+              Customize
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 px-4 py-1 flex-1 content-start">
+            {displayedItems.map((item) => {
+              const isTheme = item.tab === "Theme";
+              const isVehicle = item.tab === "Vehicle";
+              const isAvatarFrame = item.tab === "Avatar Frame";
 
-                {/* Top Bar inside Card */}
-                <div className="flex items-center justify-between w-full z-10 mb-2">
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isTheme) {
-                        setTryThemeItem(item);
-                      } else {
-                        setTryCenterItem(item);
-                      }
-                    }}
-                    className={`px-3 py-[2px] rounded-full text-[11px] font-medium border ${
-                      isTheme 
-                        ? "text-white border-white bg-white/20" 
-                        : "text-[#1d4ed8] border-[#1d4ed8]"
-                    }`}
-                  >
-                    Try
-                  </button>
-                  <div className={`flex items-center gap-1 text-[11px] font-medium ${isTheme ? "text-white drop-shadow-md" : "text-gray-500"}`}>
-                    <Clock size={12} strokeWidth={2.5} />
-                    <span>{item.duration}</span>
-                  </div>
-                </div>
+              return (
+                <div
+                  key={item.id}
+                  className={`relative bg-white rounded-xl p-1 flex flex-col items-center justify-between shadow-sm overflow-hidden ${
+                    isTheme ? "min-h-[220px]" : "h-auto"
+                  }`}
+                >
+                  {isTheme && (
+                    <div className="absolute inset-0 w-full h-full z-0">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/20"></div>
+                    </div>
+                  )}
 
-                {/* YAHAN FIX KIYA HAI - Card Height fix rahegi (80px wrapper), Image Size alag se bada hoga (120px absolute) */}
-                {!isTheme && (
-                  <div className="relative w-full h-[80px] my-2 flex items-center justify-center z-10">
-                    <div className={`absolute flex items-center justify-center ${
-                      isVehicle || isAvatarFrame ? "w-[120px] h-[120px]" : "w-full h-full"
-                    }`}>
-                      {item.image.endsWith('.mp4') ? (
-                        <WebGLVideoAvatar src={item.image} />
-                      ) : item.removeGreen ? (
-                        <WebGLImageAvatar src={item.image} />
-                      ) : (
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          className="object-contain"
-                          sizes="50vw"
-                        />
-                      )}
+                  {/* Top Bar inside Card */}
+                  <div className="flex items-center justify-between w-full z-10 mb-2">
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isTheme) {
+                          setTryThemeItem(item);
+                        } else {
+                          setTryCenterItem(item);
+                        }
+                      }}
+                      className={`px-3 py-[2px] rounded-full text-[11px] font-medium border ${
+                        isTheme 
+                          ? "text-white border-white bg-white/20" 
+                          : "text-[#1d4ed8] border-[#1d4ed8]"
+                      }`}
+                    >
+                      Try
+                    </button>
+                    <div className={`flex items-center gap-1 text-[11px] font-medium ${isTheme ? "text-white drop-shadow-md" : "text-gray-500"}`}>
+                      <Clock size={12} strokeWidth={2.5} />
+                      <span>{item.duration}</span>
                     </div>
                   </div>
-                )}
 
-                {isTheme && <div className="flex-1 w-full min-h-[80px]"></div>}
+                  {!isTheme && (
+                    <div className="relative w-full h-[80px] my-2 flex items-center justify-center z-10">
+                      <div className={`absolute flex items-center justify-center ${
+                        isVehicle || isAvatarFrame ? "w-[120px] h-[120px]" : "w-full h-full"
+                      }`}>
+                        {item.image.endsWith('.mp4') ? (
+                          <WebGLVideoAvatar src={item.image} />
+                        ) : item.removeGreen ? (
+                          <WebGLImageAvatar src={item.image} />
+                        ) : (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-contain"
+                            sizes="50vw"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
 
-                {/* Stars */}
-                <div className="flex items-center justify-center gap-0.5 mt-2 mb-1 w-full z-10">
-                  {renderStars(item.stars)}
-                </div>
+                  {isTheme && <div className="flex-1 w-full min-h-[80px]"></div>}
 
-                {/* Price Row */}
-                <div className="flex items-center justify-center gap-1.5 mb-3 w-full z-10">
-                  <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
-                    <WebGLCoinIcon src="/1786855398290.png" />
+                  {/* Stars */}
+                  <div className="flex items-center justify-center gap-0.5 mt-2 mb-1 w-full z-10">
+                    {renderStars(item.stars)}
                   </div>
-                  <span className={`text-[14px] font-bold tracking-tight truncate ${isTheme ? "text-white drop-shadow-md" : "text-gray-900"}`}>
-                    {item.price}
-                  </span>
-                </div>
 
-                {/* Bottom Buttons */}
-                <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[30px] z-10 bg-white">
-                  <button
-                    type="button"
-                    className="flex-1 h-full bg-white text-[#1d4ed8] text-[12px] font-bold flex items-center justify-center transition-colors hover:bg-gray-50"
-                  >
-                    Send
-                  </button>
-                  <button
-                    type="button"
-                    className="flex-1 h-full bg-[#1d4ed8] text-white text-[12px] font-bold flex items-center justify-center transition-colors hover:bg-blue-800"
-                  >
-                    {currentView === "bag" ? "Equip" : "Buy"}
-                  </button>
+                  {/* Price Row */}
+                  <div className="flex items-center justify-center gap-1.5 mb-3 w-full z-10">
+                    <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
+                      <WebGLCoinIcon src="/1786855398290.png" />
+                    </div>
+                    <span className={`text-[14px] font-bold tracking-tight truncate ${isTheme ? "text-white drop-shadow-md" : "text-gray-900"}`}>
+                      {item.price}
+                    </span>
+                  </div>
+
+                  {/* Bottom Buttons */}
+                  <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[30px] z-10 bg-white">
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-white text-[#1d4ed8] text-[12px] font-bold flex items-center justify-center transition-colors hover:bg-gray-50"
+                    >
+                      Send
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 h-full bg-[#1d4ed8] text-white text-[12px] font-bold flex items-center justify-center transition-colors hover:bg-blue-800"
+                    >
+                      {currentView === "bag" ? "Equip" : "Buy"}
+                    </button>
+                  </div>
                 </div>
+              );
+            })}
+
+            {displayedItems.length === 0 && (
+              <div className="col-span-2 text-center text-gray-400 mt-12 text-sm font-medium">
+                {currentView === "bag" ? "No items in Bag for this category" : "No items found"}
               </div>
-            );
-          })}
-
-          {displayedItems.length === 0 && (
-            <div className="col-span-2 text-center text-gray-400 mt-12 text-sm font-medium">
-              {currentView === "bag" ? "No items in Bag for this category" : "No items found"}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ================================================== */}
-      {/* FULL WIDE VEHICLE & FRAME TRY MODAL (Phone Corners Touch) */}
-      {/* ================================================== */}
+      {/* FULL WIDE VEHICLE & FRAME TRY MODAL */}
       {tryCenterItem && (
         <div 
           className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/10 p-0 cursor-pointer"
           onClick={() => setTryCenterItem(null)}
         >
-          {/* FULL WIDE CONTAINER TOUCHING PHONE EDGES FOR VEHICLE, NORMAL FOR FRAMES */}
           <div className={`relative flex items-center justify-center pointer-events-none ${tryCenterItem.tab === "Vehicle" ? "w-full h-[60vh]" : "w-[280px] h-[280px]"}`}>
             {tryCenterItem.tryVideo ? (
               <WebGLVideoAvatar src={tryCenterItem.tryVideo} isVehicleModal={tryCenterItem.tab === "Vehicle"} />
