@@ -14,7 +14,6 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
   const tabs = ["Hot", "Lucky", "Luxury", "Event"];
   const multipliers = ["1×", "10×", "299×", "599×", "999×"];
 
-  // Hot Tab Gifts
   const hotGifts = [
     { id: 1, name: "Rose", coins: 10, image: "/IMG_20260815_103351.jpg" },
     { id: 2, name: "Heart", coins: 99, image: "/IMG_20260815_103351.jpg" },
@@ -30,7 +29,6 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
     { id: 12, name: "Galaxy", coins: 1000000, image: "/IMG_20260815_103351.jpg" },
   ];
 
-  // Lucky Tab Gifts - Smaller
   const luckyGifts = [
     { id: 101, name: "Kiss", coins: 1999, image: "/IMG_20260906_000443.png" },
     { id: 102, name: "Nut", coins: 3999, image: "/IMG_20260906_000508.png" },
@@ -45,7 +43,6 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
     { id: 111, name: "Scarecrow", coins: 7500, image: "/IMG_20260906_000850.png" },
   ];
 
-  // Get current gifts based on active tab
   const getCurrentGifts = () => {
     if (activeTab === "Lucky") return luckyGifts;
     return hotGifts;
@@ -53,142 +50,101 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
 
   const currentGifts = getCurrentGifts();
 
-  // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (sheetRef.current && !sheetRef.current.contains(event.target as Node)) {
         onClose();
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* PURE WEB SHADER - STRICTLY FOR COINS ICON ONLY */}
+      {/* SVG FILTER – PURE WEB SHADER to remove white background from coin */}
+      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+        <filter id="removeWhite" x="0%" y="0%" width="100%" height="100%">
+          <feColorMatrix
+            type="matrix"
+            values="
+              1 0 0 0 0
+              0 1 0 0 0
+              0 0 1 0 0
+              -0.333 -0.333 -0.333 1 0"
+          />
+        </filter>
+      </svg>
+
       <style jsx>{`
-        /* Main container */
         .main-container {
           background: rgba(0, 0, 0, 0.95);
         }
-        
-        /* Gift item - NO CARD, only border on click */
+
         .gift-item {
           background: transparent;
           border: 2px solid transparent;
           transition: all 0.2s ease;
-          padding: 6px 4px;
+          padding: 6px 2px; /* reduced horizontal padding to give more width */
+          border-radius: 8px;
+          width: 100%; /* ensures full width of grid cell */
         }
-        
         .gift-item:hover {
           background: rgba(255, 255, 255, 0.03);
         }
-        
         .gift-item.selected {
           border-color: #3b82f6;
           background: rgba(59, 130, 246, 0.05);
-          border-radius: 8px;
         }
 
-        /* Gift images - NO EFFECTS */
         .gift-image {
-          /* Pure original - no effects */
+          /* pure original */
         }
 
-        /* Gift name - ONE ROW ONLY */
+        .coin-wrapper {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent !important;
+        }
+
+        .coin-image {
+          filter: url(#removeWhite) drop-shadow(0 0 4px rgba(255,215,0,0.4));
+          background: transparent !important;
+        }
+
         .gift-name {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
           max-width: 100%;
           display: block;
+          text-align: center;
         }
 
-        /* ============================================ */
-        /* PURE WEB SHADER - STRICTLY FOR COINS ONLY */
-        /* REMOVES WHITE BACKGROUND COMPLETELY */
-        /* ============================================ */
-        
-        /* Coin wrapper - pure shader */
-        .coin-wrapper {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: transparent !important;
-          backdrop-filter: blur(0px) saturate(0%) contrast(999) brightness(999);
-          -webkit-backdrop-filter: blur(0px) saturate(0%) contrast(999) brightness(999);
-          filter: 
-            drop-shadow(0 0 0px transparent)
-            brightness(2.5) 
-            contrast(3.5) 
-            saturate(4) 
-            hue-rotate(0deg);
-          mix-blend-mode: normal;
-          isolation: isolate;
-        }
-
-        /* Coin image - pure web shader removes white bg */
-        .coin-image {
-          filter: 
-            brightness(3) 
-            contrast(4) 
-            saturate(5) 
-            drop-shadow(0 0 4px rgba(255, 215, 0, 0.5))
-            drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
-          backdrop-filter: 
-            blur(0px) 
-            saturate(0%) 
-            contrast(999) 
-            brightness(999) 
-            invert(0);
-          -webkit-backdrop-filter: 
-            blur(0px) 
-            saturate(0%) 
-            contrast(999) 
-            brightness(999) 
-            invert(0);
-          background: transparent !important;
-          mix-blend-mode: normal;
-          isolation: isolate;
-          transform: scale(1);
-          image-rendering: auto;
-        }
-
-        /* Bottom bar */
         .bottom-bar {
           background: rgba(0, 0, 0, 0.5);
           backdrop-filter: blur(20px) saturate(180%);
           -webkit-backdrop-filter: blur(20px) saturate(180%);
           border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
-
-        /* Balance container */
         .balance-container {
           background: rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(10px) saturate(150%);
           -webkit-backdrop-filter: blur(10px) saturate(150%);
           border: 1px solid rgba(255, 255, 255, 0.05);
         }
-
-        /* Multiplier button */
         .multiplier-btn {
           background: rgba(255, 255, 255, 0.04);
           backdrop-filter: blur(8px) saturate(150%);
           -webkit-backdrop-filter: blur(8px) saturate(150%);
           border: 1px solid rgba(255, 255, 255, 0.06);
         }
-
         .multiplier-btn:hover {
           background: rgba(255, 255, 255, 0.1);
           backdrop-filter: blur(12px) saturate(180%);
           -webkit-backdrop-filter: blur(12px) saturate(180%);
         }
-
-        /* Send button */
         .send-btn {
           background: linear-gradient(135deg, #3b82f6, #2563eb);
           backdrop-filter: blur(8px);
@@ -196,15 +152,12 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
           box-shadow: 0 2px 15px rgba(59, 130, 246, 0.25);
           border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
         .send-btn:hover {
           background: linear-gradient(135deg, #60a5fa, #3b82f6);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           box-shadow: 0 4px 25px rgba(59, 130, 246, 0.35);
         }
-
-        /* Multiplier dropdown */
         .multiplier-dropdown {
           background: rgba(24, 24, 27, 0.92);
           backdrop-filter: blur(20px) saturate(180%);
@@ -212,53 +165,23 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
           border: 1px solid rgba(255, 255, 255, 0.08);
           box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
-
-        /* Tab active */
         .tab-active {
           text-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
         }
-
-        /* Scrollbar hide */
-        .scrollbar-none::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-none {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-
-        /* Smaller gift items for Lucky tab */
-        .lucky-gift .gift-image-container {
-          width: 40px !important;
-          height: 40px !important;
-        }
-        
-        .lucky-gift .gift-name {
-          font-size: 8px !important;
-        }
-        
-        .lucky-gift .gift-coins {
-          font-size: 7px !important;
-        }
-        
-        .lucky-gift .coin-wrapper {
-          width: 2px !important;
-          height: 2px !important;
-        }
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* 50vh Black Sheet Container */}
-      <div 
+      <div
         ref={sheetRef}
         className="main-container h-[50vh] w-full max-w-md mx-auto text-white flex flex-col justify-between rounded-t-md border-t border-white/10 shadow-2xl relative px-4 pt-3 pb-2"
       >
-        
-        {/* 1. TOP SECTION: "All" Text Only */}
+        {/* TOP: "All" */}
         <div className="flex items-center justify-end border-b border-white/10 pb-1">
           <span className="text-sm font-semibold text-gray-300">All</span>
         </div>
 
-        {/* 2. CATEGORY TABS - Gap 1 */}
+        {/* TABS – gap=1 */}
         <div className="flex items-center gap-1 py-1.5">
           {tabs.map((tab) => (
             <button
@@ -275,50 +198,47 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        {/* 3. MIDDLE SECTION: Gift Items Grid - 4 Columns */}
-        <div className="flex-1 overflow-y-auto py-2 grid grid-cols-4 gap-2 scrollbar-none">
-          {currentGifts.map((gift) => {
-            const isLucky = activeTab === "Lucky";
-            return (
-              <div
-                key={gift.id}
-                onClick={() => setSelectedGift(gift.id)}
-                className={`gift-item flex flex-col items-center justify-center transition cursor-pointer active:scale-95 ${
-                  selectedGift === gift.id ? "selected" : ""
-                } ${isLucky ? "lucky-gift" : ""}`}
-              >
-                <div className={`relative mb-0.5 ${isLucky ? "w-10 h-10" : "w-14 h-14"}`}>
+        {/* GIFT GRID – wider items: gap reduced to 1 and image slightly bigger */}
+        <div className="flex-1 overflow-y-auto py-2 grid grid-cols-4 gap-1 scrollbar-none">
+          {currentGifts.map((gift) => (
+            <div
+              key={gift.id}
+              onClick={() => setSelectedGift(gift.id)}
+              className={`gift-item flex flex-col items-center justify-center transition cursor-pointer active:scale-95 ${
+                selectedGift === gift.id ? "selected" : ""
+              }`}
+            >
+              {/* Increased image size to w-18 h-18 (72px) for a bit wider feel */}
+              <div className="relative w-18 h-18 mb-0.5">
+                <Image
+                  src={gift.image}
+                  alt={gift.name}
+                  fill
+                  className="gift-image object-contain"
+                  sizes="72px"
+                />
+              </div>
+              <span className="gift-name text-gray-300 font-medium text-[10px]">
+                {gift.name}
+              </span>
+              <span className="text-yellow-400 flex items-center gap-0.5 mt-0.5 text-[9px]">
+                <div className="coin-wrapper w-2.5 h-2.5 relative overflow-hidden rounded-full">
                   <Image
-                    src={gift.image}
-                    alt={gift.name}
+                    src="/1786855398290.png"
+                    alt="Coins"
                     fill
-                    className="gift-image object-cover"
-                    sizes={isLucky ? "40px" : "56px"}
+                    className="coin-image object-cover"
+                    sizes="10px"
                   />
                 </div>
-                <span className={`gift-name text-gray-300 font-medium text-center ${isLucky ? "text-[8px]" : "text-[10px]"}`}>
-                  {gift.name}
-                </span>
-                <span className={`gift-coins text-yellow-400 flex items-center gap-0.5 mt-0.5 ${isLucky ? "text-[7px]" : "text-[9px]"}`}>
-                  <div className={`coin-wrapper relative overflow-hidden rounded-full ${isLucky ? "w-2 h-2" : "w-2.5 h-2.5"}`}>
-                    <Image
-                      src="/1786855398290.png"
-                      alt="Coins"
-                      fill
-                      className="coin-image object-cover"
-                      sizes={isLucky ? "8px" : "10px"}
-                    />
-                  </div>
-                  {gift.coins}
-                </span>
-              </div>
-            );
-          })}
+                {gift.coins}
+              </span>
+            </div>
+          ))}
         </div>
 
-        {/* 4. BOTTOM BAR */}
+        {/* BOTTOM BAR */}
         <div className="bottom-bar flex items-center justify-between pt-1.5 relative rounded-b-md">
-          {/* Left Side: Coin Balance */}
           <div className="balance-container flex items-center gap-1 px-2.5 py-1 rounded-full">
             <div className="coin-wrapper w-5 h-5 relative overflow-hidden rounded-full">
               <Image
@@ -332,10 +252,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
             <span className="text-[10px] font-bold text-yellow-300 tracking-wide">66457</span>
           </div>
 
-          {/* Right Side: Multiplier Bar & Send Button */}
           <div className="flex items-center gap-1.5 relative">
-            
-            {/* Multiplier Dropdown Popup */}
             {showMultipliers && (
               <div className="multiplier-dropdown absolute bottom-10 right-14 rounded-md p-1 shadow-xl flex flex-col gap-1 z-50">
                 {multipliers.map((num) => (
@@ -356,8 +273,6 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
                 ))}
               </div>
             )}
-
-            {/* Multiplier Option Bar Button */}
             <button
               onClick={() => setShowMultipliers(!showMultipliers)}
               className="multiplier-btn flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-gray-200 transition"
@@ -365,8 +280,6 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
               <span>{selectedMultiplier}</span>
               <ChevronUp className={`w-3 h-3 transition-transform ${showMultipliers ? "rotate-180" : ""}`} />
             </button>
-
-            {/* Blue Send Button */}
             <button
               onClick={() => console.log(`Sent Gift ID: ${selectedGift} with ${selectedMultiplier}`)}
               className="send-btn text-white font-bold text-xs px-4 py-1.5 rounded-full transition-all active:scale-95"
@@ -375,8 +288,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );
-        }
+            }
