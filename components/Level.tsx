@@ -128,22 +128,12 @@ function ShaderImageBadge({
 }
 
 export default function Level({ onBack }: LevelProps) {
-  const currentXP = 0
-  const nextLevelXP = 857342265
   const progressPercent = 0
 
   return (
     <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#120822] via-[#090414] to-[#030107] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-purple-950/40">
       
-      {/* 30vh Top Background Image Layer */}
-      <div 
-        className="absolute top-0 left-0 w-full h-[30vh] bg-cover bg-center z-0 pointer-events-none opacity-80"
-        style={{ backgroundImage: "url('/file_00000000360c82118a57a81f560c0ec3.png')" }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-[#120822]/20 via-[#120822]/60 to-[#120822]" />
-      </div>
-
-      {/* Background Glows */}
+      {/* Background Dark Purple Shining Glows */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-full h-80 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-600/25 via-indigo-900/10 to-transparent blur-3xl" />
         <div className="absolute top-[30%] -left-20 w-80 h-80 bg-purple-900/10 rounded-full blur-[120px]" />
@@ -170,18 +160,18 @@ export default function Level({ onBack }: LevelProps) {
       {/* Main Content */}
       <div className="flex-1 px-4 pt-2 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
-        {/* Main Profile Card - Clean & Exact Reference Style */}
-        <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-b from-[#160b2b] via-[#0d061c] to-[#070310] p-5 shadow-[0_16px_35px_rgba(10,4,20,0.8)] border border-purple-500/20">
-          
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
-          <div className="absolute top-0 left-0 w-48 h-48 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Main Card Using the Provided Background Image */}
+        <div 
+          className="relative overflow-hidden rounded-[24px] bg-cover bg-center p-5 shadow-[0_16px_35px_rgba(10,4,20,0.9)] border border-purple-500/30"
+          style={{ backgroundImage: "url('/file_00000000360c82118a57a81f560c0ec3.png')" }}
+        >
+          <div className="absolute inset-0 bg-[#0c0518]/70 backdrop-blur-[2px]" />
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
 
-          <div className="relative z-10 space-y-5">
+          <div className="relative z-10 space-y-6">
             
-            {/* Top Row: Avatar Frame & Username (Lv.0 and Elite Player removed) */}
-            <div className="flex items-center gap-4 py-2">
-              
-              {/* Avatar Frame Container */}
+            {/* Top Row: Avatar Frame & Username */}
+            <div className="flex items-center gap-4 py-1">
               <div className="relative w-[84px] h-[84px] flex items-center justify-center shrink-0">
                 <img 
                   src="/file_0000000055ac821186486b31f4a0d239.png" 
@@ -197,7 +187,6 @@ export default function Level({ onBack }: LevelProps) {
                 </div>
               </div>
 
-              {/* Username Only */}
               <div className="flex flex-col justify-center">
                 <h2 className="text-[26px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#fde68a] via-[#f59e0b] to-[#d97706] tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] font-serif">
                   KāziR Khān
@@ -205,8 +194,8 @@ export default function Level({ onBack }: LevelProps) {
               </div>
             </div>
 
-            {/* Bottom Progress Bar Section with 0% and Badge */}
-            <div className="flex items-center gap-3 pt-2">
+            {/* Bottom Progress Bar Section */}
+            <div className="flex items-center gap-3 pt-1">
               <div className="relative flex-1 h-9 flex items-center px-3">
                 <img 
                   src="/file_000000006ff48211a6b2db258441b739.png" 
@@ -236,7 +225,7 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Level Section */}
+        {/* Level Section (Redesigned Card Layout with original ranges) */}
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
@@ -248,28 +237,33 @@ export default function Level({ onBack }: LevelProps) {
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#110722] border border-purple-950/60 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-500/40"
+                className="relative overflow-hidden rounded-2xl bg-[#130926]/95 border border-purple-500/25 shadow-[0_8px_20px_rgba(0,0,0,0.5)] flex flex-col items-center justify-between py-3 px-2 min-h-[135px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-purple-400/50"
               >
-                <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#a855f7] via-[#7e22ce] to-[#581c87] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.4)] border-r border-b border-purple-400/30 flex items-center justify-center">
-                  <span className="text-[8px] font-black text-white leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-                    {tier.range}
-                  </span>
+                {/* Top-Left Level Tag */}
+                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[#1d1138]/90 border border-purple-400/30 text-[10px] font-black text-purple-200 shadow-sm">
+                  {tier.range}
                 </div>
 
-                <div className="pt-2 flex items-center justify-center">
+                {/* Center Image */}
+                <div className="flex-1 flex items-center justify-center pt-5 pb-2">
                   <ShaderImageBadge
                     src={tier.imageSrc}
                     isWhiteBg={tier.isWhiteBg}
-                    className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-md transition-transform duration-200"
+                    className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
                   />
+                </div>
+
+                {/* Bottom subtle indicator */}
+                <div className="w-full flex justify-center pt-1 border-t border-purple-900/40">
+                  <span className="text-[9px] font-medium text-purple-300/70">★ Tier {idx + 1}</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Coins Reward Section */}
-        <div className="space-y-3">
+        {/* Coins Reward Section (Redesigned Card Layout with original rewards) */}
+        <div className="space-y-3 pt-2">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
             <span className="text-xs font-bold tracking-wider text-purple-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Coins Reward</span>
@@ -280,26 +274,27 @@ export default function Level({ onBack }: LevelProps) {
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#110722] border border-purple-950/60 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[115px] p-2 pt-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
+                className="relative overflow-hidden rounded-2xl bg-[#130926]/95 border border-purple-500/25 shadow-[0_8px_20px_rgba(0,0,0,0.5)] flex flex-col items-center justify-between py-3 px-2 min-h-[145px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-amber-400/50"
               >
-                <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#a855f7] via-[#7e22ce] to-[#581c87] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.4)] border-r border-b border-purple-400/30 flex items-center justify-center">
-                  <span className="text-[8px] font-black text-white leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-                    {reward.level}
-                  </span>
+                {/* Top-Left Level Tag */}
+                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[#1d1138]/90 border border-purple-400/30 text-[10px] font-black text-purple-200 shadow-sm">
+                  {reward.level}
                 </div>
 
-                <div className="flex-1 flex items-center justify-center pt-2">
+                {/* Center Image */}
+                <div className="flex-1 flex items-center justify-center pt-5 pb-1">
                   <ShaderImageBadge
                     src={reward.imageSrc}
                     isWhiteBg={true}
-                    className="w-11 h-11 object-contain group-hover:scale-110 drop-shadow-md transition-transform duration-200"
+                    className="w-11 h-11 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
                   />
                 </div>
 
-                <div className="w-full flex justify-center pb-1">
-                  <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-b from-[#ff4d4d] via-[#e62e2e] to-[#b31414] shadow-[0_3px_6px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.6)] flex items-center gap-1 border border-red-300/40">
-                    <span className="text-[9px] drop-shadow-sm">🪙</span>
-                    <span className="text-[9px] font-black text-white leading-none tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
+                {/* Bottom Red Pill Amount */}
+                <div className="w-full flex flex-col items-center gap-1 pt-1.5 border-t border-purple-900/40">
+                  <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-b from-[#ff4d4d] via-[#e62e2e] to-[#b31414] shadow-md flex items-center gap-1 border border-red-300/30">
+                    <span className="text-[8px]"></span>
+                    <span className="text-[9px] font-black text-white leading-none tracking-tight">
                       {reward.amount}
                     </span>
                   </div>
