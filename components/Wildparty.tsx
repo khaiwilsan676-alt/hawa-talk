@@ -221,8 +221,8 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   // Original Exact Coordinates, Sizes & Multipliers
   const animals: AnimalItem[] = [
     
-    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Deer', angle: 315, distance: 130, x: 0, y: -14, size: 70, multiplier: 5 },
-    { id: 1, src: '/IMG_20260822_011134.png', alt: 'dog', angle: 270, distance: 130, x: -4, y: -10, size: 55, multiplier: 5 },
+    { id: 0, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -14, size: 72, multiplier: 5 },
+    { id: 1, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -4, y: -10, size: 55, multiplier: 5 },
     { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -8, y: -19, size: 68, multiplier: 5 },
     { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -6, y: -18, size: 52, multiplier: 5 },
     { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
@@ -516,7 +516,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           <img
             src="/file_00000000993c8208ae462545f9ccb0ba.png"
             alt="Bottom Left Decor"
-            className="absolute bottom-4 left-2 w-[40px] h-[55px] object-contain z-40 pointer-events-none"
+            className="absolute bottom-10 left-2 w-[40px] h-[55px] object-contain z-40 pointer-events-none"
           />
         )}
 
@@ -530,11 +530,11 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
             />
             {/* Eagle (10x) - Moved down, lower z-index */}
-            <div className="absolute top-2 -left-0.5 w-8 h-8 -rotate-[10deg] z-10">
+            <div className="absolute top-1 -left-1.5 w-8 h-8 -rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011151.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Bear (15x) - Moved down, lower z-index */}
-            <div className="absolute top-2 -right-0.5 w-8 h-8 rotate-[10deg] z-10">
+            <div className="absolute top-1 -right-1.5 w-8 h-8 rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011205.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Tiger (25x) - Moved up slightly, higher z-index (Head is OVER) */}
@@ -558,11 +558,11 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
             />
             {/* Dog - Moved down, lower z-index */}
-            <div className="absolute top-2 -left-0.5 w-8 h-8 -rotate-[10deg] z-10">
+            <div className="absolute top-1 -left-1.5 w-8 h-8 -rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011118.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Deer - Moved down, lower z-index */}
-            <div className="absolute top-2 -right-0.5 w-8 h-8 rotate-[10deg] z-10">
+            <div className="absolute top-1 -right-1.5 w-8 h-8 rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011134.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Zebra - Moved up slightly, higher z-index (Head is OVER) */}
@@ -809,7 +809,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           <div className="absolute bottom-4 left-2.5 z-30 flex items-center gap-1.5 pointer-events-auto select-none">
             <LoadingShaderImage
               src="/1786855398290.png"
-              className="w-4 h-4 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+              className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
             />
             <span className="text-yellow-400 font-black text-xs sm:text-sm tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
               {balance.toLocaleString()}
