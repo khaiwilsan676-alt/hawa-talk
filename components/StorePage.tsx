@@ -149,7 +149,6 @@ function WebGLCoinIcon({ src }: { src: string }) {
   return <canvas ref={canvasRef} width={64} height={64} className="w-full h-full object-contain" />;
 }
 
-// STRICT CHROMA KEY FOR STATIC IMAGE (Clean Soft Edges)
 function WebGLImageAvatar({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
@@ -168,7 +167,6 @@ function WebGLImageAvatar({ src }: { src: string }) {
       }
     `;
 
-    // UPDATED: Smoothstep and spill suppression for clean edges
     const fsSource = `
       precision mediump float;
       varying vec2 v_texCoord;
@@ -254,7 +252,6 @@ function WebGLImageAvatar({ src }: { src: string }) {
   return <canvas ref={canvasRef} width={256} height={256} className="w-full h-full object-contain" />;
 }
 
-// STRICT CHROMA KEY FOR VIDEO (Clean Soft Edges)
 function WebGLVideoAvatar({ src, isVehicleModal = false }: { src: string; isVehicleModal?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -282,7 +279,6 @@ function WebGLVideoAvatar({ src, isVehicleModal = false }: { src: string; isVehi
       }
     `;
 
-    // UPDATED: Smoothstep and spill suppression for clear & clean video edges
     const fsSource = `
       precision mediump float;
       varying vec2 v_texCoord;
@@ -487,6 +483,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
         <div className="grid grid-cols-2 gap-2 px-4 py-1 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
+            const isVehicle = item.tab === "Vehicle";
             const isAvatarFrame = item.tab === "Avatar Frame";
 
             return (
@@ -534,22 +531,26 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                   </div>
                 </div>
 
-                {/* Item Image / Video */}
+                {/* YAHAN FIX KIYA HAI - Card Height fix rahegi (80px wrapper), Image Size alag se bada hoga (120px absolute) */}
                 {!isTheme && (
-                  <div className={`relative w-full ${isAvatarFrame ? 'h-[130px]' : 'h-[80px]'} my-2 flex items-center justify-center z-10`}>
-                    {item.image.endsWith('.mp4') ? (
-                      <WebGLVideoAvatar src={item.image} />
-                    ) : item.removeGreen ? (
-                      <WebGLImageAvatar src={item.image} />
-                    ) : (
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-contain"
-                        sizes="50vw"
-                      />
-                    )}
+                  <div className="relative w-full h-[80px] my-2 flex items-center justify-center z-10">
+                    <div className={`absolute flex items-center justify-center ${
+                      isVehicle || isAvatarFrame ? "w-[120px] h-[120px]" : "w-full h-full"
+                    }`}>
+                      {item.image.endsWith('.mp4') ? (
+                        <WebGLVideoAvatar src={item.image} />
+                      ) : item.removeGreen ? (
+                        <WebGLImageAvatar src={item.image} />
+                      ) : (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-contain"
+                          sizes="50vw"
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
 
