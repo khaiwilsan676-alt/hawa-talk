@@ -558,11 +558,11 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
             />
             {/* Dog - Moved down, lower z-index */}
-            <div className="absolute -top-1 left-1.5 w-8 h-8 -rotate-[10deg] z-10">
+            <div className="absolute -top-1 left-1.5 w-8 h-8 -rotate-[7deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011118.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Deer - Moved down, lower z-index */}
-            <div className="absolute -top-1 right-1.5 w-8 h-8 rotate-[10deg] z-10">
+            <div className="absolute -top-1 right-1 w-10 h-10 rotate-[8deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011134.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Zebra - Moved up slightly, higher z-index (Head is OVER) */}
