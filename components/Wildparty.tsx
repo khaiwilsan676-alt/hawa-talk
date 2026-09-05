@@ -220,10 +220,10 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
   // Original Exact Coordinates, Sizes & Multipliers
   const animals: AnimalItem[] = [
-    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: 0, y: -15, size: 55, multiplier: 5 },
-    { id: 1, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 260, distance: 130, x: -4, y: -10, size: 72, multiplier: 5 },
-    { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -7.5, y: -19, size: 68, multiplier: 5 },
-    { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -5, y: -18, size: 52, multiplier: 5 },
+    { id: 1, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: 0, y: -15, size: 55, multiplier: 5 },
+    { id: 0, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 260, distance: 130, x: -4, y: -10, size: 72, multiplier: 5 },
+    { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -8, y: -19, size: 68, multiplier: 5 },
+    { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -6, y: -18, size: 52, multiplier: 5 },
     { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
     { id: 5, src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 5, y: -15, size: 60, multiplier: 15 },
     { id: 6, src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180, distance: 130, x: 7, y: -8, size: 63, multiplier: 25 },
