@@ -7,7 +7,9 @@ import { ArrowLeft, Clock } from "lucide-react";
 interface StoreItem {
   id: string;
   name: string;
-  image: string; // Used for both image src and video src
+  image: string; 
+  tryVideo?: string; // Naya field Try video ke liye
+  removeGreen?: boolean; // Agar static image ka green remove karna ho
   tab: string;
   stars: number;
   price: string;
@@ -18,18 +20,25 @@ interface StoreItem {
 const tabs = ["Vehicle", "Avatar Frame", "Theme", "Chat Bubble", "ID"];
 
 const allStoreItems: StoreItem[] = [
-  // Vehicle
-  { id: "v1", name: "Gold Fish", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "2,500,000", duration: "3D" },
-  { id: "v2", name: "Scooter Fox", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "4,500,000", duration: "3D" },
-  { id: "v3", name: "Luxury Yacht", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "7,000,000", duration: "3D" },
-  { id: "v4", name: "Magic Swan", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 4, price: "5,000,000", duration: "3D" },
-  { id: "v5", name: "Submarine", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 4, price: "2,500,000", duration: "3D" },
-  { id: "v6", name: "Sports Car", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "5,000,000", duration: "3D" },
-  { id: "v7", name: "Golden Cycle", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 3, price: "1,000,000", duration: "3D" },
+  // ==========================================
+  // VEHICLE - Purane saare hata diye, sirf naya add kiya hai
+  // ==========================================
+  { 
+    id: "v1", 
+    name: "Leopard Roar", 
+    image: "/IMG_20260905_213710.jpg", 
+    tryVideo: "/VID_20260905_090530_315_bsl.mp4", 
+    removeGreen: true, 
+    tab: "Vehicle", 
+    stars: 5, 
+    price: "100,000", 
+    duration: "5D" 
+  },
 
-  // Avatar Frame - NEW VIDEOS ONLY
+  // Avatar Frame
   { id: "a1", name: "Crown Wings", image: "/VID_20260905_024534_955_bsl.mp4", tab: "Avatar Frame", stars: 5, price: "250,000", duration: "3D" },
   { id: "a2", name: "Host Wings", image: "/VID_20260905_024726_660_bsl.mp4", tab: "Avatar Frame", stars: 5, price: "500,000", duration: "3D" },
+  { id: "a3", name: "Mystic Wings", image: "/VID_20260905_083446_619_bsl.mp4", tab: "Avatar Frame", stars: 5, price: "750,000", duration: "3D" }, 
 
   // Theme
   { id: "t1", name: "Seafood", image: "/IMG-20260904-WA0004.jpg", tab: "Theme", stars: 4, price: "2,700,000", duration: "30D" },
@@ -50,7 +59,6 @@ const allStoreItems: StoreItem[] = [
 
 function WebGLCoinIcon({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -95,7 +103,6 @@ function WebGLCoinIcon({ src }: { src: string }) {
     if (!vertexShader || !fragmentShader) return;
 
     const program = gl.createProgram();
-    if (!program) return;
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
@@ -145,6 +152,107 @@ function WebGLCoinIcon({ src }: { src: string }) {
 }
 
 // ==========================================
+// NAYA: PURE GPU WEBGL STATIC IMAGE GREEN REMOVER
+// ==========================================
+function WebGLImageAvatar({ src }: { src: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const gl = canvas.getContext("webgl", { preserveDrawingBuffer: true, alpha: true });
+    if (!gl) return;
+
+    const vsSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `;
+
+    const fsSource = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_image;
+      
+      void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        float maxRB = max(color.r, color.b);
+        float greenness = color.g - maxRB;
+        float alpha = 1.0 - smoothstep(0.05, 0.15, greenness);
+        if (greenness > 0.0) {
+          color.g = min(color.g, maxRB + 0.05);
+        }
+        gl_FragColor = vec4(color.rgb, color.a * alpha);
+      }
+    `;
+
+    const createShader = (gl: WebGLRenderingContext, type: number, source: string) => {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    };
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    if (!vertexShader || !fragmentShader) return;
+
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const positionLocation = gl.getAttribLocation(program, "a_position");
+    const texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,  1, -1, -1,  1,
+      -1,  1,  1, -1,  1,  1,
+    ]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      0, 0,  1, 0,  0, 1,
+      0, 1,  1, 0,  1, 1,
+    ]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(texCoordLocation);
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const texture = gl.createTexture();
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    
+    const image = new window.Image();
+    image.crossOrigin = "anonymous";
+    image.src = src;
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+  }, [src]);
+
+  return <canvas ref={canvasRef} width={256} height={256} className="w-full h-full object-contain" />;
+}
+
+// ==========================================
 // PURE GPU WEBGL GREEN SCREEN VIDEO SHADER
 // ==========================================
 function WebGLVideoAvatar({ src }: { src: string }) {
@@ -174,7 +282,6 @@ function WebGLVideoAvatar({ src }: { src: string }) {
       }
     `;
 
-    // 100% GPU Fragment Shader logic for Chrome Key (Green Removal)
     const fsSource = `
       precision mediump float;
       varying vec2 v_texCoord;
@@ -182,19 +289,12 @@ function WebGLVideoAvatar({ src }: { src: string }) {
       
       void main() {
         vec4 color = texture2D(u_image, v_texCoord);
-        
-        // Greenness calculation
         float maxRB = max(color.r, color.b);
         float greenness = color.g - maxRB;
-        
-        // Smooth edge masking for green removal (no glitches/hard edges)
         float alpha = 1.0 - smoothstep(0.05, 0.15, greenness);
-        
-        // Despill logic to remove green tint from edges
         if (greenness > 0.0) {
           color.g = min(color.g, maxRB + 0.05);
         }
-        
         gl_FragColor = vec4(color.rgb, color.a * alpha);
       }
     `;
@@ -245,7 +345,6 @@ function WebGLVideoAvatar({ src }: { src: string }) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     
-    // WebGL reads DOM upside down by default, flip it to show correct video
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
     let animationFrameId: number;
@@ -253,7 +352,6 @@ function WebGLVideoAvatar({ src }: { src: string }) {
     const render = () => {
       if (video.readyState >= video.HAVE_CURRENT_DATA) {
         gl.bindTexture(gl.TEXTURE_2D, texture);
-        // Direct GPU transfer, ZERO CPU calculation
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
         
         gl.viewport(0, 0, canvas.width, canvas.height);
@@ -285,6 +383,9 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
   const [currentView, setCurrentView] = useState<"store" | "bag">(initialView);
   const [activeTab, setActiveTab] = useState("Vehicle");
   const [tryThemeItem, setTryThemeItem] = useState<StoreItem | null>(null);
+  
+  // Unified State for Avatar Frame & Vehicle TRY Modals
+  const [tryCenterItem, setTryCenterItem] = useState<StoreItem | null>(null);
 
   const displayedItems = allStoreItems.filter(item => {
     if (currentView === "bag") {
@@ -382,8 +483,8 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
         <div className="grid grid-cols-2 gap-2 px-4 py-1 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
-            // Check if the item is an mp4 video
-            const isVideo = item.image.endsWith('.mp4');
+            const isAvatarFrame = item.tab === "Avatar Frame";
+            const isVehicle = item.tab === "Vehicle";
 
             return (
               <div
@@ -409,9 +510,11 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                   <button 
                     type="button"
                     onClick={(e) => {
+                      e.stopPropagation();
                       if (isTheme) {
-                        e.stopPropagation();
                         setTryThemeItem(item);
+                      } else if (isAvatarFrame || isVehicle) {
+                        setTryCenterItem(item);
                       }
                     }}
                     className={`px-3 py-[2px] rounded-full text-[11px] font-medium border ${
@@ -430,9 +533,11 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
 
                 {/* Item Image / Video */}
                 {!isTheme && (
-                  <div className="relative w-full h-[80px] my-2 flex items-center justify-center z-10">
-                    {isVideo ? (
+                  <div className={`relative w-full ${isAvatarFrame || isVehicle ? 'h-[130px]' : 'h-[80px]'} my-2 flex items-center justify-center z-10`}>
+                    {item.image.endsWith('.mp4') ? (
                       <WebGLVideoAvatar src={item.image} />
+                    ) : item.removeGreen ? (
+                      <WebGLImageAvatar src={item.image} />
                     ) : (
                       <Image
                         src={item.image}
@@ -489,7 +594,37 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
         </div>
       </div>
 
-      {/* STRICT THEME TRY OVERLAY MODAL */}
+      {/* ================================================== */}
+      {/* VEHICLE & AVATAR FRAME TRY OVERLAY MODAL (Black/10) */}
+      {/* ================================================== */}
+      {tryCenterItem && (
+        <div 
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/10 p-4 cursor-pointer"
+          onClick={() => setTryCenterItem(null)}
+        >
+          <div className="relative w-[280px] h-[280px] flex items-center justify-center pointer-events-none">
+            {tryCenterItem.tryVideo ? (
+              <WebGLVideoAvatar src={tryCenterItem.tryVideo} />
+            ) : tryCenterItem.image.endsWith('.mp4') ? (
+              <WebGLVideoAvatar src={tryCenterItem.image} />
+            ) : tryCenterItem.removeGreen ? (
+               <WebGLImageAvatar src={tryCenterItem.image} />
+            ) : (
+              <Image src={tryCenterItem.image} alt={tryCenterItem.name} fill className="object-contain" />
+            )}
+          </div>
+
+          <div className="flex items-center justify-center gap-1 mt-4 pointer-events-none">
+            {renderStars(tryCenterItem.stars)}
+          </div>
+
+          <div className="mt-2 text-[20px] font-bold text-gray-900 pointer-events-none">
+            {tryCenterItem.name}
+          </div>
+        </div>
+      )}
+
+      {/* STRICT THEME TRY OVERLAY MODAL (Purana wala untouched) */}
       {tryThemeItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="relative w-full max-w-[260px] flex flex-col items-center">
