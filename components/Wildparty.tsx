@@ -221,7 +221,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   // Original Exact Coordinates, Sizes & Multipliers
   const animals: AnimalItem[] = [
     
-    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 260, distance: 130, x: 12, y: -5, size: 55, multiplier: 5 },
+    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 260, distance: 130, x: 15, y: -5, size: 55, multiplier: 5 },
     { id: 1, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 315, distance: 130, x: -4, y: -14, size: 72, multiplier: 5 },
     { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -8, y: -19, size: 68, multiplier: 5 },
     { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -6, y: -18, size: 52, multiplier: 5 },
@@ -509,6 +509,69 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             alt="Bottom decoration"
             className="absolute bottom-0 left-0 w-full h-auto object-contain rounded-md z-10 pointer-events-none"
           />
+        )}
+
+        {/* --- NEW ADDITION: Bottom Left Corner Image --- */}
+        {!loading && (
+          <img
+            src="/file_00000000993c8208ae462545f9ccb0ba.png"
+            alt="Bottom Left Decor"
+            className="absolute bottom-11 left-1 w-14 h-14 object-contain z-20 pointer-events-none"
+          />
+        )}
+
+        {/* --- NEW ADDITION: Top Left High Multiplier Group (10, 15, 25, 45) --- */}
+        {!loading && (
+          <div className="absolute top-[72px] left-1 w-[68px] h-[68px] z-30 pointer-events-none flex items-center justify-center">
+            <img
+              src="/file_00000000330c8211b80be136b631b3e0.png"
+              alt="High Multipliers Bg"
+              className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
+            />
+            {/* Eagle (10x) */}
+            <div className="absolute top-1.5 left-1.5 w-6 h-6 rotate-12">
+              <GreenScreenImage src="/IMG_20260822_011151.png" className="w-full h-full object-cover drop-shadow-sm" />
+            </div>
+            {/* Bear (15x) */}
+            <div className="absolute top-1.5 right-1.5 w-6 h-6 -rotate-6">
+              <GreenScreenImage src="/IMG_20260822_011205.png" className="w-full h-full object-cover drop-shadow-sm" />
+            </div>
+            {/* Tiger (25x) */}
+            <div className="absolute bottom-1.5 left-1.5 w-6 h-6 -rotate-[15deg]">
+              <GreenScreenImage src="/IMG_20260822_011218.png" className="w-full h-full object-cover drop-shadow-sm" />
+            </div>
+            {/* Lion (45x) */}
+            <div className="absolute bottom-1.5 right-1.5 w-7 h-7 rotate-[10deg] z-10">
+              <GreenScreenImage src="/IMG_20260822_011028.png" className="w-full h-full object-cover drop-shadow-sm" />
+            </div>
+          </div>
+        )}
+
+        {/* --- NEW ADDITION: Top Right 5x Multiplier Group (Dog, Deer, Zebra, Fox) --- */}
+        {!loading && (
+          <div className="absolute top-[72px] right-1 w-[68px] h-[68px] z-30 pointer-events-none flex items-center justify-center">
+            <img
+              src="/file_00000000330c8211b80be136b631b3e0.png"
+              alt="Low Multipliers Bg"
+              className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
+            />
+            {/* Dog */}
+            <div className="absolute top-1.5 left-1.5 w-6 h-6 rotate-6">
+              <GreenScreenImage src="/IMG_20260822_011118.png" className="w-full h-full object-cover drop-shadow-sm" />
+            </div>
+            {/* Deer */}
+            <div className="absolute top-1.5 right-1.5 w-[26px] h-[26px] -rotate-12">
+              <GreenScreenImage src="/IMG_20260822_011134.png" className="w-full h-full object-cover drop-shadow-sm" />
+            </div>
+            {/* Zebra */}
+            <div className="absolute bottom-1.5 left-1.5 w-6 h-6 -rotate-[10deg] z-10">
+              <GreenScreenImage src="/IMG_20260822_011103.png" className="w-full h-full object-cover drop-shadow-sm" />
+            </div>
+            {/* Fox */}
+            <div className="absolute bottom-1 right-1.5 w-6 h-6 rotate-12">
+              <GreenScreenImage src="/IMG_20260822_011041.png" className="w-full h-full object-cover drop-shadow-sm" />
+            </div>
+          </div>
         )}
 
         {/* Top Header Bar & Icons */}
