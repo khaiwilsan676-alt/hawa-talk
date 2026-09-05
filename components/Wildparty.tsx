@@ -221,8 +221,8 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   // Original Exact Coordinates, Sizes & Multipliers
   const animals: AnimalItem[] = [
     
-    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 260, distance: 130, x: -0, y: -15, size: 55, multiplier: 5 },
-    { id: 1, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 315, distance: 130, x: 4, y: -10, size: 72, multiplier: 5 },
+    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 260, distance: 130, x: 0, y: -15, size: 55, multiplier: 5 },
+    { id: 1, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 315, distance: 130, x: -4, y: -10, size: 72, multiplier: 5 },
     { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -8, y: -19, size: 68, multiplier: 5 },
     { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -6, y: -18, size: 52, multiplier: 5 },
     { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
