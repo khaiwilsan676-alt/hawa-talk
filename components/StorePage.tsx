@@ -149,7 +149,7 @@ function WebGLCoinIcon({ src }: { src: string }) {
   return <canvas ref={canvasRef} width={64} height={64} className="w-full h-full object-contain" />;
 }
 
-// Pure GPU WebGL Static Image Green Remover (Strictly Clean Edges)
+// STRICT CHROMA KEY FOR STATIC IMAGE (Clean Soft Edges)
 function WebGLImageAvatar({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
@@ -168,6 +168,7 @@ function WebGLImageAvatar({ src }: { src: string }) {
       }
     `;
 
+    // UPDATED: Smoothstep and spill suppression for clean edges
     const fsSource = `
       precision mediump float;
       varying vec2 v_texCoord;
@@ -177,12 +178,16 @@ function WebGLImageAvatar({ src }: { src: string }) {
         vec4 color = texture2D(u_image, v_texCoord);
         float maxRB = max(color.r, color.b);
         float greenness = color.g - maxRB;
-        // Strict threshold to prevent any green/black spill
-        float alpha = 1.0 - smoothstep(0.02, 0.08, greenness);
-        if (greenness > 0.0) {
-          color.g = min(color.g, maxRB);
+        
+        float alpha = 1.0 - smoothstep(0.04, 0.12, greenness);
+        
+        color.g = min(color.g, maxRB + 0.05);
+        
+        if (alpha < 0.01) {
+          discard;
         }
-        gl_FragColor = vec4(color.rgb, color.a * alpha);
+        
+        gl_FragColor = vec4(color.rgb * alpha, alpha);
       }
     `;
 
@@ -249,7 +254,7 @@ function WebGLImageAvatar({ src }: { src: string }) {
   return <canvas ref={canvasRef} width={256} height={256} className="w-full h-full object-contain" />;
 }
 
-// Pure GPU WebGL Green Screen Video Shader with Sound Support (muted = false for vehicles)
+// STRICT CHROMA KEY FOR VIDEO (Clean Soft Edges)
 function WebGLVideoAvatar({ src, isVehicleModal = false }: { src: string; isVehicleModal?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -263,7 +268,6 @@ function WebGLVideoAvatar({ src, isVehicleModal = false }: { src: string; isVehi
     video.src = src;
     video.crossOrigin = "anonymous";
     video.loop = true;
-    // VEHICLE MODAL KE LIYE SOUND ON KI HAI (muted = false), baaki ke liye muted = true
     video.muted = !isVehicleModal;
     video.playsInline = true;
     video.play().catch(e => console.log("Video auto-play prevented:", e));
@@ -278,6 +282,7 @@ function WebGLVideoAvatar({ src, isVehicleModal = false }: { src: string; isVehi
       }
     `;
 
+    // UPDATED: Smoothstep and spill suppression for clear & clean video edges
     const fsSource = `
       precision mediump float;
       varying vec2 v_texCoord;
@@ -287,12 +292,16 @@ function WebGLVideoAvatar({ src, isVehicleModal = false }: { src: string; isVehi
         vec4 color = texture2D(u_image, v_texCoord);
         float maxRB = max(color.r, color.b);
         float greenness = color.g - maxRB;
-        // Perfect green spill removal without black/green dots
-        float alpha = 1.0 - smoothstep(0.03, 0.12, greenness);
-        if (greenness > 0.0) {
-          color.g = min(color.g, maxRB);
+        
+        float alpha = 1.0 - smoothstep(0.04, 0.12, greenness);
+        
+        color.g = min(color.g, maxRB + 0.05);
+        
+        if (alpha < 0.01) {
+          discard;
         }
-        gl_FragColor = vec4(color.rgb, color.a * alpha);
+        
+        gl_FragColor = vec4(color.rgb * alpha, alpha);
       }
     `;
 
@@ -373,14 +382,13 @@ function WebGLVideoAvatar({ src, isVehicleModal = false }: { src: string; isVehi
     };
   }, [src, isVehicleModal]);
 
-  return <canvas ref={canvasRef} width={256} height={256} className="w-full h-full object-contain" />;
+  return <canvas ref={canvasRef} width={512} height={512} className="w-full h-full object-contain" />;
 }
 
 export default function StorePage({ onBack, initialView = "store" }: { onBack: () => void; initialView?: "store" | "bag" }) {
   const [currentView, setCurrentView] = useState<"store" | "bag">(initialView);
   const [activeTab, setActiveTab] = useState("Vehicle");
   const [tryThemeItem, setTryThemeItem] = useState<StoreItem | null>(null);
-  
   const [tryCenterItem, setTryCenterItem] = useState<StoreItem | null>(null);
 
   const displayedItems = allStoreItems.filter(item => {
@@ -475,7 +483,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
           })}
         </div>
 
-        {/* Items Grid - ORIGINAL DISPLAY CARD HEIGHT RESTORED */}
+        {/* Items Grid */}
         <div className="grid grid-cols-2 gap-2 px-4 py-1 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
@@ -526,7 +534,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                   </div>
                 </div>
 
-                {/* Item Image / Video - ONLY AVATAR FRAME SIZE IS BIGGER, OTHERS ORIGINAL (h-[80px]) */}
+                {/* Item Image / Video */}
                 {!isTheme && (
                   <div className={`relative w-full ${isAvatarFrame ? 'h-[130px]' : 'h-[80px]'} my-2 flex items-center justify-center z-10`}>
                     {item.image.endsWith('.mp4') ? (
@@ -590,14 +598,15 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
       </div>
 
       {/* ================================================== */}
-      {/* CENTER TRY MODAL (Zero Green/Black Drop, Sound On for Vehicle) */}
+      {/* FULL WIDE VEHICLE & FRAME TRY MODAL (Phone Corners Touch) */}
       {/* ================================================== */}
       {tryCenterItem && (
         <div 
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/10 p-4 cursor-pointer"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/10 p-0 cursor-pointer"
           onClick={() => setTryCenterItem(null)}
         >
-          <div className="relative w-[280px] h-[280px] flex items-center justify-center pointer-events-none">
+          {/* FULL WIDE CONTAINER TOUCHING PHONE EDGES FOR VEHICLE, NORMAL FOR FRAMES */}
+          <div className={`relative flex items-center justify-center pointer-events-none ${tryCenterItem.tab === "Vehicle" ? "w-full h-[60vh]" : "w-[280px] h-[280px]"}`}>
             {tryCenterItem.tryVideo ? (
               <WebGLVideoAvatar src={tryCenterItem.tryVideo} isVehicleModal={tryCenterItem.tab === "Vehicle"} />
             ) : tryCenterItem.image.endsWith('.mp4') ? (
