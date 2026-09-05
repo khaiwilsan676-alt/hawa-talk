@@ -222,9 +222,9 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   const animals: AnimalItem[] = [
     
     { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 260, distance: 130, x: 17, y: -5, size: 55, multiplier: 5 },
-    { id: 1, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 315, distance: 130, x: -4, y: -14, size: 52, multiplier: 5 },
+    { id: 1, src: '/IMG_20260822_011134.png', alt: 'deer', angle: 315, distance: 130, x: -4, y: -14, size: 72, multiplier: 5 },
     { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -8, y: -19, size: 68, multiplier: 5 },
-    { id: 3, src: '/IMG_20260822_011134.png', alt: 'deer', angle: 45, distance: 130, x: -6, y: -18, size: 72, multiplier: 5 },
+    { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -6, y: -18, size: 52, multiplier: 5 },
     { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
     { id: 5, src: '/IMG_20260822_011205.png', alt: 'Bear', angle: 135, distance: 130, x: 5, y: -15, size: 60, multiplier: 15 },
     { id: 6, src: '/IMG_20260822_011218.png', alt: 'Tiger', angle: 180, distance: 130, x: 7, y: -8, size: 63, multiplier: 25 },
@@ -513,26 +513,26 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
                {/* --- NEW ADDITION: Top Left High Multiplier Group (10, 15, 25, 45) --- */}
         {!loading && (
-          <div className="absolute top-[88px] left-1 w-[60px] h-[60px] z-30 pointer-events-none flex items-center justify-center">
+          <div className="absolute top-[88px] left-1 w-[65px] h-[65px] z-30 pointer-events-none flex items-center justify-center">
             <img
               src="/file_00000000330c8211b80be136b631b3e0.png"
               alt="High Multipliers Bg"
               className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
             />
             {/* Eagle (10x) - Left side khiskaya aur zyada rotate kiya */}
-            <div className="absolute top-1.5 -left-0.5 w-8 h-8 -rotate-[25deg] z-20">
+            <div className="absolute top-1.5 -left-0.5 w-8 h-8 -rotate-[10deg] z-20">
               <GreenScreenImage src="/IMG_20260822_011151.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Bear (15x) - Right side khiskaya aur rotate kiya */}
-            <div className="absolute top-1.5 -right-0.5 w-8 h-8 rotate-[25deg] z-20">
+            <div className="absolute top-1.5 -right-0.5 w-8 h-8 rotate-[10deg] z-20">
               <GreenScreenImage src="/IMG_20260822_011205.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Tiger (25x) - Ekdam pehle jaisa (As before) */}
-            <div className="absolute bottom-1.5 left-1.5 w-6 h-6 -rotate-[15deg] z-10">
+            <div className="absolute bottom-1.5 left-1.5 w-8 h-8 -rotate-[15deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011218.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Lion (45x) - Ekdam pehle jaisa (As before) */}
-            <div className="absolute bottom-1.5 right-1.5 w-7 h-7 rotate-[10deg] z-10">
+            <div className="absolute bottom-1.5 right-1.5 w-8 h-8 rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011028.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
           </div>
@@ -540,26 +540,26 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
                 {/* --- NEW ADDITION: Top Right 5x Multiplier Group (Dog, Deer, Zebra, Fox) --- */}
         {!loading && (
-          <div className="absolute top-[88px] right-1 w-[60px] h-[60px] z-30 pointer-events-none flex items-center justify-center">
+          <div className="absolute top-[88px] right-1 w-[65px] h-[65px] z-30 pointer-events-none flex items-center justify-center">
             <img
               src="/file_00000000330c8211b80be136b631b3e0.png"
               alt="Low Multipliers Bg"
               className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
             />
             {/* Dog - Left side khiskaya aur zyada rotate kiya */}
-            <div className="absolute top-1.5 -left-0.5 w-8 h-8 -rotate-[25deg] z-20">
+            <div className="absolute top-1.5 -left-0.5 w-8 h-8 -rotate-[10deg] z-20">
               <GreenScreenImage src="/IMG_20260822_011118.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Deer - Right side khiskaya aur rotate kiya */}
-            <div className="absolute top-1.5 -right-0.5 w-8 h-8 rotate-[25deg] z-20">
+            <div className="absolute top-1.5 -right-0.5 w-8 h-8 rotate-[10deg] z-20">
               <GreenScreenImage src="/IMG_20260822_011134.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Zebra - Ekdam pehle jaisa (As before) */}
-            <div className="absolute bottom-1.5 left-1.5 w-6 h-6 -rotate-[10deg] z-10">
+            <div className="absolute bottom-1.5 left-1.5 w-8 h-8 -rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011103.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
             {/* Fox - Ekdam pehle jaisa (As before) */}
-            <div className="absolute bottom-1 right-1.5 w-6 h-6 rotate-12 z-10">
+            <div className="absolute bottom-1 right-1.5 w-8 h-8 rotate-12 z-10">
               <GreenScreenImage src="/IMG_20260822_011041.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
           </div>
@@ -795,7 +795,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
         {/* Bottom Left: Live Golden Balance */}
         {!loading && (
-          <div className="absolute bottom-5 lgap-1.5 z-30 flex items-center gap-1.5 pointer-events-auto select-none">
+          <div className="absolute bottom-4 left-2.5 gap-1.5 z-30 flex items-center gap-1.5 pointer-events-auto select-none">
             <LoadingShaderImage
               src="/1786855398290.png"
               className="w-4 h-4 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
