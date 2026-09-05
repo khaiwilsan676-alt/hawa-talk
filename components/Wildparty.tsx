@@ -221,8 +221,8 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   // Original Exact Coordinates, Sizes & Multipliers
   const animals: AnimalItem[] = [
     
-    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 260, distance: 130, x: 17, y: -5, size: 55, multiplier: 5 },
-    { id: 1, src: '/IMG_20260822_011134.png', alt: 'deer', angle: 315, distance: 130, x: -4, y: -14, size: 72, multiplier: 5 },
+    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Deer', angle: 315, distance: 130, x: 0, y: -14, size: 70, multiplier: 5 },
+    { id: 1, src: '/IMG_20260822_011134.png', alt: 'dog', angle: 270, distance: 130, x: -4, y: -10, size: 55, multiplier: 5 },
     { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -8, y: -19, size: 68, multiplier: 5 },
     { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -6, y: -18, size: 52, multiplier: 5 },
     { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
@@ -491,7 +491,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
       {/* Bottom Sheet Container */}
       <div
-        className="relative bg-transparent w-full max-w-md rounded-none rounded-none shadow-2xl overflow-hidden"
+        className="relative bg-transparent w-full max-w-md rounded-none shadow-2xl overflow-hidden"
         style={{ height: '65vh' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -511,7 +511,17 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           />
         )}
 
-               {/* --- NEW ADDITION: Top Left High Multiplier Group (10, 15, 25, 45) --- */}
+        {/* --- ADDED BACK: Bottom Left Corner Image --- */}
+        {!loading && (
+          <img
+            src="/file_00000000993c8208ae462545f9ccb0ba.png"
+            alt="Bottom Left Decor"
+            className="absolute bottom-4 left-2 w-[40px] h-[55px] object-contain z-40 pointer-events-none"
+          />
+        )}
+
+        {/* --- FIXED: Top Left High Multiplier Group (10, 15, 25, 45) --- */}
+        {/* Gap removed & Tiger/Lion overlapping over Eagle/Bear */}
         {!loading && (
           <div className="absolute top-[88px] left-1 w-[65px] h-[65px] z-30 pointer-events-none flex items-center justify-center">
             <img
@@ -519,26 +529,27 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               alt="High Multipliers Bg"
               className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
             />
-            {/* Eagle (10x) - Left side khiskaya aur zyada rotate kiya */}
-            <div className="absolute top-1.5 -left-0.5 w-8 h-8 -rotate-[10deg] z-20">
+            {/* Eagle (10x) - Moved down, lower z-index */}
+            <div className="absolute top-2 -left-0.5 w-8 h-8 -rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011151.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
-            {/* Bear (15x) - Right side khiskaya aur rotate kiya */}
-            <div className="absolute top-1.5 -right-0.5 w-8 h-8 rotate-[10deg] z-20">
+            {/* Bear (15x) - Moved down, lower z-index */}
+            <div className="absolute top-2 -right-0.5 w-8 h-8 rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011205.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
-            {/* Tiger (25x) - Ekdam pehle jaisa (As before) */}
-            <div className="absolute bottom-1.5 left-1.5 w-8 h-8 -rotate-[15deg] z-10">
+            {/* Tiger (25x) - Moved up slightly, higher z-index (Head is OVER) */}
+            <div className="absolute bottom-2 left-1 w-[34px] h-[34px] -rotate-[15deg] z-30">
               <GreenScreenImage src="/IMG_20260822_011218.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
-            {/* Lion (45x) - Ekdam pehle jaisa (As before) */}
-            <div className="absolute bottom-1.5 right-1.5 w-8 h-8 rotate-[10deg] z-10">
+            {/* Lion (45x) - Moved up slightly, higher z-index (Head is OVER) */}
+            <div className="absolute bottom-2 right-0.5 w-[34px] h-[34px] rotate-[10deg] z-30">
               <GreenScreenImage src="/IMG_20260822_011028.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
           </div>
         )}
 
-                {/* --- NEW ADDITION: Top Right 5x Multiplier Group (Dog, Deer, Zebra, Fox) --- */}
+        {/* --- FIXED: Top Right 5x Multiplier Group (Dog, Deer, Zebra, Fox) --- */}
+        {/* Gap removed & Zebra/Fox overlapping over Dog/Deer */}
         {!loading && (
           <div className="absolute top-[88px] right-1 w-[65px] h-[65px] z-30 pointer-events-none flex items-center justify-center">
             <img
@@ -546,20 +557,20 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               alt="Low Multipliers Bg"
               className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
             />
-            {/* Dog - Left side khiskaya aur zyada rotate kiya */}
-            <div className="absolute top-1.5 -left-0.5 w-8 h-8 -rotate-[10deg] z-20">
+            {/* Dog - Moved down, lower z-index */}
+            <div className="absolute top-2 -left-0.5 w-8 h-8 -rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011118.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
-            {/* Deer - Right side khiskaya aur rotate kiya */}
-            <div className="absolute top-1.5 -right-0.5 w-8 h-8 rotate-[10deg] z-20">
+            {/* Deer - Moved down, lower z-index */}
+            <div className="absolute top-2 -right-0.5 w-8 h-8 rotate-[10deg] z-10">
               <GreenScreenImage src="/IMG_20260822_011134.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
-            {/* Zebra - Ekdam pehle jaisa (As before) */}
-            <div className="absolute bottom-1.5 left-1.5 w-8 h-8 -rotate-[10deg] z-10">
+            {/* Zebra - Moved up slightly, higher z-index (Head is OVER) */}
+            <div className="absolute bottom-2 left-1 w-[34px] h-[34px] -rotate-[10deg] z-30">
               <GreenScreenImage src="/IMG_20260822_011103.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
-            {/* Fox - Ekdam pehle jaisa (As before) */}
-            <div className="absolute bottom-1 right-1.5 w-8 h-8 rotate-12 z-10">
+            {/* Fox - Moved up slightly, higher z-index (Head is OVER) */}
+            <div className="absolute bottom-2 right-0.5 w-[34px] h-[34px] rotate-12 z-30">
               <GreenScreenImage src="/IMG_20260822_011041.png" className="w-full h-full object-cover drop-shadow-sm" />
             </div>
           </div>
@@ -795,7 +806,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
         {/* Bottom Left: Live Golden Balance */}
         {!loading && (
-          <div className="absolute bottom-4 left-2.5 gap-1.5 z-30 flex items-center gap-1.5 pointer-events-auto select-none">
+          <div className="absolute bottom-4 left-2.5 z-30 flex items-center gap-1.5 pointer-events-auto select-none">
             <LoadingShaderImage
               src="/1786855398290.png"
               className="w-4 h-4 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
