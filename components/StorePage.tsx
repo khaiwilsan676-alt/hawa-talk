@@ -8,8 +8,8 @@ interface StoreItem {
   id: string;
   name: string;
   image: string; 
-  tryVideo?: string; // Naya field Try video ke liye
-  removeGreen?: boolean; // Agar static image ka green remove karna ho
+  tryVideo?: string; 
+  removeGreen?: boolean; 
   tab: string;
   stars: number;
   price: string;
@@ -20,9 +20,7 @@ interface StoreItem {
 const tabs = ["Vehicle", "Avatar Frame", "Theme", "Chat Bubble", "ID"];
 
 const allStoreItems: StoreItem[] = [
-  // ==========================================
-  // VEHICLE - Purane saare hata diye, sirf naya add kiya hai
-  // ==========================================
+  // Vehicle
   { 
     id: "v1", 
     name: "Leopard Roar", 
@@ -151,9 +149,7 @@ function WebGLCoinIcon({ src }: { src: string }) {
   return <canvas ref={canvasRef} width={64} height={64} className="w-full h-full object-contain" />;
 }
 
-// ==========================================
-// NAYA: PURE GPU WEBGL STATIC IMAGE GREEN REMOVER
-// ==========================================
+// Pure GPU WebGL Static Image Green Remover (Strictly Clean Edges)
 function WebGLImageAvatar({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
@@ -181,9 +177,10 @@ function WebGLImageAvatar({ src }: { src: string }) {
         vec4 color = texture2D(u_image, v_texCoord);
         float maxRB = max(color.r, color.b);
         float greenness = color.g - maxRB;
-        float alpha = 1.0 - smoothstep(0.05, 0.15, greenness);
+        // Strict threshold to prevent any green/black spill
+        float alpha = 1.0 - smoothstep(0.02, 0.08, greenness);
         if (greenness > 0.0) {
-          color.g = min(color.g, maxRB + 0.05);
+          color.g = min(color.g, maxRB);
         }
         gl_FragColor = vec4(color.rgb, color.a * alpha);
       }
@@ -252,10 +249,8 @@ function WebGLImageAvatar({ src }: { src: string }) {
   return <canvas ref={canvasRef} width={256} height={256} className="w-full h-full object-contain" />;
 }
 
-// ==========================================
-// PURE GPU WEBGL GREEN SCREEN VIDEO SHADER
-// ==========================================
-function WebGLVideoAvatar({ src }: { src: string }) {
+// Pure GPU WebGL Green Screen Video Shader with Sound Support (muted = false for vehicles)
+function WebGLVideoAvatar({ src, isVehicleModal = false }: { src: string; isVehicleModal?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -268,7 +263,8 @@ function WebGLVideoAvatar({ src }: { src: string }) {
     video.src = src;
     video.crossOrigin = "anonymous";
     video.loop = true;
-    video.muted = true;
+    // VEHICLE MODAL KE LIYE SOUND ON KI HAI (muted = false), baaki ke liye muted = true
+    video.muted = !isVehicleModal;
     video.playsInline = true;
     video.play().catch(e => console.log("Video auto-play prevented:", e));
 
@@ -291,9 +287,10 @@ function WebGLVideoAvatar({ src }: { src: string }) {
         vec4 color = texture2D(u_image, v_texCoord);
         float maxRB = max(color.r, color.b);
         float greenness = color.g - maxRB;
-        float alpha = 1.0 - smoothstep(0.05, 0.15, greenness);
+        // Perfect green spill removal without black/green dots
+        float alpha = 1.0 - smoothstep(0.03, 0.12, greenness);
         if (greenness > 0.0) {
-          color.g = min(color.g, maxRB + 0.05);
+          color.g = min(color.g, maxRB);
         }
         gl_FragColor = vec4(color.rgb, color.a * alpha);
       }
@@ -374,7 +371,7 @@ function WebGLVideoAvatar({ src }: { src: string }) {
       gl.deleteBuffer(texCoordBuffer);
       gl.deleteProgram(program);
     };
-  }, [src]);
+  }, [src, isVehicleModal]);
 
   return <canvas ref={canvasRef} width={256} height={256} className="w-full h-full object-contain" />;
 }
@@ -384,7 +381,6 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
   const [activeTab, setActiveTab] = useState("Vehicle");
   const [tryThemeItem, setTryThemeItem] = useState<StoreItem | null>(null);
   
-  // Unified State for Avatar Frame & Vehicle TRY Modals
   const [tryCenterItem, setTryCenterItem] = useState<StoreItem | null>(null);
 
   const displayedItems = allStoreItems.filter(item => {
@@ -479,12 +475,11 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
           })}
         </div>
 
-        {/* Items Grid */}
+        {/* Items Grid - ORIGINAL DISPLAY CARD HEIGHT RESTORED */}
         <div className="grid grid-cols-2 gap-2 px-4 py-1 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
             const isAvatarFrame = item.tab === "Avatar Frame";
-            const isVehicle = item.tab === "Vehicle";
 
             return (
               <div
@@ -513,7 +508,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                       e.stopPropagation();
                       if (isTheme) {
                         setTryThemeItem(item);
-                      } else if (isAvatarFrame || isVehicle) {
+                      } else {
                         setTryCenterItem(item);
                       }
                     }}
@@ -531,9 +526,9 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                   </div>
                 </div>
 
-                {/* Item Image / Video */}
+                {/* Item Image / Video - ONLY AVATAR FRAME SIZE IS BIGGER, OTHERS ORIGINAL (h-[80px]) */}
                 {!isTheme && (
-                  <div className={`relative w-full ${isAvatarFrame || isVehicle ? 'h-[130px]' : 'h-[80px]'} my-2 flex items-center justify-center z-10`}>
+                  <div className={`relative w-full ${isAvatarFrame ? 'h-[130px]' : 'h-[80px]'} my-2 flex items-center justify-center z-10`}>
                     {item.image.endsWith('.mp4') ? (
                       <WebGLVideoAvatar src={item.image} />
                     ) : item.removeGreen ? (
@@ -595,7 +590,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
       </div>
 
       {/* ================================================== */}
-      {/* VEHICLE & AVATAR FRAME TRY OVERLAY MODAL (Black/10) */}
+      {/* CENTER TRY MODAL (Zero Green/Black Drop, Sound On for Vehicle) */}
       {/* ================================================== */}
       {tryCenterItem && (
         <div 
@@ -604,9 +599,9 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
         >
           <div className="relative w-[280px] h-[280px] flex items-center justify-center pointer-events-none">
             {tryCenterItem.tryVideo ? (
-              <WebGLVideoAvatar src={tryCenterItem.tryVideo} />
+              <WebGLVideoAvatar src={tryCenterItem.tryVideo} isVehicleModal={tryCenterItem.tab === "Vehicle"} />
             ) : tryCenterItem.image.endsWith('.mp4') ? (
-              <WebGLVideoAvatar src={tryCenterItem.image} />
+              <WebGLVideoAvatar src={tryCenterItem.image} isVehicleModal={tryCenterItem.tab === "Vehicle"} />
             ) : tryCenterItem.removeGreen ? (
                <WebGLImageAvatar src={tryCenterItem.image} />
             ) : (
@@ -624,7 +619,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
         </div>
       )}
 
-      {/* STRICT THEME TRY OVERLAY MODAL (Purana wala untouched) */}
+      {/* THEME TRY OVERLAY MODAL */}
       {tryThemeItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="relative w-full max-w-[260px] flex flex-col items-center">
