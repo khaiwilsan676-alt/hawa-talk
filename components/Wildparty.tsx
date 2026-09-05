@@ -221,8 +221,8 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   // Original Exact Coordinates, Sizes & Multipliers
   const animals: AnimalItem[] = [
     
-    { id: 0, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 260, distance: 130, x: -4, y: -10, size: 72, multiplier: 5 },
-    { id: 1, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: 0, y: -15, size: 55, multiplier: 5 },
+    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 260, distance: 130, x: -4, y: -10, size: 72, multiplier: 5 },
+    { id: 1, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 315, distance: 130, x: 0, y: -15, size: 55, multiplier: 5 },
     { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -8, y: -19, size: 68, multiplier: 5 },
     { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -6, y: -18, size: 52, multiplier: 5 },
     { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
@@ -759,9 +759,9 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             <button
               onClick={handleRepeatBet}
               aria-label="Repeat Bet"
-              className="h-4 w-4 rounded-md flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+              className="h-6 px-1 rounded-md flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
             >
-              <span className="text-white font-extrabold text-[5px] tracking-wider uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+              <span className="text-white font-extrabold text-[8px] tracking-wider uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
                 Repeat
               </span>
             </button>
