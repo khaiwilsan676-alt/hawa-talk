@@ -14,8 +14,9 @@ import InviteFriends from './InviteFriends'
 import Family from './Family'
 import Level from './Level'
 import Medal from './Medal'
-import SellerCenter from './sellercenter' // <--- Small letters me import
+import SellerCenter from './sellercenter'
 import { saveFeedback, getUsers } from '../src/lib/googleSheet'
+import FollowList from './followlist' // <--- Import FollowList
 
 // ============ IndexedDB Functions for User Data ============
 const USER_DB_NAME = 'UserDataDB';
@@ -376,6 +377,10 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const [showLevel, setShowLevel] = useState(false)
   const [showMedal, setShowMedal] = useState(false)
   const [showSellerCenter, setShowSellerCenter] = useState(false)
+  
+  // New state for FollowList
+  const [showFollowList, setShowFollowList] = useState(false)
+  const [followListType, setFollowListType] = useState<'followers' | 'following' | 'visitors'>('followers')
 
   useEffect(() => {
     if (onPublicProfileChange) {
@@ -388,10 +393,11 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         showFamily ||
         showLevel ||
         showMedal ||
-        showSellerCenter
+        showSellerCenter ||
+        showFollowList
       )
     }
-  }, [showFeedbackPage, currentView, showWallet, showStore, showInviteFriends, showFamily, showLevel, showMedal, showSellerCenter])
+  }, [showFeedbackPage, currentView, showWallet, showStore, showInviteFriends, showFamily, showLevel, showMedal, showSellerCenter, showFollowList])
   
   const [selectedType, setSelectedType] = useState<string>('')
   const [problemDescription, setProblemDescription] = useState('')
@@ -471,7 +477,8 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         showFamily || 
         showLevel || 
         showMedal ||
-        showSellerCenter
+        showSellerCenter ||
+        showFollowList
       )
     }
   }
@@ -624,7 +631,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
   const isSpecialUID = user.uid === 'HUSxSvQnabgU029dWYt1TUV04hd2' || user.uid === 'ADqW31RGBMaosOzy0HiqexKSD7h1'
 
-  // Early returns
+  // Early returns - FollowList check first
+  if (showFollowList) {
+    return <FollowList 
+      onBack={() => setShowFollowList(false)} 
+      type={followListType} 
+    />
+  }
+
   if (showInviteFriends) return <InviteFriends onBack={() => setShowInviteFriends(false)} />
   if (showFamily) return <Family onBack={() => setShowFamily(false)} />
   if (showLevel) return <Level onBack={() => setShowLevel(false)} />
@@ -862,16 +876,35 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
           </button>
         </div>
 
+        {/* Followers, Following, Visitors - All Clickable */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center">
+          <div 
+            className="text-center cursor-pointer active:scale-95 transition-transform"
+            onClick={() => {
+              setFollowListType('followers');
+              setShowFollowList(true);
+            }}
+          >
             <div className="text-2xl font-bold text-gray-900">1</div>
             <div className="text-xs text-gray-600 mt-1">{t.followers}</div>
           </div>
-          <div className="text-center">
+          <div 
+            className="text-center cursor-pointer active:scale-95 transition-transform"
+            onClick={() => {
+              setFollowListType('following');
+              setShowFollowList(true);
+            }}
+          >
             <div className="text-2xl font-bold text-gray-900">0</div>
             <div className="text-xs text-gray-600 mt-1">{t.following}</div>
           </div>
-          <div className="text-center">
+          <div 
+            className="text-center cursor-pointer active:scale-95 transition-transform"
+            onClick={() => {
+              setFollowListType('visitors');
+              setShowFollowList(true);
+            }}
+          >
             <div className="text-2xl font-bold text-gray-900">1</div>
             <div className="text-xs text-gray-600 mt-1">{t.visitors}</div>
           </div>
@@ -1008,5 +1041,4 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     </div>
   )
-}
-
+          }
