@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { ChevronLeft, HelpCircle } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -128,22 +128,26 @@ function ShaderImageBadge({
 }
 
 export default function Level({ onBack }: LevelProps) {
-  const currentXP = 59692
-  const nextLevelXP = 68414
-  const neededXP = nextLevelXP - currentXP
-  const progressPercent = Math.min((currentXP / nextLevelXP) * 100, 100)
+  const currentXP = 0
+  const nextLevelXP = 857342265
+  const progressPercent = 0
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#0a0c16] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-purple-950/30">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#120822] via-[#090414] to-[#030107] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-purple-950/40">
       
-      {/* 30vh Top Background Image with Subtle Fade */}
-      <div className="absolute top-0 left-0 right-0 h-[30vh] pointer-events-none z-0 overflow-hidden">
-        <img
-          src="/file_00000000360c82118a57a81f560c0ec3.png"
-          alt="Top Background"
-          className="w-full h-full object-cover object-top opacity-70"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0c16]/60 to-[#0a0c16]" />
+      {/* 30vh Top Background Image Layer */}
+      <div 
+        className="absolute top-0 left-0 w-full h-[30vh] bg-cover bg-center z-0 pointer-events-none opacity-80"
+        style={{ backgroundImage: "url('/file_00000000360c82118a57a81f560c0ec3.png')" }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-[#120822]/20 via-[#120822]/60 to-[#120822]" />
+      </div>
+
+      {/* Background Glows */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-full h-80 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-600/25 via-indigo-900/10 to-transparent blur-3xl" />
+        <div className="absolute top-[30%] -left-20 w-80 h-80 bg-purple-900/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[25%] -right-20 w-80 h-80 bg-fuchsia-900/10 rounded-full blur-[120px]" />
       </div>
 
       {/* Top Header */}
@@ -157,73 +161,78 @@ export default function Level({ onBack }: LevelProps) {
         >
           <ChevronLeft size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
         </button>
-
-        <h1 className="text-lg font-bold text-white tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-white tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
           Level
         </h1>
-
-        <button className="p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer">
-          <HelpCircle size={22} className="text-white/80 hover:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-        </button>
+        <div className="w-8" />
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 px-4 pt-3 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      {/* Main Content */}
+      <div className="flex-1 px-4 pt-2 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
-        {/* Exact Same-to-Same Card Design from Reference Image */}
-        <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#231a47] via-[#1b1735] to-[#121024] p-5 shadow-[0_12px_32px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(180,160,255,0.25)] border border-[#483c74]/50">
+        {/* Main Profile Card - Clean & Exact Reference Style */}
+        <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-b from-[#160b2b] via-[#0d061c] to-[#070310] p-5 shadow-[0_16px_35px_rgba(10,4,20,0.8)] border border-purple-500/20">
           
-          {/* Top Edge Purple Neon Glow Line */}
-          <div className="absolute top-0 left-6 right-6 h-[1.5px] bg-gradient-to-r from-transparent via-[#885df1] to-transparent shadow-[0_0_8px_#a855f7]" />
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
+          <div className="absolute top-0 left-0 w-48 h-48 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Right Side 3D Isometric Platform Blocks (Podium) */}
-          <div className="absolute -bottom-2 -right-4 w-44 h-36 pointer-events-none opacity-85">
-            <div className="absolute bottom-0 right-2 w-24 h-16 bg-[#16122c] border border-purple-500/20 rounded-md shadow-2xl transform skew-y-[-8deg]" />
-            <div className="absolute bottom-6 right-16 w-20 h-20 bg-[#1e193d] border border-purple-400/25 rounded-md shadow-2xl transform skew-y-[-8deg]" />
-            <div className="absolute bottom-3 right-8 w-16 h-16 bg-[#251f49] border border-purple-400/30 rounded-md shadow-2xl transform skew-y-[-8deg]" />
-            <div className="absolute top-2 right-12 w-24 h-24 bg-purple-600/10 blur-xl rounded-full" />
-          </div>
-
-          <div className="relative z-10 space-y-4">
-            {/* User Profile Info */}
-            <div className="flex items-center gap-3">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#54408d] shadow-[0_0_12px_rgba(139,92,246,0.4)]">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
+          <div className="relative z-10 space-y-5">
+            
+            {/* Top Row: Avatar Frame & Username (Lv.0 and Elite Player removed) */}
+            <div className="flex items-center gap-4 py-2">
+              
+              {/* Avatar Frame Container */}
+              <div className="relative w-[84px] h-[84px] flex items-center justify-center shrink-0">
+                <img 
+                  src="/file_0000000055ac821186486b31f4a0d239.png" 
+                  alt="Avatar Frame" 
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none z-10 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]"
                 />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <h2 className="text-lg font-bold text-white tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-serif">
-                  Aawara.
-                </h2>
-                <span className="text-sky-400 text-sm drop-shadow-[0_0_6px_rgba(56,189,248,0.8)]">💙</span>
-              </div>
-            </div>
-
-            {/* Level Title & XP Info */}
-            <div className="space-y-1">
-              <h3 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                Lv.2
-              </h3>
-              <p className="text-xs font-semibold text-slate-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                {neededXP.toLocaleString()} EXP to upgrade
-              </p>
-            </div>
-
-            {/* Mint Green Progress Bar */}
-            <div className="pt-1">
-              <div className="flex items-center justify-between gap-3">
-                <div className="relative flex-1 h-1.5 bg-[#141026] rounded-full overflow-hidden shadow-inner border border-white/5">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#2dd4bf] to-[#34d399] rounded-full shadow-[0_0_10px_#2dd4bf] transition-all duration-500"
-                    style={{ width: `${progressPercent}%` }}
+                <div className="w-[56px] h-[56px] rounded-full overflow-hidden bg-black z-0 flex items-center justify-center">
+                  <img 
+                    src="/IMG-20260905-WA0078.jpg" 
+                    alt="User" 
+                    className="w-full h-full object-cover"
                   />
                 </div>
-                <span className="text-xs font-bold text-slate-400">Lv.3</span>
+              </div>
+
+              {/* Username Only */}
+              <div className="flex flex-col justify-center">
+                <h2 className="text-[26px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#fde68a] via-[#f59e0b] to-[#d97706] tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] font-serif">
+                  KāziR Khān
+                </h2>
               </div>
             </div>
+
+            {/* Bottom Progress Bar Section with 0% and Badge */}
+            <div className="flex items-center gap-3 pt-2">
+              <div className="relative flex-1 h-9 flex items-center px-3">
+                <img 
+                  src="/file_000000006ff48211a6b2db258441b739.png" 
+                  alt="Progress Bar Frame" 
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
+                />
+                <div className="relative z-10 w-full flex items-center justify-between text-xs font-bold text-white px-2">
+                  <span className="text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">0%</span>
+                  <div className="flex-1 mx-3 h-1.5 bg-black/40 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full transition-all duration-500" 
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative w-11 h-11 shrink-0 flex items-center justify-center">
+                <ShaderImageBadge
+                  src="/1787590094184~2.jpg"
+                  isWhiteBg={false}
+                  className="w-full h-full object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
+                />
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -235,21 +244,18 @@ export default function Level({ onBack }: LevelProps) {
             <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-purple-400/50 to-transparent" />
           </div>
 
-          {/* Cards - 3D Blue Corner Pill */}
           <div className="grid grid-cols-3 gap-2.5">
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#141226] border border-purple-900/30 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-500/40"
+                className="relative overflow-hidden rounded-xl bg-[#110722] border border-purple-950/60 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-500/40"
               >
-                {/* 3D Blue Pill at exact top-left corner */}
-                <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.4)] border-r border-b border-sky-300/40 flex items-center justify-center">
+                <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#a855f7] via-[#7e22ce] to-[#581c87] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.4)] border-r border-b border-purple-400/30 flex items-center justify-center">
                   <span className="text-[8px] font-black text-white leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                     {tier.range}
                   </span>
                 </div>
 
-                {/* Badge Center */}
                 <div className="pt-2 flex items-center justify-center">
                   <ShaderImageBadge
                     src={tier.imageSrc}
@@ -270,21 +276,18 @@ export default function Level({ onBack }: LevelProps) {
             <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-purple-400/50 to-transparent" />
           </div>
 
-          {/* Coins Reward Cards - 3D Blue Corner Pill + Coin Image + 3D Red Pill Below */}
           <div className="grid grid-cols-3 gap-2.5">
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#141226] border border-purple-900/30 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[115px] p-2 pt-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
+                className="relative overflow-hidden rounded-xl bg-[#110722] border border-purple-950/60 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[115px] p-2 pt-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
               >
-                {/* 3D Blue Pill at exact top-left corner */}
-                <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.4)] border-r border-b border-sky-300/40 flex items-center justify-center">
+                <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#a855f7] via-[#7e22ce] to-[#581c87] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.4)] border-r border-b border-purple-400/30 flex items-center justify-center">
                   <span className="text-[8px] font-black text-white leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                     {reward.level}
                   </span>
                 </div>
 
-                {/* Coin Image (Center) */}
                 <div className="flex-1 flex items-center justify-center pt-2">
                   <ShaderImageBadge
                     src={reward.imageSrc}
@@ -293,10 +296,9 @@ export default function Level({ onBack }: LevelProps) {
                   />
                 </div>
 
-                {/* 3D Red Pill with Coin Value directly underneath the image */}
                 <div className="w-full flex justify-center pb-1">
-                  <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-b from-[#ff4d4d] via-[#e62e2e] to-[#b31414] shadow-[0_3px_6px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.5)] flex items-center gap-1 border border-red-300/40">
-                    <span className="text-[9px] drop-shadow-sm"></span>
+                  <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-b from-[#ff4d4d] via-[#e62e2e] to-[#b31414] shadow-[0_3px_6px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.6)] flex items-center gap-1 border border-red-300/40">
+                    <span className="text-[9px] drop-shadow-sm">🪙</span>
                     <span className="text-[9px] font-black text-white leading-none tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
                       {reward.amount}
                     </span>
@@ -311,3 +313,4 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
+
