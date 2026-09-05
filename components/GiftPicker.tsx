@@ -30,16 +30,16 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
     { id: 12, name: "Galaxy", coins: 1000000, image: "/IMG_20260815_103351.jpg" },
   ];
 
-  // Lucky Tab Gifts
+  // Lucky Tab Gifts - Smaller
   const luckyGifts = [
     { id: 101, name: "Kiss", coins: 1999, image: "/IMG_20260906_000443.png" },
     { id: 102, name: "Nut", coins: 3999, image: "/IMG_20260906_000508.png" },
     { id: 103, name: "Mahjong", coins: 5999, image: "/IMG_20260906_000521.png" },
-    { id: 104, name: "Lucky Clover", coins: 4250, image: "/IMG_20260906_000541.png" },
-    { id: 105, name: "Lucky Charm", coins: 7000, image: "/IMG_20260906_000624.png" },
-    { id: 106, name: "Rose Bouquet", coins: 10999, image: "/IMG_20260906_000643.png" },
-    { id: 107, name: "Autumn Leaves", coins: 6799, image: "/IMG_20260906_000713.png" },
-    { id: 108, name: "Ice Crystal", coins: 2999, image: "/IMG_20260906_000756.png" },
+    { id: 104, name: "Clover", coins: 4250, image: "/IMG_20260906_000541.png" },
+    { id: 105, name: "Charm", coins: 7000, image: "/IMG_20260906_000624.png" },
+    { id: 106, name: "Bouquet", coins: 10999, image: "/IMG_20260906_000643.png" },
+    { id: 107, name: "Leaves", coins: 6799, image: "/IMG_20260906_000713.png" },
+    { id: 108, name: "Crystal", coins: 2999, image: "/IMG_20260906_000756.png" },
     { id: 109, name: "Candy", coins: 15499, image: "/IMG_20260906_000814.png" },
     { id: 110, name: "Pop", coins: 4000, image: "/IMG_20260906_000832.png" },
     { id: 111, name: "Scarecrow", coins: 7500, image: "/IMG_20260906_000850.png" },
@@ -69,48 +69,93 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      {/* PURE WEB SHADER - ONLY FOR COINS ICON */}
+      {/* PURE WEB SHADER - STRICTLY FOR COINS ICON ONLY */}
       <style jsx>{`
         /* Main container */
         .main-container {
           background: rgba(0, 0, 0, 0.95);
         }
         
-        /* Gift item - NO SHADER on images */
+        /* Gift item - NO CARD, only border on click */
         .gift-item {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          background: transparent;
+          border: 2px solid transparent;
           transition: all 0.2s ease;
+          padding: 6px 4px;
         }
         
         .gift-item:hover {
-          background: rgba(255, 255, 255, 0.07);
-          border-color: rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.03);
         }
         
         .gift-item.selected {
-          background: rgba(59, 130, 246, 0.12);
           border-color: #3b82f6;
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+          background: rgba(59, 130, 246, 0.05);
+          border-radius: 8px;
         }
 
-        /* Gift images - NO EFFECTS, pure original */
+        /* Gift images - NO EFFECTS */
         .gift-image {
-          /* NO FILTERS - pure original image */
+          /* Pure original - no effects */
         }
 
-        /* PURE WEB SHADER FOR COINS ONLY - removes white bg */
+        /* Gift name - ONE ROW ONLY */
+        .gift-name {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
+          display: block;
+        }
+
+        /* ============================================ */
+        /* PURE WEB SHADER - STRICTLY FOR COINS ONLY */
+        /* REMOVES WHITE BACKGROUND COMPLETELY */
+        /* ============================================ */
+        
+        /* Coin wrapper - pure shader */
         .coin-wrapper {
-          backdrop-filter: blur(0px) saturate(0%) contrast(3);
-          -webkit-backdrop-filter: blur(0px) saturate(0%) contrast(3);
-          background: transparent;
-          filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.2));
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent !important;
+          backdrop-filter: blur(0px) saturate(0%) contrast(999) brightness(999);
+          -webkit-backdrop-filter: blur(0px) saturate(0%) contrast(999) brightness(999);
+          filter: 
+            drop-shadow(0 0 0px transparent)
+            brightness(2.5) 
+            contrast(3.5) 
+            saturate(4) 
+            hue-rotate(0deg);
+          mix-blend-mode: normal;
+          isolation: isolate;
         }
 
+        /* Coin image - pure web shader removes white bg */
         .coin-image {
-          filter: brightness(1.3) contrast(1.8) saturate(2.0) drop-shadow(0 0 2px rgba(255, 215, 0, 0.3));
-          backdrop-filter: blur(0px);
-          -webkit-backdrop-filter: blur(0px);
+          filter: 
+            brightness(3) 
+            contrast(4) 
+            saturate(5) 
+            drop-shadow(0 0 4px rgba(255, 215, 0, 0.5))
+            drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
+          backdrop-filter: 
+            blur(0px) 
+            saturate(0%) 
+            contrast(999) 
+            brightness(999) 
+            invert(0);
+          -webkit-backdrop-filter: 
+            blur(0px) 
+            saturate(0%) 
+            contrast(999) 
+            brightness(999) 
+            invert(0);
+          background: transparent !important;
+          mix-blend-mode: normal;
+          isolation: isolate;
+          transform: scale(1);
+          image-rendering: auto;
         }
 
         /* Bottom bar */
@@ -181,12 +226,31 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+
+        /* Smaller gift items for Lucky tab */
+        .lucky-gift .gift-image-container {
+          width: 40px !important;
+          height: 40px !important;
+        }
+        
+        .lucky-gift .gift-name {
+          font-size: 8px !important;
+        }
+        
+        .lucky-gift .gift-coins {
+          font-size: 7px !important;
+        }
+        
+        .lucky-gift .coin-wrapper {
+          width: 2px !important;
+          height: 2px !important;
+        }
       `}</style>
 
       {/* 50vh Black Sheet Container */}
       <div 
         ref={sheetRef}
-        className="main-container h-[50vh] w-full max-w-md mx-auto text-white flex flex-col justify-between rounded-md border-t border-white/10 shadow-2xl relative px-4 pt-3 pb-2"
+        className="main-container h-[50vh] w-full max-w-md mx-auto text-white flex flex-col justify-between rounded-t-md border-t border-white/10 shadow-2xl relative px-4 pt-3 pb-2"
       >
         
         {/* 1. TOP SECTION: "All" Text Only */}
@@ -194,13 +258,13 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
           <span className="text-sm font-semibold text-gray-300">All</span>
         </div>
 
-        {/* 2. CATEGORY TABS - No bottom line */}
-        <div className="flex items-center gap-5 py-1.5">
+        {/* 2. CATEGORY TABS - Gap 1 */}
+        <div className="flex items-center gap-1 py-1.5">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`text-sm font-semibold transition-all relative ${
+              className={`text-sm font-semibold transition-all relative px-1 ${
                 activeTab === tab
                   ? "text-white font-bold scale-105 tab-active"
                   : "text-gray-400 hover:text-gray-200"
@@ -212,39 +276,44 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* 3. MIDDLE SECTION: Gift Items Grid - 4 Columns */}
-        <div className="flex-1 overflow-y-auto py-2 grid grid-cols-4 gap-2.5 scrollbar-none">
-          {currentGifts.map((gift) => (
-            <div
-              key={gift.id}
-              onClick={() => setSelectedGift(gift.id)}
-              className={`gift-item flex flex-col items-center justify-center p-2.5 transition cursor-pointer active:scale-95 rounded-md ${
-                selectedGift === gift.id ? "selected" : ""
-              }`}
-            >
-              <div className="relative w-14 h-14 mb-1">
-                <Image
-                  src={gift.image}
-                  alt={gift.name}
-                  fill
-                  className="gift-image object-cover"
-                  sizes="56px"
-                />
-              </div>
-              <span className="text-[10px] text-gray-300 font-medium">{gift.name}</span>
-              <span className="text-[9px] text-yellow-400 flex items-center gap-0.5 mt-0.5">
-                <div className="coin-wrapper w-2.5 h-2.5 relative overflow-hidden rounded-full">
+        <div className="flex-1 overflow-y-auto py-2 grid grid-cols-4 gap-2 scrollbar-none">
+          {currentGifts.map((gift) => {
+            const isLucky = activeTab === "Lucky";
+            return (
+              <div
+                key={gift.id}
+                onClick={() => setSelectedGift(gift.id)}
+                className={`gift-item flex flex-col items-center justify-center transition cursor-pointer active:scale-95 ${
+                  selectedGift === gift.id ? "selected" : ""
+                } ${isLucky ? "lucky-gift" : ""}`}
+              >
+                <div className={`relative mb-0.5 ${isLucky ? "w-10 h-10" : "w-14 h-14"}`}>
                   <Image
-                    src="/1786855398290.png"
-                    alt="Coins"
+                    src={gift.image}
+                    alt={gift.name}
                     fill
-                    className="coin-image object-cover"
-                    sizes="10px"
+                    className="gift-image object-cover"
+                    sizes={isLucky ? "40px" : "56px"}
                   />
                 </div>
-                {gift.coins}
-              </span>
-            </div>
-          ))}
+                <span className={`gift-name text-gray-300 font-medium text-center ${isLucky ? "text-[8px]" : "text-[10px]"}`}>
+                  {gift.name}
+                </span>
+                <span className={`gift-coins text-yellow-400 flex items-center gap-0.5 mt-0.5 ${isLucky ? "text-[7px]" : "text-[9px]"}`}>
+                  <div className={`coin-wrapper relative overflow-hidden rounded-full ${isLucky ? "w-2 h-2" : "w-2.5 h-2.5"}`}>
+                    <Image
+                      src="/1786855398290.png"
+                      alt="Coins"
+                      fill
+                      className="coin-image object-cover"
+                      sizes={isLucky ? "8px" : "10px"}
+                    />
+                  </div>
+                  {gift.coins}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {/* 4. BOTTOM BAR */}
