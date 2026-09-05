@@ -7,7 +7,7 @@ import { ArrowLeft, Clock } from "lucide-react";
 interface StoreItem {
   id: string;
   name: string;
-  image: string;
+  image: string; // Used for both image src and video src
   tab: string;
   stars: number;
   price: string;
@@ -27,10 +27,9 @@ const allStoreItems: StoreItem[] = [
   { id: "v6", name: "Sports Car", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 5, price: "5,000,000", duration: "3D" },
   { id: "v7", name: "Golden Cycle", image: "/1784533036732~2.jpg", tab: "Vehicle", stars: 3, price: "1,000,000", duration: "3D" },
 
-  // Avatar Frame
-  { id: "a1", name: "Crystal Crown", image: "/1784533036732~2.jpg", tab: "Avatar Frame", stars: 5, price: "8,000,000", duration: "3D" },
-  { id: "a2", name: "Jellyfish Ring", image: "/1784533036732~2.jpg", tab: "Avatar Frame", stars: 4, price: "500,000", duration: "3D" },
-  { id: "a3", name: "Neon Beats", image: "/1784533036732~2.jpg", tab: "Avatar Frame", stars: 5, price: "150,000", duration: "3D" },
+  // Avatar Frame - NEW VIDEOS ONLY
+  { id: "a1", name: "Crown Wings", image: "/VID_20260905_024534_955_bsl.mp4", tab: "Avatar Frame", stars: 5, price: "250,000", duration: "3D" },
+  { id: "a2", name: "Host Wings", image: "/VID_20260905_024726_660_bsl.mp4", tab: "Avatar Frame", stars: 5, price: "500,000", duration: "3D" },
 
   // Theme
   { id: "t1", name: "Seafood", image: "/IMG-20260904-WA0004.jpg", tab: "Theme", stars: 4, price: "2,700,000", duration: "30D" },
@@ -44,7 +43,8 @@ const allStoreItems: StoreItem[] = [
   { id: "c1", name: "1", image: "/file_000000003d888211822aa6837fe5013c.png", tab: "Chat Bubble", stars: 4, price: "500,000", duration: "3D" },
   { id: "c2", name: "2", image: "/file_000000006044821186ff566329797142.png", tab: "Chat Bubble", stars: 4, price: "250,000", duration: "2D" }, 
   { id: "c3", name: "3", image: "/file_00000000c44c81f598f62ae8a45e13a7.png", tab: "Chat Bubble", stars: 5, price: "300,000", duration: "3D" }, 
-   // ID
+  
+  // ID
   { id: "i1", name: "ID Badge 8", image: "/1784533036732~2.jpg", tab: "ID", stars: 5, price: "10,000,000", duration: "3D", isOwned: true },
 ];
 
@@ -144,6 +144,143 @@ function WebGLCoinIcon({ src }: { src: string }) {
   return <canvas ref={canvasRef} width={64} height={64} className="w-full h-full object-contain" />;
 }
 
+// ==========================================
+// PURE GPU WEBGL GREEN SCREEN VIDEO SHADER
+// ==========================================
+function WebGLVideoAvatar({ src }: { src: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const gl = canvas.getContext("webgl", { preserveDrawingBuffer: false, alpha: true });
+    if (!gl) return;
+
+    const video = document.createElement("video");
+    video.src = src;
+    video.crossOrigin = "anonymous";
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.play().catch(e => console.log("Video auto-play prevented:", e));
+
+    const vsSource = `
+      attribute vec2 a_position;
+      attribute vec2 a_texCoord;
+      varying vec2 v_texCoord;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `;
+
+    // 100% GPU Fragment Shader logic for Chrome Key (Green Removal)
+    const fsSource = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_image;
+      
+      void main() {
+        vec4 color = texture2D(u_image, v_texCoord);
+        
+        // Greenness calculation
+        float maxRB = max(color.r, color.b);
+        float greenness = color.g - maxRB;
+        
+        // Smooth edge masking for green removal (no glitches/hard edges)
+        float alpha = 1.0 - smoothstep(0.05, 0.15, greenness);
+        
+        // Despill logic to remove green tint from edges
+        if (greenness > 0.0) {
+          color.g = min(color.g, maxRB + 0.05);
+        }
+        
+        gl_FragColor = vec4(color.rgb, color.a * alpha);
+      }
+    `;
+
+    const createShader = (gl: WebGLRenderingContext, type: number, source: string) => {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    };
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    if (!vertexShader || !fragmentShader) return;
+
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const positionLocation = gl.getAttribLocation(program, "a_position");
+    const texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,  1, -1, -1,  1,
+      -1,  1,  1, -1,  1,  1,
+    ]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      0, 0,  1, 0,  0, 1,
+      0, 1,  1, 0,  1, 1,
+    ]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(texCoordLocation);
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    
+    // WebGL reads DOM upside down by default, flip it to show correct video
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+    let animationFrameId: number;
+
+    const render = () => {
+      if (video.readyState >= video.HAVE_CURRENT_DATA) {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        // Direct GPU transfer, ZERO CPU calculation
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+        
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      gl.deleteTexture(texture);
+      gl.deleteBuffer(positionBuffer);
+      gl.deleteBuffer(texCoordBuffer);
+      gl.deleteProgram(program);
+    };
+  }, [src]);
+
+  return <canvas ref={canvasRef} width={256} height={256} className="w-full h-full object-contain" />;
+}
+
 export default function StorePage({ onBack, initialView = "store" }: { onBack: () => void; initialView?: "store" | "bag" }) {
   const [currentView, setCurrentView] = useState<"store" | "bag">(initialView);
   const [activeTab, setActiveTab] = useState("Vehicle");
@@ -168,7 +305,6 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
     <div className="min-h-screen bg-[#f5f6f8] text-gray-800 pb-10 select-none font-sans relative">
       <div 
         className="max-w-md mx-auto min-h-screen flex flex-col"
-        /* YAHAN FIX KIYA HAI: max() hata kar direct env lagaya taaki Android mein niche na bhage */
         style={{ paddingTop: 'env(safe-area-inset-top, 12px)' }}
       >
         
@@ -192,7 +328,6 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
             {currentView === "store" ? "Store" : "Bag"}
           </h1>
 
-          {/* Top Right Icon Images strictly set to 70px */}
           {currentView === "store" ? (
             <button 
               type="button"
@@ -222,7 +357,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
           )}
         </div>
 
-        {/* Category Tabs - Similar to Image */}
+        {/* Category Tabs */}
         <div className="flex items-center gap-3 px-4 mt-1 mb-2 overflow-x-auto no-scrollbar shrink-0">
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
@@ -243,10 +378,12 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
           })}
         </div>
 
-        {/* Items Grid - Converted to 2 Columns like Image */}
+        {/* Items Grid */}
         <div className="grid grid-cols-2 gap-2 px-4 py-1 flex-1 content-start">
           {displayedItems.map((item) => {
             const isTheme = item.tab === "Theme";
+            // Check if the item is an mp4 video
+            const isVideo = item.image.endsWith('.mp4');
 
             return (
               <div
@@ -267,7 +404,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                   </div>
                 )}
 
-                {/* Top Bar inside Card (Try Button and Duration) */}
+                {/* Top Bar inside Card */}
                 <div className="flex items-center justify-between w-full z-10 mb-2">
                   <button 
                     type="button"
@@ -291,16 +428,20 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                   </div>
                 </div>
 
-                {/* Item Image */}
+                {/* Item Image / Video */}
                 {!isTheme && (
                   <div className="relative w-full h-[80px] my-2 flex items-center justify-center z-10">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-contain"
-                      sizes="50vw"
-                    />
+                    {isVideo ? (
+                      <WebGLVideoAvatar src={item.image} />
+                    ) : (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-contain"
+                        sizes="50vw"
+                      />
+                    )}
                   </div>
                 )}
 
@@ -311,7 +452,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                   {renderStars(item.stars)}
                 </div>
 
-                {/* Price Row using WebGL Shader */}
+                {/* Price Row */}
                 <div className="flex items-center justify-center gap-1.5 mb-3 w-full z-10">
                   <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
                     <WebGLCoinIcon src="/1786855398290.png" />
@@ -321,7 +462,7 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                   </span>
                 </div>
 
-                {/* Bottom Buttons inside Card (Half-Half style like image) */}
+                {/* Bottom Buttons */}
                 <div className="flex items-center w-full rounded-full border border-[#1d4ed8] overflow-hidden h-[30px] z-10 bg-white">
                   <button
                     type="button"
@@ -348,12 +489,11 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
         </div>
       </div>
 
-      {/* STRICT THEME TRY OVERLAY MODAL (Untouched as requested) */}
+      {/* STRICT THEME TRY OVERLAY MODAL */}
       {tryThemeItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="relative w-full max-w-[260px] flex flex-col items-center">
             
-            {/* Close Button top-right */}
             <button
               type="button"
               onClick={() => setTryThemeItem(null)}
@@ -362,7 +502,6 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
               ✕
             </button>
 
-            {/* Tall & Narrow Preview Card with Yellow Border */}
             <div className="relative w-[230px] h-[480px] rounded-3xl border-[4px] border-yellow-300 overflow-hidden shadow-2xl bg-black">
               <Image
                 src={tryThemeItem.image}
@@ -372,7 +511,6 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
               />
             </div>
 
-            {/* Stars at bottom */}
             <div className="flex items-center justify-center gap-1 mt-4">
               {renderStars(tryThemeItem.stars)}
             </div>
