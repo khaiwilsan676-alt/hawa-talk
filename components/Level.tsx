@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, HelpCircle } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -134,107 +134,95 @@ export default function Level({ onBack }: LevelProps) {
   const progressPercent = Math.min((currentXP / nextLevelXP) * 100, 100)
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#08182b] via-[#05111f] to-[#02070e] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-cyan-950/40">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-[#0a0c16] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-purple-950/30">
       
-      {/* Dynamic Top Cinematic Light Rays & Atmospheric Beams */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-12 -left-20 w-[180px] h-[350px] bg-gradient-to-b from-cyan-300/35 via-sky-400/10 to-transparent rotate-[32deg] blur-xl" />
-        <div className="absolute -top-16 left-1/4 w-[130px] h-[380px] bg-gradient-to-b from-white/30 via-sky-300/15 to-transparent rotate-[18deg] blur-lg" />
-        <div className="absolute -top-10 right-8 w-[160px] h-[340px] bg-gradient-to-b from-sky-200/25 via-cyan-500/10 to-transparent -rotate-[24deg] blur-xl" />
-        <div className="absolute -top-14 -right-16 w-[140px] h-[320px] bg-gradient-to-b from-cyan-400/20 via-sky-500/5 to-transparent -rotate-[38deg] blur-2xl" />
-
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-80 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-400/30 via-cyan-600/15 to-transparent blur-2xl" />
-        <div className="absolute top-[38%] -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[25%] -right-20 w-80 h-80 bg-sky-500/10 rounded-full blur-[110px]" />
+      {/* 30vh Top Background Image with Subtle Fade */}
+      <div className="absolute top-0 left-0 right-0 h-[30vh] pointer-events-none z-0 overflow-hidden">
+        <img
+          src="/file_00000000360c82118a57a81f560c0ec3.png"
+          alt="Top Background"
+          className="w-full h-full object-cover object-top opacity-70"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0c16]/60 to-[#0a0c16]" />
       </div>
 
       {/* Top Header */}
       <div
-        className="relative z-10 flex items-center justify-center px-4 pb-2"
+        className="relative z-10 flex items-center justify-between px-4 pb-2"
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)) + 12px)' }}
       >
         <button
           onClick={onBack}
-          className="absolute left-3 p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
+          className="p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
         >
           <ChevronLeft size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
         </button>
+
         <h1 className="text-lg font-bold text-white tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
           Level
         </h1>
+
+        <button className="p-1.5 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer">
+          <HelpCircle size={22} className="text-white/80 hover:text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+        </button>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="flex-1 px-4 pt-3 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
-        {/* Main Level Profile Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#29b4f8] via-[#028ceb] to-[#0060ba] p-4 shadow-[0_12px_28px_rgba(0,70,140,0.55),inset_0_1px_2px_rgba(255,255,255,0.7),inset_0_-2px_6px_rgba(0,35,80,0.6)] border border-sky-200/40">
-          <div className="absolute -top-24 -left-20 w-72 h-72 bg-white/25 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-0 left-0 right-0 h-[45%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
-          <div className="absolute -bottom-10 right-0 w-44 h-44 bg-cyan-300/20 rounded-full blur-2xl pointer-events-none" />
+        {/* Exact Same-to-Same Card Design from Reference Image */}
+        <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#231a47] via-[#1b1735] to-[#121024] p-5 shadow-[0_12px_32px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(180,160,255,0.25)] border border-[#483c74]/50">
+          
+          {/* Top Edge Purple Neon Glow Line */}
+          <div className="absolute top-0 left-6 right-6 h-[1.5px] bg-gradient-to-r from-transparent via-[#885df1] to-transparent shadow-[0_0_8px_#a855f7]" />
 
-          <div className="relative z-10 flex items-start justify-between">
-            <div className="space-y-3.5">
-              {/* User Info */}
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#5c3e2e] to-[#3a2215] flex items-center justify-center text-white text-xl font-bold shadow-[0_4px_8px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/30">
-                  K
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                    Aawara.
-                  </h2>
-                  <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full bg-black/40 border border-white/20 shadow-inner">
-                    <span className="text-[10px] font-extrabold text-sky-200">ID</span>
-                    <span className="text-[11px] text-white font-semibold">100658242</span>
-                  </div>
-                </div>
+          {/* Right Side 3D Isometric Platform Blocks (Podium) */}
+          <div className="absolute -bottom-2 -right-4 w-44 h-36 pointer-events-none opacity-85">
+            <div className="absolute bottom-0 right-2 w-24 h-16 bg-[#16122c] border border-purple-500/20 rounded-md shadow-2xl transform skew-y-[-8deg]" />
+            <div className="absolute bottom-6 right-16 w-20 h-20 bg-[#1e193d] border border-purple-400/25 rounded-md shadow-2xl transform skew-y-[-8deg]" />
+            <div className="absolute bottom-3 right-8 w-16 h-16 bg-[#251f49] border border-purple-400/30 rounded-md shadow-2xl transform skew-y-[-8deg]" />
+            <div className="absolute top-2 right-12 w-24 h-24 bg-purple-600/10 blur-xl rounded-full" />
+          </div>
+
+          <div className="relative z-10 space-y-4">
+            {/* User Profile Info */}
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#54408d] shadow-[0_0_12px_rgba(139,92,246,0.4)]">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
               </div>
-
-              {/* Progress & XP Details */}
-              <div className="space-y-2 pt-0.5">
-                <div className="inline-flex items-center gap-1 bg-[#01356b]/80 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-sky-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)] border border-sky-400/30">
-                  <span className="text-[#ffe066]">{currentXP.toLocaleString()}</span>
-                  <span>/</span>
-                  <span>{nextLevelXP.toLocaleString()}</span>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  <div className="relative w-44 h-2.5 bg-[#00264d]/80 rounded-full p-[1px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] border border-sky-300/30">
-                    <div
-                      className="h-full bg-gradient-to-r from-sky-200 via-cyan-200 to-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.95)] transition-all duration-500"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                    <div
-                      className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.5),0_0_8px_#38bdf8] border border-cyan-400"
-                      style={{ left: `calc(${progressPercent}% - 7px)` }}
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">Lv.10</span>
-                </div>
-
-                <p className="text-[11px] text-sky-50 font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-                  Need {neededXP.toLocaleString()} EXP to reach the next level
-                </p>
-
-                <button className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/40 hover:bg-black/50 text-[11px] font-semibold text-white shadow-[0_4px_10px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.25)] border border-white/20 active:scale-95 transition-all">
-                  <span>How to upgrade?</span>
-                  <span className="text-amber-300 text-[10px]">▲</span>
-                </button>
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-lg font-bold text-white tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-serif">
+                  Aawara.
+                </h2>
+                <span className="text-sky-400 text-sm drop-shadow-[0_0_6px_rgba(56,189,248,0.8)]">💙</span>
               </div>
             </div>
 
-            {/* Right Badge Container */}
-            <div className="relative flex items-center justify-center shrink-0 translate-y-3">
-              <div className="absolute inset-0 bg-yellow-300/35 blur-xl rounded-full scale-110 pointer-events-none" />
-              <ShaderImageBadge
-                src="/1787590094184~2.jpg"
-                isWhiteBg={false}
-                className="w-24 h-24 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-sm font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-white via-amber-100 to-yellow-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] pointer-events-none select-none">
-                Lv.9
-              </span>
+            {/* Level Title & XP Info */}
+            <div className="space-y-1">
+              <h3 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                Lv.2
+              </h3>
+              <p className="text-xs font-semibold text-slate-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                {neededXP.toLocaleString()} EXP to upgrade
+              </p>
+            </div>
+
+            {/* Mint Green Progress Bar */}
+            <div className="pt-1">
+              <div className="flex items-center justify-between gap-3">
+                <div className="relative flex-1 h-1.5 bg-[#141026] rounded-full overflow-hidden shadow-inner border border-white/5">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#2dd4bf] to-[#34d399] rounded-full shadow-[0_0_10px_#2dd4bf] transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <span className="text-xs font-bold text-slate-400">Lv.3</span>
+              </div>
             </div>
           </div>
         </div>
@@ -242,17 +230,17 @@ export default function Level({ onBack }: LevelProps) {
         {/* Level Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2 text-white/90">
-            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
-            <span className="text-xs font-bold tracking-wider text-cyan-100 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Level</span>
-            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-cyan-400/50 to-transparent" />
+            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
+            <span className="text-xs font-bold tracking-wider text-purple-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Level</span>
+            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-purple-400/50 to-transparent" />
           </div>
 
-          {/* Clean Cards - 3D Blue Corner Pill */}
+          {/* Cards - 3D Blue Corner Pill */}
           <div className="grid grid-cols-3 gap-2.5">
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-500/40"
+                className="relative overflow-hidden rounded-xl bg-[#141226] border border-purple-900/30 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center min-h-[95px] p-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-500/40"
               >
                 {/* 3D Blue Pill at exact top-left corner */}
                 <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.4)] border-r border-b border-sky-300/40 flex items-center justify-center">
@@ -277,9 +265,9 @@ export default function Level({ onBack }: LevelProps) {
         {/* Coins Reward Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-center gap-2 text-white/90">
-            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
-            <span className="text-xs font-bold tracking-wider text-cyan-100 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Coins Reward</span>
-            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-cyan-400/50 to-transparent" />
+            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
+            <span className="text-xs font-bold tracking-wider text-purple-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Coins Reward</span>
+            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-purple-400/50 to-transparent" />
           </div>
 
           {/* Coins Reward Cards - 3D Blue Corner Pill + Coin Image + 3D Red Pill Below */}
@@ -287,7 +275,7 @@ export default function Level({ onBack }: LevelProps) {
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#0c1f36] border border-sky-900/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[115px] p-2 pt-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
+                className="relative overflow-hidden rounded-xl bg-[#141226] border border-purple-900/30 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between min-h-[115px] p-2 pt-2.5 group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/40"
               >
                 {/* 3D Blue Pill at exact top-left corner */}
                 <div className="absolute top-0 left-0 px-2.5 py-0.5 rounded-br-xl bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.4)] border-r border-b border-sky-300/40 flex items-center justify-center">
@@ -308,7 +296,7 @@ export default function Level({ onBack }: LevelProps) {
                 {/* 3D Red Pill with Coin Value directly underneath the image */}
                 <div className="w-full flex justify-center pb-1">
                   <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-b from-[#ff4d4d] via-[#e62e2e] to-[#b31414] shadow-[0_3px_6px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.5)] flex items-center gap-1 border border-red-300/40">
-                    <span className="text-[9px] drop-shadow-sm">🪙</span>
+                    <span className="text-[9px] drop-shadow-sm"></span>
                     <span className="text-[9px] font-black text-white leading-none tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
                       {reward.amount}
                     </span>
@@ -318,8 +306,8 @@ export default function Level({ onBack }: LevelProps) {
             ))}
           </div>
         </div>
+
       </div>
     </div>
   )
 }
-
