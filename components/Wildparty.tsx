@@ -486,12 +486,12 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center select-none overflow-hidden touch-none">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
 
       {/* Bottom Sheet Container */}
       <div
-        className="relative bg-transparent w-full max-w-md rounded-t-3xl rounded-b-3xl shadow-2xl overflow-hidden"
-        style={{ height: '70vh' }}
+        className="relative bg-transparent w-full max-w-md rounded-none rounded-none shadow-2xl overflow-hidden"
+        style={{ height: '65vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Background Image */}
@@ -506,7 +506,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
           <img
             src="/IMG_20260822_011000.png"
             alt="Bottom decoration"
-            className="absolute bottom-0 left-0 w-full h-auto object-contain rounded-b-3xl z-10 pointer-events-none"
+            className="absolute bottom-0 left-0 w-full h-auto object-contain rounded-md z-10 pointer-events-none"
           />
         )}
 
@@ -532,7 +532,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               <button
                 onClick={() => setShowRulesSheet(true)}
                 aria-label="Help Rules"
-                className="w-6 h-6 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
                 <span className="text-white font-extrabold text-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
                   ?
@@ -597,7 +597,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             </div>
 
             {/* Top Transparent Patti: Recent Winners */}
-            <div className="absolute top-12 left-2 right-2 z-30 flex items-center gap-1.5 px-2.5 py-1 bg-black/25 backdrop-blur-sm rounded-full border border-white/20 shadow-sm overflow-x-auto no-scrollbar pointer-events-none min-h-[30px]">
+            <div className="absolute top-12 left-2 right-2 z-30 flex items-center gap-1.5 px-2.5 py-1 bg-black/25 backdrop-blur-sm rounded-full border border-white/20 shadow-sm overflow-x-auto no-scrollbar pointer-events-none min-h-[25px]">
               {roundHistory.length === 0 ? (
                 <span className="text-[10px] text-white/50 italic px-1 select-none">History</span>
               ) : (
@@ -792,7 +792,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
         {/* 40vh Black Bottom History Sheet */}
         {showHistorySheet && (
-          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl border-t border-white/20 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.8)] z-50 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
+          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl border-t border-white/20 rounded-xl shadow-[0_-10px_30px_rgba(0,0,0,0.8)] z-50 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
             {/* History Header */}
             <div className="relative flex items-center justify-center px-4 py-3 border-b border-white/10">
               <button
@@ -863,7 +863,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
         {/* 40vh Black Bottom Rules Sheet */}
         {showRulesSheet && (
-          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl border-t border-white/20 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.8)] z-50 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
+          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl border-t border-white/20 rounded-xl shadow-[0_-10px_30px_rgba(0,0,0,0.8)] z-50 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
             {/* Rules Header */}
             <div className="relative flex items-center justify-center px-4 py-3 border-b border-white/10">
               <button
