@@ -220,8 +220,8 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
   // Original Exact Coordinates, Sizes & Multipliers
   const animals: AnimalItem[] = [
-    { id: 0, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 270, distance: 130, x: 0, y: -17, size: 72, multiplier: 5 },
-    { id: 1, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 315, distance: 130, x: -4, y: -10, size: 55, multiplier: 5 },
+    { id: 0, src: '/IMG_20260822_011118.png', alt: 'Dog', angle: 270, distance: 130, x: 0, y: -15, size: 55, multiplier: 5 },
+    { id: 1, src: '/IMG_20260822_011134.png', alt: 'Deer', angle: 315, distance: 130, x: -4, y: -10, size: 72, multiplier: 5 },
     { id: 2, src: '/IMG_20260822_011103.png', alt: 'Zebra', angle: 0, distance: 130, x: -6, y: -19, size: 68, multiplier: 5 },
     { id: 3, src: '/IMG_20260822_011041.png', alt: 'Fox', angle: 45, distance: 130, x: -5, y: -18, size: 52, multiplier: 5 },
     { id: 4, src: '/IMG_20260822_011151.png', alt: 'Eagle', angle: 90, distance: 130, x: 0, y: -18, size: 61, multiplier: 10 },
@@ -514,7 +514,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
         {!loading && (
           <>
             {/* Top Left Icons (Sound & Help/Rules) */}
-            <div className="absolute top-3.5 left-3.5 z-30 flex items-center gap-2">
+            <div className="absolute top-2 left-2 z-30 flex items-center gap-1">
               <button
                 aria-label="Sound"
                 className="w-6 h-6 rounded-xl flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
@@ -541,19 +541,19 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             </div>
 
             {/* Top Middle Heading */}
-            <div className="absolute top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
               <span className="italic font-black text-lg tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] select-none">
                 Wild Party
               </span>
             </div>
 
             {/* Top Right Action Buttons Bar */}
-            <div className="absolute top-3.5 right-3.5 z-30 flex items-center gap-2">
+            <div className="absolute top-2 right-2 z-30 flex items-center gap-2">
               {/* Menu Button: Opens 40vh History Sheet */}
               <button
                 onClick={() => setShowHistorySheet(true)}
                 aria-label="History Menu"
-                className="w-6 h-6 rounded-xl flex flex-col items-center justify-center gap-[3px] bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+                className="w-6 h-6 rounded-xl flex flex-col items-center justify-center gap-[2px] bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
                 <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
                 <span className="w-4 h-[2.5px] bg-white rounded-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
@@ -597,7 +597,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
             </div>
 
             {/* Top Transparent Patti: Recent Winners */}
-            <div className="absolute top-12 left-2 right-2 z-30 flex items-center gap-1.5 px-2.5 py-1 bg-black/25 backdrop-blur-sm rounded-full border border-white/20 shadow-sm overflow-x-auto no-scrollbar pointer-events-none min-h-[25px]">
+            <div className="absolute top-11 w-[270px] z-30 flex items-center gap-1.5 px-2.5 py-1 bg-black/25 rounded-full border border-white/20 shadow-sm overflow-x-auto no-scrollbar pointer-events-none min-h-[25px]">
               {roundHistory.length === 0 ? (
                 <span className="text-[10px] text-white/50 italic px-1 select-none">History</span>
               ) : (
