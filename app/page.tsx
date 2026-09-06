@@ -84,11 +84,18 @@ export default function Page() {
     setIsLoggedIn(false)
   }
 
+  // Background Theme Style (Top 30vh Blue fading into 70vh White)
+  const themeStyle = {
+    background: 'linear-gradient(to bottom, #3b82f6 0vh, #3b82f6 30vh, #ffffff 50vh, #ffffff 100vh)',
+    minHeight: '100vh',
+    width: '100%'
+  }
+
   if (loading) {
     return (
       <div
-        className="min-h-screen bg-gray-900 flex flex-col items-center"
-        style={{ paddingTop: '18vh' }}
+        className="flex flex-col items-center"
+        style={{ ...themeStyle, paddingTop: '18vh' }}
       >
         <img
           src="/logo.png"
@@ -103,8 +110,17 @@ export default function Page() {
   }
 
   if (!isLoggedIn) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />
+    return (
+      <div style={themeStyle}>
+        <LoginPage onLoginSuccess={handleLoginSuccess} />
+      </div>
+    )
   }
 
-  return <HomePage onLogout={handleLogout} />
+  return (
+    <div style={themeStyle}>
+      <HomePage onLogout={handleLogout} />
+    </div>
+  )
 }
+
