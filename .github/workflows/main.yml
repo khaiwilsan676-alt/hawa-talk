@@ -37,12 +37,10 @@ jobs:
           java-version: 21
 
       - name: Install Dependencies
-        run: |
-          npm install -g pnpm
-          pnpm install --no-frozen-lockfile
+        run: npm install --ignore-scripts
 
       - name: Build Next.js
-        run: pnpm run build
+        run: npm run build
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
