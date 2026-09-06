@@ -2123,7 +2123,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       <img 
                         src="/file_000000001d448211bde98cd9bb7fd05f.png" 
                         alt="Top 2 Frame" 
-                        className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        className="w-[40px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
                         draggable="false"
                       />
                     </div>
@@ -2138,7 +2138,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       <img 
                         src="/file_000000008ad88211bf5e135a06034b76.png" 
                         alt="Top 1 Frame" 
-                        className="w-[34px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        className="w-[45px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
                         draggable="false"
                       />
                     </div>
@@ -2153,7 +2153,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       <img 
                         src="/file_0000000076c88211aadab79e74df9315.png" 
                         alt="Top 3 Frame" 
-                        className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        className="w-[40px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
                         draggable="false"
                       />
                     </div>
