@@ -10,11 +10,11 @@ interface LeaderboardProps {
 }
 type LeaderboardSubTab = 'daily' | 'weekly' | 'monthly'
 
-// Global in-memory cache to prevent re-processing same image multiple times
+// Global in-memory cache to prevent re-processing same image multiple times (Anti-Freeze Cache added)
 const processedImageCache: Record<string, string> = {}
+const processingPromises: Record<string, Promise<string>> = {}
 
 // Ultra-fast Chroma Key green screen remover without WebGL crashes
-// YAHAN PAR EXPORT LAGA DIYA HAI TAAKI VERCEL ERROR NA DE
 export function ChromaImage({
   src,
   alt,
@@ -27,44 +27,50 @@ export function ChromaImage({
   const [dataUrl, setDataUrl] = useState<string>(processedImageCache[src] || '')
 
   useEffect(() => {
+    let isMounted = true;
+    
     if (processedImageCache[src]) {
       setDataUrl(processedImageCache[src])
       return
     }
 
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.src = src
+    if (!processingPromises[src]) {
+      processingPromises[src] = new Promise((resolve) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.src = src
 
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.naturalWidth || 300
-      canvas.height = img.naturalHeight || 300
-      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.naturalWidth || 300
+          canvas.height = img.naturalHeight || 300
+          const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
-      if (!ctx) return
-      ctx.drawImage(img, 0, 0)
+          if (ctx) {
+            ctx.drawImage(img, 0, 0)
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            const data = imgData.data
 
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const data = imgData.data
-
-      // Loop through RGBA pixels and erase green screen background cleanly
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i]
-        const g = data[i + 1]
-        const b = data[i + 2]
-
-        // Sharp green chroma detection
-        if (g > 50 && g > r * 1.15 && g > b * 1.15) {
-          data[i + 3] = 0 // Transparent
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i], g = data[i + 1], b = data[i + 2]
+              if (g > 50 && g > r * 1.15 && g > b * 1.15) {
+                data[i + 3] = 0
+              }
+            }
+            ctx.putImageData(imgData, 0, 0)
+            const finalUrl = canvas.toDataURL('image/png')
+            processedImageCache[src] = finalUrl
+            resolve(finalUrl)
+          }
         }
-      }
-
-      ctx.putImageData(imgData, 0, 0)
-      const finalUrl = canvas.toDataURL('image/png')
-      processedImageCache[src] = finalUrl
-      setDataUrl(finalUrl)
+      })
     }
+
+    processingPromises[src].then((url) => {
+      if (isMounted) setDataUrl(url)
+    })
+
+    return () => { isMounted = false }
   }, [src])
 
   if (!dataUrl) {
