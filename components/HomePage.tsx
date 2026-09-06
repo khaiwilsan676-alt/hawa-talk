@@ -2096,7 +2096,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   {card.label}
                 </div>
                 
-                <div
+                               <div
                   style={{
                     flex: 1,
                     borderRadius: '10px',
@@ -2110,33 +2110,67 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     justifyContent: 'center'
                   }}
                 >
-                  {/* EKDAM COMPACT TOP 1, 2, 3 IN TWO ROWS, POINTER-EVENTS-NONE ADDED */}
+                  {/* EKDAM COMPACT TOP 1, 2, 3 WITH AVATARS BEHIND FRAMES */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-0.5 z-0 opacity-90 pointer-events-none">
+                    
                     {/* Row 1: Top 1 */}
-                    <div className="flex justify-center w-full z-10">
-                      <ChromaImage 
-                        src="/1787994771034~2.jpg" 
-                        alt="Top 1" 
-                        className="w-[34px] h-auto object-contain pointer-events-none drop-shadow-md" 
-                      />
+                    <div className="flex justify-center w-full z-10 mt-0.5">
+                      <div className="relative flex items-center justify-center">
+                        {/* Avatar Behind Frame (Circle mein) */}
+                        <img 
+                          src="/assets/logo.png" 
+                          alt="User Avatar" 
+                          className="absolute w-[22px] h-[22px] rounded-full object-cover z-0" 
+                          style={{ top: '6px' }} 
+                        />
+                        {/* Frame Overlay */}
+                        <ChromaImage 
+                          src="/1787994771034~2.jpg" 
+                          alt="Top 1" 
+                          className="w-[34px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
+                        />
+                      </div>
                     </div>
+                    
                     {/* Row 2: Top 2 & Top 3 */}
-                    <div className="flex justify-between items-center w-full px-1.5 -mt-2 z-0">
-                      <ChromaImage 
-                        src="/1787994751636~2.jpg" 
-                        alt="Top 2" 
-                        className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md" 
-                      />
-                      <ChromaImage 
-                        src="/1787994761762~2.jpg" 
-                        alt="Top 3" 
-                        className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md" 
-                      />
+                    <div className="flex justify-between items-center w-full px-2 -mt-1.5 z-0">
+                      
+                      {/* Top 2 */}
+                      <div className="relative flex items-center justify-center">
+                        <img 
+                          src="/assets/logo.png" 
+                          alt="User Avatar" 
+                          className="absolute w-[18px] h-[18px] rounded-full object-cover z-0" 
+                          style={{ top: '5px' }} 
+                        />
+                        <ChromaImage 
+                          src="/1787994751636~2.jpg" 
+                          alt="Top 2" 
+                          className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
+                        />
+                      </div>
+
+                      {/* Top 3 */}
+                      <div className="relative flex items-center justify-center">
+                        <img 
+                          src="/assets/logo.png" 
+                          alt="User Avatar" 
+                          className="absolute w-[18px] h-[18px] rounded-full object-cover z-0" 
+                          style={{ top: '5px' }} 
+                        />
+                        <ChromaImage 
+                          src="/1787994761762~2.jpg" 
+                          alt="Top 3" 
+                          className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
+                        />
+                      </div>
+
                     </div>
                   </div>
                   
                   <span className="text-xl relative z-10 pointer-events-none">{card.icon}</span>
                 </div>
+
               </div>
             ))}
           </div>
@@ -2604,7 +2638,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 height: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
                 minHeight: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
                 background: activeTab === 'mine'
-                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 50%, #ffffff 100%)'
+                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 60%, #ffffff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
                 paddingBottom: '12px'
               }}
