@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-            {CATEGORY_CARDS.map((card, i) => (
+                        {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2096,7 +2096,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   {card.label}
                 </div>
                 
-                               <div
+                <div
                   style={{
                     flex: 1,
                     borderRadius: '10px',
@@ -2110,57 +2110,59 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     justifyContent: 'center'
                   }}
                 >
-            {/* 1 ROW PODIUM LAYOUT: Left (Top 2) -> Middle (Top 1) -> Right (Top 3) */}
-<div className="absolute inset-0 flex flex-row items-center justify-center px-0.5 z-0 opacity-90 pointer-events-none gap-[2px]">
-  
-  {/* Left: Top 2 */}
-  <div className="relative flex items-center justify-center mt-2">
-    <img 
-      src="/logo.png" 
-      alt="User Avatar" 
-      className="absolute w-[16px] h-[16px] rounded-full object-cover z-0" 
-    />
-    <img 
-      src="/file_000000001d448211bde98cd9bb7fd05f.png" 
-      alt="Top 2 Frame" 
-      className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
-      draggable="false"
-    />
-  </div>
+                  {/* 1 ROW PODIUM LAYOUT */}
+                  <div className="absolute inset-0 flex flex-row items-center justify-center px-0.5 z-0 opacity-90 pointer-events-none gap-[2px]">
+                    
+                    {/* Left: Top 2 */}
+                    <div className="relative flex items-center justify-center mt-2">
+                      <img 
+                        src="/logo.png" 
+                        alt="User Avatar" 
+                        className="absolute w-[16px] h-[16px] rounded-full object-cover z-0" 
+                      />
+                      <img 
+                        src="/file_000000001d448211bde98cd9bb7fd05f.png" 
+                        alt="Top 2 Frame" 
+                        className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        draggable="false"
+                      />
+                    </div>
 
-  {/* Middle: Top 1 (Thoda bada aur upar) */}
-  <div className="relative flex items-center justify-center z-10 mb-2">
-    <img 
-      src="/logo.png" 
-      alt="User Avatar" 
-      className="absolute w-[20px] h-[20px] rounded-full object-cover z-0" 
-    />
-    <img 
-      src="/file_000000008ad88211bf5e135a06034b76.png" 
-      alt="Top 1 Frame" 
-      className="w-[34px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
-      draggable="false"
-    />
-  </div>
+                    {/* Middle: Top 1 */}
+                    <div className="relative flex items-center justify-center z-10 mb-2">
+                      <img 
+                        src="/logo.png" 
+                        alt="User Avatar" 
+                        className="absolute w-[20px] h-[20px] rounded-full object-cover z-0" 
+                      />
+                      <img 
+                        src="/file_000000008ad88211bf5e135a06034b76.png" 
+                        alt="Top 1 Frame" 
+                        className="w-[34px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        draggable="false"
+                      />
+                    </div>
 
-  {/* Right: Top 3 */}
-  <div className="relative flex items-center justify-center mt-2">
-    <img 
-      src="/logo.png" 
-      alt="User Avatar" 
-      className="absolute w-[16px] h-[16px] rounded-full object-cover z-0" 
-    />
-    <img 
-      src="/file_0000000076c88211aadab79e74df9315.png" 
-      alt="Top 3 Frame" 
-      className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
-      draggable="false"
-    />
-  </div>
+                    {/* Right: Top 3 */}
+                    <div className="relative flex items-center justify-center mt-2">
+                      <img 
+                        src="/logo.png" 
+                        alt="User Avatar" 
+                        className="absolute w-[16px] h-[16px] rounded-full object-cover z-0" 
+                      />
+                      <img 
+                        src="/file_0000000076c88211aadab79e74df9315.png" 
+                        alt="Top 3 Frame" 
+                        className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        draggable="false"
+                      />
+                    </div>
 
-</div>
-
-
+                  </div>
+                  
+                  <span className="text-xl relative z-10 pointer-events-none">{card.icon}</span>
+                </div>
+              </div>
             ))}
           </div>
         </div>
