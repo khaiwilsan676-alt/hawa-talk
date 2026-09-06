@@ -8,7 +8,7 @@ import MePage from './MePage';
 import { getOrCreateAccountNumber } from './MePage'
 import RoomPage from './RoomPage'
 import PublicProfile from './PublicProfile'
-import Leaderboard from './Leaderboard'
+import {ChromaImage} from './Leaderboard'
 import { generateStableId } from '../lib/hash'
 import { translations, getTranslation, LanguageCode } from '../lib/translations'
 import DailyCheckInModal from '../components/DailyCheckInModal'
@@ -360,6 +360,7 @@ const CATEGORY_CARDS = [
   {
     label: 'Honour',
     icon: '',
+    frame: '/1787994771034~2.jpg', // Top 1 Frame
     outerFrom: '#FFED99',
     outerTo: '#FFE27A',
     textColor: '#7A4E1B',
@@ -369,6 +370,7 @@ const CATEGORY_CARDS = [
   {
     label: 'Charm',
     icon: '',
+    frame: '/1787994751636~2.jpg', // Top 2 Frame
     outerFrom: '#A2D8FF',
     outerTo: '#8ECBFF',
     textColor: '#184E6E',
@@ -378,6 +380,7 @@ const CATEGORY_CARDS = [
   {
     label: 'Room',
     icon: '',
+    frame: '/1787994761762~2.jpg', // Top 3 Frame
     outerFrom: '#D1B1FF',
     outerTo: '#C39BFF',
     textColor: '#4E2A7A',
@@ -1795,7 +1798,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             willChange: 'transform'
           }}
         >
-          <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
+                   <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
@@ -1836,6 +1839,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 >
                   {card.label}
                 </div>
+                
+                {/* YAHAN WOH NAYA CODE ADD HUA HAI */}
                 <div
                   style={{
                     flex: 1,
@@ -1850,6 +1855,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     justifyContent: 'center'
                   }}
                 >
+                  {card.frame && (
+                    <div className="absolute inset-0 flex items-center justify-center p-1 z-0 opacity-90 hover:scale-110 transition-transform duration-300">
+                      <ChromaImage 
+                        src={card.frame} 
+                        alt={`${card.label} frame`} 
+                        className="w-full h-full object-contain drop-shadow-md"
+                      />
+                    </div>
+                  )}
+                  
                   <span className="text-xl relative z-10">{card.icon}</span>
                 </div>
               </div>
@@ -2319,7 +2334,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 height: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
                 minHeight: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
                 background: activeTab === 'mine'
-                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 100%)'
+                  ? 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 50%, #ffffff 100%)'
                   : 'linear-gradient(to bottom, #3b82f6 0%, #eff6ff 70%, #ffffff 100%)',
                 paddingBottom: '12px'
               }}
