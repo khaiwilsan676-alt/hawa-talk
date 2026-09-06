@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                        {CATEGORY_CARDS.map((card, i) => (
+                                    {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2068,7 +2068,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 }}
                 className="group flex-1 cursor-pointer"
                 style={{
-                  height: '90px',
+                  height: '90px', /* <-- WAPAS ORIGINAL 90px KAR DIYA */
                   borderRadius: '16px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -2104,56 +2104,62 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     border: `1.5px solid ${card.innerBorder}`,
                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
                     position: 'relative',
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
                 >
-                  {/* 1 ROW PODIUM LAYOUT */}
-                  <div className="absolute inset-0 flex flex-row items-center justify-center px-0.5 z-0 opacity-90 pointer-events-none gap-[2px]">
+                  {/* 1 ROW PODIUM LAYOUT - 90px KE ANDAR MAX SIZE */}
+                  <div className="absolute inset-0 flex flex-row items-center justify-center z-0 opacity-90 pointer-events-none gap-0">
                     
                     {/* Left: Top 2 */}
-                    <div className="relative flex items-center justify-center mt-2">
+                    <div className="relative flex items-center justify-center mt-3 -mr-2 z-10">
                       <img 
                         src="/logo.png" 
                         alt="User Avatar" 
-                        className="absolute w-[16px] h-[16px] rounded-full object-cover z-0" 
+                        className="absolute rounded-full object-cover z-0" 
+                        style={{ width: '18px', height: '18px' }}
                       />
                       <img 
                         src="/file_000000001d448211bde98cd9bb7fd05f.png" 
                         alt="Top 2 Frame" 
-                        className="w-[80px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        className="object-contain pointer-events-none drop-shadow-md relative z-10"
+                        style={{ width: '40px', height: '40px' }}
                         draggable="false"
                       />
                     </div>
 
-                    {/* Middle: Top 1 */}
-                    <div className="relative flex items-center justify-center z-10 mb-2">
+                    {/* Middle: Top 1 (Center aur sabse aage) */}
+                    <div className="relative flex items-center justify-center mb-1 z-20">
                       <img 
                         src="/logo.png" 
                         alt="User Avatar" 
-                        className="absolute w-[20px] h-[20px] rounded-full object-cover z-0" 
+                        className="absolute rounded-full object-cover z-0" 
+                        style={{ width: '24px', height: '24px' }}
                       />
                       <img 
                         src="/file_000000008ad88211bf5e135a06034b76.png" 
                         alt="Top 1 Frame" 
-                        className="w-[85px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        className="object-contain pointer-events-none drop-shadow-md relative z-10"
+                        style={{ width: '45px', height: '45px' }}
                         draggable="false"
                       />
                     </div>
 
                     {/* Right: Top 3 */}
-                    <div className="relative flex items-center justify-center mt-2">
+                    <div className="relative flex items-center justify-center mt-3 -ml-2 z-10">
                       <img 
                         src="/logo.png" 
                         alt="User Avatar" 
-                        className="absolute w-[16px] h-[16px] rounded-full object-cover z-0" 
+                        className="absolute rounded-full object-cover z-0" 
+                        style={{ width: '18px', height: '18px' }}
                       />
                       <img 
                         src="/file_0000000076c88211aadab79e74df9315.png" 
                         alt="Top 3 Frame" 
-                        className="w-[80px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+                        className="object-contain pointer-events-none drop-shadow-md relative z-10"
+                        style={{ width: '40px', height: '40px' }}
                         draggable="false"
                       />
                     </div>
@@ -2164,6 +2170,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 </div>
               </div>
             ))}
+
           </div>
         </div>
         
