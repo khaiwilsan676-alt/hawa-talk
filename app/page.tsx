@@ -84,10 +84,22 @@ export default function Page() {
     setIsLoggedIn(false)
   }
 
- 
-      if (loading) {
+  if (loading) {
     return (
-      
+      <div
+        className="min-h-screen bg-gray-900 flex flex-col items-center"
+        style={{ paddingTop: '18vh' }}
+      >
+        <img
+          src="/logo.png"
+          alt="Hurry Logo"
+          className="w-24 h-24 rounded-2xl object-cover shadow-lg"
+        />
+        <div style={{ gap: '0.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '0.5rem' }}>
+          <h1 className="text-3xl font-bold text-white tracking-wide">Hurry</h1>
+        </div>
+      </div>
+    )
   }
 
   if (!isLoggedIn) {
