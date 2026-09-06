@@ -14,7 +14,8 @@ type LeaderboardSubTab = 'daily' | 'weekly' | 'monthly'
 const processedImageCache: Record<string, string> = {}
 
 // Ultra-fast Chroma Key green screen remover without WebGL crashes
-function ChromaImage({
+// YAHAN PAR EXPORT LAGA DIYA HAI TAAKI VERCEL ERROR NA DE
+export function ChromaImage({
   src,
   alt,
   className = '',
@@ -270,3 +271,4 @@ export default function Leaderboard({ onBack, initialTab = 'honour' }: Leaderboa
     </div>
   )
 }
+
