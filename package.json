@@ -17,7 +17,6 @@
     "@capacitor/status-bar": "^8.0.3",
     "@livekit/components-react": "^2.9.24",
     "@livekit/components-styles": "^1.2.0",
-    "@next/swc-wasm-nodejs": "^16.3.1",
     "@vercel/analytics": "1.6.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -33,6 +32,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.2",
+    "@next/swc-wasm-nodejs": "^16.2.6",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24",

@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.view.Window;
 import android.view.WindowManager;
 import android.os.Build;
+import android.view.View;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -12,11 +13,11 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
         Window window = getWindow();
 
-        // TRUE EDGE-TO-EDGE: app draws behind system bars
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false);
         }
@@ -25,7 +26,6 @@ public class MainActivity extends BridgeActivity {
             WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
         );
 
-        // Transparent bars = app remains visible underneath
         window.setStatusBarColor(Color.TRANSPARENT);
         window.setNavigationBarColor(Color.TRANSPARENT);
 
