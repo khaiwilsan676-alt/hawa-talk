@@ -84,10 +84,8 @@ export default function Page() {
     setIsLoggedIn(false)
   }
 
- 
-      if (loading) {
-    return (
-      
+  if (loading) {
+    return null;
   }
 
   if (!isLoggedIn) {
