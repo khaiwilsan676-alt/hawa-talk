@@ -84,8 +84,19 @@ export default function Page() {
     setIsLoggedIn(false)
   }
 
-  if (loading) {
-    return null
+ 
+      if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-100 to-white flex flex-col items-center pt-[17vh]">
+        <img
+          src="/logo.png"
+          alt="Hurry Logo"
+          className="w-24 h-24 rounded-2xl object-cover shadow-md"
+        />
+        <h1 className="mt-[0.5rem] text-2xl font-bold text-white tracking-wide">
+          Hurry
+        </h1>
+      </div>
   }
 
   if (!isLoggedIn) {
