@@ -13,12 +13,5 @@
 
     <style name="AppTheme.NoActionBar" parent="@style/AppTheme" />
 
-    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:windowSplashScreenBackground">#60A5FA</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/hurry_logo</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
-        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
-        <item name="android:windowLightStatusBar">false</item>
-    </style>
 
 </resources>
