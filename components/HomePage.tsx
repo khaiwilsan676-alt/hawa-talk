@@ -2118,7 +2118,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       <div className="relative flex items-center justify-center">
                         {/* Avatar Behind Frame (Circle mein) */}
                         <img 
-                          src="/assets/logo.png" 
+                          src="/logo.png" 
                           alt="User Avatar" 
                           className="absolute w-[22px] h-[22px] rounded-full object-cover z-0" 
                           style={{ top: '6px' }} 
@@ -2138,7 +2138,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       {/* Top 2 */}
                       <div className="relative flex items-center justify-center">
                         <img 
-                          src="/assets/logo.png" 
+                          src="/logo.png" 
                           alt="User Avatar" 
                           className="absolute w-[18px] h-[18px] rounded-full object-cover z-0" 
                           style={{ top: '5px' }} 
@@ -2146,14 +2146,14 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         <ChromaImage 
                           src="/1787994751636~2.jpg" 
                           alt="Top 2" 
-                          className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
+                          className="w-[31px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
                         />
                       </div>
 
                       {/* Top 3 */}
                       <div className="relative flex items-center justify-center">
                         <img 
-                          src="/assets/logo.png" 
+                          src="/logo.png" 
                           alt="User Avatar" 
                           className="absolute w-[18px] h-[18px] rounded-full object-cover z-0" 
                           style={{ top: '5px' }} 
@@ -2161,7 +2161,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         <ChromaImage 
                           src="/1787994761762~2.jpg" 
                           alt="Top 3" 
-                          className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
+                          className="w-[31px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
                         />
                       </div>
 
