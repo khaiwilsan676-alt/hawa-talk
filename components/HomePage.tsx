@@ -2110,68 +2110,57 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     justifyContent: 'center'
                   }}
                 >
-                  {/* EKDAM COMPACT TOP 1, 2, 3 WITH AVATARS BEHIND FRAMES */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-0.5 z-0 opacity-90 pointer-events-none">
-                    
-                    {/* Row 1: Top 1 */}
-                    <div className="flex justify-center w-full z-10 mt-0.5">
-                      <div className="relative flex items-center justify-center">
-                        {/* Avatar Behind Frame (Circle mein) */}
-                        <img 
-                          src="/logo.png" 
-                          alt="User Avatar" 
-                          className="absolute w-[22px] h-[22px] rounded-full object-cover z-0" 
-                          style={{ top: '6px' }} 
-                        />
-                        {/* Frame Overlay */}
-                        <ChromaImage 
-                          src="/1787994771034~2.jpg" 
-                          alt="Top 1" 
-                          className="w-[34px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Row 2: Top 2 & Top 3 */}
-                    <div className="flex justify-between items-center w-full px-2 -mt-1.5 z-0">
-                      
-                      {/* Top 2 */}
-                      <div className="relative flex items-center justify-center">
-                        <img 
-                          src="/logo.png" 
-                          alt="User Avatar" 
-                          className="absolute w-[18px] h-[18px] rounded-full object-cover z-0" 
-                          style={{ top: '5px' }} 
-                        />
-                        <ChromaImage 
-                          src="/1787994751636~2.jpg" 
-                          alt="Top 2" 
-                          className="w-[31px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
-                        />
-                      </div>
+            {/* 1 ROW PODIUM LAYOUT: Left (Top 2) -> Middle (Top 1) -> Right (Top 3) */}
+<div className="absolute inset-0 flex flex-row items-center justify-center px-0.5 z-0 opacity-90 pointer-events-none gap-[2px]">
+  
+  {/* Left: Top 2 */}
+  <div className="relative flex items-center justify-center mt-2">
+    <img 
+      src="/logo.png" 
+      alt="User Avatar" 
+      className="absolute w-[16px] h-[16px] rounded-full object-cover z-0" 
+    />
+    <img 
+      src="/file_000000001d448211bde98cd9bb7fd05f.png" 
+      alt="Top 2 Frame" 
+      className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+      draggable="false"
+    />
+  </div>
 
-                      {/* Top 3 */}
-                      <div className="relative flex items-center justify-center">
-                        <img 
-                          src="/logo.png" 
-                          alt="User Avatar" 
-                          className="absolute w-[18px] h-[18px] rounded-full object-cover z-0" 
-                          style={{ top: '5px' }} 
-                        />
-                        <ChromaImage 
-                          src="/1787994761762~2.jpg" 
-                          alt="Top 3" 
-                          className="w-[31px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10" 
-                        />
-                      </div>
+  {/* Middle: Top 1 (Thoda bada aur upar) */}
+  <div className="relative flex items-center justify-center z-10 mb-2">
+    <img 
+      src="/logo.png" 
+      alt="User Avatar" 
+      className="absolute w-[20px] h-[20px] rounded-full object-cover z-0" 
+    />
+    <img 
+      src="/file_000000008ad88211bf5e135a06034b76.png" 
+      alt="Top 1 Frame" 
+      className="w-[34px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+      draggable="false"
+    />
+  </div>
 
-                    </div>
-                  </div>
-                  
-                  <span className="text-xl relative z-10 pointer-events-none">{card.icon}</span>
-                </div>
+  {/* Right: Top 3 */}
+  <div className="relative flex items-center justify-center mt-2">
+    <img 
+      src="/logo.png" 
+      alt="User Avatar" 
+      className="absolute w-[16px] h-[16px] rounded-full object-cover z-0" 
+    />
+    <img 
+      src="/file_0000000076c88211aadab79e74df9315.png" 
+      alt="Top 3 Frame" 
+      className="w-[28px] h-auto object-contain pointer-events-none drop-shadow-md relative z-10"
+      draggable="false"
+    />
+  </div>
 
-              </div>
+</div>
+
+
             ))}
           </div>
         </div>
