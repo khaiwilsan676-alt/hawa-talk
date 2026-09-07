@@ -178,7 +178,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         {!loading && (
           <>
             {/* TOP LEFT BUTTONS: Speaker and Question Mark */}
-            <div className="absolute top-[6.5px] left-7.3 z-30 flex items-center gap-0.5">
+            <div className="absolute top-[6.5px] left-7 z-30 flex items-center gap-0.5">
               {/* Speaker Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
@@ -195,7 +195,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross -> FIX: Capital 'R' removed, now uses lowercase 'right-8' */}
-            <div className="absolute top-[6.5px] right-7.3 z-30 flex items-center gap-0.5">
+            <div className="absolute top-[6.5px] right-7 z-30 flex items-center gap-0.5">
               {/* Arrow Down Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
