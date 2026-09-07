@@ -2104,86 +2104,90 @@ export default function HomePage({ onLogout }: HomePageProps) {
     >
       {card.label}
     </div>
-    
-    {/* 2. CHOTA CARD BACKGROUND */}
-    <div
-      style={{
-        position: 'absolute',
-        top: '28px',
-        bottom: '6px',
-        left: '6px',
-        right: '6px',
-        borderRadius: '10px',
-        backgroundColor: card.innerBg,
-        border: `1.5px solid ${card.innerBorder}`,
-        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
-        zIndex: 1
-      }}
-    />
+                    {/* 2. CHOTA CARD BACKGROUND */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '28px',
+                    bottom: '6px',
+                    left: '6px',
+                    right: '6px',
+                    borderRadius: '10px',
+                    backgroundColor: card.innerBg,
+                    border: `1.5px solid ${card.innerBorder}`,
+                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
+                    zIndex: 1
+                  }}
+                />
 
-    {/* 3 & 4. COMBINED ZERO-GAP CONTAINER (Animated Frame + Static Bottom Edge) */}
-    <div className="absolute bottom-0 left-0 w-full flex flex-col z-20 pointer-events-none">
-      
-      {/* CSS Animation specifically for this map (slide up every 5s) */}
-      <style>{`
-        @keyframes slideUpFrame {
-          0% { transform: translateY(40px); opacity: 0; }
-          10% { transform: translateY(20px); opacity: 1; }
-          90% { transform: translateY(-50px); opacity: 1; }
-          100% { transform: translateY(-70px); opacity: 0; }
-        }
-      `}</style>
+                {/* --- YAHAN SE REPLACE KARR --- */}
 
-      {/* ANIMATED FRAME AND LOGOS (Ye continuous upar slide hoga) */}
-      <div 
-        className="relative w-full flex items-center justify-center z-10"
-        style={{ animation: 'slideUpFrame 5s linear infinite' }}
-      >
-        
-        {/* Frame Image */}
-        <img 
-          src="/file_00000000048882118276c7215012963f.png" 
-          alt="Frame" 
-          className="w-full h-auto block"
-          draggable="false"
-        />
-        
-        {/* Logos container fixed inside the Frame */}
-        <div className="absolute inset-0 flex flex-row items-center justify-center z-30">
-          <img 
-            src="/logo.png" 
-            alt="Left" 
-            className="rounded-full object-cover shadow-sm relative shrink-0" 
-            style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '3px' }}
-          />
-          <img 
-            src="/logo.png" 
-            alt="Middle" 
-            className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
-            style={{ width: '29px', height: '29px', marginBottom: '3px' }} 
-          />
-          <img 
-            src="/logo.png" 
-            alt="Right" 
-            className="rounded-full object-cover shadow-sm relative shrink-0" 
-            style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '3px' }}
-          />
-        </div>
-      </div>
+                {/* ANIMATION KEYFRAMES - 4 second ruka rahega, fir scroll hoke reset */}
+                <style>{`
+                  @keyframes scrollOnce {
+                    0%, 75% { transform: translateY(0); opacity: 1; }   /* 0 Gap pe Fix rahega */
+                    85% { transform: translateY(-45px); opacity: 1; } /* Upar scroll hoga */
+                    95% { transform: translateY(-55px); opacity: 0; } /* Top pe jaake gayab */
+                    100% { transform: translateY(0); opacity: 0; }    /* Wapas reset */
+                  }
+                `}</style>
 
-      {/* STATIC BOTTOM EDGE IMAGE (Ye edge-to-edge bilkul fix rahegi) */}
-      <img 
-        src="/file_00000000c61c82119e0bd419691cb264.png" 
-        alt="Bottom Edge" 
-        className="relative w-full h-auto block z-40"
-        style={{ objectFit: 'fill' }}
-        draggable="false"
-      />
-    </div>
-    
-  </div>
-))}
-                   </div>
+                {/* STRICT BOUNDARY WRAPPER: Top se 2px chhod kar overflow hidden karr diya */}
+                <div 
+                  className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none" 
+                  style={{ top: '2px', overflow: 'hidden' }}
+                >
+                  
+                  {/* BOTTOM ALIGNED CONTAINER (0 Gap guarantee) */}
+                  <div className="absolute bottom-0 left-0 w-full flex flex-col justify-end">
+                    
+                    {/* ANIMATED FRAME & LOGOS */}
+                    <div 
+                      className="relative w-full flex items-center justify-center z-10"
+                      style={{ animation: 'scrollOnce 5s ease-in-out infinite' }}
+                    >
+                      <img 
+                        src="/file_00000000048882118276c7215012963f.png" 
+                        alt="Frame" 
+                        className="w-full h-auto block"
+                        draggable="false"
+                      />
+                      
+                      {/* LOGOS CENTERED IN FRAME */}
+                      <div className="absolute inset-0 flex flex-row items-center justify-center z-30">
+                        <img 
+                          src="/logo.png" 
+                          alt="Left" 
+                          className="rounded-full object-cover shadow-sm relative shrink-0" 
+                          style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '5px' }}
+                        />
+                        <img 
+                          src="/logo.png" 
+                          alt="Middle" 
+                          className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
+                          style={{ width: '29px', height: '29px', marginBottom: '3px' }} 
+                        />
+                        <img 
+                          src="/logo.png" 
+                          alt="Right" 
+                          className="rounded-full object-cover shadow-sm relative shrink-0" 
+                          style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '5px' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* STATIC BOTTOM EDGE IMAGE (Ekdam fix, edge to edge) */}
+                    <img 
+                      src="/file_00000000c61c82119e0bd419691cb264.png" 
+                      alt="Bottom Edge" 
+                      className="w-full h-auto block relative z-40"
+                      style={{ objectFit: 'fill' }}
+                      draggable="false"
+                    />
+                  </div>
+                </div>
+               ))}
+         </div>
         </div>
 
         
