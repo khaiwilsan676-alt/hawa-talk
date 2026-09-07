@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                        {CATEGORY_CARDS.map((card, i) => (
+                                    {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2114,10 +2114,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   }}
                 />
 
-                {/* 3. AVATARS LOGOS (Peeche ki layer me z-10) */}
+                {/* 3. AVATARS LOGOS (Thoda upar shift kiya hai, z-10 par) */}
                 <div 
                   className="absolute left-0 w-full flex flex-row items-center justify-center gap-0 pointer-events-none z-10"
-                  style={{ bottom: 0, height: '35px' }} 
+                  style={{ bottom: '18px' }} /* LOGO KO THODA UPAR KIYA */
                 >
                   <img 
                     src="/logo.png" 
@@ -2139,17 +2139,17 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   />
                 </div>
 
-                {/* 4. IMAGE OVERLAY (Logos ke upar aayegi z-20) */}
+                {/* 4. IMAGE OVERLAY (Bade card ke bottom me, edge to edge, no cut) */}
                 <img 
                   src="/file_00000000626882118324a2318aa23e38.png" 
                   alt="Bg" 
-                  className="absolute bottom-0 left-0 w-full pointer-events-none z-20"
-                  style={{ height: '35px', objectFit: 'cover', objectPosition: 'bottom' }} 
+                  className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-20"
                   draggable="false"
                 />
                 
               </div>
             ))}
+
 
 
 
