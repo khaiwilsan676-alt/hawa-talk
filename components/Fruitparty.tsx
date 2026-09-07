@@ -14,14 +14,14 @@ interface FruitpartyProps {
 // [7] [6] [5]
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG-20260823-WA0003.jpg', x: 0,      y: 0,      w: 33.333, h: 33.333 }, // Mango
-  { id: 2, img: '/IMG-20260823-WA0004.jpg', x: 33.333, y: 0,      w: 33.333, h: 33.333 }, // Banana
-  { id: 3, img: '/IMG-20260823-WA0005.jpg', x: 66.666, y: 0,      w: 33.333, h: 33.333 }, // Watermelon
-  { id: 4, img: '/IMG-20260823-WA0006.jpg', x: 66.666, y: 33.333, w: 33.333, h: 33.333 }, // Kiwi
-  { id: 5, img: '/IMG-20260823-WA0007.jpg', x: 66.666, y: 66.666, w: 33.333, h: 33.333 }, // Grapes
-  { id: 6, img: '/IMG-20260823-WA0008.jpg', x: 33.333, y: 66.666, w: 33.333, h: 33.333 }, // Apple
-  { id: 7, img: '/IMG-20260823-WA0009.jpg', x: 0,      y: 66.666, w: 33.333, h: 33.333 }, // Strawberry
-  { id: 8, img: '/IMG-20260822-WA0124.jpg', x: 0,      y: 33.333, w: 33.333, h: 33.333 }, // Cherry
+  { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 33.333, h: 33.333 }, // Lemon 5x
+  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 0,      w: 33.333, h: 33.333 }, // Guava 5x
+  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666, y: 0,      w: 33.333, h: 33.333 }, // Mango 5x
+  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666, y: 33.333, w: 33.333, h: 33.333 }, // Orange 5x
+  { id: 5, img: '/IMG_20260907_154323.png', x: 66.666, y: 66.666, w: 33.333, h: 33.333 }, // Grapesh 10x
+  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 66.666, w: 33.333, h: 33.333 }, // Strawberry 15x
+  { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 66.666, w: 33.333, h: 33.333 }, // Apple 25x
+  { id: 8, img: '/IMG_20260907_154449.png', x: 0,      y: 33.333, w: 33.333, h: 33.333 }, // Cherry 45x
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -175,16 +175,34 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         style={{ height: '65vh' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 z-30 bg-black/40 hover:bg-black/60 text-white p-1.5 rounded-full transition-colors backdrop-blur-sm"
-        >
-          <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.5]">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+        {/* NEW Right Side Action Buttons: Arrow Down, Clock, Cross */}
+        <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5">
+          
+          {/* Arrow Down Button */}
+          <button className="w-9 h-9 rounded-full border-[2px] border-[#d6a54a] bg-[#2e1503] flex items-center justify-center shadow-md hover:brightness-110 active:scale-95 transition-all">
+            <svg viewBox="0 0 24 24" className="w-[20px] h-[20px] fill-none stroke-[#fef5d6] stroke-[2.5]" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          {/* Clock Button */}
+          <button className="w-9 h-9 rounded-full border-[2px] border-[#d6a54a] bg-[#2e1503] flex items-center justify-center shadow-md hover:brightness-110 active:scale-95 transition-all">
+            <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-[#fef5d6]">
+              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+            </svg>
+          </button>
+
+          {/* Cross Button (Close) */}
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full border-[2px] border-[#d6a54a] bg-[#2e1503] flex items-center justify-center shadow-md hover:brightness-110 active:scale-95 transition-all"
+          >
+            <svg viewBox="0 0 24 24" className="w-[20px] h-[20px] fill-[#fef5d6]">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+
+        </div>
 
         {loading ? (
           /* ---------- Loading State with WebGL Shader ---------- */
@@ -204,7 +222,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </span>
           </div>
         ) : (
-          /* ---------- Game Screen: 70vh Background + Compact Upper Square Grid ---------- */
+          /* ---------- Game Screen: 70vh Background + Game Elements ---------- */
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             {/* Full 70vh Background Image */}
             <img
@@ -213,44 +231,77 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               className="absolute inset-0 w-full h-full object-fill pointer-events-none"
             />
 
-            {/* Compact Square Container Positioned Upwards */}
-            <div className="relative z-10 w-[60%] max-w-[243px] aspect-square -mt-44">
-              {/* 8 Fruit Images with 0.5px tight padding */}
-              {FRUITS_CONFIG.map((fruit) => (
+            {/* Main Wrapping Container to stack items properly */}
+            <div className="relative z-10 w-full flex flex-col items-center -mt-16">
+              
+              {/* Compact Square Container Positioned Upwards */}
+              <div className="relative w-[60%] max-w-[243px] aspect-square">
+                {/* 8 Fruit Images with 0.5px tight padding */}
+                {FRUITS_CONFIG.map((fruit) => (
+                  <div
+                    key={fruit.id}
+                    style={{
+                      position: 'absolute',
+                      left: `${fruit.x}%`,
+                      top: `${fruit.y}%`,
+                      width: `${fruit.w}%`,
+                      height: `${fruit.h}%`,
+                      padding: '0.5px',
+                    }}
+                  >
+                    <img
+                      src={fruit.img}
+                      alt="Fruit"
+                      className="w-full h-full object-cover rounded-xl block"
+                    />
+                  </div>
+                ))}
+
+                {/* Center 30s Countdown (Zero Card / No Box) */}
                 <div
-                  key={fruit.id}
                   style={{
                     position: 'absolute',
-                    left: `${fruit.x}%`,
-                    top: `${fruit.y}%`,
-                    width: `${fruit.w}%`,
-                    height: `${fruit.h}%`,
-                    padding: '0.5px',
+                    left: '33.333%',
+                    top: '33.333%',
+                    width: '33.333%',
+                    height: '33.333%',
                   }}
+                  className="flex items-center justify-center pointer-events-none"
                 >
-                  <img
-                    src={fruit.img}
-                    alt="Fruit"
-                    className="w-full h-full object-cover rounded-xl block"
-                  />
+                  <span className="text-amber-400 font-extrabold text-2xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                    {countdown}s
+                  </span>
                 </div>
-              ))}
-
-              {/* Center 30s Countdown (Zero Card / No Box) */}
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '33.333%',
-                  top: '33.333%',
-                  width: '33.333%',
-                  height: '33.333%',
-                }}
-                className="flex items-center justify-center pointer-events-none"
-              >
-                <span className="text-amber-400 font-extrabold text-2xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-                  {countdown}s
-                </span>
               </div>
+
+              {/* Space 3vh and 2 New Images (Same row, gap 1) */}
+              <div className="flex flex-row justify-center items-center gap-1 mt-[3vh]">
+                <img 
+                  src="/IMG_20260907_154135.png" 
+                  alt="Option 1" 
+                  className="w-20 h-auto object-contain" 
+                />
+                <img 
+                  src="/IMG_20260907_154118.png" 
+                  alt="Option 2" 
+                  className="w-20 h-auto object-contain" 
+                />
+              </div>
+
+              {/* Border image first, then Red Button exactly below it */}
+              <div className="flex flex-col items-center mt-3 gap-1">
+                <img 
+                  src="/file_000000003d24821182882f8ca412d2b6.png" 
+                  alt="Border" 
+                  className="w-32 h-auto object-contain" 
+                />
+                <img 
+                  src="/file_00000000d9b08211b0304c61b802348b.png" 
+                  alt="Red Button" 
+                  className="w-28 h-auto object-contain" 
+                />
+              </div>
+
             </div>
           </div>
         )}
