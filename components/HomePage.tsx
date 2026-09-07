@@ -2117,25 +2117,25 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 {/* 3. AVATARS LOGOS (Thoda upar shift kiya hai, z-10 par) */}
                 <div 
                   className="absolute left-0 w-full flex flex-row items-center justify-center gap-0 pointer-events-none z-10"
-                  style={{ bottom: '18px' }} /* LOGO KO THODA UPAR KIYA */
+                  style={{ bottom: '16px' }} /* LOGO KO THODA UPAR KIYA */
                 >
                   <img 
                     src="/logo.png" 
                     alt="Left" 
                     className="rounded-full object-cover shadow-sm relative" 
-                    style={{ width: '22px', height: '22px', marginTop: '6px', marginRight: '-2px' }}
+                    style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '-2px' }}
                   />
                   <img 
                     src="/logo.png" 
                     alt="Middle" 
                     className="rounded-full object-cover shadow-md relative" 
-                    style={{ width: '34px', height: '34px', marginBottom: '4px' }}
+                    style={{ width: '29px', height: '29px', marginBottom: '3px' }}
                   />
                   <img 
                     src="/logo.png" 
                     alt="Right" 
                     className="rounded-full object-cover shadow-sm relative" 
-                    style={{ width: '22px', height: '22px', marginTop: '6px', marginLeft: '-2px' }}
+                    style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '-2px' }}
                   />
                 </div>
 
