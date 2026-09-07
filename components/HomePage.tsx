@@ -2138,7 +2138,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   {/* ANIMATED FRAME (Bottom image ke thik ouper 0 gap k sath) */}
                   <div 
                     className="relative w-full flex items-center justify-center z-10"
-                    style={{ animation: 'scrollFrameOnce 5s ease-in-out infinite' }}
+                    style={{ animation: 'scrollFrameOnce 5s ease-in-out infinite', marginBottom: '-20px' }}
+                      
+                    
                   >
                     
                     {/* FRAME IMAGE */}
