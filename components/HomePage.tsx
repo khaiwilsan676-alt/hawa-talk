@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                                               {CATEGORY_CARDS.map((card, i) => (
+                         {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2069,8 +2069,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 className="group flex-1 cursor-pointer"
                 style={{
                   height: '90px',
-                  minHeight: '90px', /* <-- STRICT LOCK: Card kabhi chota nahi hoga */
-                  maxHeight: '90px', /* <-- STRICT LOCK: Card kabhi bada nahi hoga */
+                  minHeight: '90px',
+                  maxHeight: '90px',
                   minWidth: 0,
                   borderRadius: '16px',
                   border: '1.5px solid rgba(0,0,0,0.06)',
@@ -2085,7 +2085,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   overflow: 'hidden'    
                 }}
               >
-                {/* 1. TITLE (Strictly Locked) */}
+                {/* 1. TITLE */}
                 <div
                   style={{
                     position: 'absolute',
@@ -2099,7 +2099,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     whiteSpace: 'nowrap', 
                     color: card.textColor,
                     textShadow: '0 1px 0 rgba(255,255,255,0.7)',
-                    zIndex: 20
+                    zIndex: 30
                   }}
                 >
                   {card.label}
@@ -2121,47 +2121,44 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   }}
                 />
 
-                {/* --- BOTTOM ANCHOR (YAHI HAI MAIN FIX) --- */}
-                {/* Image aur Logo dono ko ek fix 35px ke box me lock kar diya hai */}
-                <div className="absolute bottom-0 left-0 w-full h-[35px] pointer-events-none z-10">
-                  
-                  {/* 3. IMAGE (Strict Fixed Height inside wrapper) */}
+                {/* 3. AVATARS LOGOS */}
+                <div 
+                  className="absolute left-0 right-0 flex flex-row items-center justify-center pointer-events-none z-10"
+                  style={{ bottom: '16px' }} 
+                >
+                  <img 
+                    src="/logo.png" 
+                    alt="Left" 
+                    className="rounded-full object-cover shadow-sm relative shrink-0" 
+                    style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '-3px' }}
+                  />
+                  <img 
+                    src="/logo.png" 
+                    alt="Middle" 
+                    className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
+                    style={{ width: '29px', height: '29px', marginBottom: '3px' }} 
+                  />
+                  <img 
+                    src="/logo.png" 
+                    alt="Right" 
+                    className="rounded-full object-cover shadow-sm relative shrink-0" 
+                    style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '-3px' }}
+                  />
+                </div>
+
+                {/* 4. IMAGE CONTAINER (No cutting, 100% original size maintained) */}
+                <div 
+                  className="absolute bottom-0 left-0 w-full pointer-events-none z-20 flex items-end justify-center"
+                  style={{ height: '34px' }}
+                >
                   <img 
                     src="/file_00000000626882118324a2318aa23e38.png" 
                     alt="Bg" 
-                    className="absolute bottom-0 left-0 w-full h-full object-cover object-bottom z-10" 
+                    className="w-full h-full object-contain object-bottom"
                     draggable="false"
                   />
-
-                  {/* 4. AVATARS LOGOS (Ab ye hamesha Image ke sath jude rahenge) */}
-                  <div 
-                    className="absolute left-0 right-0 flex flex-row items-center justify-center pointer-events-none z-20"
-                    style={{ bottom: '16px' }} 
-                  >
-                    {/* Left Avatar */}
-                    <img 
-                      src="/logo.png" 
-                      alt="Left" 
-                      className="rounded-full object-cover shadow-sm relative shrink-0" 
-                      style={{ width: '20px', height: '20px', marginTop: '4px', marginRight: '-1px' }}
-                    />
-                    {/* Middle Avatar */}
-                    <img 
-                      src="/logo.png" 
-                      alt="Middle" 
-                      className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
-                      style={{ width: '29px', height: '29px', marginBottom: '3px' }} 
-                    />
-                    {/* Right Avatar */}
-                    <img 
-                      src="/logo.png" 
-                      alt="Right" 
-                      className="rounded-full object-cover shadow-sm relative shrink-0" 
-                      style={{ width: '20px', height: '20px', marginTop: '4px', marginLeft: '-1px' }}
-                    />
-                  </div>
-
-                </div>            
+                </div>
+                
               </div>
             ))}
 
