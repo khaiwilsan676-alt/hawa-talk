@@ -8,20 +8,17 @@ interface FruitpartyProps {
 
 // -------------------------------------------------------------
 // Fruit Positions & Sizes (Strict 3x3 Grid, Zero-Gap Alignment)
-// Layout:
-// [1] [2] [3]
-// [8] [T] [4]  <-- T = Countdown Timer
-// [7] [6] [5]
+// Maine x, y, w, h ko adjust kar diya hai taaki overlap hoke chipak jayein
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 33.333, h: 33.333 }, // Lemon 5x
-  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 0,      w: 33.333, h: 33.333 }, // Guava 5x
-  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666, y: 0,      w: 36, h: 36 }, // Mango 5x
-  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666, y: 33.333, w: 35, h: 35 }, // Orange 5x
-  { id: 5, img: '/IMG_20260907_154323.png', x: 66.666, y: 66.666, w: 33.333, h: 33.333 }, // Grapesh 10x
-  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 66.666, w: 33.333, h: 33.333 }, // Strawberry 15x
-  { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 66.666, w: 33.333, h: 33.333 }, // Apple 25x
-  { id: 8, img: '/IMG_20260907_154449.png', x: 0,      y: 33.333, w: 33.333, h: 33.333 }, // Cherry 45x
+  { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 34, h: 34 }, // Lemon
+  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 0,      w: 34, h: 34 }, // Guava
+  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666, y: 0,      w: 34, h: 34 }, // Mango
+  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666, y: 33.333, w: 34, h: 34 }, // Orange
+  { id: 5, img: '/IMG_20260907_154323.png', x: 66.666, y: 66.666, w: 34, h: 34 }, // Grapesh
+  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 66.666, w: 34, h: 34 }, // Strawberry
+  { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 66.666, w: 34, h: 34 }, // Apple
+  { id: 8, img: '/IMG_20260907_154449.png', x: 0,      y: 33.333, w: 34, h: 34 }, // Cherry
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -194,7 +191,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross -> FIX: Capital 'R' removed, now uses lowercase 'right-8' */}
+            {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross */}
             <div className="absolute top-[6.5px] right-8 z-30 flex items-center gap-0.5">
               {/* Arrow Down Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
@@ -253,9 +250,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* Main Wrapping Container */}
             <div className="relative z-10 w-full flex flex-col items-center -mt-27">
               
-              {/* PARTICULAR SIZE ADDED HERE: w-[240px] h-[240px] (Aap chaho toh in dono numbers ko change kar sakte ho) */}
               <div className="relative w-[240px] h-[240px]">
-                {/* 8 Fruit Images with 0.5px tight padding */}
+                {/* 8 Fruit Images */}
                 {FRUITS_CONFIG.map((fruit) => (
                   <div
                     key={fruit.id}
@@ -265,13 +261,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       top: `${fruit.y}%`,
                       width: `${fruit.w}%`,
                       height: `${fruit.h}%`,
-                      padding: '0.5px',
+                      padding: '0px',
                     }}
                   >
                     <img
                       src={fruit.img}
                       alt="Fruit"
-                      className="w-full h-full object-contain rounded-none block"
+                      // scale-[1.05] se har image thodi fel jayegi aur perfectly chipak jayegi!
+                      className="w-full h-full object-cover rounded-none block scale-[1.05]"
                     />
                   </div>
                 ))}
@@ -312,7 +309,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* Bottom Left Compact Button Group */}
             <div className="absolute bottom-[15vh] left-3 z-30 w-[55px] h-[70px]">
               
-              {/* Red Button (Upar) - top-[10px] kiya hai taaki niche khisak jaye */}
+              {/* Red Button (Upar) */}
               <img 
                 src="/file_00000000d9b08211b0304c61b802348b.png" 
                 alt="Red Button" 
