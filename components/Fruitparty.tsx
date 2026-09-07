@@ -178,7 +178,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         {!loading && (
           <>
             {/* TOP LEFT BUTTONS: Speaker and Question Mark (Thick icons, 0.5 tight gap with border) */}
-            <div className="absolute top-1.5 left-5 z-30 flex items-center gap-0.5">
+            <div className="absolute top-1.8 left-8 z-30 flex items-center gap-0.5">
               {/* Speaker Button */}
               <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
@@ -195,7 +195,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross (Thick icons, 0.5 tight gap with border) */}
-            <div className="absolute top-1.5 right-5 z-30 flex items-center gap-0.5">
+            <div className="absolute top-1.8 left-8 z-30 flex items-center gap-0.5">
               {/* Arrow Down Button */}
               <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
@@ -251,10 +251,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             />
 
             {/* Main Wrapping Container - Grid Aur Upar (-mt-24) */}
-            <div className="relative z-10 w-full flex flex-col items-center -mt-24">
+            <div className="relative z-10 w-full flex flex-col items-center -mt-28">
               
               {/* Compact Square Container Positioned Upwards & A little bit bigger */}
-              <div className="relative w-[65%] max-w-[250px] aspect-square">
+              <div className="relative w-[62%] max-w-[233px] aspect-square">
                 {/* 8 Fruit Images with 0.5px tight padding */}
                 {FRUITS_CONFIG.map((fruit) => (
                   <div
@@ -298,31 +298,36 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <img 
                   src="/IMG_20260907_154135.png" 
                   alt="Option 1" 
-                  className="w-17 h-auto object-contain" 
+                  className="w-20 h-auto object-contain" 
                 />
                 <img 
                   src="/IMG_20260907_154118.png" 
                   alt="Option 2" 
-                  className="w-17 h-auto object-contain" 
+                  className="w-20 h-auto object-contain" 
                 />
               </div>
 
             </div>
 
-            {/* Bottom Left Compact Button Group: 15vh up from bottom, Red Button & Border completely stuck (no gap) */}
-            <div className="absolute bottom-[15vh] left-3 z-30 flex flex-col items-center">
+                        {/* Bottom Left Compact Button Group: Absolute Position Method */}
+            <div className="absolute bottom-[15vh] left-3 z-30 w-[55px] h-[70px]">
+              
+              {/* Red Button (Upar) */}
               <img 
                 src="/file_00000000d9b08211b0304c61b802348b.png" 
                 alt="Red Button" 
-                className="w-[45px] h-auto object-contain z-10" 
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
               />
+              
+              {/* Border (Niche) - Agar aur chipkana ho toh top-[28px] ko top-[20px] ya top-[25px] kar dena */}
               <img 
                 src="/file_000000003d24821182882f8ca412d2b6.png" 
                 alt="Border" 
-                // -mt-8 ensures they overlap and are completely stuck together
-                className="w-[55px] h-auto object-contain -mt-3" 
+                className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[55px] h-auto object-contain z-0" 
               />
+              
             </div>
+
 
           </div>
         )}
