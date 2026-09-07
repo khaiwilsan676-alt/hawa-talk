@@ -2130,7 +2130,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     src="/logo.png" 
                     alt="Left" 
                     className="rounded-full object-cover shadow-sm relative shrink-0" 
-                    style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '-5px' }}
+                    style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '3px' }}
                   />
                   <img 
                     src="/logo.png" 
@@ -2142,7 +2142,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     src="/logo.png" 
                     alt="Right" 
                     className="rounded-full object-cover shadow-sm relative shrink-0" 
-                    style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '-5px' }}
+                    style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '3px' }}
                   />
                 </div>
 
