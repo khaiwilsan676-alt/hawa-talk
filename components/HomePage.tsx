@@ -2122,7 +2122,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
                 {/* --- YAHAN SE REPLACE KERR --- */}
 
-                {/* 3 & 4. BADE CARD KI BOUNDARY WALA CONTAINER (100% Bottom Chipka hua) */}
+                               {/* 3 & 4. BADE CARD KI BOUNDARY WALA CONTAINER (100% Bottom Chipka hua) */}
                 <div className="absolute left-0 right-0 bottom-0 w-full z-40 pointer-events-none block">
                   
                   {/* SCROLL ANIMATION (4s Ruka rahega, 1s Scroll hoke fade out) */}
@@ -2149,25 +2149,25 @@ export default function HomePage({ onLogout }: HomePageProps) {
                       draggable="false"
                     />
                     
-                    {/* LOGOS (Frame ke theek middle me) */}
+                    {/* LOGOS (Pixels hata kar percentages % aur aspect-ratio laga diya) */}
                     <div className="absolute inset-0 flex flex-row items-center justify-center z-20">
                       <img 
                         src="/logo.png" 
                         alt="Left" 
                         className="rounded-full object-cover shadow-sm relative shrink-0" 
-                        style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '8px' }}
+                        style={{ width: '22%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginRight: '8%' }}
                       />
                       <img 
                         src="/logo.png" 
                         alt="Middle" 
                         className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
-                        style={{ width: '29px', height: '29px', marginBottom: '3px' }} 
+                        style={{ width: '29%', height: 'auto', aspectRatio: '1/1', marginBottom: '3%' }} 
                       />
                       <img 
                         src="/logo.png" 
                         alt="Right" 
                         className="rounded-full object-cover shadow-sm relative shrink-0" 
-                        style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '8px' }}
+                        style={{ width: '22%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginLeft: '8%' }}
                       />
                     </div>
                   </div>
@@ -2182,8 +2182,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   />
                   
                 </div>
-                {/* --- YAHAN TAK REPLACE KERR --- */}
-                
+
               </div>
 
 
