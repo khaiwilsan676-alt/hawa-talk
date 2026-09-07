@@ -2104,7 +2104,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     >
       {card.label}
     </div>
-                              {/* 2. CHOTA CARD BACKGROUND (Ye tera pehle wala hai) */}
+                    {/* 2. CHOTA CARD BACKGROUND (Ye tera pehle wala hai) */}
                 <div
                   style={{
                     position: 'absolute',
@@ -2122,25 +2122,23 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
                 {/* --- YAHAN SE REPLACE KERR --- */}
 
-                {/* 3 & 4. COMBINED CONTAINER (Grows naturally from bottom, 0 gap strictly) */}
-                <div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none flex flex-col">
+                {/* 3 & 4. BADE CARD KI BOUNDARY WALA CONTAINER (100% Bottom Chipka hua) */}
+                <div className="absolute left-0 right-0 bottom-0 w-full z-20 pointer-events-none block">
                   
                   {/* SCROLL ANIMATION (4s Ruka rahega, 1s Scroll hoke fade out) */}
                   <style>{`
                     @keyframes scrollFrameOnce {
                       0%, 75% { transform: translateY(0); opacity: 1; }
-                      85% { transform: translateY(-30px); opacity: 1; }
-                      95% { transform: translateY(-40px); opacity: 0; }
+                      85% { transform: translateY(-25px); opacity: 1; }
+                      95% { transform: translateY(-35px); opacity: 0; }
                       100% { transform: translateY(0); opacity: 0; }
                     }
                   `}</style>
                   
-                  {/* ANIMATED FRAME (Bottom image ke thik ouper 0 gap k sath) */}
+                  {/* ANIMATED FRAME (Bottom image ke thik ouper, 0 gap ke sath naturally stacked) */}
                   <div 
                     className="relative w-full flex items-center justify-center z-10"
-                    style={{ animation: 'scrollFrameOnce 5s ease-in-out infinite', marginBottom: '-20px' }}
-                      
-                    
+                    style={{ animation: 'scrollFrameOnce 5s ease-in-out infinite' }}
                   >
                     
                     {/* FRAME IMAGE */}
@@ -2179,14 +2177,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     src="/file_00000000c61c82119e0bd419691cb264.png" 
                     alt="Bottom Edge" 
                     className="w-full h-auto block relative z-40"
-                    style={{ objectFit: 'fill' }}
+                    style={{ objectFit: 'fill', margin: 0, padding: 0 }}
                     draggable="false"
                   />
                   
                 </div>
-   
+                {/* --- YAHAN TAK REPLACE KERR --- */}
                 
               </div>
+
 
              ))}
          </div>
