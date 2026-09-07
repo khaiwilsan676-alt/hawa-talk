@@ -2138,19 +2138,19 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   {/* ANIMATED FRAME (Bottom image ke thik ouper, 0 gap ke sath naturally stacked) */}
                   <div 
                     className="relative w-full flex items-center justify-center z-10"
-                    style={{ animation: 'scrollFrameOnce 5s ease-in-out infinite' }}
+                    style={{ animation: 'scrollFrameOnce 5s ease-in-out infinite', marginBottom: '-40px' }}
                   >
                     
                     {/* FRAME IMAGE */}
                     <img 
                       src="/file_00000000048882118276c7215012963f.png" 
                       alt="Frame" 
-                      className="w-full h-auto block"
+                      className="w-full h-auto block z-30"
                       draggable="false"
                     />
                     
                     {/* LOGOS (Frame ke theek middle me) */}
-                    <div className="absolute inset-0 flex flex-row items-center justify-center z-30">
+                    <div className="absolute inset-0 flex flex-row items-center justify-center z-20">
                       <img 
                         src="/logo.png" 
                         alt="Left" 
@@ -2177,7 +2177,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     src="/file_00000000c61c82119e0bd419691cb264.png" 
                     alt="Bottom Edge" 
                     className="w-full h-auto block relative z-40"
-                    style={{ objectFit: 'fill', margin: 0, padding: 0 }}
+                    style={{ objectFit: 'fill', marginBottom: '-4px', padding: 0 }}
                     draggable="false"
                   />
                   
