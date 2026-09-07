@@ -7,18 +7,21 @@ interface FruitpartyProps {
 }
 
 // -------------------------------------------------------------
-// Fruit Positions & Sizes (Strict 3x3 Grid, Zero-Gap Alignment)
-// Maine x, y, w, h ko adjust kar diya hai taaki overlap hoke chipak jayein
+// Fruit Positions & Sizes (Strict 3x3 Grid, Zero-Gap Alignment via X and Y dimensions)
+// Layout:
+// [1] [2] [3]
+// [8] [T] [4]  <-- T = Countdown Timer
+// [7] [6] [5]
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 34, h: 34 }, // Lemon
-  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 0,      w: 34, h: 34 }, // Guava
-  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666, y: 0,      w: 34, h: 34 }, // Mango
-  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666, y: 33.333, w: 34, h: 34 }, // Orange
-  { id: 5, img: '/IMG_20260907_154323.png', x: 66.666, y: 66.666, w: 34, h: 34 }, // Grapesh
-  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 66.666, w: 34, h: 34 }, // Strawberry
-  { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 66.666, w: 34, h: 34 }, // Apple
-  { id: 8, img: '/IMG_20260907_154449.png', x: 0,      y: 33.333, w: 34, h: 34 }, // Cherry
+  { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 35.5, h: 35.5 }, // Lemon
+  { id: 2, img: '/IMG_20260907_154205.png', x: 32.2,   y: 0,      w: 35.5, h: 35.5 }, // Guava
+  { id: 3, img: '/IMG_20260907_154232.png', x: 64.5,   y: 0,      w: 35.5, h: 35.5 }, // Mango
+  { id: 4, img: '/IMG_20260907_154250.png', x: 64.5,   y: 32.2,   w: 35.5, h: 35.5 }, // Orange
+  { id: 5, img: '/IMG_20260907_154323.png', x: 64.5,   y: 64.5,   w: 35.5, h: 35.5 }, // Grapesh
+  { id: 6, img: '/IMG_20260907_154348.png', x: 32.2,   y: 64.5,   w: 35.5, h: 35.5 }, // Strawberry
+  { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 64.5,   w: 35.5, h: 35.5 }, // Apple
+  { id: 8, img: '/IMG_20260907_154449.png', x: 0,      y: 32.2,   w: 35.5, h: 35.5 }, // Cherry
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -175,7 +178,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         {!loading && (
           <>
             {/* TOP LEFT BUTTONS: Speaker and Question Mark */}
-            <div className="absolute top-[6.5px] left-8 z-30 flex items-center gap-0.5">
+            <div className="absolute top-[6.5px] left-7.3 z-30 flex items-center gap-0.5">
               {/* Speaker Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
@@ -192,7 +195,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross */}
-            <div className="absolute top-[6.5px] right-8 z-30 flex items-center gap-0.5">
+            <div className="absolute top-[6.5px] right-7.3 z-30 flex items-center gap-0.5">
               {/* Arrow Down Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
@@ -251,7 +254,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <div className="relative z-10 w-full flex flex-col items-center -mt-27">
               
               <div className="relative w-[240px] h-[240px]">
-                {/* 8 Fruit Images */}
+                {/* 8 Fruit Images with X/Y Dimensions Adjusted for Zero Gap */}
                 {FRUITS_CONFIG.map((fruit) => (
                   <div
                     key={fruit.id}
@@ -267,8 +270,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <img
                       src={fruit.img}
                       alt="Fruit"
-                      // scale-[1.05] se har image thodi fel jayegi aur perfectly chipak jayegi!
-                      className="w-full h-full object-cover rounded-none block scale-[1.05]"
+                      className="w-full h-full object-contain rounded-none block"
                     />
                   </div>
                 ))}
@@ -295,12 +297,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <img 
                   src="/IMG_20260907_154135.png" 
                   alt="Option 1" 
-                  className="w-18 h-auto object-contain" 
+                  className="w-[110px] h-[35px] object-fill" 
                 />
                 <img 
                   src="/IMG_20260907_154118.png" 
                   alt="Option 2" 
-                  className="w-18 h-auto object-contain" 
+                  className="w-[110px] h-[35px] object-fill" 
                 />
               </div>
 
