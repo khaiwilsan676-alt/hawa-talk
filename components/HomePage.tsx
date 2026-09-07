@@ -2157,7 +2157,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                           src="/logo.png" 
                           alt="Left" 
                           className="rounded-full object-cover shadow-sm relative shrink-0" 
-                          style={{ width: '23%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginRight: '6%' }}
+                          style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginRight: '3%' }}
                         />
                         <img 
                           src="/logo.png" 
@@ -2169,7 +2169,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                           src="/logo.png" 
                           alt="Right" 
                           className="rounded-full object-cover shadow-sm relative shrink-0" 
-                          style={{ width: '23%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginLeft: '6%' }}
+                          style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginLeft: '3%' }}
                         />
                       </div>
                     </div>
