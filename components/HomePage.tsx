@@ -2058,112 +2058,134 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-               {CATEGORY_CARDS.map((card, i) => (
-              <div
-                key={card.label}
-                onClick={() => {
-                  const targetTab = card.label.toLowerCase() as 'honour' | 'charm' | 'room'
-                  setLeaderboardTab(targetTab)
-                  setCurrentPage('leaderboard')
-                }}
-                className="group flex-1 cursor-pointer"
-                style={{
-                  height: '90px',
-                  minHeight: '90px',
-                  maxHeight: '90px',
-                  minWidth: 0,
-                  borderRadius: '16px',
-                  border: '1.5px solid rgba(0,0,0,0.06)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
-                  opacity: mounted ? 1 : 0,
-                  transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
-                  transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
-                  animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
-                  animationDelay: `${i * 100}ms`,
-                  position: 'relative', 
-                  overflow: 'hidden'    
-                }}
-              >
-                {/* 1. TITLE */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '8px',
-                    left: 0,
-                    right: 0,
-                    textAlign: 'center',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    lineHeight: '1',
-                    whiteSpace: 'nowrap', 
-                    color: card.textColor,
-                    textShadow: '0 1px 0 rgba(255,255,255,0.7)',
-                    zIndex: 30
-                  }}
-                >
-                  {card.label}
-                </div>
-                
-                {/* 2. CHOTA CARD BACKGROUND */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '28px',
-                    bottom: '6px',
-                    left: '6px',
-                    right: '6px',
-                    borderRadius: '10px',
-                    backgroundColor: card.innerBg,
-                    border: `1.5px solid ${card.innerBorder}`,
-                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
-                    zIndex: 1
-                  }}
-                />
+              {CATEGORY_CARDS.map((card, i) => (
+  <div
+    key={card.label}
+    onClick={() => {
+      const targetTab = card.label.toLowerCase() as 'honour' | 'charm' | 'room'
+      setLeaderboardTab(targetTab)
+      setCurrentPage('leaderboard')
+    }}
+    className="group flex-1 cursor-pointer"
+    style={{
+      height: '90px',
+      minHeight: '90px',
+      maxHeight: '90px',
+      minWidth: 0,
+      borderRadius: '16px',
+      border: '1.5px solid rgba(0,0,0,0.06)',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
+      opacity: mounted ? 1 : 0,
+      transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
+      transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
+      animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
+      animationDelay: `${i * 100}ms`,
+      position: 'relative', 
+      overflow: 'hidden'    
+    }}
+  >
+    {/* 1. TITLE */}
+    <div
+      style={{
+        position: 'absolute',
+        top: '8px',
+        left: 0,
+        right: 0,
+        textAlign: 'center',
+        fontSize: '14px',
+        fontWeight: 700,
+        lineHeight: '1',
+        whiteSpace: 'nowrap', 
+        color: card.textColor,
+        textShadow: '0 1px 0 rgba(255,255,255,0.7)',
+        zIndex: 30
+      }}
+    >
+      {card.label}
+    </div>
+    
+    {/* 2. CHOTA CARD BACKGROUND */}
+    <div
+      style={{
+        position: 'absolute',
+        top: '28px',
+        bottom: '6px',
+        left: '6px',
+        right: '6px',
+        borderRadius: '10px',
+        backgroundColor: card.innerBg,
+        border: `1.5px solid ${card.innerBorder}`,
+        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
+        zIndex: 1
+      }}
+    />
 
-                {/* 3. AVATARS LOGOS */}
-                <div 
-                  className="absolute left-0 right-0 flex flex-row items-center justify-center pointer-events-none z-10"
-                  style={{ bottom: '16px' }} 
-                >
-                  <img 
-                    src="/logo.png" 
-                    alt="Left" 
-                    className="rounded-full object-cover shadow-sm relative shrink-0" 
-                    style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '3px' }}
-                  />
-                  <img 
-                    src="/logo.png" 
-                    alt="Middle" 
-                    className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
-                    style={{ width: '29px', height: '29px', marginBottom: '3px' }} 
-                  />
-                  <img 
-                    src="/logo.png" 
-                    alt="Right" 
-                    className="rounded-full object-cover shadow-sm relative shrink-0" 
-                    style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '3px' }}
-                  />
-                </div>
+    {/* 3 & 4. COMBINED ZERO-GAP CONTAINER (Animated Frame + Static Bottom Edge) */}
+    <div className="absolute bottom-0 left-0 w-full flex flex-col z-20 pointer-events-none">
+      
+      {/* CSS Animation specifically for this map (slide up every 5s) */}
+      <style>{`
+        @keyframes slideUpFrame {
+          0% { transform: translateY(40px); opacity: 0; }
+          10% { transform: translateY(20px); opacity: 1; }
+          90% { transform: translateY(-50px); opacity: 1; }
+          100% { transform: translateY(-70px); opacity: 0; }
+        }
+      `}</style>
 
-                {/* 4. IMAGE (Original size, edge-to-edge, no cutting) */}
-                <img 
-                  src="/file_00000000626882118324a2318aa23e38.png" 
-                  alt="Bg" 
-                  className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-20"
-                  draggable="false"
-                />
-                
-              </div>
-            ))}
-
-
-
-
-
-
-          </div>
+      {/* ANIMATED FRAME AND LOGOS (Ye continuous upar slide hoga) */}
+      <div 
+        className="relative w-full flex items-center justify-center z-10"
+        style={{ animation: 'slideUpFrame 5s linear infinite' }}
+      >
+        
+        {/* Frame Image */}
+        <img 
+          src="/file_00000000048882118276c7215012963f.png" 
+          alt="Frame" 
+          className="w-full h-auto block"
+          draggable="false"
+        />
+        
+        {/* Logos container fixed inside the Frame */}
+        <div className="absolute inset-0 flex flex-row items-center justify-center z-30">
+          <img 
+            src="/logo.png" 
+            alt="Left" 
+            className="rounded-full object-cover shadow-sm relative shrink-0" 
+            style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '3px' }}
+          />
+          <img 
+            src="/logo.png" 
+            alt="Middle" 
+            className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
+            style={{ width: '29px', height: '29px', marginBottom: '3px' }} 
+          />
+          <img 
+            src="/logo.png" 
+            alt="Right" 
+            className="rounded-full object-cover shadow-sm relative shrink-0" 
+            style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '3px' }}
+          />
         </div>
+      </div>
+
+      {/* STATIC BOTTOM EDGE IMAGE (Ye edge-to-edge bilkul fix rahegi) */}
+      <img 
+        src="/file_00000000c61c82119e0bd419691cb264.png" 
+        alt="Bottom Edge" 
+        className="relative w-full h-auto block z-40"
+        style={{ objectFit: 'fill' }}
+        draggable="false"
+      />
+    </div>
+    
+  </div>
+))}
+                   </div>
+        </div>
+
         
         {allRooms.length > 0 ? (
           <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
