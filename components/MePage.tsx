@@ -128,7 +128,7 @@ const menuItems: MenuItem[] = [
   { id: '4', labelKey: 'medal', src: '/1784621763019.png' },
   { id: '5', labelKey: 'store', src: '/IMG_20260720_142332.png' },
   { id: '6', labelKey: 'bag', src: '/IMG_20260720_142227.png' },
-  { id: '11', labelKey: 'Seller Center', src: '/1786855398290.png' }
+  { id: '11', labelKey: 'Seller Center', src: '/IMG_20260907_214725.jpg' }
 ]
 
 const bottomMenuItems: MenuItem[] = [
