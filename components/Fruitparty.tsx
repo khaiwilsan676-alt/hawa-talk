@@ -177,8 +177,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       >
         {!loading && (
           <>
-            {/* TOP LEFT BUTTONS: Speaker and Question Mark (Thick icons, 0.5 tight gap with border) */}
-            <div className="absolute top-1.4 left-8 z-30 flex items-center gap-0.5">
+            {/* TOP LEFT BUTTONS: Speaker and Question Mark */}
+            <div className="absolute top-[6px] left-8 z-30 flex items-center gap-0.5">
               {/* Speaker Button */}
               <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
@@ -194,8 +194,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross (Thick icons, 0.5 tight gap with border) */}
-            <div className="absolute top-1.4 Right-8 z-30 flex items-center gap-0.5">
+            {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross -> FIX: Capital 'R' removed, now uses lowercase 'right-8' */}
+            <div className="absolute top-[6px] right-8 z-30 flex items-center gap-0.5">
               {/* Arrow Down Button */}
               <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
@@ -203,7 +203,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 </svg>
               </button>
 
-                           {/* Clock Button */}
+              {/* Clock Button */}
               <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810]">
                   <path fillRule="evenodd" clipRule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12.5 7V12.25L17 14.92L16.25 16.15L11 13V7H12.5Z" />
@@ -250,11 +250,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               className="absolute inset-0 w-full h-full object-fill pointer-events-none"
             />
 
-            {/* Main Wrapping Container - Grid Aur Upar (-mt-24) */}
+            {/* Main Wrapping Container */}
             <div className="relative z-10 w-full flex flex-col items-center -mt-27">
               
-              {/* Compact Square Container Positioned Upwards & A little bit bigger */}
-              <div className="relative w-[62%] max-w-[233px] aspect-square">
+              {/* PARTICULAR SIZE ADDED HERE: w-[240px] h-[240px] (Aap chaho toh in dono numbers ko change kar sakte ho) */}
+              <div className="relative w-[240px] h-[240px]">
                 {/* 8 Fruit Images with 0.5px tight padding */}
                 {FRUITS_CONFIG.map((fruit) => (
                   <div
@@ -271,13 +271,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <img
                       src={fruit.img}
                       alt="Fruit"
-                      // object-cover ko change karke object-contain kar diya hai taaki kuch na kate
                       className="w-full h-full object-contain rounded-none block"
                     />
                   </div>
                 ))}
 
-                {/* Center 30s Countdown (Zero Card / No Box) */}
+                {/* Center 30s Countdown */}
                 <div
                   style={{
                     position: 'absolute',
@@ -310,17 +309,17 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
             </div>
 
-            {/* Bottom Left Compact Button Group: Bottom se thoda aur niche kar diya (15vh se 6vh) */}
-            <div className="absolute bottom-[15vh] left-3 z-30 w-[55px] h-[70px]">
+            {/* Bottom Left Compact Button Group */}
+            <div className="absolute bottom-[15vh] left-3 z-30 w-[60px] h-[80px]">
               
-              {/* Red Button (Upar) */}
+              {/* Red Button (Upar) - top-[10px] kiya hai taaki niche khisak jaye */}
               <img 
                 src="/file_00000000d9b08211b0304c61b802348b.png" 
                 alt="Red Button" 
-                className="absolute top-10 left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
+                className="absolute top-[7px] left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
               />
               
-              {/* Border (Niche) - Agar aur chipkana ho toh top-[28px] ko top-[20px] ya top-[25px] kar dena */}
+              {/* Border (Niche) */}
               <img 
                 src="/file_000000003d24821182882f8ca412d2b6.png" 
                 alt="Border" 
@@ -328,7 +327,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               />
               
             </div>
-
 
           </div>
         )}
