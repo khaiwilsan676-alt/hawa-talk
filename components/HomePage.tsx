@@ -2186,6 +2186,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     />
                   </div>
                 </div>
+  </div>
                ))}
          </div>
         </div>
