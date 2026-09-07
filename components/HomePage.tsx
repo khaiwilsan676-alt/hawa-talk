@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                                    {CATEGORY_CARDS.map((card, i) => (
+                                               {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2069,10 +2069,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 className="group flex-1 cursor-pointer"
                 style={{
                   height: '90px',
+                  minHeight: '90px', /* <-- STRICT LOCK: Card kabhi chota nahi hoga */
+                  maxHeight: '90px', /* <-- STRICT LOCK: Card kabhi bada nahi hoga */
+                  minWidth: 0,
                   borderRadius: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  padding: '8px 6px 6px 6px',
                   border: '1.5px solid rgba(0,0,0,0.06)',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                   background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
@@ -2085,70 +2085,86 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   overflow: 'hidden'    
                 }}
               >
-                {/* 1. TITLE (Sabse Upar z-30) */}
+                {/* 1. TITLE (Strictly Locked) */}
                 <div
                   style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: 0,
+                    right: 0,
                     textAlign: 'center',
                     fontSize: '14px',
                     fontWeight: 700,
+                    lineHeight: '1',
+                    whiteSpace: 'nowrap', 
                     color: card.textColor,
-                    marginBottom: '4px',
                     textShadow: '0 1px 0 rgba(255,255,255,0.7)',
-                    position: 'relative',
-                    zIndex: 30
+                    zIndex: 20
                   }}
                 >
                   {card.label}
                 </div>
                 
-                {/* 2. CHOTA CARD BACKGROUND (Sabse Peeche z-1) */}
+                {/* 2. CHOTA CARD BACKGROUND */}
                 <div
                   style={{
-                    flex: 1,
+                    position: 'absolute',
+                    top: '28px',
+                    bottom: '6px',
+                    left: '6px',
+                    right: '6px',
                     borderRadius: '10px',
                     backgroundColor: card.innerBg,
                     border: `1.5px solid ${card.innerBorder}`,
                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
-                    position: 'relative',
                     zIndex: 1
                   }}
                 />
 
-                {/* 3. AVATARS LOGOS (Thoda upar shift kiya hai, z-10 par) */}
-                <div 
-                  className="absolute left-0 w-full flex flex-row items-center justify-center gap-0 pointer-events-none z-10"
-                  style={{ bottom: '16px' }} /* LOGO KO THODA UPAR KIYA */
-                >
+                {/* --- BOTTOM ANCHOR (YAHI HAI MAIN FIX) --- */}
+                {/* Image aur Logo dono ko ek fix 35px ke box me lock kar diya hai */}
+                <div className="absolute bottom-0 left-0 w-full h-[35px] pointer-events-none z-10">
+                  
+                  {/* 3. IMAGE (Strict Fixed Height inside wrapper) */}
                   <img 
-                    src="/logo.png" 
-                    alt="Left" 
-                    className="rounded-full object-cover shadow-sm relative" 
-                    style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '-2px' }}
+                    src="/file_00000000626882118324a2318aa23e38.png" 
+                    alt="Bg" 
+                    className="absolute bottom-0 left-0 w-full h-full object-cover object-bottom z-10" 
+                    draggable="false"
                   />
-                  <img 
-                    src="/logo.png" 
-                    alt="Middle" 
-                    className="rounded-full object-cover shadow-md relative" 
-                    style={{ width: '29px', height: '29px', marginBottom: '3px' }}
-                  />
-                  <img 
-                    src="/logo.png" 
-                    alt="Right" 
-                    className="rounded-full object-cover shadow-sm relative" 
-                    style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '-2px' }}
-                  />
-                </div>
 
-                {/* 4. IMAGE OVERLAY (Bade card ke bottom me, edge to edge, no cut) */}
-                <img 
-                  src="/file_00000000626882118324a2318aa23e38.png" 
-                  alt="Bg" 
-                  className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-20"
-                  draggable="false"
-                />
-                
+                  {/* 4. AVATARS LOGOS (Ab ye hamesha Image ke sath jude rahenge) */}
+                  <div 
+                    className="absolute left-0 right-0 flex flex-row items-center justify-center pointer-events-none z-20"
+                    style={{ bottom: '16px' }} 
+                  >
+                    {/* Left Avatar */}
+                    <img 
+                      src="/logo.png" 
+                      alt="Left" 
+                      className="rounded-full object-cover shadow-sm relative shrink-0" 
+                      style={{ width: '20px', height: '20px', marginTop: '4px', marginRight: '-1px' }}
+                    />
+                    {/* Middle Avatar */}
+                    <img 
+                      src="/logo.png" 
+                      alt="Middle" 
+                      className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
+                      style={{ width: '29px', height: '29px', marginBottom: '3px' }} 
+                    />
+                    {/* Right Avatar */}
+                    <img 
+                      src="/logo.png" 
+                      alt="Right" 
+                      className="rounded-full object-cover shadow-sm relative shrink-0" 
+                      style={{ width: '20px', height: '20px', marginTop: '4px', marginLeft: '-1px' }}
+                    />
+                  </div>
+
+                </div>            
               </div>
             ))}
+
 
 
 
