@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                        {CATEGORY_CARDS.map((card, i) => (
+                                   {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2070,9 +2070,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 style={{
                   height: '90px',
                   borderRadius: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  padding: '8px 6px 6px 6px',
                   border: '1.5px solid rgba(0,0,0,0.06)',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                   background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
@@ -2081,48 +2078,100 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
                   animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
                   animationDelay: `${i * 100}ms`,
+                  position: 'relative', // BADE CARD PAR SET
+                  overflow: 'hidden'    // EDGE-TO-EDGE KE LIYE
                 }}
               >
+                {/* 1. TITLE (Sabse upar) */}
                 <div
+                  className="absolute w-full text-center"
                   style={{
-                    textAlign: 'center',
+                    top: '8px',
                     fontSize: '14px',
                     fontWeight: 700,
                     color: card.textColor,
-                    marginBottom: '4px',
                     textShadow: '0 1px 0 rgba(255,255,255,0.7)',
+                    zIndex: 20
                   }}
                 >
                   {card.label}
                 </div>
-                
-                {/* ANDAR WALA CHOTA CARD WAPAS ADD KIYA */}
+
+                {/* 2. CHOTA CARD BACKGROUND (Padding chhod kar center mein) */}
                 <div
                   style={{
-                    flex: 1,
+                    position: 'absolute',
+                    top: '28px',
+                    bottom: '6px',
+                    left: '6px',
+                    right: '6px',
                     borderRadius: '10px',
                     backgroundColor: card.innerBg,
                     border: `1.5px solid ${card.innerBorder}`,
                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
-                    position: 'relative',
-                    overflow: 'hidden', /* IMAGE KO BAHAR NIKALNE SE ROKNE KE LIYE HIDDEN */
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    zIndex: 1
+                  }}
+                />
+
+                {/* 3. AUTO SCROLLING CONTAINER (IMAGE + AVATARS) */}
+                <style>{`
+                  @keyframes infiniteScrollUp {
+                    0% { transform: translateY(0%); }
+                    100% { transform: translateY(-50%); }
+                  }
+                `}</style>
+                <div 
+                  className="absolute left-0 w-full z-10 pointer-events-none"
+                  style={{ 
+                    bottom: 0, 
+                    height: '200%', 
+                    animation: 'infiniteScrollUp 5s linear infinite' 
                   }}
                 >
-                  {/* BOTTOM EDGE TO EDGE IMAGE */}
-                  <img 
-                    src="/file_00000000626882118324a2318aa23e38.png" 
-                    alt="Bottom Graphic" 
-                    className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-0"
-                    draggable="false"
-                  />
-                  
-                  <span className="text-xl relative z-10 pointer-events-none">{card.icon}</span>
+                  {/* --- PEHLA SET (Screen par dikhne wala) --- */}
+                  <div className="relative w-full h-1/2 flex items-end">
+                    {/* Background Graphic */}
+                    <img 
+                      src="/file_00000000626882118324a2318aa23e38.png" 
+                      alt="Bg" 
+                      className="absolute bottom-0 left-0 w-full h-auto object-cover object-bottom"
+                      draggable="false"
+                    />
+                    {/* Logos Graphic ke theek upar */}
+                    <div 
+                      className="absolute w-full flex flex-row items-center justify-center gap-2"
+                      style={{ bottom: '12px', left: 0 }}
+                    >
+                      <img src="/logo.png" alt="Left" className="rounded-full object-cover shadow-sm border border-white/50" style={{ width: '22px', height: '22px', marginTop: '12px' }} />
+                      <img src="/logo.png" alt="Middle" className="rounded-full object-cover shadow-md border-[1.5px] border-white/80" style={{ width: '28px', height: '28px', marginBottom: '4px' }} />
+                      <img src="/logo.png" alt="Right" className="rounded-full object-cover shadow-sm border border-white/50" style={{ width: '22px', height: '22px', marginTop: '12px' }} />
+                    </div>
+                  </div>
+
+                  {/* --- DUSRA SET (Seamless Loop ban banane ke liye) --- */}
+                  <div className="relative w-full h-1/2 flex items-end">
+                    {/* Background Graphic */}
+                    <img 
+                      src="/file_00000000626882118324a2318aa23e38.png" 
+                      alt="Bg Repeat" 
+                      className="absolute bottom-0 left-0 w-full h-auto object-cover object-bottom"
+                      draggable="false"
+                    />
+                    {/* Logos Graphic ke theek upar */}
+                    <div 
+                      className="absolute w-full flex flex-row items-center justify-center gap-2"
+                      style={{ bottom: '12px', left: 0 }}
+                    >
+                      <img src="/logo.png" alt="Left" className="rounded-full object-cover shadow-sm border border-white/50" style={{ width: '22px', height: '22px', marginTop: '12px' }} />
+                      <img src="/logo.png" alt="Middle" className="rounded-full object-cover shadow-md border-[1.5px] border-white/80" style={{ width: '28px', height: '28px', marginBottom: '4px' }} />
+                      <img src="/logo.png" alt="Right" className="rounded-full object-cover shadow-sm border border-white/50" style={{ width: '22px', height: '22px', marginTop: '12px' }} />
+                    </div>
+                  </div>
+
                 </div>
               </div>
             ))}
+
 
 
           </div>
