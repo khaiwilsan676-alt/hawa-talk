@@ -964,7 +964,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   }
                 }}
               >
-            <div className={`flex items-center justify-center shrink-0 ${item.id === '11' ? 'w-11 h-11 -ml-2' : 'w-8 h-8'}`}>
+            <div className={`flex items-center justify-center shrink-0 ${item.id === '11' ? 'w-10 h-10 ml-2' : 'w-8 h-8'}`}>
   <img
     src={item.src}
     alt={typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] ? t[item.labelKey as keyof typeof translations['en']] : String(item.labelKey)}
