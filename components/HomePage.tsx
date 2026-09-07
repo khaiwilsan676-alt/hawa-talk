@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                                    {CATEGORY_CARDS.map((card, i) => (
+                         {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2068,7 +2068,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 }}
                 className="group flex-1 cursor-pointer"
                 style={{
-                  height: '90px', /* <-- WAPAS ORIGINAL 90px KAR DIYA */
+                  height: '90px',
                   borderRadius: '16px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -2096,13 +2096,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   {card.label}
                 </div>
                 
+                {/* YAHAN SE CHOTE CARD KA BACKGROUND AUR BORDER HATA DIYA HAI */}
                 <div
                   style={{
                     flex: 1,
-                    borderRadius: '10px',
-                    backgroundColor: card.innerBg,
-                    border: `1.5px solid ${card.innerBorder}`,
-                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
                     position: 'relative',
                     overflow: 'visible',
                     display: 'flex',
@@ -2110,7 +2107,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     justifyContent: 'center'
                   }}
                 >
-                  {/* 1 ROW PODIUM LAYOUT - 90px KE ANDAR MAX SIZE */}
+                  {/* 1 ROW PODIUM LAYOUT */}
                   <div className="absolute inset-0 flex flex-row items-center justify-center z-0 opacity-90 pointer-events-none gap-0">
                     
                     {/* Left: Top 2 */}
@@ -2125,7 +2122,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         src="/file_000000001d448211bde98cd9bb7fd05f.png" 
                         alt="Top 2 Frame" 
                         className="object-contain pointer-events-none drop-shadow-md relative z-10"
-                        style={{ width: '70px', height: '70px' }}
+                        style={{ width: '50px', height: '50px' }}
                         draggable="false"
                       />
                     </div>
@@ -2142,7 +2139,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         src="/file_000000008ad88211bf5e135a06034b76.png" 
                         alt="Top 1 Frame" 
                         className="object-contain pointer-events-none drop-shadow-md relative z-10"
-                        style={{ width: '75px', height: '75px' }}
+                        style={{ width: '55px', height: '55px' }}
                         draggable="false"
                       />
                     </div>
@@ -2159,7 +2156,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         src="/file_0000000076c88211aadab79e74df9315.png" 
                         alt="Top 3 Frame" 
                         className="object-contain pointer-events-none drop-shadow-md relative z-10"
-                        style={{ width: '70px', height: '70px' }}
+                        style={{ width: '50px', height: '50px' }}
                         draggable="false"
                       />
                     </div>
