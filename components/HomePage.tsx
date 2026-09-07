@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                         {CATEGORY_CARDS.map((card, i) => (
+               {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2146,18 +2146,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   />
                 </div>
 
-                {/* 4. IMAGE CONTAINER (No cutting, 100% original size maintained) */}
-                <div 
-                  className="absolute bottom-0 left-0 w-full pointer-events-none z-20 flex items-end justify-center"
-                  style={{ height: '34px' }}
-                >
-                  <img 
-                    src="/file_00000000626882118324a2318aa23e38.png" 
-                    alt="Bg" 
-                    className="w-full h-full object-contain object-bottom"
-                    draggable="false"
-                  />
-                </div>
+                {/* 4. IMAGE (Original size, edge-to-edge, no cutting) */}
+                <img 
+                  src="/file_00000000626882118324a2318aa23e38.png" 
+                  alt="Bg" 
+                  className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-20"
+                  draggable="false"
+                />
                 
               </div>
             ))}
