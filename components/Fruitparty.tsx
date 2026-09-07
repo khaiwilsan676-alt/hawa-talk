@@ -177,35 +177,35 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       >
         {!loading && (
           <>
-            {/* TOP LEFT BUTTONS: Speaker and Question Mark (Small, Brown Border, Transparent BG) */}
-            <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
+            {/* TOP LEFT BUTTONS: Speaker and Question Mark (Thick icons, 0.5 tight gap with border) */}
+            <div className="absolute top-1.5 left-2 z-30 flex items-center gap-0.5">
               {/* Speaker Button */}
-              <button className="w-7 h-7 rounded-full border-[1.5px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all">
-                <svg viewBox="0 0 24 24" className="w-[14px] h-[14px] fill-[#4a2810]">
+              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+                <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                 </svg>
               </button>
               
               {/* Question Mark Button */}
-              <button className="w-7 h-7 rounded-full border-[1.5px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all">
-                <span className="text-[#4a2810] font-extrabold text-[15px] leading-none font-serif">
+              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+                <span className="text-[#4a2810] font-black text-[18px] leading-none font-serif">
                   ?
                 </span>
               </button>
             </div>
 
-            {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross (Small, Brown Border, Transparent BG) */}
-            <div className="absolute top-3 right-3 z-30 flex items-center gap-2">
+            {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross (Thick icons, 0.5 tight gap with border) */}
+            <div className="absolute top-1.5 right-2 z-30 flex items-center gap-0.5">
               {/* Arrow Down Button */}
-              <button className="w-7 h-7 rounded-full border-[1.5px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all">
-                <svg viewBox="0 0 24 24" className="w-[14px] h-[14px] fill-none stroke-[#4a2810] stroke-[2.5]" strokeLinecap="round" strokeLinejoin="round">
+              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+                <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
 
               {/* Clock Button */}
-              <button className="w-7 h-7 rounded-full border-[1.5px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all">
-                <svg viewBox="0 0 24 24" className="w-[14px] h-[14px] fill-[#4a2810]">
+              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+                <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
                 </svg>
               </button>
@@ -213,9 +213,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {/* Cross Button (Close) */}
               <button
                 onClick={onClose}
-                className="w-7 h-7 rounded-full border-[1.5px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all"
+                className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
               >
-                <svg viewBox="0 0 24 24" className="w-[14px] h-[14px] fill-[#4a2810]">
+                <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                 </svg>
               </button>
@@ -250,11 +250,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               className="absolute inset-0 w-full h-full object-fill pointer-events-none"
             />
 
-            {/* Main Wrapping Container to stack items properly */}
-            <div className="relative z-10 w-full flex flex-col items-center -mt-16">
+            {/* Main Wrapping Container - Grid Aur Upar (-mt-24) */}
+            <div className="relative z-10 w-full flex flex-col items-center -mt-24">
               
-              {/* Compact Square Container Positioned Upwards */}
-              <div className="relative w-[60%] max-w-[243px] aspect-square">
+              {/* Compact Square Container Positioned Upwards & A little bit bigger */}
+              <div className="relative w-[65%] max-w-[260px] aspect-square">
                 {/* 8 Fruit Images with 0.5px tight padding */}
                 {FRUITS_CONFIG.map((fruit) => (
                   <div
@@ -309,8 +309,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
             </div>
 
-            {/* Bottom Left Compact Button Group: Red Button FIRST, then Border BELOW it (No gap) */}
-            <div className="absolute bottom-6 left-3 z-30 flex flex-col items-center">
+            {/* Bottom Left Compact Button Group: 15vh up from bottom, Red Button & Border completely stuck (no gap) */}
+            <div className="absolute bottom-[15vh] left-3 z-30 flex flex-col items-center">
               <img 
                 src="/file_00000000d9b08211b0304c61b802348b.png" 
                 alt="Red Button" 
@@ -319,8 +319,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <img 
                 src="/file_000000003d24821182882f8ca412d2b6.png" 
                 alt="Border" 
-                // -mt-1.5 se dono ekdam bina gap ke chipak jayenge
-                className="w-[55px] h-auto object-contain -mt-1.5" 
+                // -mt-3 ensures they overlap and are completely stuck together
+                className="w-[55px] h-auto object-contain -mt-3" 
               />
             </div>
 
@@ -344,3 +344,4 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
+
