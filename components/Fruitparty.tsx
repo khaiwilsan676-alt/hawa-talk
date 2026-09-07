@@ -178,7 +178,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         {!loading && (
           <>
             {/* TOP LEFT BUTTONS: Speaker and Question Mark (Thick icons, 0.5 tight gap with border) */}
-            <div className="absolute top-1.8 left-8 z-30 flex items-center gap-0.5">
+            <div className="absolute top-1.4 left-8 z-30 flex items-center gap-0.5">
               {/* Speaker Button */}
               <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
@@ -195,7 +195,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross (Thick icons, 0.5 tight gap with border) */}
-            <div className="absolute top-1.8 left-8 z-30 flex items-center gap-0.5">
+            <div className="absolute top-1.4 Right-8 z-30 flex items-center gap-0.5">
               {/* Arrow Down Button */}
               <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
@@ -251,7 +251,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             />
 
             {/* Main Wrapping Container - Grid Aur Upar (-mt-24) */}
-            <div className="relative z-10 w-full flex flex-col items-center -mt-28">
+            <div className="relative z-10 w-full flex flex-col items-center -mt-27">
               
               {/* Compact Square Container Positioned Upwards & A little bit bigger */}
               <div className="relative w-[62%] max-w-[233px] aspect-square">
@@ -271,7 +271,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <img
                       src={fruit.img}
                       alt="Fruit"
-                      className="w-full h-full object-cover rounded-none block"
+                      // object-cover ko change karke object-contain kar diya hai taaki kuch na kate
+                      className="w-full h-full object-contain rounded-none block"
                     />
                   </div>
                 ))}
@@ -298,25 +299,25 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <img 
                   src="/IMG_20260907_154135.png" 
                   alt="Option 1" 
-                  className="w-20 h-auto object-contain" 
+                  className="w-18 h-auto object-contain" 
                 />
                 <img 
                   src="/IMG_20260907_154118.png" 
                   alt="Option 2" 
-                  className="w-20 h-auto object-contain" 
+                  className="w-18 h-auto object-contain" 
                 />
               </div>
 
             </div>
 
-                        {/* Bottom Left Compact Button Group: Absolute Position Method */}
+            {/* Bottom Left Compact Button Group: Bottom se thoda aur niche kar diya (15vh se 6vh) */}
             <div className="absolute bottom-[15vh] left-3 z-30 w-[55px] h-[70px]">
               
               {/* Red Button (Upar) */}
               <img 
                 src="/file_00000000d9b08211b0304c61b802348b.png" 
                 alt="Red Button" 
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
+                className="absolute top-10 left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
               />
               
               {/* Border (Niche) - Agar aur chipkana ho toh top-[28px] ko top-[20px] ya top-[25px] kar dena */}
