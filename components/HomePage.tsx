@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                         {CATEGORY_CARDS.map((card, i) => (
+                        {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2096,77 +2096,34 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   {card.label}
                 </div>
                 
-                {/* YAHAN SE CHOTE CARD KA BACKGROUND AUR BORDER HATA DIYA HAI */}
+                {/* ANDAR WALA CHOTA CARD WAPAS ADD KIYA */}
                 <div
                   style={{
                     flex: 1,
+                    borderRadius: '10px',
+                    backgroundColor: card.innerBg,
+                    border: `1.5px solid ${card.innerBorder}`,
+                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
                     position: 'relative',
-                    overflow: 'visible',
+                    overflow: 'hidden', /* IMAGE KO BAHAR NIKALNE SE ROKNE KE LIYE HIDDEN */
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
                 >
-                  {/* 1 ROW PODIUM LAYOUT */}
-                  <div className="absolute inset-0 flex flex-row items-center justify-center z-0 opacity-90 pointer-events-none gap-0">
-                    
-                    {/* Left: Top 2 */}
-                    <div className="relative flex items-center justify-center mt-3 -mr-2 z-10">
-                      <img 
-                        src="/logo.png" 
-                        alt="User Avatar" 
-                        className="absolute rounded-full object-cover z-0" 
-                        style={{ width: '18px', height: '18px' }}
-                      />
-                      <img 
-                        src="/file_000000001d448211bde98cd9bb7fd05f.png" 
-                        alt="Top 2 Frame" 
-                        className="object-contain pointer-events-none drop-shadow-md relative z-10"
-                        style={{ width: '50px', height: '50px' }}
-                        draggable="false"
-                      />
-                    </div>
-
-                    {/* Middle: Top 1 (Center aur sabse aage) */}
-                    <div className="relative flex items-center justify-center mb-1 z-20">
-                      <img 
-                        src="/logo.png" 
-                        alt="User Avatar" 
-                        className="absolute rounded-full object-cover z-0" 
-                        style={{ width: '24px', height: '24px' }}
-                      />
-                      <img 
-                        src="/file_000000008ad88211bf5e135a06034b76.png" 
-                        alt="Top 1 Frame" 
-                        className="object-contain pointer-events-none drop-shadow-md relative z-10"
-                        style={{ width: '55px', height: '55px' }}
-                        draggable="false"
-                      />
-                    </div>
-
-                    {/* Right: Top 3 */}
-                    <div className="relative flex items-center justify-center mt-3 -ml-2 z-10">
-                      <img 
-                        src="/logo.png" 
-                        alt="User Avatar" 
-                        className="absolute rounded-full object-cover z-0" 
-                        style={{ width: '18px', height: '18px' }}
-                      />
-                      <img 
-                        src="/file_0000000076c88211aadab79e74df9315.png" 
-                        alt="Top 3 Frame" 
-                        className="object-contain pointer-events-none drop-shadow-md relative z-10"
-                        style={{ width: '50px', height: '50px' }}
-                        draggable="false"
-                      />
-                    </div>
-
-                  </div>
+                  {/* BOTTOM EDGE TO EDGE IMAGE */}
+                  <img 
+                    src="/file_00000000626882118324a2318aa23e38.png" 
+                    alt="Bottom Graphic" 
+                    className="absolute bottom-0 left-0 w-full h-auto pointer-events-none z-0"
+                    draggable="false"
+                  />
                   
                   <span className="text-xl relative z-10 pointer-events-none">{card.icon}</span>
                 </div>
               </div>
             ))}
+
 
           </div>
         </div>
