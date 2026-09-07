@@ -2120,12 +2120,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     className="w-full h-auto block relative z-40"
                     style={{ objectFit: 'fill', marginBottom: '-6px', padding: 0 }}
                     draggable="false"
-                  />
-                  
+                  />       
                 </div>
               </div>
-
-
              ))}
          </div>
         </div>
