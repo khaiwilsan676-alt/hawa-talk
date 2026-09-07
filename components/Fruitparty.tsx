@@ -16,8 +16,8 @@ interface FruitpartyProps {
 const FRUITS_CONFIG = [
   { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 33.333, h: 33.333 }, // Lemon 5x
   { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 0,      w: 33.333, h: 33.333 }, // Guava 5x
-  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666, y: 0,      w: 33.333, h: 33.333 }, // Mango 5x
-  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666, y: 33.333, w: 33.333, h: 33.333 }, // Orange 5x
+  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666, y: 0,      w: 35, h: 35 }, // Mango 5x
+  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666, y: 33.333, w: 35, h: 35 }, // Orange 5x
   { id: 5, img: '/IMG_20260907_154323.png', x: 66.666, y: 66.666, w: 33.333, h: 33.333 }, // Grapesh 10x
   { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 66.666, w: 33.333, h: 33.333 }, // Strawberry 15x
   { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 66.666, w: 33.333, h: 33.333 }, // Apple 25x
@@ -178,16 +178,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         {!loading && (
           <>
             {/* TOP LEFT BUTTONS: Speaker and Question Mark */}
-            <div className="absolute top-[7px] left-8 z-30 flex items-center gap-0.5">
+            <div className="absolute top-[6px] left-8 z-30 flex items-center gap-0.5">
               {/* Speaker Button */}
-              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+              <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                 </svg>
               </button>
               
               {/* Question Mark Button */}
-              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+              <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <span className="text-[#4a2810] font-black text-[18px] leading-none font-serif">
                   ?
                 </span>
@@ -195,16 +195,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross */}
-            <div className="absolute top-[7px] right-8 z-30 flex items-center gap-0.5">
+            <div className="absolute top-[6px] right-8 z-30 flex items-center gap-0.5">
               {/* Arrow Down Button */}
-              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+              <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
 
               {/* Clock Button */}
-              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+              <button className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810]">
                   <path fillRule="evenodd" clipRule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12.5 7V12.25L17 14.92L16.25 16.15L11 13V7H12.5Z" />
                 </svg>
@@ -213,7 +213,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {/* Cross Button (Close) */}
               <button
                 onClick={onClose}
-                className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
+                className="w-5 h-5 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
               >
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -253,8 +253,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* Main Wrapping Container */}
             <div className="relative z-10 w-full flex flex-col items-center -mt-27">
               
+              {/* PARTICULAR SIZE ADDED HERE: w-[240px] h-[240px] */}
               <div className="relative w-[240px] h-[240px]">
-                {/* 8 Fruit Images -> Padding 0px kardi taaki gap bilkul na rahe */}
+                {/* 8 Fruit Images */}
                 {FRUITS_CONFIG.map((fruit) => (
                   <div
                     key={fruit.id}
@@ -264,15 +265,15 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       top: `${fruit.y}%`,
                       width: `${fruit.w}%`,
                       height: `${fruit.h}%`,
-                      padding: '0px', 
+                      padding: '0.5px',
                     }}
                   >
                     <img
                       src={fruit.img}
                       alt="Fruit"
-                      // Mango (id 3) aur Orange (id 4) ko bada karne ke liye scale-[1.3] add kiya hai.
+                      // Mango (id 3) aur Orange (id 4) ko bada karne ke liye scale-[1.25] add kiya hai. Baki sab normal.
                       className={`w-full h-full object-contain rounded-none block transition-transform ${
-                        fruit.id === 3 || fruit.id === 4 ? 'scale-[1.3]' : ''
+                        fruit.id === 3 || fruit.id === 4 ? 'scale-[1.25]' : ''
                       }`}
                     />
                   </div>
@@ -295,26 +296,26 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 </div>
               </div>
 
-              {/* Space 1vh and 2 New Images (Width badhai, height fix rakhi aur object-fill kar diya) */}
+              {/* Space 3vh and 2 New Images (Same row, gap 1) */}
               <div className="flex flex-row justify-center items-center gap-1 mt-[1vh]">
                 <img 
                   src="/IMG_20260907_154135.png" 
                   alt="Option 1" 
-                  className="w-[110px] h-[35px] object-fill" 
+                  className="w-18 h-auto object-contain" 
                 />
                 <img 
                   src="/IMG_20260907_154118.png" 
                   alt="Option 2" 
-                  className="w-[110px] h-[35px] object-fill" 
+                  className="w-18 h-auto object-contain" 
                 />
               </div>
 
             </div>
 
             {/* Bottom Left Compact Button Group */}
-            <div className="absolute bottom-[6vh] left-3 z-30 w-[55px] h-[70px]">
+            <div className="absolute bottom-[15vh] left-3 z-30 w-[55px] h-[70px]">
               
-              {/* Red Button (Upar) */}
+              {/* Red Button (Upar) - top-[10px] kiya hai taaki niche khisak jaye */}
               <img 
                 src="/file_00000000d9b08211b0304c61b802348b.png" 
                 alt="Red Button" 
@@ -350,4 +351,3 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
-
