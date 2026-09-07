@@ -2104,7 +2104,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
     >
       {card.label}
     </div>
-                             {/* 2. CHOTA CARD BACKGROUND (Ye tera pehle wala hai) */}
+                              {/* 2. CHOTA CARD BACKGROUND (Ye tera pehle wala hai) */}
                 <div
                   style={{
                     position: 'absolute',
@@ -2122,18 +2122,15 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
                 {/* --- YAHAN SE REPLACE KERR --- */}
 
-                {/* 3 & 4. BADE CARD KI BOUNDARY WALA CONTAINER (Top 24px se cut, Bottom 0 par fix) */}
-                <div 
-                  className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none flex flex-col justify-end" 
-                  style={{ top: '24px', overflow: 'hidden' }}
-                >
+                {/* 3 & 4. COMBINED CONTAINER (Grows naturally from bottom, 0 gap strictly) */}
+                <div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none flex flex-col">
                   
-                  {/* SCROLL ANIMATION (5 Sec loop: 4s Ruka rahega, 1s Scroll hoga) */}
+                  {/* SCROLL ANIMATION (4s Ruka rahega, 1s Scroll hoke fade out) */}
                   <style>{`
                     @keyframes scrollFrameOnce {
                       0%, 75% { transform: translateY(0); opacity: 1; }
-                      85% { transform: translateY(-40px); opacity: 1; }
-                      95% { transform: translateY(-50px); opacity: 0; }
+                      85% { transform: translateY(-30px); opacity: 1; }
+                      95% { transform: translateY(-40px); opacity: 0; }
                       100% { transform: translateY(0); opacity: 0; }
                     }
                   `}</style>
@@ -2183,9 +2180,12 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     style={{ objectFit: 'fill' }}
                     draggable="false"
                   />
-                 
-                </div>   
-               </div>
+                  
+                </div>
+   
+                
+              </div>
+
              ))}
          </div>
         </div>
