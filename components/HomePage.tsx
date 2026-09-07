@@ -2058,7 +2058,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                    {CATEGORY_CARDS.map((card, i) => (
+                        {CATEGORY_CARDS.map((card, i) => (
               <div
                 key={card.label}
                 onClick={() => {
@@ -2081,19 +2081,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
                   animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
                   animationDelay: `${i * 100}ms`,
-                  position: 'relative', // BADE CARD PAR SET
-                  overflow: 'hidden'    // EDGE-TO-EDGE KE LIYE
+                  position: 'relative', 
+                  overflow: 'hidden'    
                 }}
               >
-                {/* 1. STATIC BACKGROUND IMAGE (Edge-to-Edge) */}
-                <img 
-                  src="/file_00000000626882118324a2318aa23e38.png" 
-                  alt="Bg" 
-                  className="absolute bottom-0 left-0 w-full h-auto object-cover object-bottom pointer-events-none z-0"
-                  draggable="false"
-                />
-
-                {/* 2. TITLE (Original Position) */}
+                {/* 1. TITLE (Sabse Upar z-30) */}
                 <div
                   style={{
                     textAlign: 'center',
@@ -2103,13 +2095,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     marginBottom: '4px',
                     textShadow: '0 1px 0 rgba(255,255,255,0.7)',
                     position: 'relative',
-                    zIndex: 10
+                    zIndex: 30
                   }}
                 >
                   {card.label}
                 </div>
                 
-                {/* 3. CHOTA CARD BACKGROUND (Original Size - Flex 1) */}
+                {/* 2. CHOTA CARD BACKGROUND (Sabse Peeche z-1) */}
                 <div
                   style={{
                     flex: 1,
@@ -2122,36 +2114,43 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   }}
                 />
 
-                {/* 4. AVATARS LOGO (Sabse upar Z-Index 20 par) */}
+                {/* 3. AVATARS LOGOS (Peeche ki layer me z-10) */}
                 <div 
-                  className="absolute w-full flex flex-row items-center justify-center gap-0 pointer-events-none z-20"
-                  style={{ bottom: '12px', left: 0 }}
+                  className="absolute left-0 w-full flex flex-row items-center justify-center gap-0 pointer-events-none z-10"
+                  style={{ bottom: 0, height: '35px' }} 
                 >
-                  {/* Left Avatar (Thoda upar kiya) */}
                   <img 
                     src="/logo.png" 
                     alt="Left" 
-                    className="rounded-full object-cover shadow-sm border border-white/50 relative z-10" 
+                    className="rounded-full object-cover shadow-sm relative" 
                     style={{ width: '22px', height: '22px', marginTop: '6px', marginRight: '-2px' }}
                   />
-                  {/* Middle Avatar (Sabse bada aur upar) */}
                   <img 
                     src="/logo.png" 
                     alt="Middle" 
-                    className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative z-20" 
+                    className="rounded-full object-cover shadow-md relative" 
                     style={{ width: '34px', height: '34px', marginBottom: '4px' }}
                   />
-                  {/* Right Avatar (Thoda upar kiya) */}
                   <img 
                     src="/logo.png" 
                     alt="Right" 
-                    className="rounded-full object-cover shadow-sm border border-white/50 relative z-10" 
+                    className="rounded-full object-cover shadow-sm relative" 
                     style={{ width: '22px', height: '22px', marginTop: '6px', marginLeft: '-2px' }}
                   />
                 </div>
+
+                {/* 4. IMAGE OVERLAY (Logos ke upar aayegi z-20) */}
+                <img 
+                  src="/file_00000000626882118324a2318aa23e38.png" 
+                  alt="Bg" 
+                  className="absolute bottom-0 left-0 w-full pointer-events-none z-20"
+                  style={{ height: '35px', objectFit: 'cover', objectPosition: 'bottom' }} 
+                  draggable="false"
+                />
                 
               </div>
             ))}
+
 
 
 
