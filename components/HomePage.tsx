@@ -2183,14 +2183,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     style={{ objectFit: 'fill' }}
                     draggable="false"
                   />
-                  
-                </div>
-    
-                
+                 
+                </div>   
               </div>
-
-  </div>
-               ))}
+             </div>
+             ))}
          </div>
         </div>
 
