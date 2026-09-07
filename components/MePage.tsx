@@ -964,13 +964,14 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                   }
                 }}
               >
-                <div className="w-11 h-11 flex items-center justify-center shrink-0">
-                  <img
-                    src={item.src}
-                    alt={typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] ? t[item.labelKey as keyof typeof translations['en']] : String(item.labelKey)}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+            <div className={`flex items-center justify-center shrink-0 ${item.id === '11' ? 'w-12 h-12' : 'w-8 h-8'}`}>
+  <img
+    src={item.src}
+    alt={typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] ? t[item.labelKey as keyof typeof translations['en']] : String(item.labelKey)}
+    className={`w-full h-full object-cover ${item.id === '11' ? 'rounded-md' : ''}`}
+  />
+</div>
+
 
                 <div className="flex-1">
                   <p className="font-semibold text-gray-900">
