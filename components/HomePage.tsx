@@ -2123,7 +2123,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 {/* --- YAHAN SE REPLACE KERR --- */}
 
                 {/* 3 & 4. BADE CARD KI BOUNDARY WALA CONTAINER (100% Bottom Chipka hua) */}
-                <div className="absolute left-0 right-0 bottom-0 w-full z-20 pointer-events-none block">
+                <div className="absolute left-0 right-0 bottom-0 w-full z-40 pointer-events-none block">
                   
                   {/* SCROLL ANIMATION (4s Ruka rahega, 1s Scroll hoke fade out) */}
                   <style>{`
@@ -2155,7 +2155,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         src="/logo.png" 
                         alt="Left" 
                         className="rounded-full object-cover shadow-sm relative shrink-0" 
-                        style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '6px' }}
+                        style={{ width: '22px', height: '22px', marginTop: '4px', marginRight: '8px' }}
                       />
                       <img 
                         src="/logo.png" 
@@ -2167,7 +2167,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                         src="/logo.png" 
                         alt="Right" 
                         className="rounded-full object-cover shadow-sm relative shrink-0" 
-                        style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '6px' }}
+                        style={{ width: '22px', height: '22px', marginTop: '4px', marginLeft: '8px' }}
                       />
                     </div>
                   </div>
@@ -2177,7 +2177,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     src="/file_00000000c61c82119e0bd419691cb264.png" 
                     alt="Bottom Edge" 
                     className="w-full h-auto block relative z-40"
-                    style={{ objectFit: 'fill', marginBottom: '-4px', padding: 0 }}
+                    style={{ objectFit: 'fill', marginBottom: '-6px', padding: 0 }}
                     draggable="false"
                   />
                   
