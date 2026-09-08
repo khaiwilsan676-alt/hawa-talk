@@ -16,8 +16,8 @@ interface FruitpartyProps {
 const FRUITS_CONFIG = [
   { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 32, h: 32 }, // Lemon
   { id: 2, img: '/IMG_20260907_154205.png', x: 33.333,   y: 0,      w: 32, h: 32 }, // Guava
-  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666,   y: 0,      w: 33, h: 33 }, // Mango
-  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666,   y: 33.333,   w: 33, h: 33 }, // Orange
+  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666,   y: 0,      w: 34, h: 34 }, // Mango
+  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666,   y: 33.333,   w: 34, h: 34 }, // Orange
   { id: 5, img: '/IMG_20260907_154323.png', x: 66.666,   y: 66.666,   w: 32.5, h: 32.5 }, // Grapesh
   { id: 6, img: '/IMG_20260907_154348.png', x: 33.333,   y: 66.666,   w: 32.5, h: 32.5 }, // Strawberry
   { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 66.666,   w: 32, h: 32 }, // Apple
