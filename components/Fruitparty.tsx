@@ -441,7 +441,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
             {/* Yaha sirf Square Grid hai, 2-row image ko is container se nikal diya hai! */}
-            <div className="relative z-10 w-full flex flex-col items-center -mt-43" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
+            <div className="relative z-10 w-full flex flex-col items-center -mt-45" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
                  <div 
@@ -510,7 +510,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* 2-ROW IMAGE ALAG KAR DI GAYI HAI (ABSOLUTE POSITION PE)  */}
             {/* ======================================================== */}
             <div 
-              className="absolute bottom-[23vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" 
+              className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" 
               style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}
             >
               <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-24 h-auto object-contain" />
