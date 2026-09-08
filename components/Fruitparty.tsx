@@ -467,7 +467,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 ))}
               </div>
 
-              <div className="flex flex-row justify-center items-center gap-1 mt-1.4">
+              <div className="flex flex-row justify-center items-center gap-0.5 mt-2">
                 <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-23 h-auto object-contain" />
                 <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-23 h-auto object-contain" />
               </div>
@@ -507,14 +507,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ left: '54px' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ left: '55px' }}>
               <div className="w-5 h-5">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
               <span className="text-white font-bold text-base drop-shadow-md">82927</span>
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-1.5" style={{ right: '54px' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ right: '55px' }}>
               <div className="w-5 h-5">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
