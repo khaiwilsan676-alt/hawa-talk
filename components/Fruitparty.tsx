@@ -243,13 +243,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
               {/* Space and 2 New Images (Same row, gap 2, no mt) */}
               <div className="flex flex-row justify-center items-center gap-2">
-                <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-18 h-auto object-contain" />
-                <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-18 h-auto object-contain" />
+                <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-22 h-auto object-contain" />
+                <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-22 h-auto object-contain" />
               </div>
             </div>
 
             {/* Bottom Centered Compact Button Group - 4 Buttons */}
-            <div className="absolute bottom-[15vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
+            <div className="absolute bottom-[10vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
               
               {/* Button 1 - 50K */}
               <button onClick={() => setActiveBtn(1)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
