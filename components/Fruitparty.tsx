@@ -23,6 +23,7 @@ const FRUITS_CONFIG = [
   { id: 7, img: '/IMG_20260907_154417.png', x: 2.6,  y: 62.666, w: 32, h: 32 }, // Apple (right shift + 0.1 aur right)
   { id: 8, img: '/IMG_20260907_154449.png', x: 2.7,  y: 30.533, w: 32, h: 33 }, // Cherry (0.2 right + 0.2 niche)
 ];
+
 // WebGL Shader for real-time solid white background removal
 function WebGLShaderImage({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -130,6 +131,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(30);
+  const [isRedButtonActive, setIsRedButtonActive] = useState(false);
 
   // Loading progression effect
   useEffect(() => {
@@ -309,20 +311,47 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* Bottom Left Compact Button Group */}
-            <div className="absolute bottom-[15vh] left-3 z-30 w-[55px] h-[70px]">
+            <div className="absolute bottom-[15vh] left-3 z-30 w-[100px]">
               
-              {/* Red Button (Upar) */}
-              <img 
-                src="/file_00000000d9b08211b0304c61b802348b.png" 
-                alt="Red Button" 
-                className="absolute top-[15px] left-1/2 -translate-x-1/2 w-[60px] h-auto object-contain z-10" 
-              />
+              {/* 4 Bet Amount Buttons - Red Button ke upar */}
+              <div className="flex flex-col gap-[3px] mb-[3px]">
+                <button className="w-full h-6 bg-black/60 rounded-full border border-yellow-400/60 flex items-center justify-center hover:bg-black/80 active:scale-95 transition-all">
+                  <span className="text-white text-xs font-bold">50K</span>
+                </button>
+                <button className="w-full h-6 bg-black/60 rounded-full border border-yellow-400/60 flex items-center justify-center hover:bg-black/80 active:scale-95 transition-all">
+                  <span className="text-white text-xs font-bold">500K</span>
+                </button>
+                <button className="w-full h-6 bg-black/60 rounded-full border border-yellow-400/60 flex items-center justify-center hover:bg-black/80 active:scale-95 transition-all">
+                  <span className="text-white text-xs font-bold">5M</span>
+                </button>
+                <button className="w-full h-6 bg-black/60 rounded-full border border-yellow-400/60 flex items-center justify-center hover:bg-black/80 active:scale-95 transition-all">
+                  <span className="text-white text-xs font-bold">50M</span>
+                </button>
+              </div>
+              
+              {/* Red Button - Click par green + niche */}
+              <button 
+                onClick={() => setIsRedButtonActive(!isRedButtonActive)}
+                className="relative w-full flex items-center justify-center transition-all duration-300"
+              >
+                <img 
+                  src={isRedButtonActive 
+                    ? "/file_00000000d9b08211b0304c61b802348b.png" // Green button image yahan lagao
+                    : "/file_00000000d9b08211b0304c61b802348b.png"
+                  } 
+                  alt="Red Button" 
+                  className={`w-[90px] h-auto object-contain transition-all duration-300 ${isRedButtonActive ? 'translate-y-1' : ''}`}
+                  style={{
+                    filter: isRedButtonActive ? 'hue-rotate(120deg) saturate(150%) brightness(0.8)' : 'none'
+                  }}
+                />
+              </button>
               
               {/* Border (Niche) */}
               <img 
                 src="/file_000000003d24821182882f8ca412d2b6.png" 
                 alt="Border" 
-                className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[65px] h-auto object-contain z-0" 
+                className="w-[100px] h-auto object-contain -mt-1"
               />
               
             </div>
