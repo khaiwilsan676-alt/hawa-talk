@@ -7,7 +7,7 @@ interface FruitpartyProps {
 }
 
 // -------------------------------------------------------------
-// Perfect 3x3 Grid Layout (Strict Fixed Sizes for Cards)
+// Perfect 3x3 Grid Layout (Responsive Percentages Applied)
 // -------------------------------------------------------------
 const GRID_ITEMS = [
   { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon
@@ -17,10 +17,9 @@ const GRID_ITEMS = [
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
   { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Orange
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },// Grapes
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Grapes (Ab Center-Bottom par)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[5px]', imgW: 55, imgH: 55 },  // Orange (Ab Right-Bottom par)
 ];
-
 // Clockwise path for Spinner & Pointer
 const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3]; 
 
@@ -134,7 +133,6 @@ async function loadGameStateFromDB(): Promise<GameStateData> {
 
 // ==========================================
 // WebGL Shader for real-time solid white background removal
-// (FIXED: Memory leak & context crash issue resolved)
 // ==========================================
 function WebGLShaderImage({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -311,7 +309,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     });
   }, []);
 
-  // Sync state into refs to avoid stale closure during interval evaluations
   useEffect(() => {
     stateRefs.current = { balance, totalWon, bets };
   }, [balance, totalWon, bets]);
@@ -346,7 +343,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               if (winnerItem && winnerItem.img) {
                 const winnerImg = winnerItem.img as string;
                 
-                // Real-time states from ref
                 const { balance: currentBalance, totalWon: currentTotalWon, bets: currentBets } = stateRefs.current;
                 
                 let earned = 0;
@@ -530,108 +526,111 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="relative z-10 w-full flex flex-col items-center -mt-33">
+            <div className="relative z-10 w-full flex flex-col items-center -mt-[33px]">
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
-                {GRID_ITEMS.map((item, index) => (
-                  <div 
-                    key={item.id || index} 
-                    onClick={() => {
-                      if (item.type === 'fruit') handleBetClick(item.id);
-                    }}
-                    className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${phase === 'betting' && handPointerIndex === index ? '!z-[999]' : ''}`}
-                  >
-                    {item.type === 'fruit' ? (
-                      <>
-                        {/* CARD BASE IMAGE WITH GREEN BLEND OVERLAY (No external boxes/lights) */}
-                        <div className="absolute inset-0 z-0 overflow-hidden rounded-[8px]">
+                {GRID_ITEMS.map((item, index) => {
+                  const isHighlighted = highlightIndex === index || (phase === 'betting' && handPointerIndex === index);
+                  
+                  return (
+                    <div 
+                      key={item.id || index} 
+                      onClick={() => {
+                        if (item.type === 'fruit') handleBetClick(item.id);
+                      }}
+                      // Responsive Size Logic: Scales down smoothly on smaller devices
+                      className={`relative w-[21.5vw] max-w-[78px] h-[24vw] max-h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${isHighlighted ? '!z-[999]' : ''}`}
+                    >
+                      {item.type === 'fruit' ? (
+                        <>
+                          {/* Image base converts to green cleanly using hue-rotate filter instead of a separate div overlay */}
                           <img 
                             src="/file_00000000d0ec820ba666eab8bea30204.png" 
                             alt="Card Base" 
-                            className="absolute inset-0 w-full h-full object-fill pointer-events-none"
+                            className={`absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300 ${
+                              isHighlighted ? 'hue-rotate-[-160deg] saturate-[200%] brightness-125 contrast-110 drop-shadow-[0_0_8px_rgba(0,255,0,0.6)]' : ''
+                            }`} 
                           />
-                          {((phase === 'betting' && handPointerIndex === index) || (phase === 'spinning' && highlightIndex === index)) && (
-                            <div className="absolute inset-0 bg-green-500/70 mix-blend-color-burn transition-all duration-300 pointer-events-none"></div>
+                          
+                          {/* Betting Phase Hand Pointer */}
+                          {phase === 'betting' && handPointerIndex === index && (
+                            <img 
+                              src="/file_000000000f0c820b95490c9d927692d9.png" 
+                              alt="Pointer" 
+                              className="absolute -bottom-3 -right-2 w-[15vw] max-w-[55px] h-[15vw] max-h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300"
+                            />
                           )}
-                        </div>
 
-                        {/* Betting Phase Hand Pointer */}
-                        {phase === 'betting' && handPointerIndex === index && (
-                          <img 
-                            src="/file_000000000f0c820b95490c9d927692d9.png" 
-                            alt="Pointer" 
-                            className="absolute -bottom-3 -right-2 w-[55px] h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300"
-                          />
-                        )}
-
-                        {/* Image Layer */}
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
-                          <img 
-                            src={item.img} 
-                            alt="Fruit" 
-                            style={{ width: `${item.imgW}px`, height: `${item.imgH}px` }}
-                            className="object-contain pointer-events-none drop-shadow-md mb-2" 
-                          />
-                        </div>
-
-                        {/* Bottom Blue-Pink Transparent Patti For Bet value */}
-                        {(bets[item.id] || 0) > 0 && (
-                          <div className="absolute bottom-[22px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
-                            <div className="w-[10px] h-[10px] flex-shrink-0">
-                              <WebGLShaderImage src="/1786855398290.png" />
-                            </div>
-                            <span className="text-white text-[9px] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
+                          {/* Image Layer - Percentage based scaling logic */}
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
+                            <img 
+                              src={item.img} 
+                              alt="Fruit" 
+                              style={{ width: `${(item.imgW / 78) * 100}%`, height: `${(item.imgH / 87) * 100}%` }}
+                              className="object-contain pointer-events-none drop-shadow-md mb-[8%]" 
+                            />
                           </div>
-                        )}
 
-                        {/* Multiplier */}
-                        <span className="absolute bottom-[10px] left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">
-                          {item.multi}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" alt="Timer Base" className="absolute inset-0 w-full h-full object-fill z-0" />
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-                          <span className="text-white text-[9px] font-bold tracking-wider drop-shadow-md mb-0.5">
-                            {phase === 'betting' ? 'BETTING' : 'SPINNING'}
+                          {/* Bottom Blue-Pink Transparent Patti For Bet value */}
+                          {(bets[item.id] || 0) > 0 && (
+                            <div className="absolute bottom-[25%] left-1/2 -translate-x-1/2 w-[85%] h-[18%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
+                              <div className="w-[10px] h-[10px] flex-shrink-0">
+                                <WebGLShaderImage src="/1786855398290.png" />
+                              </div>
+                              <span className="text-white text-[9px] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
+                            </div>
+                          )}
+
+                          {/* Multiplier shifted slightly up */}
+                          <span className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">
+                            {item.multi}
                           </span>
-                          <span className="text-amber-400 font-extrabold text-xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{countdown}s</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
+                        </>
+                      ) : (
+                        <>
+                          <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" alt="Timer Base" className="absolute inset-0 w-full h-full object-fill z-0" />
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+                            <span className="text-white text-[9px] font-bold tracking-wider drop-shadow-md mb-0.5">
+                              {phase === 'betting' ? 'BETTING' : 'SPINNING'}
+                            </span>
+                            <span className="text-amber-400 font-extrabold text-xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{countdown}s</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="flex flex-row justify-center items-center gap-0.5 mt-2">
-                <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-23 h-auto object-contain" />
-                <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-23 h-auto object-contain" />
+                <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-[25vw] max-w-[92px] h-auto object-contain" />
+                <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-[25vw] max-w-[92px] h-auto object-contain" />
               </div>
             </div>
 
+            {/* Bottom Buttons are kept safely aligned */}
             <div className="absolute bottom-[15vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
-              <button onClick={() => setActiveBtn(1)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
-                <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 1" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 1 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
-                <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 1" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 1 ? 'z-10' : 'z-0'}`} />
-                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">1K</span>
+              <button onClick={() => setActiveBtn(1)} className="relative flex flex-col items-center w-[22vw] max-w-[85px] h-[26vw] max-h-[100px] cursor-pointer">
+                <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 1" className={`absolute left-1/2 -translate-x-1/2 w-[105%] h-auto object-contain transition-all duration-150 ${activeBtn === 1 ? 'top-[36%] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29%] z-10'}`} />
+                <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 1" className={`absolute top-[34%] left-1/2 -translate-x-1/2 w-[115%] h-auto object-contain pointer-events-none ${activeBtn === 1 ? 'z-10' : 'z-0'}`} />
+                <span className="absolute bottom-[35%] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">1K</span>
               </button>
 
-              <button onClick={() => setActiveBtn(2)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
-                <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 2" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 2 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
-                <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 2" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 2 ? 'z-10' : 'z-0'}`} />
-                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">500K</span>
+              <button onClick={() => setActiveBtn(2)} className="relative flex flex-col items-center w-[22vw] max-w-[85px] h-[26vw] max-h-[100px] cursor-pointer">
+                <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 2" className={`absolute left-1/2 -translate-x-1/2 w-[105%] h-auto object-contain transition-all duration-150 ${activeBtn === 2 ? 'top-[36%] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29%] z-10'}`} />
+                <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 2" className={`absolute top-[34%] left-1/2 -translate-x-1/2 w-[115%] h-auto object-contain pointer-events-none ${activeBtn === 2 ? 'z-10' : 'z-0'}`} />
+                <span className="absolute bottom-[35%] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">500K</span>
               </button>
 
-              <button onClick={() => setActiveBtn(3)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
-                <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 3" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 3 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
-                <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 3" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 3 ? 'z-10' : 'z-0'}`} />
-                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">5M</span>
+              <button onClick={() => setActiveBtn(3)} className="relative flex flex-col items-center w-[22vw] max-w-[85px] h-[26vw] max-h-[100px] cursor-pointer">
+                <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 3" className={`absolute left-1/2 -translate-x-1/2 w-[105%] h-auto object-contain transition-all duration-150 ${activeBtn === 3 ? 'top-[36%] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29%] z-10'}`} />
+                <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 3" className={`absolute top-[34%] left-1/2 -translate-x-1/2 w-[115%] h-auto object-contain pointer-events-none ${activeBtn === 3 ? 'z-10' : 'z-0'}`} />
+                <span className="absolute bottom-[35%] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">5M</span>
               </button>
 
-              <button onClick={() => setActiveBtn(4)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
-                <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 4" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 4 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
-                <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 4" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 4 ? 'z-10' : 'z-0'}`} />
-                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50M</span>
+              <button onClick={() => setActiveBtn(4)} className="relative flex flex-col items-center w-[22vw] max-w-[85px] h-[26vw] max-h-[100px] cursor-pointer">
+                <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 4" className={`absolute left-1/2 -translate-x-1/2 w-[105%] h-auto object-contain transition-all duration-150 ${activeBtn === 4 ? 'top-[36%] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29%] z-10'}`} />
+                <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 4" className={`absolute top-[34%] left-1/2 -translate-x-1/2 w-[115%] h-auto object-contain pointer-events-none ${activeBtn === 4 ? 'z-10' : 'z-0'}`} />
+                <span className="absolute bottom-[35%] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50M</span>
               </button>
             </div>
 
