@@ -234,7 +234,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {/* gap-0 taaki paas mein rahe */}
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
-                  <div key={item.id || index} className={`relative w-[78px] h-[82px] flex items-center justify-center transition-transform ${item.move || ''}`}>
+                  <div key={item.id || index} className={`relative w-[78px] h-[90px] flex items-center justify-center transition-transform ${item.move || ''}`}>
                     
                     {item.type === 'fruit' ? (
                       <>
@@ -277,7 +277,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* Bottom Centered Compact Button Group - 4 Buttons */}
-            <div className="absolute bottom-[13vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
+            <div className="absolute bottom-[15vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
               
               {/* Button 1 - 50K */}
               <button onClick={() => setActiveBtn(1)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
