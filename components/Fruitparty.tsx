@@ -388,7 +388,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   // Handle User Bet Placements
   const handleBetClick = (fruitId: number) => {
     if (phase === 'betting' && activeBtn !== null) {
-      const betValues = { 1: 50000, 2: 500000, 3: 5000000, 4: 50000000 };
+      const betValues = { 1: 1000, 2: 500000, 3: 5000000, 4: 50000000 };
       const betAmt = betValues[activeBtn as keyof typeof betValues];
       
       if (balance >= betAmt) {
