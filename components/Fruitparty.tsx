@@ -229,7 +229,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="relative z-10 w-full flex flex-col items-center -mt-27">
+            <div className="relative z-10 w-full flex flex-col items-center -mt-29">
               <div className="relative w-[242px] h-[242px]">
                 {FRUITS_CONFIG.map((fruit) => (
                   <div key={fruit.id} style={{ position: 'absolute', left: `${fruit.x}%`, top: `${fruit.y}%`, width: `${fruit.w}%`, height: `${fruit.h}%`, padding: '0px' }}>
@@ -242,14 +242,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </div>
 
               {/* Space and 2 New Images (Same row, gap 2, no mt) */}
-              <div className="flex flex-row justify-center items-center gap-2">
+              <div className="flex flex-row justify-center items-center gap-1">
                 <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-22 h-auto object-contain" />
                 <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-22 h-auto object-contain" />
               </div>
             </div>
 
             {/* Bottom Centered Compact Button Group - 4 Buttons */}
-            <div className="absolute bottom-[10vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
+            <div className="absolute bottom-[13vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
               
               {/* Button 1 - 50K */}
               <button onClick={() => setActiveBtn(1)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
