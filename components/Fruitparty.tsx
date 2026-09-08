@@ -182,42 +182,29 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <>
             {/* TOP LEFT BUTTONS: Speaker and Question Mark */}
             <div className="absolute top-[6.5px] left-7 z-30 flex items-center gap-0.5">
-              {/* Speaker Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                 </svg>
               </button>
-              
-              {/* Question Mark Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
-                <span className="text-[#4a2810] font-black text-[18px] leading-none font-serif">
-                  ?
-                </span>
+                <span className="text-[#4a2810] font-black text-[18px] leading-none font-serif">?</span>
               </button>
             </div>
 
             {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross */}
             <div className="absolute top-[6.5px] right-7 z-30 flex items-center gap-0.5">
-              {/* Arrow Down Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-
-              {/* Clock Button */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810]">
                   <path fillRule="evenodd" clipRule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12.5 7V12.25L17 14.92L16.25 16.15L11 13V7H12.5Z" />
                 </svg>
               </button>
-
-              {/* Cross Button (Close) */}
-              <button
-                onClick={onClose}
-                className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
-              >
+              <button onClick={onClose} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                 </svg>
@@ -227,164 +214,99 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         )}
 
         {loading ? (
-          /* ---------- Loading State with WebGL Shader ---------- */
+          /* ---------- Loading State ---------- */
           <div className="w-full h-full bg-gradient-to-b from-[#4A154B] via-[#330c36] to-[#1e0520] flex flex-col items-center justify-center px-6">
             <div className="w-32 h-32 flex items-center justify-center mb-6">
               <WebGLShaderImage src="/IMG_20260824_232321.png" />
             </div>
-
             <div className="w-48 bg-black/40 rounded-full h-3 p-0.5 border border-yellow-300/40 shadow-inner">
-              <div
-                className="bg-gradient-to-r from-yellow-400 to-amber-300 h-full rounded-full transition-all duration-150 ease-out shadow-[0_0_8px_rgba(250,204,21,0.7)]"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="bg-gradient-to-r from-yellow-400 to-amber-300 h-full rounded-full transition-all duration-150 ease-out shadow-[0_0_8px_rgba(250,204,21,0.7)]" style={{ width: `${progress}%` }} />
             </div>
-            <span className="text-yellow-300 text-xs font-semibold mt-2 tracking-wider">
-              LOADING {progress}%
-            </span>
+            <span className="text-yellow-300 text-xs font-semibold mt-2 tracking-wider">LOADING {progress}%</span>
           </div>
         ) : (
-          /* ---------- Game Screen: 70vh Background + Game Elements ---------- */
+          /* ---------- Game Screen ---------- */
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-            {/* Full 70vh Background Image */}
-            <img
-              src="/1787413631876~2.jpg"
-              alt="Fruit Party Background"
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none"
-            />
+            <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            {/* Main Wrapping Container */}
             <div className="relative z-10 w-full flex flex-col items-center -mt-27">
-              
-              {/* Fruit Grid Container - GAP 0 ke liye exact 3x3 grid */}
               <div className="relative w-[242px] h-[242px]">
-                {/* 8 Fruit Images with GAP 0 */}
                 {FRUITS_CONFIG.map((fruit) => (
-                  <div
-                    key={fruit.id}
-                    style={{
-                      position: 'absolute',
-                      left: `${fruit.x}%`,
-                      top: `${fruit.y}%`,
-                      width: `${fruit.w}%`,
-                      height: `${fruit.h}%`,
-                      padding: '0px', // GAP 0 kar diya
-                    }}
-                  >
-                    <img
-                      src={fruit.img}
-                      alt="Fruit"
-                      className="w-full h-full object-contain rounded-none block"
-                    />
+                  <div key={fruit.id} style={{ position: 'absolute', left: `${fruit.x}%`, top: `${fruit.y}%`, width: `${fruit.w}%`, height: `${fruit.h}%`, padding: '0px' }}>
+                    <img src={fruit.img} alt="Fruit" className="w-full h-full object-contain rounded-none block" />
                   </div>
                 ))}
-
-                {/* Center 30s Countdown */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '33.333%',
-                    top: '33.333%',
-                    width: '33.333%',
-                    height: '33.333%',
-                  }}
-                  className="flex items-center justify-center pointer-events-none"
-                >
-                  <span className="text-amber-400 font-extrabold text-2xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-                    {countdown}s
-                  </span>
+                <div style={{ position: 'absolute', left: '33.333%', top: '33.333%', width: '33.333%', height: '33.333%' }} className="flex items-center justify-center pointer-events-none">
+                  <span className="text-amber-400 font-extrabold text-2xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">{countdown}s</span>
                 </div>
               </div>
 
               {/* Space 3vh and 2 New Images (Same row, gap 1) - Re-added */}
               <div className="flex flex-row justify-center items-center gap-1 mt-[1vh]">
-                <img 
-                  src="/IMG_20260907_154135.png" 
-                  alt="Option 1" 
-                  className="w-18 h-auto object-contain" 
-                />
-                <img 
-                  src="/IMG_20260907_154118.png" 
-                  alt="Option 2" 
-                  className="w-18 h-auto object-contain" 
-                />
+                <img src="/IMG_20260907_154135.png" alt="Option 1" className="w-18 h-auto object-contain" />
+                <img src="/IMG_20260907_154118.png" alt="Option 2" className="w-18 h-auto object-contain" />
               </div>
-
             </div>
 
             {/* Bottom Centered Compact Button Group - 4 Buttons */}
-            <div className="absolute bottom-[15vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-3 w-max">
+            <div className="absolute bottom-[15vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
               
               {/* Button 1 - 50K */}
-              <button 
-                onClick={() => setActiveBtn(1)}
-                className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer"
-              >
-                {/* Red Button (z-0) ab Border ke peeche rahega */}
+              <button onClick={() => setActiveBtn(1)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img 
                   src="/file_00000000d9b08211b0304c61b802348b.png" 
                   alt="Red Button 1" 
-                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain z-0 transition-all duration-150 ${activeBtn === 1 ? 'top-[30px] hue-rotate-[120deg] brightness-110 saturate-150' : 'top-[26px]'}`} 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 1 ? 'top-[33px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[26px] z-10'}`} 
                 />
-                {/* Border (z-10) hamesha upar dikhega */}
                 <img 
                   src="/file_000000003d24821182882f8ca412d2b6.png" 
                   alt="Border 1" 
-                  className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain z-10 pointer-events-none" 
+                  className={`absolute top-[31px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 1 ? 'z-10' : 'z-0'}`} 
                 />
                 <span className="absolute bottom-0 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50K</span>
               </button>
 
               {/* Button 2 - 500K */}
-              <button 
-                onClick={() => setActiveBtn(2)}
-                className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer"
-              >
+              <button onClick={() => setActiveBtn(2)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img 
                   src="/file_00000000d9b08211b0304c61b802348b.png" 
                   alt="Red Button 2" 
-                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain z-0 transition-all duration-150 ${activeBtn === 2 ? 'top-[30px] hue-rotate-[120deg] brightness-110 saturate-150' : 'top-[26px]'}`} 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 2 ? 'top-[33px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[26px] z-10'}`} 
                 />
                 <img 
                   src="/file_000000003d24821182882f8ca412d2b6.png" 
                   alt="Border 2" 
-                  className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain z-10 pointer-events-none" 
+                  className={`absolute top-[31px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 2 ? 'z-10' : 'z-0'}`} 
                 />
                 <span className="absolute bottom-0 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">500K</span>
               </button>
 
               {/* Button 3 - 5M */}
-              <button 
-                onClick={() => setActiveBtn(3)}
-                className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer"
-              >
+              <button onClick={() => setActiveBtn(3)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img 
                   src="/file_00000000d9b08211b0304c61b802348b.png" 
                   alt="Red Button 3" 
-                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain z-0 transition-all duration-150 ${activeBtn === 3 ? 'top-[30px] hue-rotate-[120deg] brightness-110 saturate-150' : 'top-[26px]'}`} 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 3 ? 'top-[33px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[26px] z-10'}`} 
                 />
                 <img 
                   src="/file_000000003d24821182882f8ca412d2b6.png" 
                   alt="Border 3" 
-                  className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain z-10 pointer-events-none" 
+                  className={`absolute top-[31px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 3 ? 'z-10' : 'z-0'}`} 
                 />
                 <span className="absolute bottom-0 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">5M</span>
               </button>
 
               {/* Button 4 - 50M */}
-              <button 
-                onClick={() => setActiveBtn(4)}
-                className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer"
-              >
+              <button onClick={() => setActiveBtn(4)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img 
                   src="/file_00000000d9b08211b0304c61b802348b.png" 
                   alt="Red Button 4" 
-                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain z-0 transition-all duration-150 ${activeBtn === 4 ? 'top-[30px] hue-rotate-[120deg] brightness-110 saturate-150' : 'top-[26px]'}`} 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 4 ? 'top-[33px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[26px] z-10'}`} 
                 />
                 <img 
                   src="/file_000000003d24821182882f8ca412d2b6.png" 
                   alt="Border 4" 
-                  className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain z-10 pointer-events-none" 
+                  className={`absolute top-[31px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 4 ? 'z-10' : 'z-0'}`} 
                 />
                 <span className="absolute bottom-0 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50M</span>
               </button>
