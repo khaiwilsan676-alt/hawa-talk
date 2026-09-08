@@ -434,14 +434,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <div className="w-48 bg-black/40 rounded-full h-3 p-0.5 border border-yellow-300/40 shadow-inner">
               <div className="bg-gradient-to-r from-yellow-400 to-amber-300 h-full rounded-full transition-all duration-150 ease-out shadow-[0_0_8px_rgba(250,204,21,0.7)]" style={{ width: `${progress}%` }} />
             </div>
-            <span className="text-yellow-300 text-xs font-semibold mt-2 tracking-wider">LOADING {progress}%</span>
+            <span className="text-yellow-300 text-xs font-semibold -mt-43 tracking-wider">LOADING {progress}%</span>
           </div>
         ) : (
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
             {/* Yaha sirf Square Grid hai, 2-row image ko is container se nikal diya hai! */}
-            <div className="relative z-10 w-full flex flex-col items-center -mt-39" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
+            <div className="relative z-10 w-full flex flex-col items-center mt-" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
                  <div 
@@ -510,11 +510,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* 2-ROW IMAGE ALAG KAR DI GAYI HAI (ABSOLUTE POSITION PE)  */}
             {/* ======================================================== */}
             <div 
-              className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" 
+              className="absolute bottom-[23vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" 
               style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}
             >
-              <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-23 h-auto object-contain" />
-              <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-23 h-auto object-contain" />
+              <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-25 h-auto object-contain" />
+              <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-25 h-auto object-contain" />
             </div>
 
             <div className="absolute bottom-[15vh] left-1/2 z-30 flex flex-row items-end gap-1 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
