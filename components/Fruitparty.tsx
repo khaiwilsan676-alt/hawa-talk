@@ -23,6 +23,9 @@ const GRID_ITEMS = [
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 33, imgH: 33 },// Grapes
 ];
 
+// Clockwise path for Spinner (Perimeter cards only, skipping center timer at index 4)
+const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3]; 
+
 // WebGL Shader for real-time solid white background removal
 function WebGLShaderImage({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -129,7 +132,16 @@ function WebGLShaderImage({ src }: { src: string }) {
 export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  
+  // Naye States: Phase, Countdown, aur Spinner
+  const [phase, setPhase] = useState<'betting' | 'spinning'>('betting');
   const [countdown, setCountdown] = useState(30);
+  
+  const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
+  const highlightRef = useRef<number | null>(null);
+  
+  // Winners history ko save karne ke liye
+  const [winners, setWinners] = useState<string[]>([]);
   
   // Track karne ke liye konsa button active (clicked) hai
   const [activeBtn, setActiveBtn] = useState<number | null>(null);
@@ -146,25 +158,61 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         return prev + 10;
       });
     }, 150);
-
     return () => clearInterval(interval);
   }, []);
 
-  // 30s Countdown timer loop
+  // Main Timer Loop (30s Betting -> 15s Spinning)
   useEffect(() => {
     if (loading) return;
 
-    const timer = setInterval(() => {
+    const clock = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          return 30;
+          if (phase === 'betting') {
+            setPhase('spinning');
+            return 15; // 15 Second ka Spinning timer chalu
+          } else {
+            // Spin Khatam hone par Winner decide karo
+            if (highlightRef.current !== null) {
+              const winnerItem = GRID_ITEMS[highlightRef.current];
+              if (winnerItem && winnerItem.img) {
+                // Max 5 winners dikhane ke liye slice use kiya hai
+                setWinners(w => [...w, winnerItem.img as string].slice(-5)); 
+              }
+            }
+            setPhase('betting');
+            return 30; // Wapas 30s Betting chalu
+          }
         }
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [loading]);
+    return () => clearInterval(clock);
+  }, [loading, phase]);
+
+  // Fast Spinner Effect Loop (Sirf Spinning Phase mein chalega)
+  useEffect(() => {
+    if (phase === 'spinning') {
+      const interval = setInterval(() => {
+        setHighlightIndex(prev => {
+          let nextPos = 0;
+          if (prev !== null) {
+            const currentPos = SPIN_PATH.indexOf(prev);
+            nextPos = (currentPos + 1) % SPIN_PATH.length;
+          }
+          const nextIndex = SPIN_PATH[nextPos];
+          highlightRef.current = nextIndex;
+          return nextIndex;
+        });
+      }, 120); // Speed of the spin (120ms)
+      
+      return () => clearInterval(interval);
+    } else {
+      // Jaise hi spin hatega, original color wapas aa jayega (null karke)
+      setHighlightIndex(null);
+    }
+  }, [phase]);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
@@ -179,7 +227,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       >
         {!loading && (
           <>
-            {/* TOP LEFT BUTTONS: Speaker and Question Mark */}
+            {/* TOP LEFT BUTTONS */}
             <div className="absolute top-[6.5px] left-7 z-30 flex items-center gap-0.5">
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
@@ -191,7 +239,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            {/* TOP RIGHT BUTTONS: Arrow Down, Clock, Cross */}
+            {/* TOP HEADER MIDDLE: Round 358 */}
+            <div className="absolute top-[8px] left-1/2 -translate-x-1/2 z-30">
+              <span className="text-white font-bold text-base drop-shadow-md tracking-wide">
+                Round 358
+              </span>
+            </div>
+
+            {/* TOP RIGHT BUTTONS */}
             <div className="absolute top-[6.5px] right-7 z-30 flex items-center gap-0.5">
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
@@ -231,7 +286,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <div className="relative z-10 w-full flex flex-col items-center -mt-34">
               
               {/* === STRICT SQUARE CSS GRID === */}
-              {/* gap-0 taaki paas mein rahe */}
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
                   <div key={item.id || index} className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''}`}>
@@ -241,9 +295,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         {/* Base Card Background */}
                         <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" />
                         
+                        {/* 🔥 Green Highlight Overlay (Yeh fruit ke peeche rahega, sirf card green hoga) */}
+                        {highlightIndex === index && (
+                          <div className="absolute inset-[3px] bg-[#00FF00]/50 rounded-[8px] z-[5] mix-blend-color animate-pulse pointer-events-none border-[2px] border-green-400"></div>
+                        )}
+
                         {/* Content constrained inside */}
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
-                          {/* Yahan par particular image ki custom width (item.imgW) aur height (item.imgH) pass ki gayi hai */}
                           <img 
                             src={item.img} 
                             alt="Fruit" 
@@ -258,8 +316,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         {/* Countdown Timer Center Card Background */}
                         <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" alt="Timer Base" className="absolute inset-0 w-full h-full object-fill z-0" />
                         
-                        <div className="absolute inset-0 z-10 flex items-center justify-center">
-                          <span className="text-amber-400 font-extrabold text-xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">{countdown}s</span>
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+                          <span className="text-white text-[9px] font-bold tracking-wider drop-shadow-md mb-0.5">
+                            {phase === 'betting' ? 'BETTING' : 'SPINNING'}
+                          </span>
+                          <span className="text-amber-400 font-extrabold text-xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{countdown}s</span>
                         </div>
                       </>
                     )}
@@ -269,7 +330,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </div>
               {/* ============================== */}
 
-              {/* Space and 2 New Images with mt-0.5 */}
+              {/* Space and 2 New Images */}
               <div className="flex flex-row justify-center items-center gap-1.5 mt-0.5">
                 <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-22 h-auto object-contain" />
                 <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-22 h-auto object-contain" />
@@ -338,23 +399,55 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 />
                 <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50M</span>
               </button>
-
             </div>
+
+            {/* 🔥 Winners History Dikhane Ki Jagah (Bottom se 1 gap upar, Left side mein) */}
+            <div className="absolute bottom-[11vh] left-5 z-40 flex flex-row flex-wrap gap-2 max-w-[45vw]">
+              {winners.map((imgUrl, i) => (
+                <div key={i} className="animate-fade-in-up">
+                  <img src={imgUrl} alt="Winner" className="w-7 h-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                </div>
+              ))}
+            </div>
+
+            {/* Left Side: 82927 (Bottom 4vh) */}
+            <div className="absolute bottom-[4vh] left-5 z-30 flex items-center gap-2">
+              <div className="w-10 h-10">
+                <WebGLShaderImage src="/1786855398290.png" />
+              </div>
+              <span className="text-white font-bold text-base drop-shadow-md">
+                82927
+              </span>
+            </div>
+
+            {/* Right Side: 30180 (Bottom 4vh) */}
+            <div className="absolute bottom-[4vh] right-5 z-30 flex items-center gap-2 flex-row-reverse">
+              <div className="w-10 h-10">
+                <WebGLShaderImage src="/1786855398290.png" />
+              </div>
+              <span className="text-white font-bold text-base drop-shadow-md">
+                30180
+              </span>
+            </div>
+
           </div>
         )}
       </div>
 
       <style jsx>{`
         @keyframes slideUp {
-          from {
-            transform: translateY(100%);
-          }
-          to {
-            transform: translateY(0);
-          }
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(10px) scale(0.8); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .animate-slide-up {
           animation: slideUp 0.3s ease-out;
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.4s ease-out forwards;
         }
       `}</style>
     </div>
