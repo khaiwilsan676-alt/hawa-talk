@@ -10,15 +10,15 @@ interface FruitpartyProps {
 // Perfect 3x3 Grid Layout (Strict Fixed Sizes for Cards)
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 36, imgH: 36 },  // Lemon
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 36, imgH: 36 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 43, imgH: 43 },  // Mango
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 36, imgH: 36 },  // Cherry
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 41, imgH: 41 },  // Lemon
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 41, imgH: 41 },  // Apple
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 47, imgH: 47 },  // Mango
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 41, imgH: 41 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 36, imgH: 36 },// Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 36, imgH: 36 },  // Guava
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 37, imgH: 37 },  // Orange
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 36, imgH: 36 },// Grapes
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 41, imgH: 41 },// Strawberry
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 41, imgH: 41 },  // Guava
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 45, imgH: 45 },  // Orange
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 41, imgH: 41 },// Grapes
 ];
 
 // Clockwise path for Spinner
@@ -33,8 +33,10 @@ const STORE_NAME = 'GameState';
 interface GameStateData {
   currentRound: number;
   winners: string[];
-  roundHistory: Array<{ round: number; winnerImg: string; userBetId: number | null; won: boolean }>;
+  roundHistory: Array<{ round: number; winnerImg: string; won: boolean }>;
   lastResetTime: number;
+  balance: number;
+  totalWon: number;
 }
 
 function initDB(): Promise<IDBDatabase> {
@@ -62,6 +64,8 @@ async function saveGameStateToDB(state: GameStateData) {
     store.put(state.winners, 'winners');
     store.put(state.roundHistory, 'roundHistory');
     store.put(state.lastResetTime, 'lastResetTime');
+    store.put(state.balance, 'balance');
+    store.put(state.totalWon, 'totalWon');
   } catch (err) {
     console.error("IndexedDB Save Error:", err);
   }
@@ -78,10 +82,14 @@ async function loadGameStateFromDB(): Promise<GameStateData> {
       const reqWinners = store.get('winners');
       const reqHistory = store.get('roundHistory');
       const reqReset = store.get('lastResetTime');
+      const reqBalance = store.get('balance');
+      const reqTotalWon = store.get('totalWon');
 
       tx.oncomplete = () => {
         const now = Date.now();
         let lastReset = reqReset.result || 0;
+        const savedBalance = reqBalance.result !== undefined ? reqBalance.result : 82927;
+        const savedTotalWon = reqTotalWon.result !== undefined ? reqTotalWon.result : 0;
 
         // 5:30 AM Daily Reset Calculation
         const currentDate = new Date(now);
@@ -98,7 +106,9 @@ async function loadGameStateFromDB(): Promise<GameStateData> {
             currentRound: 358,
             winners: [],
             roundHistory: [],
-            lastResetTime: now
+            lastResetTime: now,
+            balance: savedBalance,
+            totalWon: 0 // Reset daily win on 5:30 AM
           };
           saveGameStateToDB(freshState);
           resolve(freshState);
@@ -107,18 +117,27 @@ async function loadGameStateFromDB(): Promise<GameStateData> {
             currentRound: reqRound.result || 358,
             winners: reqWinners.result || [],
             roundHistory: reqHistory.result || [],
-            lastResetTime: lastReset || now
+            lastResetTime: lastReset || now,
+            balance: savedBalance,
+            totalWon: savedTotalWon
           });
         }
       };
       tx.onerror = () => {
-        resolve({ currentRound: 358, winners: [], roundHistory: [], lastResetTime: Date.now() });
+        resolve({ currentRound: 358, winners: [], roundHistory: [], lastResetTime: Date.now(), balance: 82927, totalWon: 0 });
       };
     });
   } catch (err) {
-    return { currentRound: 358, winners: [], roundHistory: [], lastResetTime: Date.now() };
+    return { currentRound: 358, winners: [], roundHistory: [], lastResetTime: Date.now(), balance: 82927, totalWon: 0 };
   }
 }
+
+// Format Numbers (e.g. 50000 -> 50K)
+const formatNumber = (num: number) => {
+  if (num >= 1000000) return (num / 1000000).toFixed(num % 1000000 === 0 ? 0 : 1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(num % 1000 === 0 ? 0 : 1) + 'K';
+  return num.toString();
+};
 
 // ==========================================
 // WebGL Shader for real-time solid white background removal
@@ -237,13 +256,18 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   
   const [currentRound, setCurrentRound] = useState(358);
   const [winners, setWinners] = useState<string[]>([]);
-  const [roundHistory, setRoundHistory] = useState<Array<{ round: number; winnerImg: string; userBetId: number | null; won: boolean }>>([]);
+  const [roundHistory, setRoundHistory] = useState<Array<{ round: number; winnerImg: string; won: boolean }>>([]);
   
+  // Coin Logic & States
+  const [balance, setBalance] = useState(82927);
+  const [totalWon, setTotalWon] = useState(0);
+  const [bets, setBets] = useState<Record<number, number>>({});
+  const stateRefs = useRef({ balance: 82927, totalWon: 0, bets: {} as Record<number, number> });
+
   // Modals Toggle State
   const [showHistory, setShowHistory] = useState(false);
   const [showRules, setShowRules] = useState(false);
 
-  const [userBetFruitId, setUserBetFruitId] = useState<number | null>(null);
   const [activeBtn, setActiveBtn] = useState<number | null>(null);
 
   useEffect(() => {
@@ -252,9 +276,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         setCurrentRound(data.currentRound);
         setWinners(data.winners || []);
         setRoundHistory(data.roundHistory || []);
+        setBalance(data.balance);
+        setTotalWon(data.totalWon);
       }
     });
   }, []);
+
+  // Sync state into refs to avoid stale closure during interval evaluations
+  useEffect(() => {
+    stateRefs.current = { balance, totalWon, bets };
+  }, [balance, totalWon, bets]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -280,27 +311,47 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             setPhase('spinning');
             return 15;
           } else {
+            // Winning Logic & Settlement
             if (highlightRef.current !== null) {
               const winnerItem = GRID_ITEMS[highlightRef.current];
               if (winnerItem && winnerItem.img) {
                 const winnerImg = winnerItem.img as string;
-                const userWon = userBetFruitId !== null && userBetFruitId === winnerItem.id;
+                
+                // Real-time states from ref
+                const { balance: currentBalance, totalWon: currentTotalWon, bets: currentBets } = stateRefs.current;
+                
+                let earned = 0;
+                const betOnWinner = currentBets[winnerItem.id] || 0;
+                if (betOnWinner > 0) {
+                   const mult = parseInt(winnerItem.multi.replace('×', ''));
+                   earned = betOnWinner * mult;
+                }
+
+                const nextBalance = currentBalance + earned;
+                const nextTotalWon = currentTotalWon + earned;
+
+                setBalance(nextBalance);
+                setTotalWon(nextTotalWon);
+                setBets({}); // Round complete, clear all bets
 
                 setWinners(w => {
-                  const newWinners = [...w, winnerImg].slice(-12);
+                  const newWinners = [...w, winnerImg].slice(-14);
                   setRoundHistory(history => {
                     const newHistory = [
-                      { round: currentRound, winnerImg, userBetId: userBetFruitId, won: userWon },
+                      { round: currentRound, winnerImg, won: earned > 0 },
                       ...history
                     ];
                     const nextRound = currentRound + 1;
                     setCurrentRound(nextRound);
 
+                    // Save Final Win State
                     saveGameStateToDB({
                       currentRound: nextRound,
                       winners: newWinners,
                       roundHistory: newHistory,
-                      lastResetTime: Date.now()
+                      lastResetTime: Date.now(),
+                      balance: nextBalance,
+                      totalWon: nextTotalWon
                     });
 
                     return newHistory;
@@ -309,7 +360,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 });
               }
             }
-            setUserBetFruitId(null);
             setPhase('betting');
             return 30;
           }
@@ -319,7 +369,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }, 1000);
 
     return () => clearInterval(clock);
-  }, [loading, phase, currentRound, userBetFruitId]);
+  }, [loading, phase, currentRound]);
 
   useEffect(() => {
     if (phase === 'spinning') {
@@ -342,6 +392,29 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [phase]);
 
+  // Handle User Bet Placements
+  const handleBetClick = (fruitId: number) => {
+    if (phase === 'betting' && activeBtn !== null) {
+      const betValues = { 1: 50000, 2: 500000, 3: 5000000, 4: 50000000 };
+      const betAmt = betValues[activeBtn as keyof typeof betValues];
+      
+      if (balance >= betAmt) {
+        const newBalance = balance - betAmt;
+        const newBets = { ...bets, [fruitId]: (bets[fruitId] || 0) + betAmt };
+        
+        setBalance(newBalance);
+        setBets(newBets);
+        
+        saveGameStateToDB({ 
+          currentRound, winners, roundHistory, 
+          lastResetTime: Date.now(), 
+          balance: newBalance, 
+          totalWon 
+        });
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -355,13 +428,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <>
             {/* TOP LEFT BUTTONS */}
             <div className="absolute top-[6.5px] left-7 z-30 flex items-center gap-0.5">
-              {/* Original Speaker Icon */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                 </svg>
               </button>
-              {/* Question Mark Icon (Opens Rules) */}
               <button 
                 onClick={() => setShowRules(true)}
                 className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
@@ -379,13 +450,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
             {/* TOP RIGHT BUTTONS */}
             <div className="absolute top-[6.5px] right-7 z-30 flex items-center gap-0.5">
-              {/* List Icon */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-              {/* Original Clock Icon (Now Opens History) */}
               <button 
                 onClick={() => setShowHistory(true)}
                 className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
@@ -394,7 +463,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   <path fillRule="evenodd" clipRule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12.5 7V12.25L17 14.92L16.25 16.15L11 13V7H12.5Z" />
                 </svg>
               </button>
-              {/* Close (Cross) Icon */}
               <button onClick={onClose} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -418,15 +486,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="relative z-10 w-full flex flex-col items-center -mt-34">
+            <div className="relative z-10 w-full flex flex-col items-center -mt-33">
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
                   <div 
                     key={item.id || index} 
                     onClick={() => {
-                      if (phase === 'betting' && item.type === 'fruit') {
-                        setUserBetFruitId(item.id);
-                      }
+                      if (item.type === 'fruit') handleBetClick(item.id);
                     }}
                     className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''}`}
                   >
@@ -434,7 +500,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       <>
                         <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" />
                         
-                        {userBetFruitId === item.id && (
+                        {/* Pulse Border Selection Effect */}
+                        {(bets[item.id] || 0) > 0 && (
                           <div className="absolute inset-[2px] rounded-[8px] z-[4] border-[2px] border-amber-400 animate-pulse pointer-events-none"></div>
                         )}
 
@@ -442,15 +509,30 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                           <div className="absolute inset-[3px] bg-[#00FF00]/50 rounded-[8px] z-[5] mix-blend-color animate-pulse pointer-events-none border-[2px] border-green-400"></div>
                         )}
 
+                        {/* Image Layer */}
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
                           <img 
                             src={item.img} 
                             alt="Fruit" 
                             style={{ width: `${item.imgW}px`, height: `${item.imgH}px` }}
-                            className="object-contain pointer-events-none drop-shadow-md" 
+                            className="object-contain pointer-events-none drop-shadow-md mb-2" 
                           />
-                          <span className="text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none">{item.multi}</span>
                         </div>
+
+                        {/* Bottom Blue-Pink Transparent Patti For Bet value */}
+                        {(bets[item.id] || 0) > 0 && (
+                          <div className="absolute bottom-[16px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
+                            <div className="w-[10px] h-[10px] flex-shrink-0">
+                              <WebGLShaderImage src="/1786855398290.png" />
+                            </div>
+                            <span className="text-white text-[9px] font-bold leading-none mt-[1px]">{formatNumber(bets[item.id])}</span>
+                          </div>
+                        )}
+
+                        {/* Multiplier at absolute bottom */}
+                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">
+                          {item.multi}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -507,18 +589,20 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
+            {/* Left Balance Wallet */}
             <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ left: '55px' }}>
               <div className="w-5 h-5">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
-              <span className="text-white font-bold text-base drop-shadow-md">82927</span>
+              <span className="text-white font-bold text-base drop-shadow-md">{formatNumber(balance)}</span>
             </div>
 
+            {/* Right Total Won Wallet */}
             <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ right: '55px' }}>
               <div className="w-5 h-5">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
-              <span className="text-white font-bold text-base drop-shadow-md">30180</span>
+              <span className="text-white font-bold text-base drop-shadow-md">{formatNumber(totalWon)}</span>
             </div>
 
           </div>
@@ -530,7 +614,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       {/* ========================================== */}
       {showHistory && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
-          {/* Transparent Backdrop so original background is visible */}
           <div className="absolute inset-0 bg-transparent" onClick={() => setShowHistory(false)} />
           <div className="relative bg-black w-full max-w-md h-[40vh] rounded-t-md shadow-2xl flex flex-col overflow-hidden text-white animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3">
@@ -553,7 +636,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <span className="text-sm font-bold text-gray-200">Round {item.round}</span>
                     <div className="flex items-center gap-3">
                       <img src={item.winnerImg} alt="Fruit" className="w-6 h-6 object-contain drop-shadow-sm" />
-                    
                     </div>
                   </div>
                 ))
@@ -568,7 +650,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       {/* ========================================== */}
       {showRules && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
-          {/* Transparent Backdrop so original background is visible */}
           <div className="absolute inset-0 bg-transparent" onClick={() => setShowRules(false)} />
           <div className="relative bg-black w-full max-w-md h-[40vh] rounded-t-md shadow-2xl flex flex-col overflow-hidden text-white animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3">
