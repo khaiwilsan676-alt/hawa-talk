@@ -133,28 +133,17 @@ async function loadGameStateFromDB(): Promise<GameStateData> {
 }
 
 // ==========================================
-// WebGL Shader Caching System (CRASH FIX)
+// WebGL Shader for real-time solid white background removal
+// (FIXED: Memory leak & context crash issue resolved)
 // ==========================================
-// Global cache taki ek image sirf ek baar WebGL me process ho.
-const textureCache = new Map<string, string>();
-
 function WebGLShaderImage({ src }: { src: string }) {
-  const [processedSrc, setProcessedSrc] = useState<string | null>(textureCache.get(src) || null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    // Agar image pehle se process ho chuki hai, toh cache se uthao (Crash bypass)
-    if (textureCache.has(src)) {
-      setProcessedSrc(textureCache.get(src)!);
-      return;
-    }
-
     let isMounted = true;
-    
-    // Virtual Canvas banayenge, DOM me render hone se memory leak rukegi
-    const canvas = document.createElement('canvas');
-    // preserveDrawingBuffer zaroori hai image export karne ke liye
-    const gl = canvas.getContext('webgl', { premultipliedAlpha: false, alpha: true, preserveDrawingBuffer: true });
-    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: false, alpha: true });
     if (!gl) return;
 
     const vsSource = `
@@ -216,18 +205,18 @@ function WebGLShaderImage({ src }: { src: string }) {
       gl.STATIC_DRAW
     );
 
+    const texture = gl.createTexture();
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.src = src;
     
     image.onload = () => {
-      if (!isMounted) return;
+      if (!isMounted || !canvasRef.current) return;
       try {
         canvas.width = image.width;
         canvas.height = image.height;
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-        const texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -248,21 +237,6 @@ function WebGLShaderImage({ src }: { src: string }) {
         gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 16, 8);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        // DATA EXTRACT KARKE NORMAL IMAGE BANA LIA
-        const dataURL = canvas.toDataURL('image/png');
-        textureCache.set(src, dataURL);
-        setProcessedSrc(dataURL);
-
-        // INSTANT CLEANUP (Crash se bachne k liye WebGL turant destroy kiya)
-        gl.deleteTexture(texture);
-        gl.deleteBuffer(positionBuffer);
-        gl.deleteProgram(program);
-        gl.deleteShader(vertShader!);
-        gl.deleteShader(fragShader!);
-        const ext = gl.getExtension('WEBGL_lose_context');
-        if (ext) ext.loseContext();
-
       } catch (err) {
         console.error("WebGL Draw Error:", err);
       }
@@ -270,24 +244,29 @@ function WebGLShaderImage({ src }: { src: string }) {
 
     return () => {
       isMounted = false;
+      if (gl) {
+        gl.deleteTexture(texture);
+        gl.deleteBuffer(positionBuffer);
+        gl.deleteProgram(program);
+        gl.deleteShader(vertShader);
+        gl.deleteShader(fragShader);
+        
+        const ext = gl.getExtension('WEBGL_lose_context');
+        if (ext) {
+          ext.loseContext();
+        }
+      }
     };
   }, [src]);
 
-  // Ek standard image tag return kiya, jisme koi context ka jhanjhat nahi hai
-  if (processedSrc) {
-    return <img src={processedSrc} className="w-full h-full object-contain" alt="icon" />;
-  }
-  
-  // Jab tak process ho raha hai transparent rahega
-  return <div className="w-full h-full" />;
+  return <canvas ref={canvasRef} className="w-full h-full object-contain" />;
 }
 
-// Auto Resize Wallet Text Logic
 const getDynamicTextSize = (val: number) => {
   const len = val.toString().length;
   if (len > 8) return 'text-[10px]';
   if (len > 6) return 'text-[12px]';
-  return 'text-base'; // Default
+  return 'text-base';
 };
 
 export default function Fruitparty({ onClose }: FruitpartyProps) {
@@ -300,23 +279,19 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
   const highlightRef = useRef<number | null>(null);
   
-  // Hand Pointer Index State
   const [handPointerIndex, setHandPointerIndex] = useState<number>(SPIN_PATH[0]);
 
   const [currentRound, setCurrentRound] = useState(358);
   const [winners, setWinners] = useState<string[]>([]);
   const [roundHistory, setRoundHistory] = useState<Array<{ round: number; winnerImg: string; won: boolean }>>([]);
   
-  // Coin Logic & States
   const [balance, setBalance] = useState(82927);
   const [totalWon, setTotalWon] = useState(0);
   const [bets, setBets] = useState<Record<number, number>>({});
   const stateRefs = useRef({ balance: 82927, totalWon: 0, bets: {} as Record<number, number> });
 
-  // Modals Toggle State
   const [showHistory, setShowHistory] = useState(false);
   const [showRules, setShowRules] = useState(false);
-
   const [activeBtn, setActiveBtn] = useState<number | null>(null);
 
   useEffect(() => {
@@ -331,7 +306,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     });
   }, []);
 
-  // Sync state into refs to avoid stale closure during interval evaluations
   useEffect(() => {
     stateRefs.current = { balance, totalWon, bets };
   }, [balance, totalWon, bets]);
@@ -360,13 +334,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             setPhase('spinning');
             return 15;
           } else {
-            // Winning Logic & Settlement
             if (highlightRef.current !== null) {
               const winnerItem = GRID_ITEMS[highlightRef.current];
               if (winnerItem && winnerItem.img) {
                 const winnerImg = winnerItem.img as string;
                 
-                // Real-time states from ref
                 const { balance: currentBalance, totalWon: currentTotalWon, bets: currentBets } = stateRefs.current;
                 
                 let earned = 0;
@@ -381,7 +353,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
                 setBalance(nextBalance);
                 setTotalWon(nextTotalWon);
-                setBets({}); // Round complete, clear all bets
+                setBets({});
 
                 setWinners(w => {
                   const newWinners = [...w, winnerImg].slice(-13);
@@ -393,7 +365,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     const nextRound = currentRound + 1;
                     setCurrentRound(nextRound);
 
-                    // Save Final Win State
                     saveGameStateToDB({
                       currentRound: nextRound,
                       winners: newWinners,
@@ -420,7 +391,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     return () => clearInterval(clock);
   }, [loading, phase, currentRound]);
 
-  // Hand pointer movement logic every 2 seconds during betting
   useEffect(() => {
     if (phase === 'betting' && !loading) {
       const pointerInterval = setInterval(() => {
@@ -434,7 +404,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [phase, loading]);
 
-  // Spinner highlight movement logic during spinning
   useEffect(() => {
     if (phase === 'spinning') {
       const interval = setInterval(() => {
@@ -456,7 +425,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [phase]);
 
-  // Handle User Bet Placements
   const handleBetClick = (fruitId: number) => {
     if (phase === 'betting' && activeBtn !== null) {
       const betValues = { 1: 1000, 2: 500000, 3: 5000000, 4: 50000000 };
@@ -483,15 +451,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* STRICT DIMENSIONS CONTAINER: Ab vh/vw hatake hardcoded pixels lagaya hai. Koi bhi device ho, size 1mm b nhi hilega! */}
       <div
-        className="relative bg-[#330c36] shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
-        style={{ width: '360px', height: '640px' }}
+        className="relative bg-[#330c36] w-full max-w-md shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
+        style={{ height: '69vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {!loading && (
           <>
-            {/* TOP LEFT BUTTONS */}
             <div className="absolute top-[6.5px] left-7 z-30 flex items-center gap-0.5">
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
@@ -506,14 +472,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            {/* TOP HEADER MIDDLE */}
             <div className="absolute top-[8px] left-1/2 -translate-x-1/2 z-30">
               <span className="text-white font-bold text-base drop-shadow-md tracking-wide">
                 Round {currentRound}
               </span>
             </div>
 
-            {/* TOP RIGHT BUTTONS */}
             <div className="absolute top-[6.5px] right-7 z-30 flex items-center gap-0.5">
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
@@ -554,33 +518,38 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <div className="relative z-10 w-full flex flex-col items-center -mt-33">
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
-                 <div 
-                  key={item.id || index} 
-                  onClick={() => {
-                    if (item.type === 'fruit') handleBetClick(item.id);
-                  }}
-                  className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${phase === 'betting' && handPointerIndex === index ? '!z-[999]' : ''}`}
-                 >
+                  <div 
+                    key={item.id || index} 
+                    onClick={() => {
+                      if (item.type === 'fruit') handleBetClick(item.id);
+                    }}
+                    className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${phase === 'betting' && handPointerIndex === index ? '!z-[999]' : ''}`}
+                  >
                     {item.type === 'fruit' ? (
                       <>
-                        <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" />
-                        
+                        {/* MAIN CARD IMAGE (Wahi image green hogi direct) */}
+                        <img 
+                          src="/file_00000000d0ec820ba666eab8bea30204.png" 
+                          alt="Card Base" 
+                          className={`absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300 ${
+                            phase === 'betting' && handPointerIndex === index 
+                              ? 'brightness-125 sepia-[0.5] hue-rotate-[70deg] saturate-200 drop-shadow-[0_0_8px_#22c55e]' 
+                              : ''
+                          }`} 
+                        />
+
                         {/* Spinning Phase Highlight Effect */}
                         {highlightIndex === index && (
                           <div className="absolute inset-[3px] bg-[#00FF00]/50 rounded-[8px] z-[5] mix-blend-color animate-pulse pointer-events-none border-[2px] border-green-400"></div>
                         )}
 
-                        {/* Betting Phase Hand Pointer & Green Card Effect */}
+                        {/* Betting Phase Hand Pointer */}
                         {phase === 'betting' && handPointerIndex === index && (
-                          <>
-                            <div className="absolute inset-[3px] bg-green-500/40 rounded-[8px] z-[5] pointer-events-none border-[2px] border-green-500 transition-all duration-300"></div>
-                            
-                            <img 
-                              src="/file_000000000f0c820b95490c9d927692d9.png" 
-                              alt="Pointer" 
-                              className="absolute -bottom-3 -right-2 w-[55px] h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300"
-                            />
-                          </>
+                          <img 
+                            src="/file_000000000f0c820b95490c9d927692d9.png" 
+                            alt="Pointer" 
+                            className="absolute -bottom-3 -right-2 w-[55px] h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300"
+                          />
                         )}
 
                         {/* Image Layer */}
@@ -603,7 +572,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                           </div>
                         )}
 
-                        {/* Multiplier shifted slightly up */}
+                        {/* Multiplier */}
                         <span className="absolute bottom-[10px] left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">
                           {item.multi}
                         </span>
@@ -629,8 +598,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </div>
             </div>
 
-            {/* BOTTOM BUTTONS - Fixed with Pixels vh->px */}
-            <div className="absolute bottom-[90px] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
+            <div className="absolute bottom-[15vh] left-1/2 -translate-x-1/2 z-30 flex flex-row items-end gap-1 w-max">
               <button onClick={() => setActiveBtn(1)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 1" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 1 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
                 <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 1" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 1 ? 'z-10' : 'z-0'}`} />
@@ -656,7 +624,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            <div className="absolute bottom-3 z-40 flex flex-row flex-wrap gap-0.5 max-w-[320px]" style={{ left: '51px' }}>
+            <div className="absolute bottom-3 z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ left: '51px' }}>
               {winners.map((imgUrl, i) => (
                 <div key={i} className="animate-fade-in-up">
                   <img src={imgUrl} alt="Winner" className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
@@ -664,8 +632,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
-            {/* Left Balance Wallet - Fixed with px */}
-            <div className="absolute bottom-[35px] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '55px' }}>
+            {/* Left Balance Wallet */}
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '55px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
@@ -674,8 +642,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </span>
             </div>
 
-            {/* Right Total Won Wallet - Fixed with px */}
-            <div className="absolute bottom-[35px] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '35px' }}>
+            {/* Right Total Won Wallet */}
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '35px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
