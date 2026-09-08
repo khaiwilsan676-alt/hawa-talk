@@ -14,7 +14,7 @@ interface FruitpartyProps {
 const GRID_ITEMS = [
   { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 36, imgH: 36 },  // Lemon
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 36, imgH: 36 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 38, imgH: 38 },  // Mango
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 41, imgH: 41 },  // Mango
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 36, imgH: 36 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 36, imgH: 36 },// Strawberry
@@ -392,7 +392,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {/* ============================== */}
 
               {/* Space and 2 New Images */}
-              <div className="flex flex-row justify-center items-center gap-2 mt-0.5">
+              <div className="flex flex-row justify-center items-center gap-1 mt-1">
                 <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-23 h-auto object-contain" />
                 <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-23 h-auto object-contain" />
               </div>
@@ -463,16 +463,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* 🔥 Winners History Dikhane Ki Jagah (Ekdam Bottom Par) */}
-            <div className="absolute bottom-2 left-5 z-40 flex flex-row flex-wrap gap-2 max-w-[90vw]">
+            <div className="absolute bottom-2 left-8 z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]">
               {winners.map((imgUrl, i) => (
                 <div key={i} className="animate-fade-in-up">
-                  <img src={imgUrl} alt="Winner" className="w-6 h-6 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                  <img src={imgUrl} alt="Winner" className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
                 </div>
               ))}
             </div>
 
             {/* Left Side: 82927 (Bottom 4vh) */}
-            <div className="absolute bottom-[5vh] left-5 z-30 flex items-center gap-1.5">
+            <div className="absolute bottom-[6vh] left-8 z-30 flex items-center gap-0.5">
               <div className="w-6 h-6">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
@@ -482,7 +482,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* Right Side: 30180 (Bottom 4vh) - Image on Left, Value on Right */}
-            <div className="absolute bottom-[5vh] right-5 z-30 flex items-center gap-1.5">
+            <div className="absolute bottom-[6vh] right-8 z-30 flex items-center gap-0.5">
               <div className="w-6 h-6">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
