@@ -235,7 +235,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               if (winnerItem && winnerItem.img) {
                 setWinners(w => {
                   // 10 winners ki history rakhenge (UI overfill na ho isliye)
-                  const newWinners = [...w, winnerItem.img as string].slice(-10);
+                  const newWinners = [...w, winnerItem.img as string].slice(-12);
                   saveWinnersToDB(newWinners); // IndexedDB mein save kiya
                   return newWinners;
                 });
@@ -465,7 +465,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
    {/* 🔥 Winners History Dikhane Ki Jagah (Ekdam Bottom Par) */}
 <div 
   className="absolute bottom-3 z-40 flex flex-row flex-wrap gap-1.5 max-w-[90vw]"
-  style={{ left: '45px' }} 
+  style={{ left: '49px' }} 
 >
   {winners.map((imgUrl, i) => (
     <div key={i} className="animate-fade-in-up">
@@ -477,7 +477,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
            {/* Left Side: 82927 (Oupar aur thoda Right) */}
 <div 
   className="absolute bottom-[6vh] z-30 flex items-center gap-0.5"
-  style={{ left: '40px' }} 
+  style={{ left: '48px' }} 
 >
   <div className="w-5 h-5">
     <WebGLShaderImage src="/1786855398290.png" />
@@ -490,7 +490,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 {/* Right Side: 30180 (Oupar aur thoda Left) */}
 <div 
   className="absolute bottom-[6vh] z-30 flex items-center gap-1.5"
-  style={{ right: '40px' }} 
+  style={{ right: '48px' }} 
 >
   <div className="w-5 h-5">
     <WebGLShaderImage src="/1786855398290.png" />
