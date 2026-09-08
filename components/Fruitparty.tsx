@@ -12,15 +12,15 @@ interface FruitpartyProps {
 // Tum in values ko badal kar kisi bhi particular fruit ka size adjust kar sakte ho!
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 32, imgH: 32 },  // Lemon
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 32, imgH: 32 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 35, imgH: 35 },  // Mango
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 32, imgH: 33 },  // Cherry
-  { id: 9, type: 'timer', move: 'z-20 scale-[1.15]' },                                                                                        // CENTER (Timer)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 32.5, imgH: 32.5},// Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 32, imgH: 32 },  // Guava
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 34.5, imgH: 35 },  // Orange
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 32.5, imgH: 32.5},// Grapes
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 33, imgH: 33 },  // Lemon
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 33, imgH: 32 },  // Apple
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 36, imgH: 36 },  // Mango
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 33, imgH: 33 },  // Cherry
+  { id: 9, type: 'timer', move: 'z-20 scale-[1.13]' },                                                                                        // CENTER (Timer)
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 33, imgH: 33},// Strawberry
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 33, imgH: 32 },  // Guava
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 35, imgH: 35 },  // Orange
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 33, imgH: 33 },// Grapes
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -174,7 +174,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       {/* 70vh Bottom Sheet */}
       <div
         className="relative bg-[#330c36] w-full max-w-md shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
-        style={{ height: '65vh' }}
+        style={{ height: '70vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {!loading && (
@@ -234,7 +234,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {/* gap-0 taaki paas mein rahe */}
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
-                  <div key={item.id || index} className={`relative w-[76px] h-[76px] flex items-center justify-center transition-transform ${item.move || ''}`}>
+                  <div key={item.id || index} className={`relative w-[78px] h-[82px] flex items-center justify-center transition-transform ${item.move || ''}`}>
                     
                     {item.type === 'fruit' ? (
                       <>
