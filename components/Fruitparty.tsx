@@ -7,20 +7,20 @@ interface FruitpartyProps {
 }
 
 // -------------------------------------------------------------
-// Perfect 3x3 Grid Layout (Strict Fixed Sizes)
-// 'move' property added to literally push each outer card slightly 
-// towards the CENTER (Countdown) without changing their perfect square size!
+// Perfect 3x3 Grid Layout (Strict Fixed Sizes for Cards)
+// Har Fruit ka apna alag size hai (imgW aur imgH ke roop mein).
+// Tum in values ko badal kar kisi bhi particular fruit ka size adjust kar sakte ho!
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[2px] translate-y-[2px]' },  // Top-Left -> Move Right & Down
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[2px]' },                   // Top-Center -> Move Down
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[2px] translate-y-[2px]' }, // Top-Right -> Move Left & Down
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[2px]' },                   // Mid-Left -> Move Right
-  { id: 9, type: 'timer', move: 'z-10' },                                                                               // CENTER (Countdown stays fixed, above others)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[2px]' },                  // Mid-Right -> Move Left
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[2px] -translate-y-[2px]' }, // Bottom-Left -> Move Right & Up
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[2px]' },                  // Bottom-Center -> Move Up
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[2px] -translate-y-[2px]' },// Bottom-Right -> Move Left & Up
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 32, imgH: 32 },  // Lemon
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 32, imgH: 32 },  // Apple
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 35, imgH: 35 },  // Mango
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 32, imgH: 33 },  // Cherry
+  { id: 9, type: 'timer', move: 'z-20 scale-[1.15]' },                                                                                        // CENTER (Timer)
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 32.5, imgH: 32.5},// Strawberry
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 32, imgH: 32 },  // Guava
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 34.5, imgH: 35 },  // Orange
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 32.5, imgH: 32.5},// Grapes
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -231,14 +231,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <div className="relative z-10 w-full flex flex-col items-center -mt-29">
               
               {/* === STRICT SQUARE CSS GRID === */}
-              {/* gap-0 kardiya taaki wo paas paas ho jayein */}
+              {/* gap-0 taaki paas mein rahe */}
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
-                  /* 
-                    Fixed width and height (76px) strictly prevents any resizing.
-                    'item.move' literally translates the outer items inward towards the center!
-                  */
-                  <div key={item.id || index} className={`relative w-[76px] h-[76px] flex items-center justify-center ${item.move || ''}`}>
+                  <div key={item.id || index} className={`relative w-[76px] h-[76px] flex items-center justify-center transition-transform ${item.move || ''}`}>
                     
                     {item.type === 'fruit' ? (
                       <>
@@ -247,8 +243,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         
                         {/* Content constrained inside */}
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
-                          {/* Exact 32px fruit image size so it doesn't break out */}
-                          <img src={item.img} alt="Fruit" className="w-[32px] h-[32px] object-contain pointer-events-none drop-shadow-md" />
+                          {/* Yahan par particular image ki custom width (item.imgW) aur height (item.imgH) pass ki gayi hai */}
+                          <img 
+                            src={item.img} 
+                            alt="Fruit" 
+                            style={{ width: `${item.imgW}px`, height: `${item.imgH}px` }}
+                            className="object-contain pointer-events-none drop-shadow-md" 
+                          />
                           <span className="text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none">{item.multi}</span>
                         </div>
                       </>
