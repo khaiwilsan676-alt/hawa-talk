@@ -8,19 +8,19 @@ interface FruitpartyProps {
 
 // -------------------------------------------------------------
 // Perfect 3x3 Grid Layout (Strict Fixed Sizes)
-// Center is Timer (index 4)
-// Layout swaps applied: Guava <-> Apple, Strawberry <-> Orange
+// 'move' property added to literally push each outer card slightly 
+// towards the CENTER (Countdown) without changing their perfect square size!
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5' },  // 0: Top-Left (Lemon)
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10' }, // 1: Top-Center (Apple)
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5' },  // 2: Top-Right (Mango)
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15' }, // 3: Mid-Left (Cherry)
-  { id: 9, type: 'timer' },                                                 // 4: CENTER (Countdown)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45' }, // 5: Mid-Right (Strawberry)
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5' },  // 6: Bottom-Left (Guava)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5' },  // 7: Bottom-Center (Orange)
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25' }, // 8: Bottom-Right (Grapes)
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[2px] translate-y-[2px]' },  // Top-Left -> Move Right & Down
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[2px]' },                   // Top-Center -> Move Down
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[2px] translate-y-[2px]' }, // Top-Right -> Move Left & Down
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[2px]' },                   // Mid-Left -> Move Right
+  { id: 9, type: 'timer', move: 'z-10' },                                                                               // CENTER (Countdown stays fixed, above others)
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[2px]' },                  // Mid-Right -> Move Left
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[2px] -translate-y-[2px]' }, // Bottom-Left -> Move Right & Up
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[2px]' },                  // Bottom-Center -> Move Up
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[2px] -translate-y-[2px]' },// Bottom-Right -> Move Left & Up
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -231,15 +231,18 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <div className="relative z-10 w-full flex flex-col items-center -mt-29">
               
               {/* === STRICT SQUARE CSS GRID === */}
-              {/* gap-0.5 for small gap. mx-auto ensures it stays centered. */}
-              <div className="grid grid-cols-3 gap-0.5 mx-auto w-max">
+              {/* gap-0 kardiya taaki wo paas paas ho jayein */}
+              <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
-                  /* Fixed width and height (76px) strictly prevents any resizing */
-                  <div key={item.id || index} className="relative w-[76px] h-[76px] flex items-center justify-center">
+                  /* 
+                    Fixed width and height (76px) strictly prevents any resizing.
+                    'item.move' literally translates the outer items inward towards the center!
+                  */
+                  <div key={item.id || index} className={`relative w-[76px] h-[76px] flex items-center justify-center ${item.move || ''}`}>
                     
                     {item.type === 'fruit' ? (
                       <>
-                        {/* Base Card Background - object-fill guarantees it covers the 76x76 square perfectly */}
+                        {/* Base Card Background */}
                         <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" />
                         
                         {/* Content constrained inside */}
