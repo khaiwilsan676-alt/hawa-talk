@@ -14,14 +14,14 @@ interface FruitpartyProps {
 // [7] [6] [5]
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG_20260907_154053.png', x: 2.5,  y: 0,      w: 32, h: 32 }, // Lemon (right shift)
-  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 0,      w: 32, h: 32 }, // Guava (same)
-  { id: 3, img: '/IMG_20260907_154232.png', x: 64.166, y: -1,    w: 35, h: 35 }, // Mango (left shift + 0.5 aur upar)
-  { id: 4, img: '/IMG_20260907_154250.png', x: 64.166, y: 30.333, w: 34.5, h: 35}, // Orange (left shift + 1 gap aur upar)
+  { id: 1, img: '/IMG_20260907_154053.png', x: 2.5,  y: 1,      w: 32, h: 32 }, // Lemon (right shift + 1 gap niche)
+  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 1,      w: 32, h: 32 }, // Guava (1 gap niche)
+  { id: 3, img: '/IMG_20260907_154232.png', x: 64.166, y: 0,    w: 35, h: 35 }, // Mango (left shift + 1 gap niche from -1)
+  { id: 4, img: '/IMG_20260907_154250.png', x: 64.166, y: 30.433, w: 34.5, h: 35}, // Orange (left shift + 0.1 niche)
   { id: 5, img: '/IMG_20260907_154323.png', x: 64.166, y: 62.666, w: 32.5, h: 32.5 }, // Grapesh (left shift + 2 gap aur upar)
   { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 62.666, w: 32.5, h: 32.5 }, // Strawberry (2 gap aur upar)
-  { id: 7, img: '/IMG_20260907_154417.png', x: 2.5,  y: 62.666, w: 32, h: 32 }, // Apple (right shift + 2 gap aur upar)
-  { id: 8, img: '/IMG_20260907_154449.png', x: 2.5,  y: 30.333, w: 32, h: 33 }, // Cherry (right shift + 1 gap aur upar)
+  { id: 7, img: '/IMG_20260907_154417.png', x: 2.6,  y: 62.666, w: 32, h: 32 }, // Apple (right shift + 0.1 aur right)
+  { id: 8, img: '/IMG_20260907_154449.png', x: 2.7,  y: 30.533, w: 32, h: 33 }, // Cherry (0.2 right + 0.2 niche)
 ];
 // WebGL Shader for real-time solid white background removal
 function WebGLShaderImage({ src }: { src: string }) {
@@ -315,14 +315,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <img 
                 src="/file_00000000d9b08211b0304c61b802348b.png" 
                 alt="Red Button" 
-                className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
+                className="absolute top-[15px] left-1/2 -translate-x-1/2 w-[60px] h-auto object-contain z-10" 
               />
               
               {/* Border (Niche) */}
               <img 
                 src="/file_000000003d24821182882f8ca412d2b6.png" 
                 alt="Border" 
-                className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[55px] h-auto object-contain z-0" 
+                className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[65px] h-auto object-contain z-0" 
               />
               
             </div>
