@@ -7,21 +7,21 @@ interface FruitpartyProps {
 }
 
 // -------------------------------------------------------------
-// Fruit Positions & Sizes - Sabhi images ka size SAME rahega
+// Fruit Positions & Sizes - GAP 0, sabhi images exact grid mein
 // Layout:
 // [1] [2] [3]
 // [8] [T] [4]  <-- T = Countdown Timer
 // [7] [6] [5]
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG_20260907_154053.png', x: 1.5,      y: 1.5,      w: 32, h: 32 }, // Lemon - aur center ki tarf
-  { id: 2, img: '/IMG_20260907_154205.png', x: 34.833,   y: 1.5,      w: 32, h: 32 }, // Guava - aur center ki tarf
-  { id: 3, img: '/IMG_20260907_154232.png', x: 68.166,   y: 1.5,      w: 33, h: 33 }, // Mango - aur center ki tarf
-  { id: 4, img: '/IMG_20260907_154250.png', x: 68.166,   y: 34.833,   w: 33, h: 33 }, // Orange - aur center ki tarf
-  { id: 5, img: '/IMG_20260907_154323.png', x: 68.166,   y: 68.166,   w: 32.5, h: 32.5 }, // Grapesh - aur center ki tarf
-  { id: 6, img: '/IMG_20260907_154348.png', x: 34.833,   y: 68.166,   w: 32.5, h: 32.5 }, // Strawberry - aur center ki tarf
-  { id: 7, img: '/IMG_20260907_154417.png', x: 1.5,      y: 68.166,   w: 32, h: 32 }, // Apple - aur center ki tarf
-  { id: 8, img: '/IMG_20260907_154449.png', x: 1.5,      y: 34.833,   w: 32, h: 32 }, // Cherry - aur center ki tarf
+  { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 32, h: 32 }, // Lemon
+  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333,   y: 0,      w: 32, h: 32 }, // Guava
+  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666,   y: 0,      w: 33, h: 33 }, // Mango
+  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666,   y: 33.333,   w: 33, h: 33 }, // Orange
+  { id: 5, img: '/IMG_20260907_154323.png', x: 66.666,   y: 66.666,   w: 32.5, h: 32.5 }, // Grapesh
+  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333,   y: 66.666,   w: 32.5, h: 32.5 }, // Strawberry
+  { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 66.666,   w: 32, h: 32 }, // Apple
+  { id: 8, img: '/IMG_20260907_154449.png', x: 0,      y: 33.333,   w: 32, h: 32 }, // Cherry
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -253,9 +253,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* Main Wrapping Container */}
             <div className="relative z-10 w-full flex flex-col items-center -mt-27">
               
-              {/* Fruit Grid Container - SQUARE KO CHOTA KIYA HAI */}
-              <div className="relative w-[220px] h-[220px]">
-                {/* 8 Fruit Images with EQUAL size and shifted towards center */}
+              {/* Fruit Grid Container - GAP 0 ke liye exact 3x3 grid */}
+              <div className="relative w-[240px] h-[240px]">
+                {/* 8 Fruit Images with GAP 0 */}
                 {FRUITS_CONFIG.map((fruit) => (
                   <div
                     key={fruit.id}
@@ -265,7 +265,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       top: `${fruit.y}%`,
                       width: `${fruit.w}%`,
                       height: `${fruit.h}%`,
-                      padding: '0.5px',
+                      padding: '0px', // GAP 0 kar diya
                     }}
                   >
                     <img
@@ -276,7 +276,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </div>
                 ))}
 
-                {/* Center 30s Countdown - thoda adjust kiya */}
+                {/* Center 30s Countdown */}
                 <div
                   style={{
                     position: 'absolute',
