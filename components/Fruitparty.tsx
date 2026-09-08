@@ -651,7 +651,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* Right Total Won Wallet */}
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '55px' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '35px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
