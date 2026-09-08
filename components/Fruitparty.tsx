@@ -14,14 +14,14 @@ interface FruitpartyProps {
 // [7] [6] [5]
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG_20260907_154053.png', x: 2.5,  y: 1,      w: 32, h: 32 }, // Lemon (right shift + 1 gap niche)
-  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 1,      w: 32, h: 32 }, // Guava (1 gap niche)
-  { id: 3, img: '/IMG_20260907_154232.png', x: 64.166, y: 0,    w: 35, h: 35 }, // Mango (left shift + 1 gap niche from -1)
-  { id: 4, img: '/IMG_20260907_154250.png', x: 64.166, y: 30.433, w: 34.5, h: 35}, // Orange (left shift + 0.1 niche)
-  { id: 5, img: '/IMG_20260907_154323.png', x: 64.166, y: 62.666, w: 32.5, h: 32.5 }, // Grapesh (left shift + 2 gap aur upar)
-  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 62.666, w: 32.5, h: 32.5 }, // Strawberry (2 gap aur upar)
-  { id: 7, img: '/IMG_20260907_154417.png', x: 2.6,  y: 62.666, w: 32, h: 32 }, // Apple (right shift + 0.1 aur right)
-  { id: 8, img: '/IMG_20260907_154449.png', x: 2.7,  y: 30.533, w: 32, h: 33 }, // Cherry (0.2 right + 0.2 niche)
+  { id: 1, img: '/IMG_20260907_154053.png', x: 2.5,  y: 1,      w: 32, h: 32 }, // Lemon
+  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 1,      w: 32, h: 32 }, // Guava
+  { id: 3, img: '/IMG_20260907_154232.png', x: 64.166, y: 0,    w: 35, h: 35 }, // Mango
+  { id: 4, img: '/IMG_20260907_154250.png', x: 64.166, y: 30.433, w: 34.5, h: 35}, // Orange
+  { id: 5, img: '/IMG_20260907_154323.png', x: 64.166, y: 62.666, w: 32.5, h: 32.5 }, // Grapesh
+  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 62.666, w: 32.5, h: 32.5 }, // Strawberry
+  { id: 7, img: '/IMG_20260907_154417.png', x: 2.6,  y: 62.666, w: 32, h: 32 }, // Apple
+  { id: 8, img: '/IMG_20260907_154449.png', x: 2.7,  y: 30.533, w: 32, h: 33 }, // Cherry
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -131,7 +131,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(30);
-  const [isRedButtonActive, setIsRedButtonActive] = useState(false);
+  
+  // Track karne ke liye konsa button active (clicked) hai
+  const [activeBtn, setActiveBtn] = useState<number | null>(null);
 
   // Loading progression effect
   useEffect(() => {
@@ -293,87 +295,84 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </span>
                 </div>
               </div>
-
-              {/* Space 3vh and 2 New Images (Same row, gap 1) */}
-              <div className="flex flex-row justify-center items-center gap-1 mt-[1vh]">
-                <img 
-                  src="/IMG_20260907_154135.png" 
-                  alt="Option 1" 
-                  className="w-18 h-auto object-contain" 
-                />
-                <img 
-                  src="/IMG_20260907_154118.png" 
-                  alt="Option 2" 
-                  className="w-18 h-auto object-contain" 
-                />
-              </div>
-
             </div>
 
-         {/* Bottom Left Compact Button Group - 4 Buttons */}
-<div className="absolute bottom-[15vh] left-3 z-30 flex flex-row items-end gap-3">
-  
-  {/* Button 1 - 50K */}
-  <button className="relative flex flex-col items-center w-[55px] h-[70px] active:translate-y-1 transition-transform">
-    <span className="text-white font-bold text-xs mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">50K</span>
-    <img 
-      src="/file_00000000d9b08211b0304c61b802348b.png" 
-      alt="Red Button 1" 
-      className="absolute top-[19px] left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
-    />
-    <img 
-      src="/file_000000003d24821182882f8ca412d2b6.png" 
-      alt="Border 1" 
-      className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[55px] h-auto object-contain z-0" 
-    />
-  </button>
+            {/* Bottom Right Compact Button Group - 4 Buttons (shifted to right-4) */}
+            <div className="absolute bottom-[15vh] right-2 z-30 flex flex-row items-end gap-3">
+              
+              {/* Button 1 - 50K */}
+              <button 
+                onClick={() => setActiveBtn(1)}
+                className="relative flex flex-col items-center w-[55px] h-[70px] cursor-pointer"
+              >
+                <img 
+                  src="/file_00000000d9b08211b0304c61b802348b.png" 
+                  alt="Red Button 1" 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain z-10 transition-all duration-150 ${activeBtn === 1 ? 'top-[30px] hue-rotate-[120deg] brightness-110 saturate-150' : 'top-[26px]'}`} 
+                />
+                <img 
+                  src="/file_000000003d24821182882f8ca412d2b6.png" 
+                  alt="Border 1" 
+                  className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain z-0" 
+                />
+                <span className="absolute -bottom-1 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20">50K</span>
+              </button>
 
-  {/* Button 2 - 500K */}
-  <button className="relative flex flex-col items-center w-[55px] h-[70px] active:translate-y-1 transition-transform">
-    <span className="text-white font-bold text-xs mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">500K</span>
-    <img 
-      src="/file_00000000d9b08211b0304c61b802348b.png" 
-      alt="Red Button 2" 
-      className="absolute top-[19px] left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
-    />
-    <img 
-      src="/file_000000003d24821182882f8ca412d2b6.png" 
-      alt="Border 2" 
-      className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[55px] h-auto object-contain z-0" 
-    />
-  </button>
+              {/* Button 2 - 500K */}
+              <button 
+                onClick={() => setActiveBtn(2)}
+                className="relative flex flex-col items-center w-[55px] h-[70px] cursor-pointer"
+              >
+                <img 
+                  src="/file_00000000d9b08211b0304c61b802348b.png" 
+                  alt="Red Button 2" 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain z-10 transition-all duration-150 ${activeBtn === 2 ? 'top-[30px] hue-rotate-[120deg] brightness-110 saturate-150' : 'top-[26px]'}`} 
+                />
+                <img 
+                  src="/file_000000003d24821182882f8ca412d2b6.png" 
+                  alt="Border 2" 
+                  className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain z-0" 
+                />
+                <span className="absolute -bottom-1 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20">500K</span>
+              </button>
 
-  {/* Button 3 - 5M */}
-  <button className="relative flex flex-col items-center w-[55px] h-[70px] active:translate-y-1 transition-transform">
-    <span className="text-white font-bold text-xs mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">5M</span>
-    <img 
-      src="/file_00000000d9b08211b0304c61b802348b.png" 
-      alt="Red Button 3" 
-      className="absolute top-[19px] left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
-    />
-    <img 
-      src="/file_000000003d24821182882f8ca412d2b6.png" 
-      alt="Border 3" 
-      className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[55px] h-auto object-contain z-0" 
-    />
-  </button>
+              {/* Button 3 - 5M */}
+              <button 
+                onClick={() => setActiveBtn(3)}
+                className="relative flex flex-col items-center w-[55px] h-[70px] cursor-pointer"
+              >
+                <img 
+                  src="/file_00000000d9b08211b0304c61b802348b.png" 
+                  alt="Red Button 3" 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain z-10 transition-all duration-150 ${activeBtn === 3 ? 'top-[30px] hue-rotate-[120deg] brightness-110 saturate-150' : 'top-[26px]'}`} 
+                />
+                <img 
+                  src="/file_000000003d24821182882f8ca412d2b6.png" 
+                  alt="Border 3" 
+                  className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain z-0" 
+                />
+                <span className="absolute -bottom-1 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20">5M</span>
+              </button>
 
-  {/* Button 4 - 50M */}
-  <button className="relative flex flex-col items-center w-[55px] h-[70px] active:translate-y-1 transition-transform">
-    <span className="text-white font-bold text-xs mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">50M</span>
-    <img 
-      src="/file_00000000d9b08211b0304c61b802348b.png" 
-      alt="Red Button 4" 
-      className="absolute top-[19px] left-1/2 -translate-x-1/2 w-[45px] h-auto object-contain z-10" 
-    />
-    <img 
-      src="/file_000000003d24821182882f8ca412d2b6.png" 
-      alt="Border 4" 
-      className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[55px] h-auto object-contain z-0" 
-    />
-  </button>
+              {/* Button 4 - 50M */}
+              <button 
+                onClick={() => setActiveBtn(4)}
+                className="relative flex flex-col items-center w-[55px] h-[70px] cursor-pointer"
+              >
+                <img 
+                  src="/file_00000000d9b08211b0304c61b802348b.png" 
+                  alt="Red Button 4" 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain z-10 transition-all duration-150 ${activeBtn === 4 ? 'top-[30px] hue-rotate-[120deg] brightness-110 saturate-150' : 'top-[26px]'}`} 
+                />
+                <img 
+                  src="/file_000000003d24821182882f8ca412d2b6.png" 
+                  alt="Border 4" 
+                  className="absolute top-[28px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain z-0" 
+                />
+                <span className="absolute -bottom-1 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20">50M</span>
+              </button>
 
-</div>
+            </div>
           </div>
         )}
       </div>
@@ -394,3 +393,4 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
+
