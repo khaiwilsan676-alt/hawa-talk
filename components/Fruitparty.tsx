@@ -132,13 +132,6 @@ async function loadGameStateFromDB(): Promise<GameStateData> {
   }
 }
 
-// Format Numbers (e.g. 50000 -> 50K)
-const formatNumber = (num: number) => {
-  if (num >= 1000000) return (num / 1000000).toFixed(num % 1000000 === 0 ? 0 : 1) + 'M';
-  if (num >= 1000) return (num / 1000).toFixed(num % 1000 === 0 ? 0 : 1) + 'K';
-  return num.toString();
-};
-
 // ==========================================
 // WebGL Shader for real-time solid white background removal
 // ==========================================
@@ -335,7 +328,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 setBets({}); // Round complete, clear all bets
 
                 setWinners(w => {
-                  const newWinners = [...w, winnerImg].slice(-14);
+                  const newWinners = [...w, winnerImg].slice(-13);
                   setRoundHistory(history => {
                     const newHistory = [
                       { round: currentRound, winnerImg, won: earned > 0 },
@@ -500,11 +493,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       <>
                         <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" />
                         
-                        {/* Pulse Border Selection Effect */}
-                        {(bets[item.id] || 0) > 0 && (
-                          <div className="absolute inset-[2px] rounded-[8px] z-[4] border-[2px] border-amber-400 animate-pulse pointer-events-none"></div>
-                        )}
-
+                        {/* Spinner Highlight Border Effect */}
                         {highlightIndex === index && (
                           <div className="absolute inset-[3px] bg-[#00FF00]/50 rounded-[8px] z-[5] mix-blend-color animate-pulse pointer-events-none border-[2px] border-green-400"></div>
                         )}
@@ -525,12 +514,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                             <div className="w-[10px] h-[10px] flex-shrink-0">
                               <WebGLShaderImage src="/1786855398290.png" />
                             </div>
-                            <span className="text-white text-[9px] font-bold leading-none mt-[1px]">{formatNumber(bets[item.id])}</span>
+                            <span className="text-white text-[9px] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
                           </div>
                         )}
 
-                        {/* Multiplier at absolute bottom */}
-                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">
+                        {/* Multiplier shifted slightly up */}
+                        <span className="absolute bottom-[10px] left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">
                           {item.multi}
                         </span>
                       </>
@@ -559,7 +548,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <button onClick={() => setActiveBtn(1)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img src="/file_00000000d9b08211b0304c61b802348b.png" alt="Red Button 1" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 1 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
                 <img src="/file_000000003d24821182882f8ca412d2b6.png" alt="Border 1" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 1 ? 'z-10' : 'z-0'}`} />
-                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50K</span>
+                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">1K</span>
               </button>
 
               <button onClick={() => setActiveBtn(2)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
@@ -581,7 +570,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            <div className="absolute bottom-3 z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ left: '49px' }}>
+            <div className="absolute bottom-3 z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ left: '51px' }}>
               {winners.map((imgUrl, i) => (
                 <div key={i} className="animate-fade-in-up">
                   <img src={imgUrl} alt="Winner" className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
@@ -589,20 +578,20 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
-            {/* Left Balance Wallet */}
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ left: '55px' }}>
-              <div className="w-5 h-5">
+            {/* Left Balance Wallet - FIXED width to prevent shifting */}
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '55px' }}>
+              <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
-              <span className="text-white font-bold text-base drop-shadow-md">{formatNumber(balance)}</span>
+              <span className="text-white font-bold text-base drop-shadow-md text-left flex-1 truncate">{balance}</span>
             </div>
 
-            {/* Right Total Won Wallet */}
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ right: '55px' }}>
-              <div className="w-5 h-5">
+            {/* Right Total Won Wallet - FIXED width to prevent shifting */}
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '35px' }}>
+              <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
-              <span className="text-white font-bold text-base drop-shadow-md">{formatNumber(totalWon)}</span>
+              <span className="text-white font-bold text-base drop-shadow-md text-left flex-1 truncate">{totalWon}</span>
             </div>
 
           </div>
