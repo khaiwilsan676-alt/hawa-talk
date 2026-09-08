@@ -10,15 +10,15 @@ interface FruitpartyProps {
 // Perfect 3x3 Grid Layout (Strict Fixed Sizes for Cards)
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 41, imgH: 41 },  // Lemon
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 41, imgH: 41 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 47, imgH: 47 },  // Mango
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 41, imgH: 41 },  // Cherry
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Apple
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 58, imgH: 58 },  // Mango
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 41, imgH: 41 },// Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 41, imgH: 41 },  // Guava
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 45, imgH: 45 },  // Orange
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 41, imgH: 41 },// Grapes
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Orange
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },// Grapes
 ];
 
 // Clockwise path for Spinner & Pointer
@@ -134,11 +134,13 @@ async function loadGameStateFromDB(): Promise<GameStateData> {
 
 // ==========================================
 // WebGL Shader for real-time solid white background removal
+// (FIXED: Memory leak & context crash issue resolved)
 // ==========================================
 function WebGLShaderImage({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const gl = canvas.getContext('webgl', { premultipliedAlpha: false, alpha: true });
@@ -203,34 +205,53 @@ function WebGLShaderImage({ src }: { src: string }) {
       gl.STATIC_DRAW
     );
 
-    const aPosition = gl.getAttribLocation(program, 'a_position');
-    const aTexCoord = gl.getAttribLocation(program, 'a_texCoord');
-
-    gl.enableVertexAttribArray(aPosition);
-    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 16, 0);
-
-    gl.enableVertexAttribArray(aTexCoord);
-    gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 16, 8);
-
     const texture = gl.createTexture();
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.src = src;
+    
     image.onload = () => {
-      canvas.width = image.width;
-      canvas.height = image.height;
-      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      if (!isMounted || !canvasRef.current) return;
+      try {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        
+        const aPosition = gl.getAttribLocation(program, 'a_position');
+        const aTexCoord = gl.getAttribLocation(program, 'a_texCoord');
+
+        gl.enableVertexAttribArray(aPosition);
+        gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 16, 0);
+
+        gl.enableVertexAttribArray(aTexCoord);
+        gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 16, 8);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      } catch (err) {
+        console.error("WebGL Draw Error:", err);
+      }
+    };
+
+    // Cleanup function to prevent WebGL memory leak crashes
+    return () => {
+      isMounted = false;
+      if (gl) {
+        gl.deleteTexture(texture);
+        gl.deleteBuffer(positionBuffer);
+        gl.deleteProgram(program);
+        gl.deleteShader(vertShader);
+        gl.deleteShader(fragShader);
+      }
     };
   }, [src]);
 
@@ -530,11 +551,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                             {/* Card green ho jayega */}
                             <div className="absolute inset-[3px] bg-green-500/40 rounded-[8px] z-[5] pointer-events-none border-[2px] border-green-500 transition-all duration-300"></div>
                             
-                            {/* Hand Pointer rotated left */}
+                            {/* FIXED Hand Pointer: Zyada Rotated, Bada Size, aur Highest Z-Index */}
                             <img 
                               src="/file_000000000f0c820b95490c9d927692d9.png" 
                               alt="Pointer" 
-                              className="absolute -bottom-2 -right-1 w-9 h-9 z-50 object-contain pointer-events-none -rotate-[25deg] drop-shadow-lg transition-all duration-300"
+                              className="absolute -bottom-3 -right-2 w-[55px] h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300"
                             />
                           </>
                         )}
@@ -549,9 +570,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                           />
                         </div>
 
-                        {/* Bottom Blue-Pink Transparent Patti For Bet value - THORA UPAR SHIFT KIYA (bottom-[22px]) */}
+                        {/* Bottom Blue-Pink Transparent Patti For Bet value */}
                         {(bets[item.id] || 0) > 0 && (
-                          <div className="absolute bottom-[19px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
+                          <div className="absolute bottom-[22px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
                             <div className="w-[10px] h-[10px] flex-shrink-0">
                               <WebGLShaderImage src="/1786855398290.png" />
                             </div>
@@ -619,7 +640,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
-            {/* Left Balance Wallet - AUTO RESIZE FONT LOGIC ADDED */}
+            {/* Left Balance Wallet */}
             <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '55px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
@@ -629,7 +650,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </span>
             </div>
 
-            {/* Right Total Won Wallet - AUTO RESIZE FONT LOGIC ADDED */}
+            {/* Right Total Won Wallet */}
             <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '35px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
@@ -727,3 +748,4 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
+
