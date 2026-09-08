@@ -392,7 +392,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {/* ============================== */}
 
               {/* Space and 2 New Images */}
-              <div className="flex flex-row justify-center items-center gap-1 mt-1">
+              <div className="flex flex-row justify-center items-center gap-1 mt-1.5">
                 <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-23 h-auto object-contain" />
                 <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-23 h-auto object-contain" />
               </div>
@@ -462,34 +462,44 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            {/* 🔥 Winners History Dikhane Ki Jagah (Ekdam Bottom Par) */}
-            <div className="absolute bottom-2 left-8 z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]">
-              {winners.map((imgUrl, i) => (
-                <div key={i} className="animate-fade-in-up">
-                  <img src={imgUrl} alt="Winner" className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                </div>
-              ))}
-            </div>
+   {/* 🔥 Winners History Dikhane Ki Jagah (Ekdam Bottom Par) */}
+<div 
+  className="absolute bottom-3 z-40 flex flex-row flex-wrap gap-1.5 max-w-[90vw]"
+  style={{ left: '45px' }} 
+>
+  {winners.map((imgUrl, i) => (
+    <div key={i} className="animate-fade-in-up">
+      <img src={imgUrl} alt="Winner" className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+    </div>
+  ))}
+</div>
 
-            {/* Left Side: 82927 (Bottom 4vh) */}
-            <div className="absolute bottom-[6vh] left-8 z-30 flex items-center gap-0.5">
-              <div className="w-6 h-6">
-                <WebGLShaderImage src="/1786855398290.png" />
-              </div>
-              <span className="text-white font-bold text-base drop-shadow-md">
-                82927
-              </span>
-            </div>
+           {/* Left Side: 82927 (Oupar aur thoda Right) */}
+<div 
+  className="absolute bottom-[6vh] z-30 flex items-center gap-0.5"
+  style={{ left: '40px' }} 
+>
+  <div className="w-5 h-5">
+    <WebGLShaderImage src="/1786855398290.png" />
+  </div>
+  <span className="text-white font-bold text-base drop-shadow-md">
+    82927
+  </span>
+</div>
 
-            {/* Right Side: 30180 (Bottom 4vh) - Image on Left, Value on Right */}
-            <div className="absolute bottom-[6vh] right-8 z-30 flex items-center gap-0.5">
-              <div className="w-6 h-6">
-                <WebGLShaderImage src="/1786855398290.png" />
-              </div>
-              <span className="text-white font-bold text-base drop-shadow-md">
-                30180
-              </span>
-            </div>
+{/* Right Side: 30180 (Oupar aur thoda Left) */}
+<div 
+  className="absolute bottom-[6vh] z-30 flex items-center gap-1.5"
+  style={{ right: '40px' }} 
+>
+  <div className="w-5 h-5">
+    <WebGLShaderImage src="/1786855398290.png" />
+  </div>
+  <span className="text-white font-bold text-base drop-shadow-md">
+    30180
+  </span>
+</div>
+
 
           </div>
         )}
