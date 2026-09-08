@@ -13,15 +13,15 @@ interface FruitpartyProps {
 // [8] [T] [4]  <-- T = Countdown Timer
 // [7] [6] [5]
 // -------------------------------------------------------------
-const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG_20260907_154053.png', x: 0,      y: 0,      w: 32, h: 32 }, // Lemon
-  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333,   y: 0,      w: 32, h: 32 }, // Guava
-  { id: 3, img: '/IMG_20260907_154232.png', x: 66.666,   y: 0,      w: 34, h: 34 }, // Mango
-  { id: 4, img: '/IMG_20260907_154250.png', x: 66.666,   y: 33.333,   w: 34, h: 34 }, // Orange
-  { id: 5, img: '/IMG_20260907_154323.png', x: 66.666,   y: 66.666,   w: 32.5, h: 32.5 }, // Grapesh
-  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333,   y: 66.666,   w: 32.5, h: 32.5 }, // Strawberry
-  { id: 7, img: '/IMG_20260907_154417.png', x: 0,      y: 66.666,   w: 32, h: 32 }, // Apple
-  { id: 8, img: '/IMG_20260907_154449.png', x: 0,      y: 33.333,   w: 32, h: 32 }, // Cherry
+ const FRUITS_CONFIG = [
+  { id: 1, img: '/IMG_20260907_154053.png', x: 2.5,  y: 0,      w: 32, h: 32 }, // Lemon (right shift)
+  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 0,      w: 32, h: 32 }, // Guava (same)
+  { id: 3, img: '/IMG_20260907_154232.png', x: 64.166, y: 0,      w: 35, h: 35 }, // Mango (left shift)
+  { id: 4, img: '/IMG_20260907_154250.png', x: 64.166, y: 33.333, w: 34, h: 34 }, // Orange (left shift)
+  { id: 5, img: '/IMG_20260907_154323.png', x: 64.166, y: 66.666, w: 32.5, h: 32.5 }, // Grapesh (left shift)
+  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 66.666, w: 32.5, h: 32.5 }, // Strawberry (same)
+  { id: 7, img: '/IMG_20260907_154417.png', x: 2.5,  y: 66.666, w: 32, h: 32 }, // Apple (right shift)
+  { id: 8, img: '/IMG_20260907_154449.png', x: 2.5,  y: 33.333, w: 32, h: 32 }, // Cherry (right shift)
 ];
 
 // WebGL Shader for real-time solid white background removal
