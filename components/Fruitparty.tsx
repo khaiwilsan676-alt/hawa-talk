@@ -262,11 +262,12 @@ function WebGLShaderImage({ src }: { src: string }) {
   return <canvas ref={canvasRef} className="w-full h-full object-contain" />;
 }
 
+// Auto Resize Wallet Text Logic
 const getDynamicTextSize = (val: number) => {
   const len = val.toString().length;
   if (len > 8) return 'text-[10px]';
   if (len > 6) return 'text-[12px]';
-  return 'text-base';
+  return 'text-base'; // Default
 };
 
 export default function Fruitparty({ onClose }: FruitpartyProps) {
@@ -279,19 +280,23 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
   const highlightRef = useRef<number | null>(null);
   
+  // Hand Pointer Index State
   const [handPointerIndex, setHandPointerIndex] = useState<number>(SPIN_PATH[0]);
 
   const [currentRound, setCurrentRound] = useState(358);
   const [winners, setWinners] = useState<string[]>([]);
   const [roundHistory, setRoundHistory] = useState<Array<{ round: number; winnerImg: string; won: boolean }>>([]);
   
+  // Coin Logic & States
   const [balance, setBalance] = useState(82927);
   const [totalWon, setTotalWon] = useState(0);
   const [bets, setBets] = useState<Record<number, number>>({});
   const stateRefs = useRef({ balance: 82927, totalWon: 0, bets: {} as Record<number, number> });
 
+  // Modals Toggle State
   const [showHistory, setShowHistory] = useState(false);
   const [showRules, setShowRules] = useState(false);
+
   const [activeBtn, setActiveBtn] = useState<number | null>(null);
 
   useEffect(() => {
@@ -306,6 +311,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     });
   }, []);
 
+  // Sync state into refs to avoid stale closure during interval evaluations
   useEffect(() => {
     stateRefs.current = { balance, totalWon, bets };
   }, [balance, totalWon, bets]);
@@ -334,11 +340,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             setPhase('spinning');
             return 15;
           } else {
+            // Winning Logic & Settlement
             if (highlightRef.current !== null) {
               const winnerItem = GRID_ITEMS[highlightRef.current];
               if (winnerItem && winnerItem.img) {
                 const winnerImg = winnerItem.img as string;
                 
+                // Real-time states from ref
                 const { balance: currentBalance, totalWon: currentTotalWon, bets: currentBets } = stateRefs.current;
                 
                 let earned = 0;
@@ -353,7 +361,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
                 setBalance(nextBalance);
                 setTotalWon(nextTotalWon);
-                setBets({});
+                setBets({}); // Round complete, clear all bets
 
                 setWinners(w => {
                   const newWinners = [...w, winnerImg].slice(-13);
@@ -365,6 +373,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     const nextRound = currentRound + 1;
                     setCurrentRound(nextRound);
 
+                    // Save Final Win State
                     saveGameStateToDB({
                       currentRound: nextRound,
                       winners: newWinners,
@@ -391,6 +400,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     return () => clearInterval(clock);
   }, [loading, phase, currentRound]);
 
+  // Hand pointer movement logic every 2 seconds during betting
   useEffect(() => {
     if (phase === 'betting' && !loading) {
       const pointerInterval = setInterval(() => {
@@ -404,6 +414,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [phase, loading]);
 
+  // Spinner highlight movement logic during spinning
   useEffect(() => {
     if (phase === 'spinning') {
       const interval = setInterval(() => {
@@ -425,6 +436,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [phase]);
 
+  // Handle User Bet Placements
   const handleBetClick = (fruitId: number) => {
     if (phase === 'betting' && activeBtn !== null) {
       const betValues = { 1: 1000, 2: 500000, 3: 5000000, 4: 50000000 };
@@ -458,6 +470,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       >
         {!loading && (
           <>
+            {/* TOP LEFT BUTTONS */}
             <div className="absolute top-[6.5px] left-7 z-30 flex items-center gap-0.5">
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
@@ -472,12 +485,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
+            {/* TOP HEADER MIDDLE */}
             <div className="absolute top-[8px] left-1/2 -translate-x-1/2 z-30">
               <span className="text-white font-bold text-base drop-shadow-md tracking-wide">
                 Round {currentRound}
               </span>
             </div>
 
+            {/* TOP RIGHT BUTTONS */}
             <div className="absolute top-[6.5px] right-7 z-30 flex items-center gap-0.5">
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
@@ -527,21 +542,17 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   >
                     {item.type === 'fruit' ? (
                       <>
-                        {/* MAIN CARD IMAGE (Wahi image green hogi direct) */}
-                       <img 
-  src="/file_00000000d0ec820ba666eab8bea30204.png" 
-  alt="Card Base" 
-  className={`absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300 ${
-    (phase === 'betting' && handPointerIndex === index) || (phase === 'spinning' && highlightIndex === index)
-      ? 'brightness-125 sepia-[0.5] hue-rotate-[130deg] saturate-200 drop-shadow-[0_0_8px_#22c55e]' 
-      : ''
-  }`} 
-/>
-
-                        {/* Spinning Phase Highlight Effect */}
-                        {highlightIndex === index && (
-                          <div className="absolute inset-[3px] bg-[#00FF00]/50 rounded-[8px] z-[5] mix-blend-color animate-pulse pointer-events-none border-[2px] border-green-400"></div>
-                        )}
+                        {/* CARD BASE IMAGE WITH GREEN BLEND OVERLAY (No external boxes/lights) */}
+                        <div className="absolute inset-0 z-0 overflow-hidden rounded-[8px]">
+                          <img 
+                            src="/file_00000000d0ec820ba666eab8bea30204.png" 
+                            alt="Card Base" 
+                            className="absolute inset-0 w-full h-full object-fill pointer-events-none"
+                          />
+                          {((phase === 'betting' && handPointerIndex === index) || (phase === 'spinning' && highlightIndex === index)) && (
+                            <div className="absolute inset-0 bg-green-500/70 mix-blend-color-burn transition-all duration-300 pointer-events-none"></div>
+                          )}
+                        </div>
 
                         {/* Betting Phase Hand Pointer */}
                         {phase === 'betting' && handPointerIndex === index && (
