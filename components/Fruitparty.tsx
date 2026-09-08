@@ -17,11 +17,11 @@ const FRUITS_CONFIG = [
   { id: 1, img: '/IMG_20260907_154053.png', x: 2.5,  y: 0,      w: 32, h: 32 }, // Lemon (right shift)
   { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 0,      w: 32, h: 32 }, // Guava (same)
   { id: 3, img: '/IMG_20260907_154232.png', x: 64.166, y: -1,    w: 35, h: 35 }, // Mango (left shift + 0.5 aur upar)
-  { id: 4, img: '/IMG_20260907_154250.png', x: 64.166, y: 30.333, w: 34.5, h: 34.5}, // Orange (left shift + 1 gap aur upar)
+  { id: 4, img: '/IMG_20260907_154250.png', x: 64.166, y: 30.333, w: 34.5, h: 35}, // Orange (left shift + 1 gap aur upar)
   { id: 5, img: '/IMG_20260907_154323.png', x: 64.166, y: 62.666, w: 32.5, h: 32.5 }, // Grapesh (left shift + 2 gap aur upar)
   { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 62.666, w: 32.5, h: 32.5 }, // Strawberry (2 gap aur upar)
   { id: 7, img: '/IMG_20260907_154417.png', x: 2.5,  y: 62.666, w: 32, h: 32 }, // Apple (right shift + 2 gap aur upar)
-  { id: 8, img: '/IMG_20260907_154449.png', x: 2.5,  y: 30.333, w: 32, h: 32 }, // Cherry (right shift + 1 gap aur upar)
+  { id: 8, img: '/IMG_20260907_154449.png', x: 2.5,  y: 30.333, w: 32, h: 33 }, // Cherry (right shift + 1 gap aur upar)
 ];
 // WebGL Shader for real-time solid white background removal
 function WebGLShaderImage({ src }: { src: string }) {
@@ -253,7 +253,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <div className="relative z-10 w-full flex flex-col items-center -mt-27">
               
               {/* Fruit Grid Container - GAP 0 ke liye exact 3x3 grid */}
-              <div className="relative w-[240px] h-[240px]">
+              <div className="relative w-[242px] h-[242px]">
                 {/* 8 Fruit Images with GAP 0 */}
                 {FRUITS_CONFIG.map((fruit) => (
                   <div
