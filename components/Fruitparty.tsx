@@ -228,7 +228,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="relative z-10 w-full flex flex-col items-center -mt-31">
+            <div className="relative z-10 w-full flex flex-col items-center -mt-34">
               
               {/* === STRICT SQUARE CSS GRID === */}
               {/* gap-0 taaki paas mein rahe */}
@@ -270,7 +270,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {/* ============================== */}
 
               {/* Space and 2 New Images with mt-0.5 */}
-              <div className="flex flex-row justify-center items-center gap-1 mt-0.5">
+              <div className="flex flex-row justify-center items-center gap-1.5 mt-0.5">
                 <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-22 h-auto object-contain" />
                 <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-22 h-auto object-contain" />
               </div>
