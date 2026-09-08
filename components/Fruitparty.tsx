@@ -16,7 +16,7 @@ const GRID_ITEMS = [
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 33, imgH: 32 },  // Apple
   { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 36, imgH: 36 },  // Mango
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 33, imgH: 33 },  // Cherry
-  { id: 9, type: 'timer', move: 'z-20 scale-[1.13]' },                                                                                        // CENTER (Timer)
+  { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 33, imgH: 33},// Strawberry
   { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 33, imgH: 32 },  // Guava
   { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 35, imgH: 35 },  // Orange
@@ -228,13 +228,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="relative z-10 w-full flex flex-col items-center -mt-29">
+            <div className="relative z-10 w-full flex flex-col items-center -mt-31">
               
               {/* === STRICT SQUARE CSS GRID === */}
               {/* gap-0 taaki paas mein rahe */}
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
-                  <div key={item.id || index} className={`relative w-[78px] h-[90px] flex items-center justify-center transition-transform ${item.move || ''}`}>
+                  <div key={item.id || index} className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''}`}>
                     
                     {item.type === 'fruit' ? (
                       <>
