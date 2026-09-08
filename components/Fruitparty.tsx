@@ -12,21 +12,69 @@ interface FruitpartyProps {
 // Tum in values ko badal kar kisi bhi particular fruit ka size adjust kar sakte ho!
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 33, imgH: 33 },  // Lemon
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 33, imgH: 32 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 36, imgH: 36 },  // Mango
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 33, imgH: 33 },  // Cherry
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 36, imgH: 36 },  // Lemon
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 36, imgH: 36 },  // Apple
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 38, imgH: 38 },  // Mango
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 36, imgH: 36 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 33, imgH: 33},// Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 33, imgH: 32 },  // Guava
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 35, imgH: 35 },  // Orange
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 33, imgH: 33 },// Grapes
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 36, imgH: 36 },// Strawberry
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 36, imgH: 36 },  // Guava
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 37, imgH: 37 },  // Orange
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 36, imgH: 36 },// Grapes
 ];
 
 // Clockwise path for Spinner (Perimeter cards only, skipping center timer at index 4)
 const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3]; 
 
+// ==========================================
+// IndexedDB Logic for Winners History
+// ==========================================
+const DB_NAME = 'FruitPartyDB';
+const STORE_NAME = 'GameState';
+
+function initDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') return reject("No window");
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = (e: any) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveWinnersToDB(winners: string[]) {
+  try {
+    const db = await initDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(winners, 'winners');
+  } catch (err) {
+    console.error("IndexedDB Save Error:", err);
+  }
+}
+
+async function loadWinnersFromDB(): Promise<string[]> {
+  try {
+    const db = await initDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const request = tx.objectStore(STORE_NAME).get('winners');
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error("IndexedDB Load Error:", err);
+    return [];
+  }
+}
+
+// ==========================================
 // WebGL Shader for real-time solid white background removal
+// ==========================================
 function WebGLShaderImage({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -133,7 +181,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   
-  // Naye States: Phase, Countdown, aur Spinner
+  // States: Phase, Countdown, aur Spinner
   const [phase, setPhase] = useState<'betting' | 'spinning'>('betting');
   const [countdown, setCountdown] = useState(30);
   
@@ -145,6 +193,15 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   
   // Track karne ke liye konsa button active (clicked) hai
   const [activeBtn, setActiveBtn] = useState<number | null>(null);
+
+  // Load IndexedDB History on Mount
+  useEffect(() => {
+    loadWinnersFromDB().then(savedWinners => {
+      if (savedWinners && savedWinners.length > 0) {
+        setWinners(savedWinners);
+      }
+    });
+  }, []);
 
   // Loading progression effect
   useEffect(() => {
@@ -176,8 +233,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             if (highlightRef.current !== null) {
               const winnerItem = GRID_ITEMS[highlightRef.current];
               if (winnerItem && winnerItem.img) {
-                // Max 5 winners dikhane ke liye slice use kiya hai
-                setWinners(w => [...w, winnerItem.img as string].slice(-5)); 
+                setWinners(w => {
+                  // 10 winners ki history rakhenge (UI overfill na ho isliye)
+                  const newWinners = [...w, winnerItem.img as string].slice(-10);
+                  saveWinnersToDB(newWinners); // IndexedDB mein save kiya
+                  return newWinners;
+                });
               }
             }
             setPhase('betting');
@@ -295,7 +356,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         {/* Base Card Background */}
                         <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" />
                         
-                        {/* 🔥 Green Highlight Overlay (Yeh fruit ke peeche rahega, sirf card green hoga) */}
+                        {/* 🔥 Green Highlight Overlay */}
                         {highlightIndex === index && (
                           <div className="absolute inset-[3px] bg-[#00FF00]/50 rounded-[8px] z-[5] mix-blend-color animate-pulse pointer-events-none border-[2px] border-green-400"></div>
                         )}
@@ -331,9 +392,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {/* ============================== */}
 
               {/* Space and 2 New Images */}
-              <div className="flex flex-row justify-center items-center gap-1.5 mt-0.5">
-                <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-22 h-auto object-contain" />
-                <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-22 h-auto object-contain" />
+              <div className="flex flex-row justify-center items-center gap-2 mt-0.5">
+                <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-23 h-auto object-contain" />
+                <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-23 h-auto object-contain" />
               </div>
             </div>
 
@@ -401,18 +462,18 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            {/* 🔥 Winners History Dikhane Ki Jagah (Bottom se 1 gap upar, Left side mein) */}
-            <div className="absolute bottom-[11vh] left-5 z-40 flex flex-row flex-wrap gap-2 max-w-[45vw]">
+            {/* 🔥 Winners History Dikhane Ki Jagah (Ekdam Bottom Par) */}
+            <div className="absolute bottom-2 left-5 z-40 flex flex-row flex-wrap gap-2 max-w-[90vw]">
               {winners.map((imgUrl, i) => (
                 <div key={i} className="animate-fade-in-up">
-                  <img src={imgUrl} alt="Winner" className="w-7 h-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                  <img src={imgUrl} alt="Winner" className="w-6 h-6 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
                 </div>
               ))}
             </div>
 
             {/* Left Side: 82927 (Bottom 4vh) */}
-            <div className="absolute bottom-[4vh] left-5 z-30 flex items-center gap-2">
-              <div className="w-10 h-10">
+            <div className="absolute bottom-[5vh] left-5 z-30 flex items-center gap-1.5">
+              <div className="w-6 h-6">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
               <span className="text-white font-bold text-base drop-shadow-md">
@@ -420,9 +481,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </span>
             </div>
 
-            {/* Right Side: 30180 (Bottom 4vh) */}
-            <div className="absolute bottom-[4vh] right-5 z-30 flex items-center gap-2 flex-row-reverse">
-              <div className="w-10 h-10">
+            {/* Right Side: 30180 (Bottom 4vh) - Image on Left, Value on Right */}
+            <div className="absolute bottom-[5vh] right-5 z-30 flex items-center gap-1.5">
+              <div className="w-6 h-6">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
               <span className="text-white font-bold text-base drop-shadow-md">
