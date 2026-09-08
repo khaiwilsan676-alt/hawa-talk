@@ -529,13 +529,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <div className="relative z-10 w-full flex flex-col items-center -mt-33">
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => (
-                  <div 
-                    key={item.id || index} 
-                    onClick={() => {
-                      if (item.type === 'fruit') handleBetClick(item.id);
-                    }}
-                    className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''}`}
-                  >
+                 <div 
+  key={item.id || index} 
+  onClick={() => {
+    if (item.type === 'fruit') handleBetClick(item.id);
+  }}
+  className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${phase === 'betting' && handPointerIndex === index ? '!z-[999]' : ''}`}
+>
                     {item.type === 'fruit' ? (
                       <>
                         <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" />
@@ -651,7 +651,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* Right Total Won Wallet */}
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '35px' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '55px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
