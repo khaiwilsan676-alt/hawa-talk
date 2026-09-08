@@ -12,7 +12,7 @@ interface FruitpartyProps {
 const GRID_ITEMS = [
   { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 36, imgH: 36 },  // Lemon
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 36, imgH: 36 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 41, imgH: 41 },  // Mango
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 43, imgH: 43 },  // Mango
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 36, imgH: 36 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 36, imgH: 36 },// Strawberry
@@ -21,7 +21,7 @@ const GRID_ITEMS = [
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 36, imgH: 36 },// Grapes
 ];
 
-// Clockwise path for Spinner (Perimeter cards only, skipping center timer at index 4)
+// Clockwise path for Spinner
 const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3]; 
 
 // ==========================================
@@ -355,17 +355,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <>
             {/* TOP LEFT BUTTONS */}
             <div className="absolute top-[6.5px] left-7 z-30 flex items-center gap-0.5">
-              {/* History Button */}
-              <button 
-                onClick={() => setShowHistory(true)}
-                className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
-              >
+              {/* Original Speaker Icon */}
+              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
-                  <circle cx="12" cy="12" r="9" fill="none" strokeWidth="2" />
-                  <polyline points="12 6 12 12 16 14" fill="none" strokeWidth="2" />
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                 </svg>
               </button>
-              {/* Rules Button */}
+              {/* Question Mark Icon (Opens Rules) */}
               <button 
                 onClick={() => setShowRules(true)}
                 className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
@@ -383,16 +379,22 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
             {/* TOP RIGHT BUTTONS */}
             <div className="absolute top-[6.5px] right-7 z-30 flex items-center gap-0.5">
+              {/* List Icon */}
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
-              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+              {/* Original Clock Icon (Now Opens History) */}
+              <button 
+                onClick={() => setShowHistory(true)}
+                className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
+              >
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810]">
                   <path fillRule="evenodd" clipRule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12.5 7V12.25L17 14.92L16.25 16.15L11 13V7H12.5Z" />
                 </svg>
               </button>
+              {/* Close (Cross) Icon */}
               <button onClick={onClose} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -465,7 +467,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 ))}
               </div>
 
-              <div className="flex flex-row justify-center items-center gap-1 mt-1.9">
+              <div className="flex flex-row justify-center items-center gap-1 mt-1.4">
                 <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-23 h-auto object-contain" />
                 <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-23 h-auto object-contain" />
               </div>
@@ -505,14 +507,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ left: '52px' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ left: '54px' }}>
               <div className="w-5 h-5">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
               <span className="text-white font-bold text-base drop-shadow-md">82927</span>
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5" style={{ right: '52px' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-1.5" style={{ right: '54px' }}>
               <div className="w-5 h-5">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
@@ -528,7 +530,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       {/* ========================================== */}
       {showHistory && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowHistory(false)} />
+          {/* Transparent Backdrop so original background is visible */}
+          <div className="absolute inset-0 bg-transparent" onClick={() => setShowHistory(false)} />
           <div className="relative bg-black w-full max-w-md h-[40vh] rounded-t-md shadow-2xl flex flex-col overflow-hidden text-white animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3">
               <button onClick={() => setShowHistory(false)} className="w-6 h-6 flex items-center justify-center active:scale-95 transition-all">
@@ -550,11 +553,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <span className="text-sm font-bold text-gray-200">Round {item.round}</span>
                     <div className="flex items-center gap-3">
                       <img src={item.winnerImg} alt="Fruit" className="w-6 h-6 object-contain drop-shadow-sm" />
-                      {item.userBetId !== null ? (
-                        item.won ? <span className="text-green-400 font-black text-lg leading-none">✔️</span> : <span className="text-red-500 font-black text-lg leading-none">❌</span>
-                      ) : (
-                        <span className="text-gray-500 text-xs font-semibold">-</span>
-                      )}
+                    
                     </div>
                   </div>
                 ))
@@ -569,9 +568,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       {/* ========================================== */}
       {showRules && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowRules(false)} />
+          {/* Transparent Backdrop so original background is visible */}
+          <div className="absolute inset-0 bg-transparent" onClick={() => setShowRules(false)} />
           <div className="relative bg-black w-full max-w-md h-[40vh] rounded-t-md shadow-2xl flex flex-col overflow-hidden text-white animate-slide-up" onClick={(e) => e.stopPropagation()}>
-            {/* Header: Left arrow back icon, Middle Rules heading, No line */}
             <div className="flex items-center justify-between px-4 py-3">
               <button onClick={() => setShowRules(false)} className="w-6 h-6 flex items-center justify-center active:scale-95 transition-all">
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
@@ -581,12 +580,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <span className="font-bold text-base tracking-wide">Rules</span>
               <div className="w-6" /> 
             </div>
-            {/* Rules Content */}
             <div className="flex-1 overflow-y-auto px-6 py-2 pb-6">
               <ul className="list-disc space-y-3 text-sm text-gray-200 font-medium">
                 <li>You can place bet by Clicking on the Red button and Place the bet On the Fruit Card</li>
                 <li>10,15,25,45 give you hight coins</li>
-                <li>You will. Receive Coins according to ( Your Bet × Multipler)</li>
+                <li>You will Receive Coins according to ( Your Bet × Multipler)</li>
                 <li>Left mix Card Give you all 5 times Coins ( Your Bet × all ×5 Times )</li>
                 <li>Right Mix card Give you all High Cards ( Your Bet × 10,15,25,45 Times)</li>
               </ul>
