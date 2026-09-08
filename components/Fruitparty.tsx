@@ -528,15 +528,15 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     {item.type === 'fruit' ? (
                       <>
                         {/* MAIN CARD IMAGE (Wahi image green hogi direct) */}
-                        <img 
-                          src="/file_00000000d0ec820ba666eab8bea30204.png" 
-                          alt="Card Base" 
-                          className={`absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300 ${
-                            phase === 'betting' && handPointerIndex === index 
-                              ? 'brightness-125 sepia-[0.5] hue-rotate-[70deg] saturate-200 drop-shadow-[0_0_8px_#22c55e]' 
-                              : ''
-                          }`} 
-                        />
+                       <img 
+  src="/file_00000000d0ec820ba666eab8bea30204.png" 
+  alt="Card Base" 
+  className={`absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300 ${
+    (phase === 'betting' && handPointerIndex === index) || (phase === 'spinning' && highlightIndex === index)
+      ? 'brightness-125 sepia-[0.5] hue-rotate-[130deg] saturate-200 drop-shadow-[0_0_8px_#22c55e]' 
+      : ''
+  }`} 
+/>
 
                         {/* Spinning Phase Highlight Effect */}
                         {highlightIndex === index && (
