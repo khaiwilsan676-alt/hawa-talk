@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { getMessages, getUser } from '../src/lib/googleSheets';
 
@@ -256,7 +255,6 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
         }}
       >
         <h1 className="text-3xl font-bold text-gray-800">Message</h1>
-        <CheckCircle size={28} className="text-green-500" />
       </div>
 
       {/* Main content: Chats only */}
@@ -328,4 +326,4 @@ export default function MessagePage({ onChatOpen, onJoinRoom, sharedRoomData }: 
       )}
     </div>
   );
-              }
+        }
