@@ -7,21 +7,21 @@ interface FruitpartyProps {
 }
 
 // -------------------------------------------------------------
-// Fruit Positions & Sizes - GAP 0, sabhi images exact grid mein
+// Fruit Positions & Sizes - Exact 32x32 for all to keep sizes SAME
 // Layout:
 // [1] [2] [3]
 // [8] [T] [4]  <-- T = Countdown Timer
 // [7] [6] [5]
 // -------------------------------------------------------------
 const FRUITS_CONFIG = [
-  { id: 1, img: '/IMG_20260907_154053.png', x: 2.5,  y: 1,      w: 32, h: 32 }, // Lemon
-  { id: 2, img: '/IMG_20260907_154205.png', x: 33.333, y: 1,      w: 32, h: 32 }, // Guava
-  { id: 3, img: '/IMG_20260907_154232.png', x: 64.166, y: 0,    w: 35, h: 35 }, // Mango
-  { id: 4, img: '/IMG_20260907_154250.png', x: 64.166, y: 30.433, w: 34.5, h: 35}, // Orange
-  { id: 5, img: '/IMG_20260907_154323.png', x: 64.166, y: 62.666, w: 32.5, h: 32.5 }, // Grapesh
-  { id: 6, img: '/IMG_20260907_154348.png', x: 33.333, y: 62.666, w: 32.5, h: 32.5 }, // Strawberry
-  { id: 7, img: '/IMG_20260907_154417.png', x: 2.6,  y: 62.666, w: 32, h: 32 }, // Apple
-  { id: 8, img: '/IMG_20260907_154449.png', x: 2.7,  y: 30.533, w: 32, h: 33 }, // Cherry
+  { id: 1, img: '/IMG_20260908_192143.png', multi: '×5',  x: 2.5,    y: 1,      w: 32, h: 32 }, // Lemon
+  { id: 2, img: '/IMG_20260908_191930.png', multi: '×25', x: 33.333, y: 1,      w: 32, h: 32 }, // Guava
+  { id: 3, img: '/IMG_20260908_191941.png', multi: '×5',  x: 64.166, y: 1,      w: 32, h: 32 }, // Mango
+  { id: 4, img: '/IMG_20260908_192203.png', multi: '×5',  x: 64.166, y: 31.833, w: 32, h: 32 }, // Orange
+  { id: 5, img: '/IMG_20260908_192120.png', multi: '×5',  x: 64.166, y: 62.666, w: 32, h: 32 }, // Grapesh
+  { id: 6, img: '/IMG_20260908_191906.png', multi: '×45', x: 33.333, y: 62.666, w: 32, h: 32 }, // Strawberry
+  { id: 7, img: '/IMG_20260908_192050.png', multi: '×10', x: 2.5,    y: 62.666, w: 32, h: 32 }, // Apple
+  { id: 8, img: '/IMG_20260908_192013.png', multi: '×15', x: 2.5,    y: 31.833, w: 32, h: 32 }, // Cherry
 ];
 
 // WebGL Shader for real-time solid white background removal
@@ -233,16 +233,26 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <div className="relative w-[242px] h-[242px]">
                 {FRUITS_CONFIG.map((fruit) => (
                   <div key={fruit.id} style={{ position: 'absolute', left: `${fruit.x}%`, top: `${fruit.y}%`, width: `${fruit.w}%`, height: `${fruit.h}%`, padding: '0px' }}>
-                    <img src={fruit.img} alt="Fruit" className="w-full h-full object-contain rounded-none block pointer-events-none" />
+                    {/* Base Card Background */}
+                    <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0" />
+                    
+                    {/* Fruit and Multiplier theek niche with gap-1 */}
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1">
+                      <img src={fruit.img} alt="Fruit" className="w-[50%] h-[50%] object-contain pointer-events-none drop-shadow-md" />
+                      <span className="text-white text-[12px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none">{fruit.multi}</span>
+                    </div>
                   </div>
                 ))}
-                <div style={{ position: 'absolute', left: '33.333%', top: '33.333%', width: '33.333%', height: '33.333%' }} className="flex items-center justify-center pointer-events-none">
-                  <span className="text-amber-400 font-extrabold text-2xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">{countdown}s</span>
+
+                {/* Countdown Timer Center Card Background (perfect 32x32 size for matching grid) */}
+                <div style={{ position: 'absolute', left: '33.333%', top: '31.833%', width: '32%', height: '32%' }} className="flex items-center justify-center pointer-events-none relative">
+                  <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" alt="Timer Base" className="absolute inset-0 w-full h-full object-contain z-0" />
+                  <span className="relative z-10 text-amber-400 font-extrabold text-2xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">{countdown}s</span>
                 </div>
               </div>
 
               {/* Space and 2 New Images (Same row, gap 2, no mt) */}
-              <div className="flex flex-row justify-center items-center gap-1">
+              <div className="flex flex-row justify-center items-center gap-1 mt-1">
                 <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-22 h-auto object-contain" />
                 <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-22 h-auto object-contain" />
               </div>
