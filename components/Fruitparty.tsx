@@ -21,7 +21,7 @@ const GRID_ITEMS = [
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 41, imgH: 41 },// Grapes
 ];
 
-// Clockwise path for Spinner
+// Clockwise path for Spinner & Pointer
 const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3]; 
 
 // ==========================================
@@ -237,6 +237,14 @@ function WebGLShaderImage({ src }: { src: string }) {
   return <canvas ref={canvasRef} className="w-full h-full object-contain" />;
 }
 
+// Auto Resize Wallet Text Logic
+const getDynamicTextSize = (val: number) => {
+  const len = val.toString().length;
+  if (len > 8) return 'text-[10px]';
+  if (len > 6) return 'text-[12px]';
+  return 'text-base'; // Default
+};
+
 export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -247,6 +255,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
   const highlightRef = useRef<number | null>(null);
   
+  // Hand Pointer Index State
+  const [handPointerIndex, setHandPointerIndex] = useState<number>(SPIN_PATH[0]);
+
   const [currentRound, setCurrentRound] = useState(358);
   const [winners, setWinners] = useState<string[]>([]);
   const [roundHistory, setRoundHistory] = useState<Array<{ round: number; winnerImg: string; won: boolean }>>([]);
@@ -364,6 +375,21 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     return () => clearInterval(clock);
   }, [loading, phase, currentRound]);
 
+  // Hand pointer movement logic every 2 seconds during betting
+  useEffect(() => {
+    if (phase === 'betting' && !loading) {
+      const pointerInterval = setInterval(() => {
+        setHandPointerIndex((prev) => {
+          const currentPos = SPIN_PATH.indexOf(prev);
+          const nextPos = (currentPos + 1) % SPIN_PATH.length;
+          return SPIN_PATH[nextPos];
+        });
+      }, 2000);
+      return () => clearInterval(pointerInterval);
+    }
+  }, [phase, loading]);
+
+  // Spinner highlight movement logic during spinning
   useEffect(() => {
     if (phase === 'spinning') {
       const interval = setInterval(() => {
@@ -493,9 +519,24 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       <>
                         <img src="/file_00000000d0ec820ba666eab8bea30204.png" alt="Card Base" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" />
                         
-                        {/* Spinner Highlight Border Effect */}
+                        {/* Spinning Phase Highlight Effect */}
                         {highlightIndex === index && (
                           <div className="absolute inset-[3px] bg-[#00FF00]/50 rounded-[8px] z-[5] mix-blend-color animate-pulse pointer-events-none border-[2px] border-green-400"></div>
+                        )}
+
+                        {/* Betting Phase Hand Pointer & Green Card Effect */}
+                        {phase === 'betting' && handPointerIndex === index && (
+                          <>
+                            {/* Card green ho jayega */}
+                            <div className="absolute inset-[3px] bg-green-500/40 rounded-[8px] z-[5] pointer-events-none border-[2px] border-green-500 transition-all duration-300"></div>
+                            
+                            {/* Hand Pointer rotated left */}
+                            <img 
+                              src="/file_000000000f0c820b95490c9d927692d9.png" 
+                              alt="Pointer" 
+                              className="absolute -bottom-2 -right-1 w-9 h-9 z-50 object-contain pointer-events-none -rotate-[25deg] drop-shadow-lg transition-all duration-300"
+                            />
+                          </>
                         )}
 
                         {/* Image Layer */}
@@ -508,9 +549,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                           />
                         </div>
 
-                        {/* Bottom Blue-Pink Transparent Patti For Bet value */}
+                        {/* Bottom Blue-Pink Transparent Patti For Bet value - THORA UPAR SHIFT KIYA (bottom-[22px]) */}
                         {(bets[item.id] || 0) > 0 && (
-                          <div className="absolute bottom-[16px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
+                          <div className="absolute bottom-[19px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
                             <div className="w-[10px] h-[10px] flex-shrink-0">
                               <WebGLShaderImage src="/1786855398290.png" />
                             </div>
@@ -578,20 +619,24 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
-            {/* Left Balance Wallet - FIXED width to prevent shifting */}
+            {/* Left Balance Wallet - AUTO RESIZE FONT LOGIC ADDED */}
             <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '55px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
-              <span className="text-white font-bold text-base drop-shadow-md text-left flex-1 truncate">{balance}</span>
+              <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate ${getDynamicTextSize(balance)}`}>
+                {balance}
+              </span>
             </div>
 
-            {/* Right Total Won Wallet - FIXED width to prevent shifting */}
+            {/* Right Total Won Wallet - AUTO RESIZE FONT LOGIC ADDED */}
             <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '35px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
-              <span className="text-white font-bold text-base drop-shadow-md text-left flex-1 truncate">{totalWon}</span>
+              <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate ${getDynamicTextSize(totalWon)}`}>
+                {totalWon}
+              </span>
             </div>
 
           </div>
@@ -682,4 +727,3 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
-
