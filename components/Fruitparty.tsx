@@ -449,7 +449,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   onClick={() => {
                     if (item.type === 'fruit') handleBetClick(item.id);
                   }}
-                  className={`relative w-[78px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${(phase === 'betting' && handPointerIndex === index) || highlightIndex === index ? '!z-[999]' : ''}`}
+                  className={`relative w-[84px] h-[93px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${(phase === 'betting' && handPointerIndex === index) || highlightIndex === index ? '!z-[999]' : ''}`}
                 >
                     {item.type === 'fruit' ? (
                       <>
@@ -510,7 +510,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* 2-ROW IMAGE ALAG KAR DI GAYI HAI (ABSOLUTE POSITION PE)  */}
             {/* ======================================================== */}
             <div 
-              className="absolute bottom-[19vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" 
+              className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" 
               style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}
             >
               <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-23 h-auto object-contain" />
