@@ -233,7 +233,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <div className="relative w-[242px] h-[242px]">
                 {FRUITS_CONFIG.map((fruit) => (
                   <div key={fruit.id} style={{ position: 'absolute', left: `${fruit.x}%`, top: `${fruit.y}%`, width: `${fruit.w}%`, height: `${fruit.h}%`, padding: '0px' }}>
-                    <img src={fruit.img} alt="Fruit" className="w-full h-full object-contain rounded-none block" />
+                    <img src={fruit.img} alt="Fruit" className="w-full h-full object-contain rounded-none block pointer-events-none" />
                   </div>
                 ))}
                 <div style={{ position: 'absolute', left: '33.333%', top: '33.333%', width: '33.333%', height: '33.333%' }} className="flex items-center justify-center pointer-events-none">
@@ -241,10 +241,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 </div>
               </div>
 
-              {/* Space 3vh and 2 New Images (Same row, gap 1) - Re-added */}
-              <div className="flex flex-row justify-center items-center gap-1 mt-[1vh]">
-                <img src="/IMG_20260907_154135.png" alt="Option 1" className="w-18 h-auto object-contain" />
-                <img src="/IMG_20260907_154118.png" alt="Option 2" className="w-18 h-auto object-contain" />
+              {/* Space and 2 New Images (Same row, gap 2, no mt) */}
+              <div className="flex flex-row justify-center items-center gap-2">
+                <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-18 h-auto object-contain" />
+                <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-18 h-auto object-contain" />
               </div>
             </div>
 
@@ -256,14 +256,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <img 
                   src="/file_00000000d9b08211b0304c61b802348b.png" 
                   alt="Red Button 1" 
-                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 1 ? 'top-[33px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[26px] z-10'}`} 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 1 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} 
                 />
                 <img 
                   src="/file_000000003d24821182882f8ca412d2b6.png" 
                   alt="Border 1" 
-                  className={`absolute top-[31px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 1 ? 'z-10' : 'z-0'}`} 
+                  className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 1 ? 'z-10' : 'z-0'}`} 
                 />
-                <span className="absolute bottom-0 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50K</span>
+                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50K</span>
               </button>
 
               {/* Button 2 - 500K */}
@@ -271,14 +271,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <img 
                   src="/file_00000000d9b08211b0304c61b802348b.png" 
                   alt="Red Button 2" 
-                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 2 ? 'top-[33px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[26px] z-10'}`} 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 2 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} 
                 />
                 <img 
                   src="/file_000000003d24821182882f8ca412d2b6.png" 
                   alt="Border 2" 
-                  className={`absolute top-[31px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 2 ? 'z-10' : 'z-0'}`} 
+                  className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 2 ? 'z-10' : 'z-0'}`} 
                 />
-                <span className="absolute bottom-0 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">500K</span>
+                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">500K</span>
               </button>
 
               {/* Button 3 - 5M */}
@@ -286,14 +286,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <img 
                   src="/file_00000000d9b08211b0304c61b802348b.png" 
                   alt="Red Button 3" 
-                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 3 ? 'top-[33px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[26px] z-10'}`} 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 3 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} 
                 />
                 <img 
                   src="/file_000000003d24821182882f8ca412d2b6.png" 
                   alt="Border 3" 
-                  className={`absolute top-[31px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 3 ? 'z-10' : 'z-0'}`} 
+                  className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 3 ? 'z-10' : 'z-0'}`} 
                 />
-                <span className="absolute bottom-0 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">5M</span>
+                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">5M</span>
               </button>
 
               {/* Button 4 - 50M */}
@@ -301,14 +301,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <img 
                   src="/file_00000000d9b08211b0304c61b802348b.png" 
                   alt="Red Button 4" 
-                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 4 ? 'top-[33px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[26px] z-10'}`} 
+                  className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 4 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} 
                 />
                 <img 
                   src="/file_000000003d24821182882f8ca412d2b6.png" 
                   alt="Border 4" 
-                  className={`absolute top-[31px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 4 ? 'z-10' : 'z-0'}`} 
+                  className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 4 ? 'z-10' : 'z-0'}`} 
                 />
-                <span className="absolute bottom-0 text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50M</span>
+                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50M</span>
               </button>
 
             </div>
