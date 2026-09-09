@@ -486,7 +486,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       )}
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
                         {/* CHANGED MANGO SIZE EXACTLY W-[80px] H-[80px] AS REQUESTED */}
-                        <img src={item.img} className={`object-contain pointer-events-none drop-shadow-md mb-2 ${item.id === 3 ? 'w-[80px] h-[80px]' : 'w-[55%] h-[55%]'}`} />
+                        <img src={item.img} className={`object-contain pointer-events-none drop-shadow-md mb-2 ${item.id === 3 ? 'w-[70px] h-[70px]' : 'w-[55%] h-[55%]'}`} />
                       </div>
                       {(bets[item.id] || 0) > 0 && (
                         <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2 w-[85%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
