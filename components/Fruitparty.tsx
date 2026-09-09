@@ -8,40 +8,30 @@ interface FruitpartyProps {
 
 // -------------------------------------------------------------
 // Perfect 3x3 Grid Layout (Strict Fixed Sizes for Cards) 
-// (Aapke original Grapes & Orange swap kar diye hain)
+// (Gap of 35px for Top & Bottom Row + Grapes & Orange swapped)
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 58, imgH: 58 },  // Mango
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[35px]', imgW: 50, imgH: 50 },  // Lemon
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[35px]',                   imgW: 50, imgH: 50 },  // Apple
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[35px]', imgW: 58, imgH: 58 },  // Mango
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },// Grapes (Swapped with Orange)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Orange (Swapped with Grapes)
-  
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[35px]', imgW: 50, imgH: 50 },  // Guava
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[35px]',                   imgW: 50, imgH: 50 },// Grapes (Swapped in place of Orange)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[35px]', imgW: 55, imgH: 55 },  // Orange (Swapped in place of Grapes)
 ];
 
-// Clockwise path for Spinner & Pointer
+// Pure Clockwise Path for the 3x3 grid
 const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3]; 
 
 // ==========================================
-// IndexedDB Logic for Global Rounds & History
+// IndexedDB Logic
 // ==========================================
 const DB_NAME = 'FruitPartyDB';
 const STORE_NAME = 'GameState';
 
-interface GameStateData {
-  currentRound: number;
-  winners: string[];
-  roundHistory: Array<{ round: number; winnerImg: string; won: boolean }>;
-  lastResetTime: number;
-  balance: number;
-  totalWon: number;
-}
-
-function initDB(): Promise<IDBDatabase> {
+async function initDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined') return reject("No window");
     const request = indexedDB.open(DB_NAME, 2);
@@ -56,84 +46,8 @@ function initDB(): Promise<IDBDatabase> {
   });
 }
 
-async function saveGameStateToDB(state: GameStateData) {
-  try {
-    const db = await initDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    store.put(state.currentRound, 'currentRound');
-    store.put(state.winners, 'winners');
-    store.put(state.roundHistory, 'roundHistory');
-    store.put(state.lastResetTime, 'lastResetTime');
-    store.put(state.balance, 'balance');
-    store.put(state.totalWon, 'totalWon');
-  } catch (err) {
-    console.error("IndexedDB Save Error:", err);
-  }
-}
-
-async function loadGameStateFromDB(): Promise<GameStateData> {
-  try {
-    const db = await initDB();
-    return new Promise((resolve) => {
-      const tx = db.transaction(STORE_NAME, 'readonly');
-      const store = tx.objectStore(STORE_NAME);
-      
-      const reqRound = store.get('currentRound');
-      const reqWinners = store.get('winners');
-      const reqHistory = store.get('roundHistory');
-      const reqReset = store.get('lastResetTime');
-      const reqBalance = store.get('balance');
-      const reqTotalWon = store.get('totalWon');
-
-      tx.oncomplete = () => {
-        const now = Date.now();
-        let lastReset = reqReset.result || 0;
-        const savedBalance = reqBalance.result !== undefined ? reqBalance.result : 82927;
-        const savedTotalWon = reqTotalWon.result !== undefined ? reqTotalWon.result : 0;
-
-        const currentDate = new Date(now);
-        const resetToday = new Date(currentDate);
-        resetToday.setHours(5, 30, 0, 0);
-        
-        let cutoff = resetToday.getTime();
-        if (now < cutoff) {
-          cutoff -= 24 * 60 * 60 * 1000;
-        }
-
-        if (lastReset < cutoff) {
-          const freshState: GameStateData = {
-            currentRound: 358,
-            winners: [],
-            roundHistory: [],
-            lastResetTime: now,
-            balance: savedBalance,
-            totalWon: 0 
-          };
-          saveGameStateToDB(freshState);
-          resolve(freshState);
-        } else {
-          resolve({
-            currentRound: reqRound.result || 358,
-            winners: reqWinners.result || [],
-            roundHistory: reqHistory.result || [],
-            lastResetTime: lastReset || now,
-            balance: savedBalance,
-            totalWon: savedTotalWon
-          });
-        }
-      };
-      tx.onerror = () => {
-        resolve({ currentRound: 358, winners: [], roundHistory: [], lastResetTime: Date.now(), balance: 82927, totalWon: 0 });
-      };
-    });
-  } catch (err) {
-    return { currentRound: 358, winners: [], roundHistory: [], lastResetTime: Date.now(), balance: 82927, totalWon: 0 };
-  }
-}
-
 // ==========================================
-// FIX: WebGL Crash hata kar Canvas 2D (Ye kabhi crash nahi hoga)
+// Canvas 2D for Images
 // ==========================================
 function WebGLShaderImage({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -152,7 +66,6 @@ function WebGLShaderImage({ src }: { src: string }) {
       canvas.width = image.width;
       canvas.height = image.height;
       ctx.drawImage(image, 0, 0);
-
       try {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
@@ -180,40 +93,35 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   
-  const [phase, setPhase] = useState<'betting' | 'spinning'>('betting');
-  const [countdown, setCountdown] = useState(30);
-  
-  const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
-  const highlightRef = useRef<number | null>(null);
-  
-  const [handPointerIndex, setHandPointerIndex] = useState<number>(SPIN_PATH[0]);
+  // GLOBAL STATE (Derived purely from Date.now() for PERFECT SYNC)
+  const [gameState, setGameState] = useState({
+    phase: 'betting' as 'betting' | 'spinning' | 'result',
+    countdown: 30,
+    round: 0,
+    winnerIndex: 0,
+    highlight: null as number | null,
+    handPointer: SPIN_PATH[0]
+  });
 
-  const [currentRound, setCurrentRound] = useState(358);
   const [winners, setWinners] = useState<string[]>([]);
   const [roundHistory, setRoundHistory] = useState<Array<{ round: number; winnerImg: string; won: boolean }>>([]);
   
   const [balance, setBalance] = useState(82927);
   const [totalWon, setTotalWon] = useState(0);
   const [bets, setBets] = useState<Record<number, number>>({});
-  const stateRefs = useRef({ balance: 82927, totalWon: 0, bets: {} as Record<number, number> });
+  
+  const [processedRound, setProcessedRound] = useState(-1);
+  const stateRefs = useRef({ balance, totalWon, bets });
 
   const [showHistory, setShowHistory] = useState(false);
   const [showRules, setShowRules] = useState(false);
-
   const [activeBtn, setActiveBtn] = useState<number | null>(null);
 
-  // ==========================================
-  // SAFE RESPONSIVE FIX (Bina design hilaaye chote phone k liye zoom out trick)
-  // ==========================================
   const [scale, setScale] = useState(1);
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      if (width < 390) {
-        setScale(width / 390);
-      } else {
-        setScale(1);
-      }
+      if (width < 390) { setScale(width / 390); } else { setScale(1); }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -221,21 +129,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   }, []);
 
   useEffect(() => {
-    loadGameStateFromDB().then((data) => {
-      if (data) {
-        setCurrentRound(data.currentRound);
-        setWinners(data.winners || []);
-        setRoundHistory(data.roundHistory || []);
-        setBalance(data.balance);
-        setTotalWon(data.totalWon);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
     stateRefs.current = { balance, totalWon, bets };
   }, [balance, totalWon, bets]);
 
+  // Loading Screen
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -250,125 +147,119 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // ==============================================================
+  // 🌍 GLOBAL CLOCK ENGINE (Make it exactly same on ALL mobiles!)
+  // ==============================================================
   useEffect(() => {
     if (loading) return;
 
     const clock = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          if (phase === 'betting') {
-            setPhase('spinning');
-            return 15;
-          } else {
-            if (highlightRef.current !== null) {
-              const winnerItem = GRID_ITEMS[highlightRef.current];
-              if (winnerItem && winnerItem.img) {
-                const winnerImg = winnerItem.img as string;
-                
-                const { balance: currentBalance, totalWon: currentTotalWon, bets: currentBets } = stateRefs.current;
-                
-                let earned = 0;
-                const betOnWinner = currentBets[winnerItem.id] || 0;
-                if (betOnWinner > 0) {
-                   const mult = parseInt(winnerItem.multi.replace('×', ''));
-                   earned = betOnWinner * mult;
-                }
+      // 30s Betting + 15s Spinning + 1s Result (Exact 1 second hold) = 46 Seconds Cycle
+      const CYCLE_MS = 46000;
+      const now = Date.now();
+      
+      // Ye Math sab mobiles par same round generate karega based on time
+      const roundNumber = (Math.floor(now / CYCLE_MS) % 10000) + 1000;
+      const elapsed = now % CYCLE_MS;
 
-                const nextBalance = currentBalance + earned;
-                const nextTotalWon = currentTotalWon + earned;
+      // 🛑 RIGGED LOGIC (LOSS FOCUS): Deterministic seed based on round
+      // Taaki sabke phone par same winner aaye bina backend ke
+      const seed = Math.sin(roundNumber) * 10000;
+      const randomVal = seed - Math.floor(seed);
+      
+      let winnerIdx = 0;
+      if (randomVal < 0.80) {
+        // 80% CHANCE TO HIT LOW MULTIPLIERS (x5) - FORCES USER LOSS
+        // Lemon(0), Mango(2), Orange(8), Guava(6)
+        const lowPayouts = [0, 2, 8, 6]; 
+        winnerIdx = lowPayouts[Math.floor(randomVal * 100) % lowPayouts.length];
+      } else {
+        // 20% CHANCE TO HIT HIGH MULTIPLIERS 
+        // Apple(1), Strawberry(5), Grapes(7), Cherry(3)
+        const highPayouts = [1, 5, 7, 3];
+        winnerIdx = highPayouts[Math.floor(randomVal * 100) % highPayouts.length];
+      }
 
-                setBalance(nextBalance);
-                setTotalWon(nextTotalWon);
-                setBets({}); 
+      let currentPhase: 'betting' | 'spinning' | 'result' = 'betting';
+      let currentCountdown = 0;
+      let currentHighlight = null;
+      let currentHandPointer = SPIN_PATH[0];
 
-                setWinners(w => {
-                  const newWinners = [...w, winnerImg].slice(-13);
-                  setRoundHistory(history => {
-                    const newHistory = [
-                      { round: currentRound, winnerImg, won: earned > 0 },
-                      ...history
-                    ];
-                    const nextRound = currentRound + 1;
-                    setCurrentRound(nextRound);
+      if (elapsed < 30000) {
+        // PHASE 1: BETTING (30 Seconds)
+        currentPhase = 'betting';
+        currentCountdown = 30 - Math.floor(elapsed / 1000);
+        // Hand pointer moves strictly clockwise every 1 second
+        currentHandPointer = SPIN_PATH[Math.floor(elapsed / 1000) % SPIN_PATH.length];
+      
+      } else if (elapsed < 45000) {
+        // PHASE 2: SPINNING (15 Seconds)
+        currentPhase = 'spinning';
+        currentCountdown = 15 - Math.floor((elapsed - 30000) / 1000);
+        // Highlight spins strictly clockwise rapidly (every 100ms)
+        const spinElapsed = elapsed - 30000;
+        currentHighlight = SPIN_PATH[Math.floor(spinElapsed / 100) % SPIN_PATH.length];
+      
+      } else {
+        // PHASE 3: RESULT (1 Second Hold exactly on the Winner)
+        currentPhase = 'result';
+        currentCountdown = 0;
+        currentHighlight = winnerIdx;
+      }
 
-                    saveGameStateToDB({
-                      currentRound: nextRound,
-                      winners: newWinners,
-                      roundHistory: newHistory,
-                      lastResetTime: Date.now(),
-                      balance: nextBalance,
-                      totalWon: nextTotalWon
-                    });
-
-                    return newHistory;
-                  });
-                  return newWinners;
-                });
-              }
-            }
-            setPhase('betting');
-            return 30;
-          }
-        }
-        return prev - 1;
+      setGameState({
+        phase: currentPhase,
+        countdown: currentCountdown,
+        round: roundNumber,
+        winnerIndex: winnerIdx,
+        highlight: currentHighlight,
+        handPointer: currentHandPointer
       });
-    }, 1000);
+
+    }, 50); // Fast check to keep animations butter smooth & globally synced
 
     return () => clearInterval(clock);
-  }, [loading, phase, currentRound]);
+  }, [loading]);
 
+  // ==============================================================
+  // PAYOUT LOGIC & HISTORY UPDATE (Triggers only once per round)
+  // ==============================================================
   useEffect(() => {
-    if (phase === 'betting' && !loading) {
-      const pointerInterval = setInterval(() => {
-        setHandPointerIndex((prev) => {
-          const currentPos = SPIN_PATH.indexOf(prev);
-          const nextPos = (currentPos + 1) % SPIN_PATH.length;
-          return SPIN_PATH[nextPos];
-        });
-      }, 2000);
-      return () => clearInterval(pointerInterval);
-    }
-  }, [phase, loading]);
+    if (gameState.phase === 'result' && gameState.round !== processedRound && !loading) {
+      const winnerItem = GRID_ITEMS[gameState.winnerIndex];
+      if (winnerItem && winnerItem.type === 'fruit') {
+        
+        const currentBets = stateRefs.current.bets;
+        let earned = 0;
+        const betOnWinner = currentBets[winnerItem.id] || 0;
+        
+        if (betOnWinner > 0) {
+          const mult = parseInt(winnerItem.multi.replace('×', ''));
+          earned = betOnWinner * mult;
+        }
 
-  useEffect(() => {
-    if (phase === 'spinning') {
-      const interval = setInterval(() => {
-        setHighlightIndex(prev => {
-          let nextPos = 0;
-          if (prev !== null) {
-            const currentPos = SPIN_PATH.indexOf(prev);
-            nextPos = (currentPos + 1) % SPIN_PATH.length;
-          }
-          const nextIndex = SPIN_PATH[nextPos];
-          highlightRef.current = nextIndex;
-          return nextIndex;
-        });
-      }, 120); 
-      
-      return () => clearInterval(interval);
-    } else {
-      setHighlightIndex(null);
+        const nextBalance = stateRefs.current.balance + earned;
+        const nextTotalWon = stateRefs.current.totalWon + earned;
+
+        setBalance(nextBalance);
+        setTotalWon(nextTotalWon);
+        setBets({});
+        setProcessedRound(gameState.round);
+
+        setWinners(w => [...w, winnerItem.img as string].slice(-13));
+        setRoundHistory(prev => [{ round: gameState.round, winnerImg: winnerItem.img as string, won: earned > 0 }, ...prev]);
+      }
     }
-  }, [phase]);
+  }, [gameState.phase, gameState.round, processedRound, loading]);
 
   const handleBetClick = (fruitId: number) => {
-    if (phase === 'betting' && activeBtn !== null) {
+    if (gameState.phase === 'betting' && activeBtn !== null) {
       const betValues = { 1: 1000, 2: 500000, 3: 5000000, 4: 50000000 };
       const betAmt = betValues[activeBtn as keyof typeof betValues];
       
       if (balance >= betAmt) {
-        const newBalance = balance - betAmt;
-        const newBets = { ...bets, [fruitId]: (bets[fruitId] || 0) + betAmt };
-        
-        setBalance(newBalance);
-        setBets(newBets);
-        
-        saveGameStateToDB({ 
-          currentRound, winners, roundHistory, 
-          lastResetTime: Date.now(), 
-          balance: newBalance, 
-          totalWon 
-        });
+        setBalance(prev => prev - betAmt);
+        setBets(prev => ({ ...prev, [fruitId]: (prev[fruitId] || 0) + betAmt }));
       }
     }
   };
@@ -400,7 +291,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
             <div className="absolute top-[8px] left-1/2 -translate-x-1/2 z-30">
               <span className="text-white font-bold text-base drop-shadow-md tracking-wide">
-                Round {currentRound}
+                Round {gameState.round}
               </span>
             </div>
 
@@ -441,81 +332,85 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            {/* Yaha sirf Square Grid hai, 2-row image ko is container se nikal diya hai! */}
             <div className="relative z-10 w-full flex flex-col items-center -mt-45" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
-                {GRID_ITEMS.map((item, index) => (
-                 <div 
-                  key={item.id || index} 
-                  onClick={() => {
-                    if (item.type === 'fruit') handleBetClick(item.id);
-                  }}
-                  className={`relative w-[84px] h-[93px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${(phase === 'betting' && handPointerIndex === index) || highlightIndex === index ? '!z-[999]' : ''}`}
-                >
-                    {item.type === 'fruit' ? (
-                      <>
-                        <img 
-                          src="/file_00000000d0ec820ba666eab8bea30204.png" 
-                          alt="Card Base" 
-                          className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300" 
-                          style={(highlightIndex === index || (phase === 'betting' && handPointerIndex === index)) ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}}
-                        />
-                        
-                        {phase === 'betting' && handPointerIndex === index && (
-                          <img 
-                            src="/file_000000000f0c820b95490c9d927692d9.png" 
-                            alt="Pointer" 
-                            className="absolute -bottom-3 -right-2 w-[55px] h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300"
-                          />
-                        )}
+                {GRID_ITEMS.map((item, index) => {
+                  
+                  // Dono States (Betting Pointer & Spin Highlight)
+                  const isBettingHighlight = gameState.phase === 'betting' && gameState.handPointer === index;
+                  const isSpinningHighlight = (gameState.phase === 'spinning' || gameState.phase === 'result') && gameState.highlight === index;
+                  const applyGreen = isBettingHighlight || isSpinningHighlight;
 
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
+                  return (
+                    <div 
+                      key={item.id || index} 
+                      onClick={() => {
+                        if (item.type === 'fruit') handleBetClick(item.id);
+                      }}
+                      className={`relative w-[85px] h-[95px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                    >
+                      {item.type === 'fruit' ? (
+                        <>
                           <img 
-                            src={item.img} 
-                            alt="Fruit" 
-                            style={{ width: `${item.imgW}px`, height: `${item.imgH}px` }}
-                            className="object-contain pointer-events-none drop-shadow-md mb-2" 
+                            src="/file_00000000d0ec820ba666eab8bea30204.png" 
+                            alt="Card Base" 
+                            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300" 
+                            style={applyGreen ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}}
                           />
-                        </div>
+                          
+                          {isBettingHighlight && (
+                            <img 
+                              src="/file_000000000f0c820b95490c9d927692d9.png" 
+                              alt="Pointer" 
+                              className="absolute -bottom-3 -right-2 w-[55px] h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300"
+                            />
+                          )}
 
-                        {(bets[item.id] || 0) > 0 && (
-                          <div className="absolute bottom-[22px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
-                            <div className="w-[10px] h-[10px] flex-shrink-0">
-                              <WebGLShaderImage src="/1786855398290.png" />
-                            </div>
-                            <span className="text-white text-[9px] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
+                            <img 
+                              src={item.img} 
+                              alt="Fruit" 
+                              style={{ width: `${item.imgW}px`, height: `${item.imgH}px` }}
+                              className="object-contain pointer-events-none drop-shadow-md mb-2" 
+                            />
                           </div>
-                        )}
 
-                        <span className="absolute bottom-[10px] left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">
-                          {item.multi}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" alt="Timer Base" className="absolute inset-0 w-full h-full object-fill z-0" />
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-                          <span className="text-white text-[9px] font-bold tracking-wider drop-shadow-md mb-0.5">
-                            {phase === 'betting' ? 'BETTING' : 'SPINNING'}
+                          {(bets[item.id] || 0) > 0 && (
+                            <div className="absolute bottom-[22px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
+                              <div className="w-[10px] h-[10px] flex-shrink-0">
+                                <WebGLShaderImage src="/1786855398290.png" />
+                              </div>
+                              <span className="text-white text-[9px] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
+                            </div>
+                          )}
+
+                          <span className="absolute bottom-[10px] left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">
+                            {item.multi}
                           </span>
-                          <span className="text-amber-400 font-extrabold text-xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{countdown}s</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
+                        </>
+                      ) : (
+                        <>
+                          <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" alt="Timer Base" className="absolute inset-0 w-full h-full object-fill z-0" />
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+                            <span className="text-white text-[9px] font-bold tracking-wider drop-shadow-md mb-0.5">
+                              {gameState.phase === 'betting' ? 'BETTING' : (gameState.phase === 'spinning' ? 'SPINNING' : 'RESULT')}
+                            </span>
+                            <span className="text-amber-400 font-extrabold text-xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{gameState.countdown}s</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* ======================================================== */}
-            {/* 2-ROW IMAGE ALAG KAR DI GAYI HAI (ABSOLUTE POSITION PE)  */}
-            {/* ======================================================== */}
             <div 
               className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" 
               style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}
             >
-              <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-24 h-auto object-contain" />
-              <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-24 h-auto object-contain" />
+              <img src="/IMG_20260908_152953.png" alt="Option 1" className="w-25 h-auto object-contain" />
+              <img src="/IMG_20260908_153008.png" alt="Option 2" className="w-25 h-auto object-contain" />
             </div>
 
             <div className="absolute bottom-[15vh] left-1/2 z-30 flex flex-row items-end gap-1 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
@@ -561,7 +456,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </span>
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '35px' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '36px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
