@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { walletDB } from '@/src/lib/walletDB';
+
 
 interface WildpartyProps {
   onClose: () => void;
@@ -200,8 +202,19 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   const [roundHistory, setRoundHistory] = useState<RoundHistoryRecord[]>([]);
   const [winnerAnimal, setWinnerAnimal] = useState<AnimalItem | null>(null);
 
-  // Balance & Betting
+    // Balance & Betting
   const [balance, setBalance] = useState<number>(5000000);
+
+  useEffect(() => {
+    const handleWalletChange = (e: CustomEvent) => {
+      if (e.detail && typeof e.detail.coins === 'number') {
+        setBalance(e.detail.coins);
+      }
+    };
+    window.addEventListener('walletBalanceChanged', handleWalletChange as EventListener);
+    return () => window.removeEventListener('walletBalanceChanged', handleWalletChange as EventListener);
+  }, []);
+
   const [bets, setBets] = useState<{ [key: string]: number }>({});
   const [lastBets, setLastBets] = useState<{ [key: string]: number }>({});
   const [selectedChip, setSelectedChip] = useState<ChipItem>({
@@ -260,13 +273,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
   };
 
   const saveBalanceToDB = async (val: number) => {
-    try {
-      const db = await initIndexedDB();
-      const tx = db.transaction('userState', 'readwrite');
-      tx.objectStore('userState').put({ id: 'current_balance', value: val });
-    } catch (err) {
-      console.error('IndexedDB Save Balance Error:', err);
-    }
+    await walletDB.setCoins(val);
   };
 
   const saveRoundToDB = async (record: RoundHistoryRecord) => {
@@ -285,15 +292,8 @@ export default function Wildparty({ onClose }: WildpartyProps) {
       const resetBoundary = get5AMResetBoundary();
 
       // Load Balance
-      const txUser = db.transaction('userState', 'readonly');
-      const balReq = txUser.objectStore('userState').get('current_balance');
-      balReq.onsuccess = () => {
-        if (balReq.result && typeof balReq.result.value === 'number') {
-          setBalance(balReq.result.value);
-        } else {
-          saveBalanceToDB(5000000);
-        }
-      };
+      const currentCoins = await walletDB.getCoins();
+      setBalance(currentCoins);
 
       // Load History
       const txHistory = db.transaction('roundHistory', 'readwrite');

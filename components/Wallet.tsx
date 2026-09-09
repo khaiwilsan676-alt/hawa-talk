@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { walletDB } from '@/src/lib/walletDB';
+
 
 // --- WebGL Shader to strictly remove White Background & Fix UV Inversion ---
 function WhiteColorRemovalShader({
@@ -149,7 +151,20 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
   )
   const [diamonds, setDiamonds] = useState('')
   const [coins, setCoins] = useState('')
+  const [globalCoins, setGlobalCoins] = useState(0)
   const [selectedPercentage, setSelectedPercentage] = useState('100%')
+
+  useEffect(() => {
+    walletDB.getCoins().then(setGlobalCoins);
+    const handleWalletChange = (e: CustomEvent) => {
+      if (e.detail && typeof e.detail.coins === 'number') {
+        setGlobalCoins(e.detail.coins);
+      }
+    };
+    window.addEventListener('walletBalanceChanged', handleWalletChange as EventListener);
+    return () => window.removeEventListener('walletBalanceChanged', handleWalletChange as EventListener);
+  }, []);
+
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
@@ -161,11 +176,13 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
     const diamondNum = parseFloat(value) || 0
     const coinValue = (diamondNum * 33 / 100).toFixed(0)
     setCoins(coinValue)
+    walletDB.setCoins(parseFloat(coinValue) || 0)
   }
 
   const handleCoinChange = (value: string) => {
     setCoins(value)
     const coinNum = parseFloat(value) || 0
+    walletDB.setCoins(coinNum)
     const diamondValue = (coinNum * 100 / 33).toFixed(0)
     setDiamonds(diamondValue)
   }

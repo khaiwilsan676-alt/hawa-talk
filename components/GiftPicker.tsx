@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { walletDB } from '@/src/lib/walletDB';
+
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";
 
@@ -10,6 +12,19 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
   const [showMultipliers, setShowMultipliers] = useState(false);
   const [selectedGift, setSelectedGift] = useState<number | null>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const [balance, setBalance] = useState<number>(5000000);
+
+  useEffect(() => {
+    walletDB.getCoins().then(setBalance);
+    const handleWalletChange = (e: CustomEvent) => {
+      if (e.detail && typeof e.detail.coins === 'number') {
+        setBalance(e.detail.coins);
+      }
+    };
+    window.addEventListener('walletBalanceChanged', handleWalletChange as EventListener);
+    return () => window.removeEventListener('walletBalanceChanged', handleWalletChange as EventListener);
+  }, []);
+
 
   const tabs = ["Hot", "Lucky", "Luxury", "Event"];
   const multipliers = ["1×", "10×", "299×", "599×", "999×"];
@@ -249,6 +264,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
                 sizes="20px"
               />
             </div>
+            <span className="text-white font-bold text-sm tracking-wide ml-1">{balance}</span>
             <span className="text-[10px] font-bold text-yellow-300 tracking-wide">66457</span>
           </div>
 
@@ -280,8 +296,23 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
               <span>{selectedMultiplier}</span>
               <ChevronUp className={`w-3 h-3 transition-transform ${showMultipliers ? "rotate-180" : ""}`} />
             </button>
-            <button
-              onClick={() => console.log(`Sent Gift ID: ${selectedGift} with ${selectedMultiplier}`)}
+                        <button
+              onClick={async () => {
+                if (!selectedGift) return;
+                const giftList = [...hotGifts, ...luckyGifts, ...luxuryGifts, ...eventGifts];
+                const gift = giftList.find((g) => g.id === selectedGift);
+                if (!gift) return;
+
+                const multiplierValue = parseInt(selectedMultiplier.replace('×', '')) || 1;
+                const totalCost = gift.coins * multiplierValue;
+
+                const success = await walletDB.deductCoins(totalCost);
+                if (success) {
+                  console.log(`Sent Gift ID: ${selectedGift} with ${selectedMultiplier}. Cost: ${totalCost}`);
+                } else {
+                  console.log("Insufficient balance to send gift.");
+                }
+              }}
               className="send-btn text-white font-bold text-xs px-4 py-1.5 rounded-full transition-all active:scale-95"
             >
               Send

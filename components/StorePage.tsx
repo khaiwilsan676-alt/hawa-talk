@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { walletDB } from '@/src/lib/walletDB';
+
 import Image from "next/image";
 import { ArrowLeft, Clock } from "lucide-react";
 
@@ -410,85 +412,33 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
       >
         
         {/* Top Header */}
-        <div className="relative flex items-center justify-between px-4 pb-2 pt-1 bg-transparent">
+      <div className="flex items-center justify-between px-4 h-[44px] bg-white border-b border-gray-100 flex-shrink-0 z-10 relative">
+        <div className="flex items-center">
           <button
-            type="button"
-            onClick={() => {
-              if (currentView === "bag") {
-                setCurrentView("store");
-              } else {
-                onBack();
-              }
-            }}
-            className="p-1 -ml-2 text-black hover:bg-black/5 rounded-full transition-colors z-10"
+            onClick={onBack}
+            className="w-10 h-10 flex items-center justify-center -ml-2"
           >
-            <ArrowLeft size={26} strokeWidth={2} />
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          
-          <h1 className="text-[18px] font-bold text-black absolute left-1/2 -translate-x-1/2">
-            {currentView === "store" ? "Store" : "Bag"}
-          </h1>
-
-          {currentView === "store" ? (
-            <button 
-              type="button"
-              onClick={() => setCurrentView("bag")}
-              className="relative w-[70px] h-[70px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
-            >
-              <Image
-                src="/file_0000000050008211a231ccb3937eab0a.png"
-                alt="Bag Icon"
-                fill
-                className="object-contain"
-              />
-            </button>
-          ) : (
-            <button 
-              type="button"
-              onClick={() => setCurrentView("store")}
-              className="relative w-[70px] h-[70px] z-10 flex items-center justify-center hover:opacity-80 transition-opacity"
-            >
-              <Image
-                src="/file_00000000d634821189c7f69b4e3786e8.png"
-                alt="Store Icon"
-                fill
-                className="object-contain"
-              />
-            </button>
-          )}
         </div>
-
-        {/* Category Tabs */}
-        <div className="flex items-center gap-3 px-4 mt-1 mb-2 overflow-x-auto no-scrollbar shrink-0">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`whitespace-nowrap text-[14px] px-4 py-1.5 rounded-xl transition-colors ${
-                  isActive
-                    ? "bg-[#1d4ed8] text-white font-medium shadow-sm"
-                    : "text-gray-400 font-medium hover:text-gray-600 bg-transparent"
-                }`}
-              >
-                {tab}
-              </button>
-            );
-          })}
+        <div className="font-bold text-[16px] text-gray-800 absolute left-1/2 -translate-x-1/2 whitespace-nowrap overflow-hidden text-ellipsis max-w-[50%]">
+          {currentView === "bag" ? "My Bag" : "Store"}
         </div>
-
-        {/* Items Grid or ID Tab Custom View */}
-        {activeTab === "ID" ? (
-          <div className="px-4 py-2 flex-1 flex flex-col gap-3">
-            {/* Customize ID Card Box */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-              <h2 className="text-[17px] font-bold text-gray-900">Customize ID</h2>
-              <div className="w-full bg-[#f3f4f6] text-gray-400 text-[14px] font-medium py-3 px-4 rounded-2xl text-center">
-                Start Your Customization Journey
-              </div>
-            </div>
+        <div className="flex items-center gap-1 bg-gray-100 px-2.5 py-1 rounded-full">
+          <img src="/1786855398290.png" alt="Coins" className="w-4 h-4 object-contain" />
+          <span className="text-xs font-bold text-gray-800">{balance.toLocaleString()}</span>
+        </div>
+        {currentView === "store" ? (
+          <button
+            onClick={() => setCurrentView("bag")}
+            className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full"
+          >
+            Bag
+          </button>
+        ) : (
+          <div className="w-14" />
+        )}
+      </div>
 
             {/* Bottom Customize Button */}
             <button 
@@ -599,9 +549,10 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                     </button>
                     <button
                       type="button"
+                      onClick={() => handleBuyOrEquip(item)}
                       className="flex-1 h-full bg-[#1d4ed8] text-white text-[12px] font-bold flex items-center justify-center transition-colors hover:bg-blue-800"
                     >
-                      {currentView === "bag" ? "Equip" : "Buy"}
+                      {currentView === "bag" ? (item as BagItem).isEquipped ? "Unequip" : "Equip" : "Buy"}
                     </button>
                   </div>
                 </div>

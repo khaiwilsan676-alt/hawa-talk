@@ -14,3 +14,10 @@ node_modules
 .next/
 .DS_Store
 out/
+*.py
+*.sh
+node_modules/
+.next/
+out/
+build/
+*.log
