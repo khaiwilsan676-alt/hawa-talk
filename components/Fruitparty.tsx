@@ -9,7 +9,7 @@ interface FruitpartyProps {
 const GRID_ITEMS = [
   { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Grapes (Top Middle)
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 65, imgH: 65 },  // Mango
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 80, imgH: 80 },  // Mango
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry (Left Middle)
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Apple (Right Middle)
@@ -518,7 +518,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            <div className="absolute z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
+            <div className="absolute z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ bottom: '2vh', left: '8vh' }}>
               {winners.map((imgUrl, i) => (
                 <div key={i} className="animate-fade-in-up">
                   <img src={imgUrl} className="w-4 h-4 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
@@ -526,7 +526,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: 2vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '4vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(balance)}`}>{balance}</span>
             </div>
