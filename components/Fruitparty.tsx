@@ -301,7 +301,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         // Cubic ease-out calculation: Smooth and natural slow down effect
         let easeOut = 1 - Math.pow(1 - t, 3);
         
-        const maxSteps = 60; // Total 80 rounds/jumps in 5 seconds
+        const maxSteps = 55; // Total 80 rounds/jumps in 5 seconds
         const step = Math.round(maxSteps * easeOut);
         
         const startOffset = (targetPathIndex - (maxSteps % SPIN_PATH.length) + SPIN_PATH.length * 10) % SPIN_PATH.length;
@@ -412,7 +412,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         
         setBets({});
         setProcessedRound(gameState.round);
-        setWinners(w => [...w, winnerImgToSave].slice(-9));
+        setWinners(w => [...w, winnerImgToSave].slice(-11));
         
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
@@ -636,7 +636,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* ============================================================== */}
             {/* HISTORY PATTI (Updated: New on left & NEW green tag added) */}
             {/* ============================================================== */}
-            <div className="absolute z-40 flex flex-row flex-wrap gap-2 max-w-[90vw]" style={{ bottom: '1vh', left: '7vh' }}>
+            <div className="absolute z-40 flex flex-row flex-wrap gap-2 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
               {winners.slice().reverse().map((imgUrl, i) => {
                 const isSmallMix = imgUrl === '/IMG_20260908_152953.png';
                 const isBigMix = imgUrl === '/IMG_20260908_153008.png';
