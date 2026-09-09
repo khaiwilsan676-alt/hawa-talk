@@ -63,11 +63,10 @@ async function saveStateToDB(state: any) {
 }
 
 // ==========================================
-// Canvas 2D for Images - ULTRA FAST NO-LAG VERSION
+// Canvas 2D for Images
 // ==========================================
 const imageCache: Record<string, string> = {};
 
-// Ye component directly image render karega bina load liye
 function WebGLShaderImage({ src }: { src: string }) {
   if (imageCache[src]) {
     return <img src={imageCache[src]} className="w-full h-full object-contain" alt="" />;
@@ -75,7 +74,6 @@ function WebGLShaderImage({ src }: { src: string }) {
   return <CanvasProcessor src={src} />;
 }
 
-// Ye sirf ek baar kaam karega jab pehli baar photo load hogi
 function CanvasProcessor({ src }: { src: string }) {
   const [finalSrc, setFinalSrc] = useState<string | null>(null);
 
@@ -246,9 +244,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [gameState.highlight, gameState.phase, isMuted]);
 
-  // ==============================================================
   // GLOBAL CLOCK ENGINE
-  // ==============================================================
   useEffect(() => {
     if (loading) return;
 
@@ -345,14 +341,17 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         setProcessedRound(gameState.round);
         setWinners(w => [...w, winnerItem.img as string].slice(-13));
         
-        setRoundHistory(prev => [{ 
-          round: gameState.round, 
-          winnerImg: winnerItem.img as string, 
-          winnerId: winnerItem.id,
-          won: earned > 0,
-          bets: currentBets,
-          totalWonAmount: earned
-        }, ...prev].slice(0, 50)); 
+        // BUG FIX: Sirf un rounds ko history me save karo jisme user ne bet lagayi ho!
+        if (totalBetThisRound > 0) {
+          setRoundHistory(prev => [{ 
+            round: gameState.round, 
+            winnerImg: winnerItem.img as string, 
+            winnerId: winnerItem.id,
+            won: earned > 0,
+            bets: currentBets,
+            totalWonAmount: earned
+          }, ...prev].slice(0, 50)); 
+        }
       }
     }
   }, [gameState.phase, gameState.round, processedRound, loading, isLoadedFromDB]);
@@ -530,7 +529,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* WINNER RESULT POPUP PAGE (STRICT GAPS) */}
             {/* ============================================================== */}
             {gameState.phase === 'result' && (
-              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-t-md pt-4">
+              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-md pt-4">
                 <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                 
                 {/* 1. Heading */}
@@ -544,16 +543,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 </div>
 
                 {/* EXACT GAP 1 */}
-                <div className="mt-1-" />
+                <div className="-mt-2" />
 
-                {/* 2. Fruit Card (Slightly reduced from 140 to 120 so it never goes off-screen) */}
+                {/* 2. Fruit Card */}
                 <div className="relative z-10 flex items-center justify-center w-[180px] h-[180px]">
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
                   <img src={GRID_ITEMS[gameState.winnerIndex].img} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
                 {/* EXACT GAP 1 */}
-                <div className="mt-3-" />
+                <div className="-mt-3" />
 
                 {/* 3. Bottom Section */}
                 <div className="relative z-10 flex flex-col items-center w-full">
@@ -632,7 +631,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       </div>
 
       {/* ============================================================== */}
-      {/* MY RECORDS / HISTORY MODAL (DOM OVERLOAD FIX APPLIED YAHAN) */}
+      {/* MY RECORDS / HISTORY MODAL (DOM FIX + PLAYED ROUNDS ONLY FIX) */}
       {/* ============================================================== */}
       {showHistory && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
@@ -647,49 +646,63 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
             
             <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col">
-              {roundHistory.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-gray-400 text-xs font-medium">No records available yet.</div>
-              ) : (
-                // SIRF LAST 15 ROUNDS DIKHENGE TAAKI PHONE HANG NA HO
-                roundHistory.slice(0, 15).map((item, index) => (
-                  <div key={index} className="flex flex-col mb-4 pb-4 border-b border-gray-800">
-                    <div className="text-sm font-bold text-gray-200">Round {item.round}</div>
-                    <div className="flex items-center gap-2 mt-1 mb-3">
-                      <span className="text-[11px] text-gray-400 font-medium">Award Results:</span>
-                      <img src={item.winnerImg} className="w-5 h-5 object-contain" alt="Winner Fruit" />
-                    </div>
+              {
+                // Ek aur safety layer purane data ke liye: Sirf un rounds ko map karo jisme bet sach me thi
+                roundHistory.filter(item => Object.values(item.bets || {}).some(val => val > 0)).length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-gray-400 text-xs font-medium">No played records available yet.</div>
+                ) : (
+                  roundHistory
+                    .filter(item => Object.values(item.bets || {}).some(val => val > 0)) // Sirf played rounds
+                    .slice(0, 15) // Max 15 rounds dikhayega loop rokne ke liye
+                    .map((item, index) => {
+                      
+                      // Sirf wo fruit nikalo jinpe iss round me bet lagi thi
+                      const betFruitIds = Object.keys(item.bets).map(Number).filter(id => item.bets[id] > 0);
 
-                    <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                      <span>Fruit</span>
-                      <span>Bet</span>
-                      <span>Award</span>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      {GRID_ITEMS.filter(f => f.type === 'fruit').map(fruit => {
-                        const betAmt = item.bets[fruit.id] || 0;
-                        const isWinner = fruit.id === item.winnerId;
-                        const mult = parseInt(fruit.multi.replace('×', ''));
-                        const awardAmt = isWinner && betAmt > 0 ? betAmt * mult : 0;
-
-                        return (
-                          <div key={fruit.id} className="grid grid-cols-3 gap-2 items-center text-center">
-                            <div className="flex justify-center"><img src={fruit.img} className="w-6 h-6 object-contain" /></div>
-                            <div className="flex justify-center items-center gap-1">
-                              <div className="w-3.5 h-3.5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
-                              <span className="text-gray-200 text-xs font-semibold">{betAmt}</span>
-                            </div>
-                            <div className="flex justify-center items-center gap-1">
-                              <div className="w-3.5 h-3.5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
-                              <span className={`text-xs font-semibold ${awardAmt > 0 ? 'text-green-400' : 'text-gray-400'}`}>{awardAmt}</span>
-                            </div>
+                      return (
+                        <div key={index} className="flex flex-col mb-4 pb-4 border-b border-gray-800">
+                          <div className="text-sm font-bold text-gray-200">Round {item.round}</div>
+                          <div className="flex items-center gap-2 mt-1 mb-3">
+                            <span className="text-[11px] text-gray-400 font-medium">Award Results:</span>
+                            <img src={item.winnerImg} className="w-5 h-5 object-contain" alt="Winner Fruit" />
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))
-              )}
+
+                          <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                            <span>Fruit</span>
+                            <span>Bet</span>
+                            <span>Award</span>
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            {betFruitIds.map(fruitId => {
+                              const fruit = GRID_ITEMS.find(f => f.id === fruitId);
+                              if (!fruit) return null;
+
+                              const betAmt = item.bets[fruitId];
+                              const isWinner = fruit.id === item.winnerId;
+                              const mult = parseInt(fruit.multi.replace('×', ''));
+                              const awardAmt = isWinner ? betAmt * mult : 0;
+
+                              return (
+                                <div key={fruit.id} className="grid grid-cols-3 gap-2 items-center text-center">
+                                  <div className="flex justify-center"><img src={fruit.img} className="w-6 h-6 object-contain" /></div>
+                                  <div className="flex justify-center items-center gap-1">
+                                    <div className="w-3.5 h-3.5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                                    <span className="text-gray-200 text-xs font-semibold">{betAmt}</span>
+                                  </div>
+                                  <div className="flex justify-center items-center gap-1">
+                                    <div className="w-3.5 h-3.5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                                    <span className={`text-xs font-semibold ${awardAmt > 0 ? 'text-green-400' : 'text-gray-400'}`}>{awardAmt}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })
+                )
+              }
             </div>
           </div>
         </div>
@@ -731,3 +744,4 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
+
