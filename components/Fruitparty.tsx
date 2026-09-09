@@ -431,8 +431,19 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="absolute z-10 w-full flex flex-col items-center bottom-[31vh]">
-              <div className="grid grid-cols-3 gap-0 mx-auto w-max">
+            {/* ============================================================== */}
+            {/* YAHA MAINE TERE GRID KO EXACTLY TERI BOLI GAYI DIMENSIONS PE FIX KIYA HAI */}
+            {/* ============================================================== */}
+            <div 
+              className="absolute z-10 flex flex-col items-center" 
+              style={{
+                top: '31vh',
+                bottom: '31vh',
+                left: '5vh',
+                right: '5vh'
+              }}
+            >
+              <div className="grid grid-cols-3 gap-0 w-full h-full mx-auto">
                 {GRID_ITEMS.map((item, index) => {
                   
                   const isBettingHighlight = gameState.phase === 'betting' && gameState.handPointer === index;
@@ -443,33 +454,35 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <div 
                       key={item.id || index} 
                       onClick={() => { if (item.type === 'fruit') handleBetClick(item.id); }}
-                      className={`relative w-[80px] h-[88px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                      // Ab yaha w-[80px] ki jagah 'w-full h-full' hai jisse ye dynamically chote-bade honge
+                      className={`relative w-full h-full flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
                     >
                       {item.type === 'fruit' ? (
                         <>
                           <img src="/file_00000000d0ec820ba666eab8bea30204.png" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300" style={applyGreen ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}} />
                           {isBettingHighlight && (
-                            <img src="/file_000000000f0c820b95490c9d927692d9.png" className="absolute -bottom-3 -right-2 w-[55px] h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300" />
+                            <img src="/file_000000000f0c820b95490c9d927692d9.png" className="absolute -bottom-[15%] -right-[15%] w-[65%] h-[65%] max-w-[55px] max-h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300" />
                           )}
                           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
-                            <img src={item.img} style={{ width: `${item.imgW}px`, height: `${item.imgH}px` }} className="object-contain pointer-events-none drop-shadow-md mb-2" />
+                            {/* Images ab flexible ban gayi hai (%) */}
+                            <img src={item.img} className="object-contain pointer-events-none drop-shadow-md w-[55%] h-[55%] mb-2" />
                           </div>
                           {(bets[item.id] || 0) > 0 && (
-                            <div className="absolute bottom-[22px] left-1/2 -translate-x-1/2 w-[85%] h-[16px] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20">
+                            <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-[85%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
                               <div className="w-[10px] h-[10px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
-                              <span className="text-white text-[9px] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
+                              <span className="text-white text-[clamp(6px,2vw,9px)] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
                             </div>
                           )}
-                          <span className="absolute bottom-[10px] left-1/2 -translate-x-1/2 text-white text-[11px] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">{item.multi}</span>
+                          <span className="absolute bottom-[8%] left-1/2 -translate-x-1/2 text-white text-[clamp(8px,2.5vw,11px)] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">{item.multi}</span>
                         </>
                       ) : (
                         <>
                           <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-                            <span className="text-white text-[9px] font-bold tracking-wider drop-shadow-md mb-0.5">
+                            <span className="text-white text-[clamp(6px,2vw,9px)] font-bold tracking-wider drop-shadow-md mb-0.5">
                               {gameState.phase === 'betting' ? 'BETTING' : (gameState.phase === 'spinning' ? 'SPINNING' : 'RESULT')}
                             </span>
-                            <span className="text-amber-400 font-extrabold text-xl tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{gameState.countdown}s</span>
+                            <span className="text-amber-400 font-extrabold text-[clamp(14px,4vw,20px)] tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{gameState.countdown}s</span>
                           </div>
                         </>
                       )}
@@ -478,6 +491,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 })}
               </div>
             </div>
+            {/* ============================================================== */}
 
             <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
               <img src="/IMG_20260908_152953.png" className="w-25 h-auto object-contain" />
@@ -526,13 +540,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* ============================================================== */}
-            {/* WINNER RESULT POPUP PAGE (STRICT GAPS) */}
+            {/* WINNER RESULT POPUP PAGE */}
             {/* ============================================================== */}
             {gameState.phase === 'result' && (
               <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-md pt-4">
                 <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                 
-                {/* 1. Heading */}
                 <div className="relative z-10 w-full px-4 flex justify-center items-center">
                   <span className="text-white font-bold text-lg drop-shadow-lg tracking-wide">
                     Round {gameState.round}
@@ -542,22 +555,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </span>
                 </div>
 
-                {/* EXACT GAP 1 */}
                 <div className="-mt-2" />
 
-                {/* 2. Fruit Card */}
                 <div className="relative z-10 flex items-center justify-center w-[180px] h-[180px]">
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
                   <img src={GRID_ITEMS[gameState.winnerIndex].img} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
-                {/* EXACT GAP 1 */}
                 <div className="-mt-3" />
 
-                {/* 3. Bottom Section */}
                 <div className="relative z-10 flex flex-col items-center w-full">
-                  
-                  {/* Bets & Wins (Plain text, no bg) */}
                   <div className="flex items-center gap-1.5 text-white text-[15px] font-bold drop-shadow-md">
                     <span>Your Bet Amount</span>
                     <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
@@ -569,14 +576,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <span className="text-green-400">{lastRoundStats.won}</span>
                   </div>
 
-                  {/* Separator */}
                   <div className="w-[85%] h-[1px] bg-white/20 my-2" />
 
                   <span className="text-yellow-100 font-extrabold text-[11px] mb-2 drop-shadow-md uppercase tracking-wider">Top winner Of this Round</span>
                   
-                  {/* Top Winners */}
                   <div className="flex flex-row items-end justify-center gap-8 w-full px-2">
-                    {/* Top 1 */}
                     <div className="flex flex-col items-center gap-0.5 w-[60px] animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                       <div className="relative w-[46px] h-[46px]">
                         <div className="w-full h-full rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-[2px] border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
@@ -591,7 +595,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       </div>
                     </div>
 
-                    {/* Top 2 */}
                     <div className="flex flex-col items-center gap-0.5 w-[60px] animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                       <div className="relative w-[40px] h-[40px]">
                         <div className="w-full h-full rounded-full bg-gradient-to-tr from-pink-400 to-red-500 border-[2px] border-gray-300 shadow-[0_0_8px_rgba(209,213,219,0.5)]" />
@@ -606,7 +609,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       </div>
                     </div>
 
-                    {/* Top 3 */}
                     <div className="flex flex-col items-center gap-0.5 w-[60px] animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                       <div className="relative w-[38px] h-[38px]">
                         <div className="w-full h-full rounded-full bg-gradient-to-tr from-green-400 to-teal-500 border-[2px] border-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
@@ -620,18 +622,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         <span className="text-orange-300 text-[10px] font-extrabold drop-shadow-md truncate">8373</span>
                       </div>
                     </div>
-
                   </div>
                 </div>
               </div>
             )}
-
           </div>
         )}
       </div>
 
       {/* ============================================================== */}
-      {/* MY RECORDS / HISTORY MODAL (DOM FIX + PLAYED ROUNDS ONLY FIX) */}
+      {/* MY RECORDS / HISTORY MODAL */}
       {/* ============================================================== */}
       {showHistory && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
@@ -647,16 +647,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             
             <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col">
               {
-                // Ek aur safety layer purane data ke liye: Sirf un rounds ko map karo jisme bet sach me thi
                 roundHistory.filter(item => Object.values(item.bets || {}).some(val => val > 0)).length === 0 ? (
                   <div className="flex items-center justify-center h-full text-gray-400 text-xs font-medium">No played records available yet.</div>
                 ) : (
                   roundHistory
-                    .filter(item => Object.values(item.bets || {}).some(val => val > 0)) // Sirf played rounds
-                    .slice(0, 15) // Max 15 rounds dikhayega loop rokne ke liye
+                    .filter(item => Object.values(item.bets || {}).some(val => val > 0)) 
+                    .slice(0, 15) 
                     .map((item, index) => {
-                      
-                      // Sirf wo fruit nikalo jinpe iss round me bet lagi thi
                       const betFruitIds = Object.keys(item.bets).map(Number).filter(id => item.bets[id] > 0);
 
                       return (
@@ -744,3 +741,4 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
+
