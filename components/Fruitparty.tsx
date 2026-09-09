@@ -397,13 +397,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            <div className="absolute bottom-[69vh] left-1/2 -translate-x-1/2 z-30">
+            <div className="absolute bottom-[67vh] left-1/2 -translate-x-1/2 z-30">
               <span className="text-white font-bold text-base drop-shadow-md tracking-wide">
                 Round {gameState.round}
               </span>
             </div>
 
-            <div className="absolute bottom-[69vh] right-7 z-30 flex items-center gap-0.5">
+            <div className="absolute bottom-[67vh] right-7 z-30 flex items-center gap-0.5">
               <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5 pointer-events-none">
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
@@ -443,7 +443,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <div 
                       key={item.id || index} 
                       onClick={() => { if (item.type === 'fruit') handleBetClick(item.id); }}
-                      className={`relative w-[85px] h-[95px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                      className={`relative w-[84px] h-[90px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
                     >
                       {item.type === 'fruit' ? (
                         <>
