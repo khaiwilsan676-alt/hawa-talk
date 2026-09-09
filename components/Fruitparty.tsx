@@ -419,7 +419,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="absolute z-10 w-full flex flex-col items-center bottom-[30vh]">
+            <div className="absolute z-10 w-full flex flex-col items-center bottom-[31vh]">
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => {
                   
@@ -431,7 +431,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <div 
                       key={item.id || index} 
                       onClick={() => { if (item.type === 'fruit') handleBetClick(item.id); }}
-                      className={`relative w-[80px] h-[90px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                      className={`relative w-[80px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
                     >
                       {item.type === 'fruit' ? (
                         <>
