@@ -8,18 +8,18 @@ interface FruitpartyProps {
 
 // -------------------------------------------------------------
 // Perfect 3x3 Grid Layout (Strict Fixed Sizes for Cards) 
-// (Gap of 35px for Top & Bottom Row + Grapes & Orange swapped)
+// (Upar wale cards upar aur neeche wale cards 1-1 gap shift kiye hue)
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[25px]', imgW: 50, imgH: 50 },  // Lemon
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[25px]',                   imgW: 50, imgH: 50 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[25px]', imgW: 58, imgH: 58 },  // Mango
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry
-  { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[25px]', imgW: 50, imgH: 50 },  // Guava
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[25px]',                   imgW: 50, imgH: 50 },// Grapes (Swapped in place of Orange)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[25px]', imgW: 55, imgH: 55 },  // Orange (Swapped in place of Grapes)
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[25px]',  imgW: 50, imgH: 50 },  // Lemon (Upar)
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: '-translate-y-[25px]',                    imgW: 50, imgH: 50 },  // Apple (Upar)
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[25px]', imgW: 58, imgH: 58 },  // Mango (Upar)
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                    imgW: 50, imgH: 50 },  // Cherry
+  { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                         // CENTER (Timer)
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                    imgW: 50, imgH: 50 },  // Strawberry
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[25px]',  imgW: 50, imgH: 50 },  // Guava (Neeche)
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: 'translate-y-[25px]',                     imgW: 50, imgH: 50 },  // Grapes (Neeche)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[25px]', imgW: 55, imgH: 55 },  // Orange (Neeche)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
@@ -205,11 +205,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     // 1. Background Video/Audio (Continues playing without stopping)
     bgAudioRef.current = new Audio('/VID_20260908_230446_120_bsl.mp4'); 
     bgAudioRef.current.loop = true;
-    bgAudioRef.current.volume = 0.4;
 
-    // 2. Mixkit Tick Sound (Jab spinning mein card change hoga tab bajega)
+    // 2. Mixkit Tick Sound (Full Loud Volume taaki video sound se upar sunai de)
     tickAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
-    trickAudioRef.current.volume = 1.0;
+    tickAudioRef.current.volume = 1.0; 
     
     return () => {
       if (bgAudioRef.current) {
@@ -235,7 +234,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     } else {
       bgAudioRef.current?.pause();
     }
-  }, [isMuted]); // Maine yaha se `gameState.phase` hata diya hai taki sound ruke nahi!
+  }, [isMuted]);
 
   // ==============================================================
   // TICK TICK SOUND LOGIC (Sirf spinning ke time chalega har movement par)
@@ -243,11 +242,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   useEffect(() => {
     if (gameState.phase === 'spinning' && !isMuted) {
       if (tickAudioRef.current) {
-        tickAudioRef.current.currentTime = 0; // Reset sound to start instantly
+        tickAudioRef.current.currentTime = 0;
         tickAudioRef.current.play().catch((e) => console.log("Tick play blocked:", e));
       }
     }
-  }, [gameState.highlight, gameState.phase, isMuted]); // Jaise hi highlight change hoga, tick bajega
+  }, [gameState.highlight, gameState.phase, isMuted]);
 
   // ==============================================================
   // 🌍 GLOBAL CLOCK ENGINE
