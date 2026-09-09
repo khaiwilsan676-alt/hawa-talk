@@ -9,7 +9,7 @@ interface FruitpartyProps {
 const GRID_ITEMS = [
   { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 58, imgH: 58 },  // Mango
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 65, imgH: 65 },  // Mango
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry 
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry 
@@ -415,7 +415,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                           <span className="text-white text-[clamp(6px,2vw,9px)] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
                         </div>
                       )}
-                      <span className="absolute bottom-[18%] left-1/2 -translate-x-1/2 text-white text-[clamp(8px,2.5vw,11px)] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">{item.multi}</span>
+                      <span className="absolute bottom-[18%] left-1/2 -translate-x-1/2 text-white text-[clamp(8px,2.5vw,13px)] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">{item.multi}</span>
                     </>
                   ) : (
                     <>
