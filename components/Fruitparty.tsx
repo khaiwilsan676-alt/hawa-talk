@@ -11,22 +11,22 @@ interface FruitpartyProps {
 // (Gap of 35px for Top & Bottom Row + Grapes & Orange swapped)
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[34px]', imgW: 50, imgH: 50 },  // Lemon
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[35px]',                   imgW: 50, imgH: 50 },  // Apple
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[35px]', imgW: 58, imgH: 58 },  // Mango
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[14px]', imgW: 50, imgH: 50 },  // Lemon
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[15px]',                   imgW: 50, imgH: 50 },  // Apple
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[15px]', imgW: 58, imgH: 58 },  // Mango
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[36px]', imgW: 50, imgH: 50 },  // Guava
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[35px]',                   imgW: 50, imgH: 50 },// Grapes (Swapped in place of Orange)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[35px]', imgW: 55, imgH: 55 },  // Orange (Swapped in place of Grapes)
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[16px]', imgW: 50, imgH: 50 },  // Guava
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[15px]',                   imgW: 50, imgH: 50 },// Grapes (Swapped in place of Orange)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[15px]', imgW: 55, imgH: 55 },  // Orange (Swapped in place of Grapes)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
 const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3]; 
 
 // ==========================================
-// IndexedDB Logic
+// IndexedDB Logic (Sare Users Ka Data Save Hoga Yahan Bss)
 // ==========================================
 const DB_NAME = 'FruitPartyDB';
 const STORE_NAME = 'GameState';
@@ -44,6 +44,26 @@ async function initDB(): Promise<IDBDatabase> {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
+
+async function loadStateFromDB() {
+  try {
+    const db = await initDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get('user_data');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+  } catch (e) { return null; }
+}
+
+async function saveStateToDB(state: any) {
+  try {
+    const db = await initDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(state, 'user_data');
+  } catch (e) {}
 }
 
 // ==========================================
@@ -92,6 +112,7 @@ const getDynamicTextSize = (val: number) => {
 export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [isLoadedFromDB, setIsLoadedFromDB] = useState(false);
   
   // GLOBAL STATE (Derived purely from Date.now() for PERFECT SYNC)
   const [gameState, setGameState] = useState({
@@ -116,6 +137,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [showHistory, setShowHistory] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [activeBtn, setActiveBtn] = useState<number | null>(null);
+  
+  // Sound logic
+  const [isMuted, setIsMuted] = useState(false);
+  const spinAudioRef = useRef<HTMLAudioElement | null>(null);
+  const bettingAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const [scale, setScale] = useState(1);
   useEffect(() => {
@@ -127,6 +153,26 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // --- IndexedDB Load System ---
+  useEffect(() => {
+    loadStateFromDB().then((data: any) => {
+      if (data) {
+        if (data.balance !== undefined) setBalance(data.balance);
+        if (data.totalWon !== undefined) setTotalWon(data.totalWon);
+        if (data.roundHistory !== undefined) setRoundHistory(data.roundHistory);
+        if (data.winners !== undefined) setWinners(data.winners);
+      }
+      setIsLoadedFromDB(true);
+    });
+  }, []);
+
+  // --- IndexedDB Save System ---
+  useEffect(() => {
+    if (isLoadedFromDB) {
+      saveStateToDB({ balance, totalWon, roundHistory, winners });
+    }
+  }, [balance, totalWon, roundHistory, winners, isLoadedFromDB]);
 
   useEffect(() => {
     stateRefs.current = { balance, totalWon, bets };
@@ -148,34 +194,75 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   }, []);
 
   // ==============================================================
-  // 🌍 GLOBAL CLOCK ENGINE (Make it exactly same on ALL mobiles!)
+  // AUDIO INITIALIZATION (Spinning + Betting)
+  // ==============================================================
+  useEffect(() => {
+    // Spin Sound
+    spinAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3'); 
+    spinAudioRef.current.loop = true;
+
+    // Betting Video Sound (Browser extract kar lega iski audio automatically bss)
+    bettingAudioRef.current = new Audio('/VID_20260908_230446_120_bsl.mp4');
+    bettingAudioRef.current.loop = true;
+    
+    return () => {
+      if (spinAudioRef.current) {
+        spinAudioRef.current.pause();
+        spinAudioRef.current = null;
+      }
+      if (bettingAudioRef.current) {
+        bettingAudioRef.current.pause();
+        bettingAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  // ==============================================================
+  // AUDIO PLAY/PAUSE LOGIC (BASED ON PHASE & MUTE BUTTON)
+  // ==============================================================
+  useEffect(() => {
+    if (spinAudioRef.current) spinAudioRef.current.muted = isMuted;
+    if (bettingAudioRef.current) bettingAudioRef.current.muted = isMuted;
+    
+    // Spinning Phase Audio Logic
+    if (gameState.phase === 'spinning' && !isMuted) {
+      spinAudioRef.current?.play().catch((e) => console.log("Play blocked:", e));
+    } else {
+      spinAudioRef.current?.pause();
+      if (spinAudioRef.current) spinAudioRef.current.currentTime = 0;
+    }
+
+    // Betting Phase Audio Logic
+    if (gameState.phase === 'betting' && !isMuted) {
+      bettingAudioRef.current?.play().catch((e) => console.log("Play blocked:", e));
+    } else {
+      bettingAudioRef.current?.pause();
+      if (bettingAudioRef.current) bettingAudioRef.current.currentTime = 0;
+    }
+
+  }, [gameState.phase, isMuted]);
+
+  // ==============================================================
+  // 🌍 GLOBAL CLOCK ENGINE
   // ==============================================================
   useEffect(() => {
     if (loading) return;
 
     const clock = setInterval(() => {
-      // 30s Betting + 15s Spinning + 1s Result (Exact 1 second hold) = 46 Seconds Cycle
       const CYCLE_MS = 46000;
       const now = Date.now();
       
-      // Ye Math sab mobiles par same round generate karega based on time
       const roundNumber = (Math.floor(now / CYCLE_MS) % 10000) + 1000;
       const elapsed = now % CYCLE_MS;
 
-      // 🛑 RIGGED LOGIC (LOSS FOCUS): Deterministic seed based on round
-      // Taaki sabke phone par same winner aaye bina backend ke
       const seed = Math.sin(roundNumber) * 10000;
       const randomVal = seed - Math.floor(seed);
       
       let winnerIdx = 0;
       if (randomVal < 0.80) {
-        // 80% CHANCE TO HIT LOW MULTIPLIERS (x5) - FORCES USER LOSS
-        // Lemon(0), Mango(2), Orange(8), Guava(6)
         const lowPayouts = [0, 2, 8, 6]; 
         winnerIdx = lowPayouts[Math.floor(randomVal * 100) % lowPayouts.length];
       } else {
-        // 20% CHANCE TO HIT HIGH MULTIPLIERS 
-        // Apple(1), Strawberry(5), Grapes(7), Cherry(3)
         const highPayouts = [1, 5, 7, 3];
         winnerIdx = highPayouts[Math.floor(randomVal * 100) % highPayouts.length];
       }
@@ -186,22 +273,15 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       let currentHandPointer = SPIN_PATH[0];
 
       if (elapsed < 30000) {
-        // PHASE 1: BETTING (30 Seconds)
         currentPhase = 'betting';
         currentCountdown = 30 - Math.floor(elapsed / 1000);
-        // Hand pointer moves strictly clockwise every 1 second
         currentHandPointer = SPIN_PATH[Math.floor(elapsed / 1000) % SPIN_PATH.length];
-      
       } else if (elapsed < 45000) {
-        // PHASE 2: SPINNING (15 Seconds)
         currentPhase = 'spinning';
         currentCountdown = 15 - Math.floor((elapsed - 30000) / 1000);
-        // Highlight spins strictly clockwise rapidly (every 100ms)
         const spinElapsed = elapsed - 30000;
         currentHighlight = SPIN_PATH[Math.floor(spinElapsed / 100) % SPIN_PATH.length];
-      
       } else {
-        // PHASE 3: RESULT (1 Second Hold exactly on the Winner)
         currentPhase = 'result';
         currentCountdown = 0;
         currentHighlight = winnerIdx;
@@ -216,16 +296,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         handPointer: currentHandPointer
       });
 
-    }, 50); // Fast check to keep animations butter smooth & globally synced
+    }, 50); 
 
     return () => clearInterval(clock);
   }, [loading]);
 
   // ==============================================================
-  // PAYOUT LOGIC & HISTORY UPDATE (Triggers only once per round)
+  // PAYOUT LOGIC & HISTORY UPDATE
   // ==============================================================
   useEffect(() => {
-    if (gameState.phase === 'result' && gameState.round !== processedRound && !loading) {
+    if (gameState.phase === 'result' && gameState.round !== processedRound && !loading && isLoadedFromDB) {
       const winnerItem = GRID_ITEMS[gameState.winnerIndex];
       if (winnerItem && winnerItem.type === 'fruit') {
         
@@ -250,7 +330,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         setRoundHistory(prev => [{ round: gameState.round, winnerImg: winnerItem.img as string, won: earned > 0 }, ...prev]);
       }
     }
-  }, [gameState.phase, gameState.round, processedRound, loading]);
+  }, [gameState.phase, gameState.round, processedRound, loading, isLoadedFromDB]);
 
   const handleBetClick = (fruitId: number) => {
     if (gameState.phase === 'betting' && activeBtn !== null) {
@@ -276,9 +356,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         {!loading && (
           <>
             <div className="absolute top-[6.5px] left-7 z-30 flex items-center gap-0.5">
-              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+              <button 
+                onClick={() => setIsMuted(!isMuted)} 
+                className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
+              >
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
-                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                  {!isMuted ? (
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                  ) : (
+                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                  )}
                 </svg>
               </button>
               <button 
@@ -336,7 +423,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => {
                   
-                  // Dono States (Betting Pointer & Spin Highlight)
                   const isBettingHighlight = gameState.phase === 'betting' && gameState.handPointer === index;
                   const isSpinningHighlight = (gameState.phase === 'spinning' || gameState.phase === 'result') && gameState.highlight === index;
                   const applyGreen = isBettingHighlight || isSpinningHighlight;
