@@ -2,6 +2,47 @@
 
 import { useState, useEffect, useRef } from 'react'
 
+// ==========================================
+// IndexedDB Logic for Wallet Sync
+// ==========================================
+const DB_NAME = 'FruitPartyDB';
+const STORE_NAME = 'GameState';
+
+async function initDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') return reject("No window");
+    const request = indexedDB.open(DB_NAME, 2);
+    request.onupgradeneeded = (e: any) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function loadBalanceFromDB(): Promise<number> {
+  try {
+    const db = await initDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get('user_data');
+      req.onsuccess = () => {
+        if (req.result && req.result.balance !== undefined) {
+          resolve(req.result.balance);
+        } else {
+          resolve(82927); // Default balance agar DB me kuch na ho
+        }
+      };
+      req.onerror = () => resolve(82927);
+    });
+  } catch (e) {
+    return 82927;
+  }
+}
+
 // --- WebGL Shader to strictly remove White Background & Fix UV Inversion ---
 function WhiteColorRemovalShader({
   imageSrc,
@@ -150,11 +191,36 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
   const [diamonds, setDiamonds] = useState('')
   const [coins, setCoins] = useState('')
   const [selectedPercentage, setSelectedPercentage] = useState('100%')
+  
+  // Real-time Balance State
+  const [walletBalance, setWalletBalance] = useState<number>(0)
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
     return () => clearTimeout(id)
   }, [])
+
+  // DB se Real-time balance sync karne ka logic
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchBalance = async () => {
+      const bal = await loadBalanceFromDB();
+      if (isMounted) {
+        setWalletBalance(bal);
+      }
+    };
+
+    fetchBalance(); // Pehli baar load hote hi balance update karega
+
+    // Har 1 second me IndexedDB check karega real-time update ke liye
+    const intervalId = setInterval(fetchBalance, 1000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   const handleDiamondChange = (value: string) => {
     setDiamonds(value)
@@ -261,7 +327,7 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
         {activeTab === 'wallet' ? (
           /* ================= COINS TAB ================= */
           <div className="flex flex-col space-y-4">
-            {/* Current Balance Banner - Less Rounded (rounded-xl) */}
+            {/* Current Balance Banner */}
             <div
               className="rounded-xl p-5 relative mt-8 flex flex-col justify-center"
               style={{
@@ -282,7 +348,8 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
                 current balance
               </span>
               <p className="text-3xl font-black text-amber-950 tracking-tight">
-                1,077,472
+                {/* Yahan Real Time Coins Update Honge DB Se */}
+                {walletBalance.toLocaleString()}
               </p>
             </div>
 
@@ -332,7 +399,7 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
           /* ================= DIAMONDS TAB ================= */
           <div className="flex flex-col justify-between min-h-[calc(100vh-140px)]">
             <div className="space-y-4">
-              {/* Current Diamonds Banner - Less Rounded (rounded-xl) */}
+              {/* Current Diamonds Banner */}
               <div
                 className="rounded-xl p-5 relative mt-8 flex flex-col justify-center"
                 style={{
@@ -458,4 +525,3 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
     </div>
   )
 }
-
