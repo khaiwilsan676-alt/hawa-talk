@@ -6,11 +6,7 @@ interface FruitpartyProps {
   onClose: () => void;
 }
 
-// -------------------------------------------------------------
-// Perfect 3x3 Grid Layout (Strict Fixed Sizes for Cards) 
-// (Upar wale cards upar aur neeche wale cards 1-1 gap shift kiye hue)
-// -------------------------------------------------------------
- const GRID_ITEMS = [
+const GRID_ITEMS = [
   { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Apple
   { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 58, imgH: 58 },  // Mango
@@ -18,8 +14,8 @@ interface FruitpartyProps {
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
   { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[5px]',                   imgW: 50, imgH: 50 },// Grapes (Swapped in place of Orange)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[5px]', imgW: 55, imgH: 55 },  // Orange (Swapped in place of Grapes)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Orange (Swapped with Grapes)
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },// Grapes (Swapped with Orange)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
@@ -208,7 +204,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
     // 2. Mixkit Tick Sound (Full Loud Volume taaki video sound se upar sunai de)
     tickAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
-    tickAudioRef.current.volume = 2.0; 
+    tickAudioRef.current.volume = 1.0; 
     
     return () => {
       if (bgAudioRef.current) {
@@ -439,7 +435,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       onClick={() => {
                         if (item.type === 'fruit') handleBetClick(item.id);
                       }}
-                      className={`relative w-[84px] h-[93px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                      className={`relative w-[85px] h-[95px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
                     >
                       {item.type === 'fruit' ? (
                         <>
@@ -641,4 +637,3 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
-
