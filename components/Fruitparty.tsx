@@ -7,15 +7,15 @@ interface FruitpartyProps {
 }
 
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[9px]', imgW: 50, imgH: 50 },  // Lemon (0)
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[6px] translate-y-[9px]', imgW: 50, imgH: 50 },  // Lemon (0)
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×10', move: 'translate-y-[9px]',                   imgW: 55, imgH: 55 },  // Grapes (1)
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[9px]', imgW: 140, imgH: 140 }, // Mango (2)
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry (3)
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[6px] translate-y-[9px]', imgW: 140, imgH: 140 }, // Mango (2)
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[6px]',                   imgW: 50, imgH: 50 },  // Cherry (3)
   { id: 9, type: 'timer', move: 'z-20' },                                                                                                    // CENTER (4) (Removed scale so size matches other cards)
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Apple (5)
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Guava (6)
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[6px]',                   imgW: 50, imgH: 50 },  // Apple (5)
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[6px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Guava (6)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-y-[9px]',                   imgW: 50, imgH: 50 },  // Strawberry (7)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Orange (8)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[6px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Orange (8)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
@@ -139,7 +139,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     round: 0,
     winnerIndex: 0,
     highlight: null as number | null,
-    handPointer: SPIN_PATH[0]
+    handPointer: SPIN_PATH[0],
+    showResultPopup: false // ADDED FOR 1.5 SEC HOLD
   });
 
   const [winners, setWinners] = useState<string[]>([]);
@@ -244,7 +245,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [gameState.highlight, gameState.phase, isMuted]);
 
-  // GLOBAL CLOCK ENGINE (Updated for 5 sec spin and 40s total cycle)
+  // GLOBAL CLOCK ENGINE (Updated for jump fix and 1.5s delay)
   useEffect(() => {
     if (loading) return;
 
@@ -276,6 +277,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       let currentCountdown = 0;
       let currentHighlight = null;
       let currentHandPointer = SPIN_PATH[0];
+      let currentShowResultPopup = false; // Add popup state flag
 
       if (elapsed < 30000) {
         // 30s Betting
@@ -287,12 +289,27 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         currentPhase = 'spinning';
         currentCountdown = 5 - Math.floor((elapsed - 30000) / 1000);
         const spinElapsed = elapsed - 30000;
-        currentHighlight = SPIN_PATH[Math.floor(spinElapsed / 100) % SPIN_PATH.length];
+        
+        // --- JUMP BUG FIX CALCULATION ---
+        // This ensures step exactly ends perfectly on winnerIdx without jumping
+        let targetPathIndex = SPIN_PATH.indexOf(winnerIdx);
+        if (targetPathIndex === -1) targetPathIndex = 0; // Fallback for mix cards
+        
+        const maxSteps = 49; // Total ticks during 5000ms at 100ms per tick
+        const startOffset = (targetPathIndex - (maxSteps % SPIN_PATH.length) + SPIN_PATH.length * 10) % SPIN_PATH.length;
+        const step = Math.floor(spinElapsed / 100);
+        
+        currentHighlight = SPIN_PATH[(startOffset + step) % SPIN_PATH.length];
       } else {
         // 5s Result Phase
         currentPhase = 'result';
         currentCountdown = 5 - Math.floor((elapsed - 35000) / 1000);
         currentHighlight = winnerIdx;
+        
+        // 1.5 SECONDS HOLD EXACTLY BEFORE WINNER PAGE COMES
+        if (elapsed >= 36500) {
+          currentShowResultPopup = true;
+        }
       }
 
       setGameState(prev => {
@@ -301,7 +318,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           prev.countdown === currentCountdown &&
           prev.round === roundNumber &&
           prev.highlight === currentHighlight &&
-          prev.handPointer === currentHandPointer
+          prev.handPointer === currentHandPointer &&
+          prev.showResultPopup === currentShowResultPopup
         ) {
           return prev; 
         }
@@ -311,7 +329,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           round: roundNumber,
           winnerIndex: winnerIdx,
           highlight: currentHighlight,
-          handPointer: currentHandPointer
+          handPointer: currentHandPointer,
+          showResultPopup: currentShowResultPopup
         };
       });
 
@@ -466,8 +485,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         <img src="/file_000000000f0c820b95490c9d927692d9.png" className="absolute -bottom-[15%] -right-[15%] w-[65%] h-[65%] max-w-[55px] max-h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300" />
                       )}
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
-                        {/* INCREASE MANGO SIZE DYNAMICALLY */}
-                        <img src={item.img} className={`object-contain pointer-events-none drop-shadow-md mb-2 ${item.id === 3 ? 'w-[85%] h-[85%]' : 'w-[55%] h-[55%]'}`} />
+                        {/* CHANGED MANGO SIZE EXACTLY W-[80px] H-[80px] AS REQUESTED */}
+                        <img src={item.img} className={`object-contain pointer-events-none drop-shadow-md mb-2 ${item.id === 3 ? 'w-[80px] h-[80px]' : 'w-[55%] h-[55%]'}`} />
                       </div>
                       {(bets[item.id] || 0) > 0 && (
                         <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2 w-[85%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
@@ -553,7 +572,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
             {/* MIX BUTTONS NOW FULLY FUNCTIONAL WITH GLOW EFFECT & BET BADGE */}
-            <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-1 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
+            <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
               
               {/* Left Mix (ID 10) */}
               <div className="relative cursor-pointer transition-transform active:scale-95" onClick={() => handleBetClick(10)}>
@@ -645,9 +664,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* ============================================================== */}
-            {/* WINNER RESULT POPUP PAGE (Hold for 1 sec before showing) */}
+            {/* WINNER RESULT POPUP PAGE (Hold for exact 1.5 sec before showing) */}
             {/* ============================================================== */}
-            {gameState.phase === 'result' && gameState.countdown < 5 && (
+            {gameState.phase === 'result' && gameState.showResultPopup && (
               <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up overflow-hidden rounded-md">
                 <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                 
@@ -876,4 +895,3 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
-
