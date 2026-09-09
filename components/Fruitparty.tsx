@@ -357,7 +357,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
   const handleBetClick = (fruitId: number) => {
     if (gameState.phase === 'betting' && activeBtn !== null) {
-      const betValues = { 1: 1000, 2: 500000, 3: 5000000, 4: 50000000 };
+      const betValues = { 1: 1000, 2: 50000, 3: 1000000, 4: 5000000 };
       const betAmt = betValues[activeBtn as keyof typeof betValues];
       
       if (balance >= betAmt) {
@@ -382,7 +382,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         <div 
           className="fixed z-[75] flex flex-col items-center pointer-events-none" 
           style={{
-            top: '36vh',
+            top: '35vh',
             bottom: '31vh',
             left: '8vh',
             right: '8vh'
@@ -410,12 +410,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         <img src={item.img} className="object-contain pointer-events-none drop-shadow-md w-[55%] h-[55%] mb-2" />
                       </div>
                       {(bets[item.id] || 0) > 0 && (
-                        <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-[85%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
+                        <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2 w-[85%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
                           <div className="w-[10px] h-[10px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
                           <span className="text-white text-[clamp(6px,2vw,9px)] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
                         </div>
                       )}
-                      <span className="absolute bottom-[8%] left-1/2 -translate-x-1/2 text-white text-[clamp(8px,2.5vw,11px)] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">{item.multi}</span>
+                      <span className="absolute bottom-[18%] left-1/2 -translate-x-1/2 text-white text-[clamp(8px,2.5vw,11px)] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">{item.multi}</span>
                     </>
                   ) : (
                     <>
@@ -505,17 +505,17 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <button onClick={() => setActiveBtn(2)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img src="/file_00000000d9b08211b0304c61b802348b.png" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 2 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
                 <img src="/file_000000003d24821182882f8ca412d2b6.png" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 2 ? 'z-10' : 'z-0'}`} />
-                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">500K</span>
+                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50K</span>
               </button>
               <button onClick={() => setActiveBtn(3)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img src="/file_00000000d9b08211b0304c61b802348b.png" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 3 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
                 <img src="/file_000000003d24821182882f8ca412d2b6.png" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 3 ? 'z-10' : 'z-0'}`} />
-                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">5M</span>
+                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">1M</span>
               </button>
               <button onClick={() => setActiveBtn(4)} className="relative flex flex-col items-center w-[85px] h-[100px] cursor-pointer">
                 <img src="/file_00000000d9b08211b0304c61b802348b.png" className={`absolute left-1/2 -translate-x-1/2 w-[90px] h-auto object-contain transition-all duration-150 ${activeBtn === 4 ? 'top-[36px] hue-rotate-[120deg] brightness-110 saturate-150 z-0' : 'top-[29px] z-10'}`} />
                 <img src="/file_000000003d24821182882f8ca412d2b6.png" className={`absolute top-[34px] left-1/2 -translate-x-1/2 w-[100px] h-auto object-contain pointer-events-none ${activeBtn === 4 ? 'z-10' : 'z-0'}`} />
-                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">50M</span>
+                <span className="absolute bottom-[35px] text-white font-bold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-20 pointer-events-none">5M</span>
               </button>
             </div>
 
