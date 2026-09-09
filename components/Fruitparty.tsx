@@ -18,8 +18,9 @@ const GRID_ITEMS = [
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
   { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Orange (Swapped with Grapes)
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },// Grapes (Swapped with Orange)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Orange (Swapped with Grapes)
+  
 ];
 
 // Clockwise path for Spinner & Pointer
