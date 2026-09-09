@@ -636,12 +636,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* ============================================================== */}
             {/* HISTORY PATTI (Updated: New on left & NEW green tag added) */}
             {/* ============================================================== */}
-            <div className="absolute z-40 flex flex-row flex-wrap gap-2 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
+            <div className="absolute z-40 flex flex-row flex-wrap gap-2 max-w-[90vw]" style={{ bottom: '1vh', left: '7vh' }}>
               {winners.slice().reverse().map((imgUrl, i) => {
                 const isSmallMix = imgUrl === '/IMG_20260908_152953.png';
                 const isBigMix = imgUrl === '/IMG_20260908_153008.png';
                 return (
-                  <div key={i} className="relative animate-fade-in-up flex items-center justify-center w-6 h-6 bg-[#4a2810] rounded-full shadow-md border-[1.5px] border-[#3a1d09]">
+                  <div key={i} className="relative animate-fade-in-up flex items-center justify-center w-5 h-5 bg-[#4a2810] rounded-full shadow-md border-[1.5px] border-[#3a1d09]">
                     {isSmallMix ? (
                       <div className="flex flex-col items-center justify-center">
                         <span className="text-green-400 text-[5px] font-bold leading-none tracking-wider">SM</span>
