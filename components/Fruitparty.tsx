@@ -548,7 +548,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
             {/* MIX BUTTONS NOW FULLY FUNCTIONAL WITH GLOW EFFECT & BET BADGE */}
-            <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-2 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
+            <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-1 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
               
               {/* Left Mix (ID 10) */}
               <div className="relative cursor-pointer transition-transform active:scale-95" onClick={() => handleBetClick(10)}>
@@ -622,7 +622,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               })}
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '9vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '8vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(balance)}`}>{balance}</span>
             </div>
@@ -648,12 +648,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </span>
                 </div>
 
-                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-[180px] h-[180px]" style={{ top: '3vh' }}>
+                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-[230px] h-[230px]" style={{ top: '3vh' }}>
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
                   <img src={popupWinnerImg} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
-                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-full" style={{ bottom: '21vh' }}>
+                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-full" style={{ bottom: '17vh' }}>
                   <div className="flex items-center gap-1.5 text-white text-[15px] font-bold drop-shadow-md">
                     <span>Your Bet Amount</span>
                     <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
