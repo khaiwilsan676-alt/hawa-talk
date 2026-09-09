@@ -419,7 +419,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="absolute z-10 w-full flex flex-col items-center bottom-[26vh]">
+            <div className="absolute z-10 w-full flex flex-col items-center bottom-[30vh]">
               <div className="grid grid-cols-3 gap-0 mx-auto w-max">
                 {GRID_ITEMS.map((item, index) => {
                   
@@ -431,7 +431,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <div 
                       key={item.id || index} 
                       onClick={() => { if (item.type === 'fruit') handleBetClick(item.id); }}
-                      className={`relative w-[85px] h-[95px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                      className={`relative w-[80px] h-[90px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
                     >
                       {item.type === 'fruit' ? (
                         <>
@@ -468,8 +468,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" style={{ transform: `translateX(-50%)` }}>
-              <img src="/IMG_20260908_152953.png" className="w-25 h-auto object-contain" />
-              <img src="/IMG_20260908_153008.png" className="w-25 h-auto object-contain" />
+              <img src="/IMG_20260908_152953.png" className="w-23 h-auto object-contain" />
+              <img src="/IMG_20260908_153008.png" className="w-23 h-auto object-contain" />
             </div>
 
             <div className="absolute bottom-[15vh] left-1/2 z-30 flex flex-row items-end gap-1 w-max" style={{ transform: `translateX(-50%)` }}>
