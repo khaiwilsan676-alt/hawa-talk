@@ -412,7 +412,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         
         setBets({});
         setProcessedRound(gameState.round);
-        setWinners(w => [...w, winnerImgToSave].slice(-11));
+        setWinners(w => [...w, winnerImgToSave].slice(-10));
         
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
