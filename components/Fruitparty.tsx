@@ -102,11 +102,14 @@ function WebGLShaderImage({ src }: { src: string }) {
   return <canvas ref={canvasRef} className="w-full h-full object-contain" />;
 }
 
+// YE FUNCTION AUTOMATICALLY TEXT CHOTA KAREGA JAISE JAISE COINS BADHENGE BSS
 const getDynamicTextSize = (val: number) => {
   const len = val.toString().length;
-  if (len > 8) return 'text-[10px]';
-  if (len > 6) return 'text-[12px]';
-  return 'text-base'; 
+  if (len > 11) return 'text-[7px]';
+  if (len > 9) return 'text-[8px]';
+  if (len > 7) return 'text-[10px]';
+  if (len > 5) return 'text-[12px]';
+  return 'text-sm'; 
 };
 
 export default function Fruitparty({ onClose }: FruitpartyProps) {
@@ -194,14 +197,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   }, []);
 
   // ==============================================================
-  // AUDIO INITIALIZATION (Spinning + Betting)
+  // AUDIO INITIALIZATION (Both Spinning & Betting are SAME file bss)
   // ==============================================================
   useEffect(() => {
-    // Spin Sound
-    spinAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3'); 
+    // Spin Sound (SAME VIDEO FILE)
+    spinAudioRef.current = new Audio('/VID_20260908_230446_120_bsl.mp4'); 
     spinAudioRef.current.loop = true;
 
-    // Betting Video Sound (Browser extract kar lega iski audio automatically bss)
+    // Betting Sound (SAME VIDEO FILE)
     bettingAudioRef.current = new Audio('/VID_20260908_230446_120_bsl.mp4');
     bettingAudioRef.current.loop = true;
     
@@ -533,20 +536,22 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
+            {/* BALANCE BOX (Digits badhne par automatically shrink hoga) */}
             <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '55px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
-              <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate ${getDynamicTextSize(balance)}`}>
+              <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(balance)}`}>
                 {balance}
               </span>
             </div>
 
+            {/* TOTAL WON BOX (Digits badhne par automatically shrink hoga) */}
             <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '36px' }}>
               <div className="w-5 h-5 flex-shrink-0">
                 <WebGLShaderImage src="/1786855398290.png" />
               </div>
-              <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate ${getDynamicTextSize(totalWon)}`}>
+              <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(totalWon)}`}>
                 {totalWon}
               </span>
             </div>
