@@ -130,6 +130,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [totalWon, setTotalWon] = useState(0);
   const [bets, setBets] = useState<Record<number, number>>({});
   
+  // Naya State (Result Page Pe User Bet Aur Win Dikhane Ke Liye)
+  const [lastRoundStats, setLastRoundStats] = useState({ bet: 0, won: 0 });
+
   const [processedRound, setProcessedRound] = useState(-1);
   const stateRefs = useRef({ balance, totalWon, bets });
 
@@ -141,8 +144,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [isMuted, setIsMuted] = useState(false);
   
   // Audio Refs
-  const bgAudioRef = useRef<HTMLAudioElement | null>(null); // Continuous bg sound
-  const tickAudioRef = useRef<HTMLAudioElement | null>(null); // Tick Tick for spinning
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null);
+  const tickAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const [scale, setScale] = useState(1);
   useEffect(() => {
@@ -198,11 +201,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   // AUDIO INITIALIZATION
   // ==============================================================
   useEffect(() => {
-    // 1. Background Video/Audio (Continues playing without stopping)
     bgAudioRef.current = new Audio('/VID_20260908_230446_120_bsl.mp4'); 
     bgAudioRef.current.loop = true;
 
-    // 2. Mixkit Tick Sound (Full Loud Volume taaki video sound se upar sunai de)
     tickAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
     tickAudioRef.current.volume = 1.0; 
     
@@ -218,9 +219,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     };
   }, []);
 
-  // ==============================================================
-  // CONTINUOUS BACKGROUND AUDIO LOGIC (Sirf mute pe rukegi, phase pe nahi)
-  // ==============================================================
   useEffect(() => {
     if (bgAudioRef.current) bgAudioRef.current.muted = isMuted;
     if (tickAudioRef.current) tickAudioRef.current.muted = isMuted;
@@ -232,13 +230,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [isMuted]);
 
-  // ==============================================================
-  // TICK TICK SOUND LOGIC (FIXED)
-  // ==============================================================
   useEffect(() => {
     if (gameState.phase === 'spinning' && !isMuted) {
       if (tickAudioRef.current) {
-        // Yahan par hum cloneNode use kar rahe hain, taaki rapid change par sound interrupt/block na ho
         const tickClone = tickAudioRef.current.cloneNode() as HTMLAudioElement;
         tickClone.volume = 1.0;
         tickClone.play().catch((e) => console.log("Tick play blocked:", e));
@@ -247,13 +241,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   }, [gameState.highlight, gameState.phase, isMuted]);
 
   // ==============================================================
-  // 🌍 GLOBAL CLOCK ENGINE
+  // 🌍 GLOBAL CLOCK ENGINE (Updated Total Cycle for 3s Result Phase)
   // ==============================================================
   useEffect(() => {
     if (loading) return;
 
     const clock = setInterval(() => {
-      const CYCLE_MS = 46000;
+      const CYCLE_MS = 48000; // 30s + 15s + 3s = 48 seconds total cycle
       const now = Date.now();
       
       const roundNumber = (Math.floor(now / CYCLE_MS) % 10000) + 1000;
@@ -286,8 +280,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         const spinElapsed = elapsed - 30000;
         currentHighlight = SPIN_PATH[Math.floor(spinElapsed / 100) % SPIN_PATH.length];
       } else {
+        // Now Result phase runs for 3 seconds exactly
         currentPhase = 'result';
-        currentCountdown = 0;
+        currentCountdown = 3 - Math.floor((elapsed - 45000) / 1000);
         currentHighlight = winnerIdx;
       }
 
@@ -315,6 +310,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         
         const currentBets = stateRefs.current.bets;
         let earned = 0;
+        let totalBetThisRound = 0;
+
+        // Round ke total bet ko calculate karna result popup ke liye
+        Object.values(currentBets).forEach(val => totalBetThisRound += val);
+
         const betOnWinner = currentBets[winnerItem.id] || 0;
         
         if (betOnWinner > 0) {
@@ -327,6 +327,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
         setBalance(nextBalance);
         setTotalWon(nextTotalWon);
+        
+        // Payout Result Update Karein Popup Ke Liye
+        setLastRoundStats({ bet: totalBetThisRound, won: earned });
+        
         setBets({});
         setProcessedRound(gameState.round);
 
@@ -556,6 +560,100 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 {totalWon}
               </span>
             </div>
+
+            {/* ============================================================== */}
+            {/* WINNER RESULT POPUP PAGE (Jo result aane par 3 second ke liye dikhega) */}
+            {/* ============================================================== */}
+            {gameState.phase === 'result' && (
+              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-md">
+                <img src="/file_00000000ced481fa9117afc4fa91791e.png" alt="Winner Background" className="absolute inset-0 w-full h-full object-fill z-0" />
+                
+                {/* Heading & Countdown */}
+                <div className="relative z-10 w-full px-4 pt-3 flex justify-center items-center">
+                  <span className="text-white font-bold text-lg drop-shadow-lg tracking-wide">
+                    Round {gameState.round}
+                  </span>
+                  <span className="absolute right-4 text-amber-400 font-extrabold text-xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    {gameState.countdown}s
+                  </span>
+                </div>
+
+                {/* Fruit Card + Winning Image inside */}
+                <div className="relative z-10 mt-3 flex items-center justify-center w-[110px] h-[110px]">
+                  <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" alt="Winner Card Base" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
+                  <img src={GRID_ITEMS[gameState.winnerIndex].img} alt="Winning Fruit" className="w-[60px] h-[60px] object-contain z-10 pointer-events-none drop-shadow-md" />
+                </div>
+
+                {/* Bet & Winning Amount Display */}
+                <div className="relative z-10 flex flex-col items-center gap-1 mt-3">
+                  <div className="flex items-center gap-1.5 text-white text-sm font-semibold drop-shadow-md bg-black/30 px-3 py-0.5 rounded-full">
+                    <span>Your Bet Amount</span>
+                    <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                    <span className="text-yellow-300">{lastRoundStats.bet}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-white text-sm font-semibold drop-shadow-md bg-black/30 px-3 py-0.5 rounded-full mt-0.5">
+                    <span>Your Winning Amount</span>
+                    <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                    <span className="text-green-400">{lastRoundStats.won}</span>
+                  </div>
+                </div>
+
+                {/* Separator Line */}
+                <div className="relative z-10 w-[85%] h-[1px] bg-white/20 my-3" />
+
+                {/* Top Winners Section */}
+                <span className="relative z-10 text-yellow-100 font-extrabold text-xs mb-3 drop-shadow-md uppercase tracking-wider">Top winner Of this Round</span>
+                
+                <div className="relative z-10 flex flex-row items-end justify-center gap-8 w-full px-2">
+                  
+                  {/* Top 1 User */}
+                  <div className="flex flex-col items-center gap-0.5 w-[60px] animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                    <div className="relative w-[46px] h-[46px]">
+                      <div className="w-full h-full rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 border-[2px] border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                      <div className="absolute -top-1 -left-1 w-[18px] h-[18px] bg-gradient-to-br from-yellow-300 to-yellow-600 rounded-full flex items-center justify-center border border-white shadow-md">
+                        <span className="text-[10px] font-black text-black leading-none mt-[1px]">1</span>
+                      </div>
+                    </div>
+                    <span className="text-white text-[11px] font-bold drop-shadow-md truncate w-full text-center mt-1">Alex</span>
+                    <div className="flex items-center justify-center gap-1 w-full">
+                      <div className="w-3.5 h-3.5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                      <span className="text-yellow-300 text-[10px] font-extrabold drop-shadow-md truncate">72882</span>
+                    </div>
+                  </div>
+
+                  {/* Top 2 User */}
+                  <div className="flex flex-col items-center gap-0.5 w-[60px] animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                    <div className="relative w-[40px] h-[40px]">
+                      <div className="w-full h-full rounded-full bg-gradient-to-tr from-pink-400 to-red-500 border-[2px] border-gray-300 shadow-[0_0_8px_rgba(209,213,219,0.5)]" />
+                      <div className="absolute -top-1 -left-1 w-[16px] h-[16px] bg-gradient-to-br from-gray-200 to-gray-500 rounded-full flex items-center justify-center border border-white shadow-md">
+                        <span className="text-[9px] font-black text-black leading-none mt-[1px]">2</span>
+                      </div>
+                    </div>
+                    <span className="text-white text-[11px] font-bold drop-shadow-md truncate w-full text-center mt-1">Simi</span>
+                    <div className="flex items-center justify-center gap-1 w-full">
+                      <div className="w-3.5 h-3.5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                      <span className="text-gray-200 text-[10px] font-extrabold drop-shadow-md truncate">8889</span>
+                    </div>
+                  </div>
+
+                  {/* Top 3 User */}
+                  <div className="flex flex-col items-center gap-0.5 w-[60px] animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                    <div className="relative w-[38px] h-[38px]">
+                      <div className="w-full h-full rounded-full bg-gradient-to-tr from-green-400 to-teal-500 border-[2px] border-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                      <div className="absolute -top-1 -left-1 w-[16px] h-[16px] bg-gradient-to-br from-orange-300 to-orange-600 rounded-full flex items-center justify-center border border-white shadow-md">
+                        <span className="text-[9px] font-black text-black leading-none mt-[1px]">3</span>
+                      </div>
+                    </div>
+                    <span className="text-white text-[11px] font-bold drop-shadow-md truncate w-full text-center mt-1">kbhir</span>
+                    <div className="flex items-center justify-center gap-1 w-full">
+                      <div className="w-3.5 h-3.5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                      <span className="text-orange-300 text-[10px] font-extrabold drop-shadow-md truncate">8373</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
 
           </div>
         )}
