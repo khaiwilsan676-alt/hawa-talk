@@ -63,14 +63,21 @@ async function saveStateToDB(state: any) {
 }
 
 // ==========================================
-// Canvas 2D for Images
+// Canvas 2D for Images - PERFORMANCE FIXED
+// (Cache mechanism added so it doesn't freeze History/Modals)
 // ==========================================
+const imageCache: Record<string, string> = {};
+
 function WebGLShaderImage({ src }: { src: string }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [finalSrc, setFinalSrc] = useState<string | null>(imageCache[src] || null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (imageCache[src]) {
+      setFinalSrc(imageCache[src]);
+      return;
+    }
+
+    const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
@@ -91,11 +98,14 @@ function WebGLShaderImage({ src }: { src: string }) {
           }
         }
         ctx.putImageData(imageData, 0, 0);
+        const dataUrl = canvas.toDataURL();
+        imageCache[src] = dataUrl;
+        setFinalSrc(dataUrl);
       } catch (err) {}
     };
   }, [src]);
 
-  return <canvas ref={canvasRef} className="w-full h-full object-contain" />;
+  return finalSrc ? <img src={finalSrc} className="w-full h-full object-contain" alt="" /> : <div className="w-full h-full" />;
 }
 
 // TEXT AUTO SHRINK
@@ -167,7 +177,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       if (data) {
         if (data.balance !== undefined) setBalance(data.balance);
         if (data.totalWon !== undefined) setTotalWon(data.totalWon);
-        if (data.roundHistory !== undefined) setRoundHistory(data.roundHistory);
+        // Added slice to limit loading old huge arrays and stop crashes
+        if (data.roundHistory !== undefined) setRoundHistory(data.roundHistory.slice(0, 50));
         if (data.winners !== undefined) setWinners(data.winners);
       }
       setIsLoadedFromDB(true);
@@ -278,8 +289,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         currentHighlight = winnerIdx;
       }
 
-      // STATE OPTIMIZATION: Only update React state if something actually changed. 
-      // Yeh UI freeze hone se rokega 100%.
       setGameState(prev => {
         if (
           prev.phase === currentPhase &&
@@ -334,6 +343,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         setProcessedRound(gameState.round);
         setWinners(w => [...w, winnerItem.img as string].slice(-13));
         
+        // Added slice(0, 50) to prevent game from freezing by holding too much data
         setRoundHistory(prev => [{ 
           round: gameState.round, 
           winnerImg: winnerItem.img as string, 
@@ -341,7 +351,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           won: earned > 0,
           bets: currentBets,
           totalWonAmount: earned
-        }, ...prev]);
+        }, ...prev].slice(0, 50));
       }
     }
   }, [gameState.phase, gameState.round, processedRound, loading, isLoadedFromDB]);
@@ -519,7 +529,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* WINNER RESULT POPUP PAGE (STRICT GAPS) */}
             {/* ============================================================== */}
             {gameState.phase === 'result' && (
-              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-t-[16px] pt-4">
+              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-md pt-4">
                 <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                 
                 {/* 1. Heading */}
@@ -536,9 +546,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <div className="mt-1" />
 
                 {/* 2. Fruit Card (Slightly reduced from 140 to 120 so it never goes off-screen) */}
-                <div className="relative z-10 flex items-center justify-center w-[120px] h-[120px]">
+                <div className="relative z-10 flex items-center justify-center w-[140px] h-[160px]">
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
-                  <img src={GRID_ITEMS[gameState.winnerIndex].img} className="w-[70px] h-[70px] object-contain z-10 pointer-events-none drop-shadow-md" />
+                  <img src={GRID_ITEMS[gameState.winnerIndex].img} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
                 {/* EXACT GAP 1 */}
