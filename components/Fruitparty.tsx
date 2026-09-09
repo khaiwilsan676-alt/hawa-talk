@@ -339,7 +339,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         
         setBets({});
         setProcessedRound(gameState.round);
-        setWinners(w => [...w, winnerItem.img as string].slice(-13));
+        setWinners(w => [...w, winnerItem.img as string].slice(-16));
         
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
@@ -526,12 +526,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               ))}
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '3vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '4vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(balance)}`}>{balance}</span>
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '10vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '11vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(totalWon)}`}>{totalWon}</span>
             </div>
@@ -540,10 +540,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* WINNER RESULT POPUP PAGE */}
             {/* ============================================================== */}
             {gameState.phase === 'result' && (
-              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-md pt-4">
+              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up overflow-hidden rounded-md">
                 <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                 
-                <div className="relative z-10 w-full px-4 flex justify-center items-center">
+                {/* Heading (46vh bottom s space so it stays completely inside 50vh top frame without cutting) */}
+                <div className="absolute left-0 w-full px-4 flex justify-center items-center z-10" style={{ bottom: '46vh' }}>
                   <span className="text-white font-bold text-lg drop-shadow-lg tracking-wide">
                     Round {gameState.round}
                   </span>
@@ -552,16 +553,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </span>
                 </div>
 
-                <div className="-mt-2" />
-
-                <div className="relative z-10 flex items-center justify-center w-[180px] h-[180px]">
+                {/* Fruit card Top s 3Vh space */}
+                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-[180px] h-[180px]" style={{ top: '3vh' }}>
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
                   <img src={GRID_ITEMS[gameState.winnerIndex].img} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
-                <div className="-mt-3" />
-
-                <div className="relative z-10 flex flex-col items-center w-full">
+                {/* You bet & You winning Bottom s 8Vh space */}
+                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-full" style={{ bottom: '8vh' }}>
                   <div className="flex items-center gap-1.5 text-white text-[15px] font-bold drop-shadow-md">
                     <span>Your Bet Amount</span>
                     <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
@@ -572,10 +571,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
                     <span className="text-green-400">{lastRoundStats.won}</span>
                   </div>
+                </div>
 
-                  <div className="w-[85%] h-[1px] bg-white/20 my-2" />
-
-                  <span className="text-yellow-100 font-extrabold text-[11px] mb-2 drop-shadow-md uppercase tracking-wider">Top winner Of this Round</span>
+                {/* Top winner Bottom s 1Vh space */}
+                <div className="absolute left-0 w-full z-10 flex flex-col items-center" style={{ bottom: '1vh' }}>
+                  <div className="w-[85%] h-[1px] bg-white/20 mb-1" />
+                  <span className="text-yellow-100 font-extrabold text-[11px] mb-1 drop-shadow-md uppercase tracking-wider">Top winner Of this Round</span>
                   
                   <div className="flex flex-row items-end justify-center gap-8 w-full px-2">
                     <div className="flex flex-col items-center gap-0.5 w-[60px] animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
@@ -738,4 +739,3 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
-
