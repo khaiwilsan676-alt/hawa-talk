@@ -382,7 +382,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       >
         {!loading && (
           <>
-            <div className="absolute bottom-[69vh] left-7 z-30 flex items-center gap-0.5">
+            <div className="absolute bottom-[65.5vh] left-7 z-30 flex items-center gap-0.5">
               <button onClick={() => setIsMuted(!isMuted)} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   {!isMuted ? (
@@ -397,7 +397,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            <div className="absolute bottom-[67vh] left-1/2 -translate-x-1/2 z-30">
+            <div className="absolute bottom-[65.5vh] left-1/2 -translate-x-1/2 z-30">
               <span className="text-white font-bold text-base drop-shadow-md tracking-wide">
                 Round {gameState.round}
               </span>
@@ -443,7 +443,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     <div 
                       key={item.id || index} 
                       onClick={() => { if (item.type === 'fruit') handleBetClick(item.id); }}
-                      className={`relative w-[84px] h-[90px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                      className={`relative w-[82px] h-[87px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
                     >
                       {item.type === 'fruit' ? (
                         <>
