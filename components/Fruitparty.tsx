@@ -63,20 +63,23 @@ async function saveStateToDB(state: any) {
 }
 
 // ==========================================
-// Canvas 2D for Images - PERFORMANCE FIXED
-// (Cache mechanism added so it doesn't freeze History/Modals)
+// Canvas 2D for Images - ULTRA FAST NO-LAG VERSION
 // ==========================================
 const imageCache: Record<string, string> = {};
 
+// Ye component directly image render karega bina load liye
 function WebGLShaderImage({ src }: { src: string }) {
-  const [finalSrc, setFinalSrc] = useState<string | null>(imageCache[src] || null);
+  if (imageCache[src]) {
+    return <img src={imageCache[src]} className="w-full h-full object-contain" alt="" />;
+  }
+  return <CanvasProcessor src={src} />;
+}
+
+// Ye sirf ek baar kaam karega jab pehli baar photo load hogi
+function CanvasProcessor({ src }: { src: string }) {
+  const [finalSrc, setFinalSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (imageCache[src]) {
-      setFinalSrc(imageCache[src]);
-      return;
-    }
-
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
@@ -177,8 +180,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       if (data) {
         if (data.balance !== undefined) setBalance(data.balance);
         if (data.totalWon !== undefined) setTotalWon(data.totalWon);
-        // Added slice to limit loading old huge arrays and stop crashes
-        if (data.roundHistory !== undefined) setRoundHistory(data.roundHistory.slice(0, 50));
+        if (data.roundHistory !== undefined) setRoundHistory(data.roundHistory);
         if (data.winners !== undefined) setWinners(data.winners);
       }
       setIsLoadedFromDB(true);
@@ -245,7 +247,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   }, [gameState.highlight, gameState.phase, isMuted]);
 
   // ==============================================================
-  // GLOBAL CLOCK ENGINE (OPTIMIZED TO PREVENT LAG/FREEZE)
+  // GLOBAL CLOCK ENGINE
   // ==============================================================
   useEffect(() => {
     if (loading) return;
@@ -343,7 +345,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         setProcessedRound(gameState.round);
         setWinners(w => [...w, winnerItem.img as string].slice(-13));
         
-        // Added slice(0, 50) to prevent game from freezing by holding too much data
         setRoundHistory(prev => [{ 
           round: gameState.round, 
           winnerImg: winnerItem.img as string, 
@@ -351,7 +352,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           won: earned > 0,
           bets: currentBets,
           totalWonAmount: earned
-        }, ...prev].slice(0, 50));
+        }, ...prev].slice(0, 50)); 
       }
     }
   }, [gameState.phase, gameState.round, processedRound, loading, isLoadedFromDB]);
@@ -529,7 +530,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             {/* WINNER RESULT POPUP PAGE (STRICT GAPS) */}
             {/* ============================================================== */}
             {gameState.phase === 'result' && (
-              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-md pt-4">
+              <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-t-md pt-4">
                 <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                 
                 {/* 1. Heading */}
@@ -543,16 +544,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 </div>
 
                 {/* EXACT GAP 1 */}
-                <div className="mt-1" />
+                <div className="mt-1-" />
 
                 {/* 2. Fruit Card (Slightly reduced from 140 to 120 so it never goes off-screen) */}
-                <div className="relative z-10 flex items-center justify-center w-[140px] h-[160px]">
+                <div className="relative z-10 flex items-center justify-center w-[180px] h-[180px]">
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
                   <img src={GRID_ITEMS[gameState.winnerIndex].img} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
                 {/* EXACT GAP 1 */}
-                <div className="mt-1" />
+                <div className="mt-3-" />
 
                 {/* 3. Bottom Section */}
                 <div className="relative z-10 flex flex-col items-center w-full">
@@ -631,7 +632,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       </div>
 
       {/* ============================================================== */}
-      {/* MY RECORDS / HISTORY MODAL */}
+      {/* MY RECORDS / HISTORY MODAL (DOM OVERLOAD FIX APPLIED YAHAN) */}
       {/* ============================================================== */}
       {showHistory && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
@@ -649,7 +650,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               {roundHistory.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-gray-400 text-xs font-medium">No records available yet.</div>
               ) : (
-                roundHistory.map((item, index) => (
+                // SIRF LAST 15 ROUNDS DIKHENGE TAAKI PHONE HANG NA HO
+                roundHistory.slice(0, 15).map((item, index) => (
                   <div key={index} className="flex flex-col mb-4 pb-4 border-b border-gray-800">
                     <div className="text-sm font-bold text-gray-200">Round {item.round}</div>
                     <div className="flex items-center gap-2 mt-1 mb-3">
@@ -729,4 +731,3 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
-
