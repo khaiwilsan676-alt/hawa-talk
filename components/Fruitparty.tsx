@@ -341,7 +341,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         setProcessedRound(gameState.round);
         setWinners(w => [...w, winnerItem.img as string].slice(-13));
         
-        // BUG FIX: Sirf un rounds ko history me save karo jisme user ne bet lagayi ho!
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
             round: gameState.round, 
@@ -374,6 +373,67 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="hidden" alt="preload2" />
 
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+
+      {/* ============================================================== */}
+      {/* GRID FIXED TO ENTIRE DEVICE SCREEN (VIEWPORT) */}
+      {/* Isko maine modal ke bahar nikal kar position 'fixed' kardi hai */}
+      {/* ============================================================== */}
+      {!loading && (
+        <div 
+          className="fixed z-[75] flex flex-col items-center pointer-events-none" 
+          style={{
+            top: '31vh',
+            bottom: '31vh',
+            left: '5vh',
+            right: '5vh'
+          }}
+        >
+          <div className="grid grid-cols-3 gap-0 w-full h-full mx-auto max-w-md pointer-events-auto">
+            {GRID_ITEMS.map((item, index) => {
+              const isBettingHighlight = gameState.phase === 'betting' && gameState.handPointer === index;
+              const isSpinningHighlight = (gameState.phase === 'spinning' || gameState.phase === 'result') && gameState.highlight === index;
+              const applyGreen = isBettingHighlight || isSpinningHighlight;
+
+              return (
+                <div 
+                  key={item.id || index} 
+                  onClick={() => { if (item.type === 'fruit') handleBetClick(item.id); }}
+                  className={`relative w-full h-full flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                >
+                  {item.type === 'fruit' ? (
+                    <>
+                      <img src="/file_00000000d0ec820ba666eab8bea30204.png" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300" style={applyGreen ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}} />
+                      {isBettingHighlight && (
+                        <img src="/file_000000000f0c820b95490c9d927692d9.png" className="absolute -bottom-[15%] -right-[15%] w-[65%] h-[65%] max-w-[55px] max-h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300" />
+                      )}
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
+                        <img src={item.img} className="object-contain pointer-events-none drop-shadow-md w-[55%] h-[55%] mb-2" />
+                      </div>
+                      {(bets[item.id] || 0) > 0 && (
+                        <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-[85%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
+                          <div className="w-[10px] h-[10px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                          <span className="text-white text-[clamp(6px,2vw,9px)] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
+                        </div>
+                      )}
+                      <span className="absolute bottom-[8%] left-1/2 -translate-x-1/2 text-white text-[clamp(8px,2.5vw,11px)] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">{item.multi}</span>
+                    </>
+                  ) : (
+                    <>
+                      <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" className="absolute inset-0 w-full h-full object-fill z-0" />
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+                        <span className="text-white text-[clamp(6px,2vw,9px)] font-bold tracking-wider drop-shadow-md mb-0.5">
+                          {gameState.phase === 'betting' ? 'BETTING' : (gameState.phase === 'spinning' ? 'SPINNING' : 'RESULT')}
+                        </span>
+                        <span className="text-amber-400 font-extrabold text-[clamp(14px,4vw,20px)] tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{gameState.countdown}s</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div
         className="relative bg-[#330c36] w-full max-w-md shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
@@ -430,68 +490,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         ) : (
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
-
-            {/* ============================================================== */}
-            {/* YAHA MAINE TERE GRID KO EXACTLY TERI BOLI GAYI DIMENSIONS PE FIX KIYA HAI */}
-            {/* ============================================================== */}
-            <div 
-              className="absolute z-10 flex flex-col items-center" 
-              style={{
-                top: '31vh',
-                bottom: '31vh',
-                left: '5vh',
-                right: '5vh'
-              }}
-            >
-              <div className="grid grid-cols-3 gap-0 w-full h-full mx-auto">
-                {GRID_ITEMS.map((item, index) => {
-                  
-                  const isBettingHighlight = gameState.phase === 'betting' && gameState.handPointer === index;
-                  const isSpinningHighlight = (gameState.phase === 'spinning' || gameState.phase === 'result') && gameState.highlight === index;
-                  const applyGreen = isBettingHighlight || isSpinningHighlight;
-
-                  return (
-                    <div 
-                      key={item.id || index} 
-                      onClick={() => { if (item.type === 'fruit') handleBetClick(item.id); }}
-                      // Ab yaha w-[80px] ki jagah 'w-full h-full' hai jisse ye dynamically chote-bade honge
-                      className={`relative w-full h-full flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
-                    >
-                      {item.type === 'fruit' ? (
-                        <>
-                          <img src="/file_00000000d0ec820ba666eab8bea30204.png" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300" style={applyGreen ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}} />
-                          {isBettingHighlight && (
-                            <img src="/file_000000000f0c820b95490c9d927692d9.png" className="absolute -bottom-[15%] -right-[15%] w-[65%] h-[65%] max-w-[55px] max-h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300" />
-                          )}
-                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
-                            {/* Images ab flexible ban gayi hai (%) */}
-                            <img src={item.img} className="object-contain pointer-events-none drop-shadow-md w-[55%] h-[55%] mb-2" />
-                          </div>
-                          {(bets[item.id] || 0) > 0 && (
-                            <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-[85%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
-                              <div className="w-[10px] h-[10px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
-                              <span className="text-white text-[clamp(6px,2vw,9px)] font-bold leading-none mt-[1px]">{bets[item.id]}</span>
-                            </div>
-                          )}
-                          <span className="absolute bottom-[8%] left-1/2 -translate-x-1/2 text-white text-[clamp(8px,2.5vw,11px)] font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)] leading-none z-20 pointer-events-none">{item.multi}</span>
-                        </>
-                      ) : (
-                        <>
-                          <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" className="absolute inset-0 w-full h-full object-fill z-0" />
-                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-                            <span className="text-white text-[clamp(6px,2vw,9px)] font-bold tracking-wider drop-shadow-md mb-0.5">
-                              {gameState.phase === 'betting' ? 'BETTING' : (gameState.phase === 'spinning' ? 'SPINNING' : 'RESULT')}
-                            </span>
-                            <span className="text-amber-400 font-extrabold text-[clamp(14px,4vw,20px)] tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] leading-none">{gameState.countdown}s</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            {/* ============================================================== */}
 
             <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
               <img src="/IMG_20260908_152953.png" className="w-25 h-auto object-contain" />
