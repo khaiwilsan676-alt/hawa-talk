@@ -10,12 +10,12 @@ const GRID_ITEMS = [
   { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Apple
   { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 58, imgH: 58 },  // Mango
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry (Now x45)
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry (Now x15)
   { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Orange (Swapped with Grapes)
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },// Grapes (Swapped with Orange)
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Grapes (Swapped with Orange)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Orange (Swapped with Grapes)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
@@ -108,6 +108,15 @@ const getDynamicTextSize = (val: number) => {
   return 'text-sm'; 
 };
 
+type HistoryItem = {
+  round: number;
+  winnerImg: string;
+  winnerId: number;
+  won: boolean;
+  bets: Record<number, number>;
+  totalWonAmount: number;
+};
+
 export default function Fruitparty({ onClose }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -124,7 +133,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   });
 
   const [winners, setWinners] = useState<string[]>([]);
-  const [roundHistory, setRoundHistory] = useState<Array<{ round: number; winnerImg: string; won: boolean }>>([]);
+  const [roundHistory, setRoundHistory] = useState<HistoryItem[]>([]);
   
   const [balance, setBalance] = useState(82927);
   const [totalWon, setTotalWon] = useState(0);
@@ -241,13 +250,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   }, [gameState.highlight, gameState.phase, isMuted]);
 
   // ==============================================================
-  // 🌍 GLOBAL CLOCK ENGINE (Updated Total Cycle for 3s Result Phase)
+  // 🌍 GLOBAL CLOCK ENGINE (Updated Total Cycle for 5s Result Phase)
   // ==============================================================
   useEffect(() => {
     if (loading) return;
 
     const clock = setInterval(() => {
-      const CYCLE_MS = 48000; // 30s + 15s + 3s = 48 seconds total cycle
+      const CYCLE_MS = 50000; // 30s + 15s + 5s = 50 seconds total cycle
       const now = Date.now();
       
       const roundNumber = (Math.floor(now / CYCLE_MS) % 10000) + 1000;
@@ -280,9 +289,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         const spinElapsed = elapsed - 30000;
         currentHighlight = SPIN_PATH[Math.floor(spinElapsed / 100) % SPIN_PATH.length];
       } else {
-        // Now Result phase runs for 3 seconds exactly
+        // Now Result phase runs for 5 seconds exactly
         currentPhase = 'result';
-        currentCountdown = 3 - Math.floor((elapsed - 45000) / 1000);
+        currentCountdown = 5 - Math.floor((elapsed - 45000) / 1000);
         currentHighlight = winnerIdx;
       }
 
@@ -308,7 +317,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       const winnerItem = GRID_ITEMS[gameState.winnerIndex];
       if (winnerItem && winnerItem.type === 'fruit') {
         
-        const currentBets = stateRefs.current.bets;
+        const currentBets = { ...stateRefs.current.bets };
         let earned = 0;
         let totalBetThisRound = 0;
 
@@ -335,7 +344,16 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         setProcessedRound(gameState.round);
 
         setWinners(w => [...w, winnerItem.img as string].slice(-13));
-        setRoundHistory(prev => [{ round: gameState.round, winnerImg: winnerItem.img as string, won: earned > 0 }, ...prev]);
+        
+        // Detailed History Record 
+        setRoundHistory(prev => [{ 
+          round: gameState.round, 
+          winnerImg: winnerItem.img as string, 
+          winnerId: winnerItem.id,
+          won: earned > 0,
+          bets: currentBets,
+          totalWonAmount: earned
+        }, ...prev]);
       }
     }
   }, [gameState.phase, gameState.round, processedRound, loading, isLoadedFromDB]);
@@ -354,6 +372,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
+      {/* PRELOAD RESULT IMAGES HIDDEN (Late Load issue fix) */}
+      <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="hidden" alt="preload1" />
+      <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="hidden" alt="preload2" />
+
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       <div
@@ -562,7 +584,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             {/* ============================================================== */}
-            {/* WINNER RESULT POPUP PAGE (Jo result aane par 3 second ke liye dikhega) */}
+            {/* WINNER RESULT POPUP PAGE (Jo result aane par 5 second ke liye dikhega) */}
             {/* ============================================================== */}
             {gameState.phase === 'result' && (
               <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up flex flex-col items-center overflow-hidden rounded-md">
@@ -578,22 +600,22 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </span>
                 </div>
 
-                {/* Fruit Card + Winning Image inside */}
-                <div className="relative z-10 mt-3 flex items-center justify-center w-[110px] h-[110px]">
+                {/* Fruit Card + Winning Image inside (INCREASED SIZE) */}
+                <div className="relative z-10 mt-3 flex items-center justify-center w-[140px] h-[140px]">
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" alt="Winner Card Base" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
-                  <img src={GRID_ITEMS[gameState.winnerIndex].img} alt="Winning Fruit" className="w-[60px] h-[60px] object-contain z-10 pointer-events-none drop-shadow-md" />
+                  <img src={GRID_ITEMS[gameState.winnerIndex].img} alt="Winning Fruit" className="w-[80px] h-[80px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
-                {/* Bet & Winning Amount Display */}
+                {/* Bet & Winning Amount Display (NO BACKGROUND CARD) */}
                 <div className="relative z-10 flex flex-col items-center gap-1 mt-3">
-                  <div className="flex items-center gap-1.5 text-white text-sm font-semibold drop-shadow-md bg-black/30 px-3 py-0.5 rounded-full">
+                  <div className="flex items-center gap-1.5 text-white text-[15px] font-bold drop-shadow-md">
                     <span>Your Bet Amount</span>
-                    <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                    <div className="w-[20px] h-[20px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
                     <span className="text-yellow-300">{lastRoundStats.bet}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-white text-sm font-semibold drop-shadow-md bg-black/30 px-3 py-0.5 rounded-full mt-0.5">
+                  <div className="flex items-center gap-1.5 text-white text-[15px] font-bold drop-shadow-md">
                     <span>Your Winning Amount</span>
-                    <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                    <div className="w-[20px] h-[20px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
                     <span className="text-green-400">{lastRoundStats.won}</span>
                   </div>
                 </div>
@@ -659,30 +681,75 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         )}
       </div>
 
+      {/* ============================================================== */}
+      {/* MY RECORDS / HISTORY MODAL (Tabular & Without Card background) */}
+      {/* ============================================================== */}
       {showHistory && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
           <div className="absolute inset-0 bg-transparent" onClick={() => setShowHistory(false)} />
-          <div className="relative bg-black w-full max-w-md h-[40vh] rounded-t-md shadow-2xl flex flex-col overflow-hidden text-white animate-slide-up" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3">
+          <div className="relative bg-black/95 w-full max-w-md h-[45vh] rounded-t-md shadow-2xl flex flex-col overflow-hidden text-white animate-slide-up" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
               <button onClick={() => setShowHistory(false)} className="w-6 h-6 flex items-center justify-center active:scale-95 transition-all">
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
                   <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
                 </svg>
               </button>
-              <span className="font-bold text-base tracking-wide">History</span>
+              <span className="font-bold text-base tracking-wide">My Records</span>
               <div className="w-6" /> 
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1">
+            
+            <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col">
               {roundHistory.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-gray-400 text-xs font-medium">
-                  No round history available yet.
+                  No records available yet.
                 </div>
               ) : (
                 roundHistory.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between py-1.5 px-2">
-                    <span className="text-sm font-bold text-gray-200">Round {item.round}</span>
-                    <div className="flex items-center gap-3">
-                      <img src={item.winnerImg} alt="Fruit" className="w-6 h-6 object-contain drop-shadow-sm" />
+                  <div key={index} className="flex flex-col mb-4 pb-4 border-b border-gray-800">
+                    <div className="text-sm font-bold text-gray-200">Round {item.round}</div>
+                    
+                    <div className="flex items-center gap-2 mt-1 mb-3">
+                      <span className="text-[11px] text-gray-400 font-medium">Award Results:</span>
+                      <img src={item.winnerImg} className="w-5 h-5 object-contain" alt="Winner Fruit" />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      <span>Fruit</span>
+                      <span>Bet</span>
+                      <span>Award</span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      {GRID_ITEMS.filter(f => f.type === 'fruit').map(fruit => {
+                        const betAmt = item.bets[fruit.id] || 0;
+                        const isWinner = fruit.id === item.winnerId;
+                        const mult = parseInt(fruit.multi.replace('×', ''));
+                        const awardAmt = isWinner && betAmt > 0 ? betAmt * mult : 0;
+
+                        return (
+                          <div key={fruit.id} className="grid grid-cols-3 gap-2 items-center text-center">
+                            <div className="flex justify-center">
+                              <img src={fruit.img} className="w-6 h-6 object-contain" alt="Fruit" />
+                            </div>
+                            
+                            <div className="flex justify-center items-center gap-1">
+                              <div className="w-3.5 h-3.5 flex-shrink-0">
+                                <WebGLShaderImage src="/1786855398290.png" />
+                              </div>
+                              <span className="text-gray-200 text-xs font-semibold">{betAmt}</span>
+                            </div>
+
+                            <div className="flex justify-center items-center gap-1">
+                              <div className="w-3.5 h-3.5 flex-shrink-0">
+                                <WebGLShaderImage src="/1786855398290.png" />
+                              </div>
+                              <span className={`text-xs font-semibold ${awardAmt > 0 ? 'text-green-400' : 'text-gray-400'}`}>
+                                {awardAmt}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))
@@ -692,6 +759,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         </div>
       )}
 
+      {/* ============================================================== */}
+      {/* RULES MODAL */}
+      {/* ============================================================== */}
       {showRules && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center">
           <div className="absolute inset-0 bg-transparent" onClick={() => setShowRules(false)} />
