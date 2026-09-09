@@ -7,15 +7,15 @@ interface FruitpartyProps {
 }
 
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[6px] translate-y-[9px]', imgW: 50, imgH: 50 },  // Lemon (0)
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[4px] translate-y-[9px]', imgW: 50, imgH: 50 },  // Lemon (0)
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×10', move: 'translate-y-[9px]',                   imgW: 55, imgH: 55 },  // Grapes (1)
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[6px] translate-y-[9px]', imgW: 140, imgH: 140 }, // Mango (2)
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[6px]',                   imgW: 50, imgH: 50 },  // Cherry (3)
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[4px] translate-y-[9px]', imgW: 140, imgH: 140 }, // Mango (2)
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[4px]',                   imgW: 50, imgH: 50 },  // Cherry (3)
   { id: 9, type: 'timer', move: 'z-20' },                                                                                                    // CENTER (4) (Removed scale so size matches other cards)
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[6px]',                   imgW: 50, imgH: 50 },  // Apple (5)
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[6px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Guava (6)
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[4px]',                   imgW: 50, imgH: 50 },  // Apple (5)
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[4px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Guava (6)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-y-[9px]',                   imgW: 50, imgH: 50 },  // Strawberry (7)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[6px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Orange (8)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[4px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Orange (8)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
