@@ -140,7 +140,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     winnerIndex: 0,
     highlight: null as number | null,
     handPointer: SPIN_PATH[0],
-    showResultPopup: false // ADDED FOR 1.5 SEC HOLD
+    showResultPopup: false 
   });
 
   const [winners, setWinners] = useState<string[]>([]);
@@ -487,10 +487,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 >
                   {item.type === 'fruit' ? (
                     <>
-                      {/* FIX HERE: Removed all transition delay classes so it instantly jumps to green no matter which phase it is in */}
                       <img src="/file_00000000d0ec820ba666eab8bea30204.png" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0" style={applyGreen ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}} />
                       {isBettingHighlight && (
-                        {/* Hand pointer ke andar se bhi transition hata diya */}
                         <img src="/file_000000000f0c820b95490c9d927692d9.png" className="absolute -bottom-[15%] -right-[15%] w-[65%] h-[65%] max-w-[55px] max-h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl" />
                       )}
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
@@ -917,4 +915,3 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
-
