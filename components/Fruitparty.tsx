@@ -382,10 +382,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         <div 
           className="fixed z-[75] flex flex-col items-center pointer-events-none" 
           style={{
-            top: '35vh',
+            top: '36vh',
             bottom: '31vh',
-            left: '7vh',
-            right: '7vh'
+            left: '8vh',
+            right: '8vh'
           }}
         >
           <div className="grid grid-cols-3 gap-0 w-full h-full mx-auto max-w-md pointer-events-auto">
