@@ -658,7 +658,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
                     {/* NEW TAG SIRF SABSE PEHLE WALE (SABSE LATEST) PAR */}
                     {i === 0 && (
-                      <div className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 bg-green-500 text-white text-[5px] font-black px-1 py-[0.5px] rounded-[2px] leading-tight z-10 shadow-md border-[0.5px] border-green-300">
+                      <div className="absolute -bottom-[2px] left-1/2 -translate-x-1/2 bg-green-500 text-white text-[5px] font-black px-1 py-[0.5px] rounded-[2px] leading-tight z-10 shadow-md border-[0.5px] border-green-300">
                         NEW
                       </div>
                     )}
