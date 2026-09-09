@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { getSharedBalance, setSharedBalance } from '../src/lib/walletDB';
 
 interface WildpartyProps {
   onClose: () => void;
@@ -237,9 +238,7 @@ export default function Wildparty({ onClose }: WildpartyProps) {
       const request = indexedDB.open('WildPartyGameDB', 2);
       request.onupgradeneeded = (e: any) => {
         const db = e.target.result;
-        if (!db.objectStoreNames.contains('userState')) {
-          db.createObjectStore('userState', { keyPath: 'id' });
-        }
+        // 'userState' used to be here, but balance is now handled globally.
         if (!db.objectStoreNames.contains('roundHistory')) {
           db.createObjectStore('roundHistory', { keyPath: 'roundNo' });
         }
@@ -261,11 +260,9 @@ export default function Wildparty({ onClose }: WildpartyProps) {
 
   const saveBalanceToDB = async (val: number) => {
     try {
-      const db = await initIndexedDB();
-      const tx = db.transaction('userState', 'readwrite');
-      tx.objectStore('userState').put({ id: 'current_balance', value: val });
+      await setSharedBalance(val);
     } catch (err) {
-      console.error('IndexedDB Save Balance Error:', err);
+      console.error('Save Balance Error:', err);
     }
   };
 
@@ -284,16 +281,9 @@ export default function Wildparty({ onClose }: WildpartyProps) {
       const db = await initIndexedDB();
       const resetBoundary = get5AMResetBoundary();
 
-      // Load Balance
-      const txUser = db.transaction('userState', 'readonly');
-      const balReq = txUser.objectStore('userState').get('current_balance');
-      balReq.onsuccess = () => {
-        if (balReq.result && typeof balReq.result.value === 'number') {
-          setBalance(balReq.result.value);
-        } else {
-          saveBalanceToDB(5000000);
-        }
-      };
+      // Load Balance globally
+      const globalBal = await getSharedBalance();
+      setBalance(globalBal);
 
       // Load History
       const txHistory = db.transaction('roundHistory', 'readwrite');

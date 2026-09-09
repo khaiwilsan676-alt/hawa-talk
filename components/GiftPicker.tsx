@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { getSharedBalance, setSharedBalance } from '../src/lib/walletDB';
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";
 
@@ -10,6 +11,17 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
   const [showMultipliers, setShowMultipliers] = useState(false);
   const [selectedGift, setSelectedGift] = useState<number | null>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  const [globalBalance, setGlobalBalance] = useState<number>(1077472);
+  useEffect(() => {
+    getSharedBalance().then(setGlobalBalance);
+    const handleBalanceChange = (e: any) => {
+      setGlobalBalance(e.detail);
+    };
+    window.addEventListener('walletBalanceChanged', handleBalanceChange);
+    return () => window.removeEventListener('walletBalanceChanged', handleBalanceChange);
+  }, []);
+
 
   const tabs = ["Hot", "Lucky", "Luxury", "Event"];
   const multipliers = ["1×", "10×", "299×", "599×", "999×"];
@@ -249,7 +261,7 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
                 sizes="20px"
               />
             </div>
-            <span className="text-[10px] font-bold text-yellow-300 tracking-wide">66457</span>
+            <span className="text-[10px] font-bold text-yellow-300 tracking-wide">{globalBalance.toLocaleString()}</span>
           </div>
 
           <div className="flex items-center gap-1.5 relative">
@@ -280,10 +292,27 @@ export default function GiftPicker({ onClose }: { onClose: () => void }) {
               <span>{selectedMultiplier}</span>
               <ChevronUp className={`w-3 h-3 transition-transform ${showMultipliers ? "rotate-180" : ""}`} />
             </button>
+
             <button
-              onClick={() => console.log(`Sent Gift ID: ${selectedGift} with ${selectedMultiplier}`)}
+              onClick={() => {
+                if (selectedGift) {
+                  const gift = currentGifts.find(g => g.id === selectedGift);
+                  if (gift) {
+                    const multi = parseInt(selectedMultiplier.replace('×', '')) || 1;
+                    const totalCost = gift.coins * multi;
+                    if (globalBalance >= totalCost) {
+                      setSharedBalance(globalBalance - totalCost);
+                      console.log(`Sent Gift ID: ${selectedGift} with ${selectedMultiplier} cost ${totalCost}`);
+                      // onClose(); // optionally close after sending
+                    } else {
+                      console.log('Not enough coins');
+                    }
+                  }
+                }
+              }}
               className="send-btn text-white font-bold text-xs px-4 py-1.5 rounded-full transition-all active:scale-95"
             >
+
               Send
             </button>
           </div>
