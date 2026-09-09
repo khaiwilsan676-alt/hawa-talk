@@ -19,7 +19,7 @@ const GRID_ITEMS = [
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
   { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[25px]', imgW: 50, imgH: 50 },  // Guava
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[25px]',                   imgW: 50, imgH: 50 },// Grapes (Swapped in place of Orange)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[35px]', imgW: 55, imgH: 55 },  // Orange (Swapped in place of Grapes)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[25px]', imgW: 55, imgH: 55 },  // Orange (Swapped in place of Grapes)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
