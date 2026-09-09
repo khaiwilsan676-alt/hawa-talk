@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { getSharedBalance, setSharedBalance } from '../src/lib/walletDB';
 
 interface FruitpartyProps {
   onClose: () => void;
@@ -49,16 +50,24 @@ async function initDB(): Promise<IDBDatabase> {
 async function loadStateFromDB() {
   try {
     const db = await initDB();
+    const globalBal = await getSharedBalance();
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const req = tx.objectStore(STORE_NAME).get('user_data');
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => resolve(null);
+      req.onsuccess = () => {
+        if (req.result) {
+           resolve({ ...req.result, balance: globalBal });
+        } else {
+           resolve({ balance: globalBal });
+        }
+      };
+      req.onerror = () => resolve({ balance: globalBal });
     });
   } catch (e) { return null; }
 }
 
 async function saveStateToDB(state: any) {
+  if (state.balance !== undefined) await setSharedBalance(state.balance);
   try {
     const db = await initDB();
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -132,6 +141,15 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   
   const [balance, setBalance] = useState(82927);
   const [totalWon, setTotalWon] = useState(0);
+
+  useEffect(() => {
+    const handleBalanceChange = (e: any) => {
+      setBalance(e.detail);
+    };
+    window.addEventListener('walletBalanceChanged', handleBalanceChange);
+    return () => window.removeEventListener('walletBalanceChanged', handleBalanceChange);
+  }, []);
+
   const [bets, setBets] = useState<Record<number, number>>({});
   
   const [processedRound, setProcessedRound] = useState(-1);
@@ -320,7 +338,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         const betOnWinner = currentBets[winnerItem.id] || 0;
         
         if (betOnWinner > 0) {
-          const mult = parseInt(winnerItem.multi.replace('×', ''));
+          const mult = winnerItem.multi ? parseInt(winnerItem.multi.replace('×', '')) : 1;
           earned = betOnWinner * mult;
         }
 

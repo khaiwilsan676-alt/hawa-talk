@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { getSharedBalance, setSharedBalance } from '../src/lib/walletDB';
 import Image from "next/image";
 import { ArrowLeft, Clock } from "lucide-react";
 
@@ -387,12 +388,34 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
   const [tryThemeItem, setTryThemeItem] = useState<StoreItem | null>(null);
   const [tryCenterItem, setTryCenterItem] = useState<StoreItem | null>(null);
 
+  const [globalBalance, setGlobalBalance] = useState<number>(1077472);
+  const [ownedItems, setOwnedItems] = useState<{ id: string; expiresAt: number }[]>([]);
+  const [equippedItems, setEquippedItems] = useState<Record<string, string>>({}); // tab -> item.id
+
+  useEffect(() => {
+    getSharedBalance().then(setGlobalBalance);
+    const handleBalanceChange = (e: any) => setGlobalBalance(e.detail);
+    window.addEventListener('walletBalanceChanged', handleBalanceChange);
+
+    // Load bag state
+    const savedBag = localStorage.getItem('userBag');
+    if (savedBag) setOwnedItems(JSON.parse(savedBag));
+    const savedEquipped = localStorage.getItem('equippedItems');
+    if (savedEquipped) setEquippedItems(JSON.parse(savedEquipped));
+
+    return () => window.removeEventListener('walletBalanceChanged', handleBalanceChange);
+  }, []);
+
+
+
   const displayedItems = allStoreItems.filter(item => {
     if (currentView === "bag") {
-      return item.isOwned && item.tab === activeTab;
+      const isOwned = item.isOwned || ownedItems.some(owned => owned.id === item.id && owned.expiresAt > Date.now());
+      return isOwned && item.tab === activeTab;
     }
     return item.tab === activeTab;
   });
+
 
   const renderStars = (count: number) => {
     return Array.from({ length: 5 }).map((_, i) => (
@@ -597,12 +620,45 @@ export default function StorePage({ onBack, initialView = "store" }: { onBack: (
                     >
                       Send
                     </button>
+
                     <button
                       type="button"
+                      onClick={() => {
+                        if (currentView === "bag") {
+                          // Equip / Unequip logic
+                          setEquippedItems(prev => {
+                            const newEquipped = { ...prev };
+                            if (newEquipped[item.tab] === item.id) {
+                              delete newEquipped[item.tab]; // Unequip
+                            } else {
+                              newEquipped[item.tab] = item.id; // Equip
+                            }
+                            localStorage.setItem('equippedItems', JSON.stringify(newEquipped));
+                            return newEquipped;
+                          });
+                        } else {
+                          // Buy logic
+                          const cost = parseInt(item.price.replace(/,/g, ''));
+                          if (globalBalance >= cost) {
+                            setSharedBalance(globalBalance - cost);
+                            const durationDays = parseInt(item.duration.replace('D', ''));
+                            const expiresAt = Date.now() + durationDays * 24 * 60 * 60 * 1000;
+
+                            setOwnedItems(prev => {
+                              const newOwned = [...prev, { id: item.id, expiresAt }];
+                              localStorage.setItem('userBag', JSON.stringify(newOwned));
+                              return newOwned;
+                            });
+                          } else {
+                            console.log('Not enough coins to buy');
+                          }
+                        }
+                      }}
                       className="flex-1 h-full bg-[#1d4ed8] text-white text-[12px] font-bold flex items-center justify-center transition-colors hover:bg-blue-800"
                     >
-                      {currentView === "bag" ? "Equip" : "Buy"}
+                      {currentView === "bag" ? (equippedItems[item.tab] === item.id ? "Unequip" : "Equip") : "Buy"}
                     </button>
+
                   </div>
                 </div>
               );

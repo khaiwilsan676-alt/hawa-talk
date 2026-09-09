@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { getSharedBalance, setSharedBalance } from '../src/lib/walletDB'
 
 // --- WebGL Shader to strictly remove White Background & Fix UV Inversion ---
 function WhiteColorRemovalShader({
@@ -149,7 +150,19 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
   )
   const [diamonds, setDiamonds] = useState('')
   const [coins, setCoins] = useState('')
+  const [globalBalance, setGlobalBalance] = useState<number>(1077472)
   const [selectedPercentage, setSelectedPercentage] = useState('100%')
+  useEffect(() => {
+    getSharedBalance().then(setGlobalBalance)
+
+    const handleBalanceChange = (e: any) => {
+      setGlobalBalance(e.detail)
+    }
+
+    window.addEventListener('walletBalanceChanged', handleBalanceChange)
+    return () => window.removeEventListener('walletBalanceChanged', handleBalanceChange)
+  }, [])
+
 
   useEffect(() => {
     const id = setTimeout(() => setMounted(true), 30)
@@ -282,7 +295,7 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
                 current balance
               </span>
               <p className="text-3xl font-black text-amber-950 tracking-tight">
-                1,077,472
+                {globalBalance.toLocaleString()}
               </p>
             </div>
 
