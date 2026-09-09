@@ -11,13 +11,13 @@ interface FruitpartyProps {
 // (Gap of 35px for Top & Bottom Row + Grapes & Orange swapped)
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[14px]', imgW: 50, imgH: 50 },  // Lemon
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[15px]', imgW: 50, imgH: 50 },  // Lemon
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: 'translate-y-[15px]',                   imgW: 50, imgH: 50 },  // Apple
   { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[15px]', imgW: 58, imgH: 58 },  // Mango
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },// Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[16px]', imgW: 50, imgH: 50 },  // Guava
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[15px]', imgW: 50, imgH: 50 },  // Guava
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: '-translate-y-[15px]',                   imgW: 50, imgH: 50 },// Grapes (Swapped in place of Orange)
   { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[15px]', imgW: 55, imgH: 55 },  // Orange (Swapped in place of Grapes)
 ];
@@ -143,8 +143,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   
   // Sound logic
   const [isMuted, setIsMuted] = useState(false);
-  const spinAudioRef = useRef<HTMLAudioElement | null>(null);
-  const bettingAudioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Audio Refs
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null); // Continuous bg sound
+  const tickAudioRef = useRef<HTMLAudioElement | null>(null); // Tick Tick for spinning
 
   const [scale, setScale] = useState(1);
   useEffect(() => {
@@ -197,53 +199,53 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
   }, []);
 
   // ==============================================================
-  // AUDIO INITIALIZATION (Both Spinning & Betting are SAME file bss)
+  // AUDIO INITIALIZATION
   // ==============================================================
   useEffect(() => {
-    // Spin Sound (SAME VIDEO FILE)
-    spinAudioRef.current = new Audio('/VID_20260908_230446_120_bsl.mp4'); 
-    spinAudioRef.current.loop = true;
+    // 1. Background Video/Audio (Continues playing without stopping)
+    bgAudioRef.current = new Audio('/VID_20260908_230446_120_bsl.mp4'); 
+    bgAudioRef.current.loop = true;
 
-    // Betting Sound (SAME VIDEO FILE)
-    bettingAudioRef.current = new Audio('/VID_20260908_230446_120_bsl.mp4');
-    bettingAudioRef.current.loop = true;
+    // 2. Mixkit Tick Sound (Jab spinning mein card change hoga tab bajega)
+    tickAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
     
     return () => {
-      if (spinAudioRef.current) {
-        spinAudioRef.current.pause();
-        spinAudioRef.current = null;
+      if (bgAudioRef.current) {
+        bgAudioRef.current.pause();
+        bgAudioRef.current = null;
       }
-      if (bettingAudioRef.current) {
-        bettingAudioRef.current.pause();
-        bettingAudioRef.current = null;
+      if (tickAudioRef.current) {
+        tickAudioRef.current.pause();
+        tickAudioRef.current = null;
       }
     };
   }, []);
 
   // ==============================================================
-  // AUDIO PLAY/PAUSE LOGIC (BASED ON PHASE & MUTE BUTTON)
+  // CONTINUOUS BACKGROUND AUDIO LOGIC (Sirf mute pe rukegi, phase pe nahi)
   // ==============================================================
   useEffect(() => {
-    if (spinAudioRef.current) spinAudioRef.current.muted = isMuted;
-    if (bettingAudioRef.current) bettingAudioRef.current.muted = isMuted;
+    if (bgAudioRef.current) bgAudioRef.current.muted = isMuted;
+    if (tickAudioRef.current) tickAudioRef.current.muted = isMuted;
     
-    // Spinning Phase Audio Logic
+    if (!isMuted) {
+      bgAudioRef.current?.play().catch((e) => console.log("Play blocked:", e));
+    } else {
+      bgAudioRef.current?.pause();
+    }
+  }, [isMuted]); // Maine yaha se `gameState.phase` hata diya hai taki sound ruke nahi!
+
+  // ==============================================================
+  // TICK TICK SOUND LOGIC (Sirf spinning ke time chalega har movement par)
+  // ==============================================================
+  useEffect(() => {
     if (gameState.phase === 'spinning' && !isMuted) {
-      spinAudioRef.current?.play().catch((e) => console.log("Play blocked:", e));
-    } else {
-      spinAudioRef.current?.pause();
-      if (spinAudioRef.current) spinAudioRef.current.currentTime = 0;
+      if (tickAudioRef.current) {
+        tickAudioRef.current.currentTime = 0; // Reset sound to start instantly
+        tickAudioRef.current.play().catch((e) => console.log("Tick play blocked:", e));
+      }
     }
-
-    // Betting Phase Audio Logic
-    if (gameState.phase === 'betting' && !isMuted) {
-      bettingAudioRef.current?.play().catch((e) => console.log("Play blocked:", e));
-    } else {
-      bettingAudioRef.current?.pause();
-      if (bettingAudioRef.current) bettingAudioRef.current.currentTime = 0;
-    }
-
-  }, [gameState.phase, isMuted]);
+  }, [gameState.highlight, gameState.phase, isMuted]); // Jaise hi highlight change hoga, tick bajega
 
   // ==============================================================
   // 🌍 GLOBAL CLOCK ENGINE
