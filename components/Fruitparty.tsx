@@ -7,15 +7,15 @@ interface FruitpartyProps {
 }
 
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Grapes (Top Middle)
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 100, imgH: 100 },  // Mango
-  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry (Left Middle)
-  { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                        // CENTER (Timer)
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Apple (Right Middle)
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Strawberry (Bottom Middle)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Orange 
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon (0)
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Grapes (1)
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 100, imgH: 100 }, // Mango (2)
+  { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry (3)
+  { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                       // CENTER (4)
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Apple (5)
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava (6)
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Strawberry (7)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Orange (8)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
@@ -259,7 +259,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       const randomVal = seed - Math.floor(seed);
       
       let winnerIdx = 0;
-      if (randomVal < 0.80) {
+      // Mix Cards Probability
+      if (randomVal < 0.04) {
+        winnerIdx = 10; // Left Mix (All x5) -> 4% chance
+      } else if (randomVal < 0.06) {
+        winnerIdx = 11; // Right Mix (All High) -> 2% chance
+      } else if (randomVal < 0.80) {
         const lowPayouts = [0, 2, 8, 6]; 
         winnerIdx = lowPayouts[Math.floor(randomVal * 100) % lowPayouts.length];
       } else {
@@ -312,24 +317,63 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     return () => clearInterval(clock);
   }, [loading]);
 
-  // Payout Logic
+  // Payout Logic Including Mix Logic
   useEffect(() => {
     if (gameState.phase === 'result' && gameState.round !== processedRound && !loading && isLoadedFromDB) {
-      const winnerItem = GRID_ITEMS[gameState.winnerIndex];
-      if (winnerItem && winnerItem.type === 'fruit') {
-        
-        const currentBets = { ...stateRefs.current.bets };
-        let earned = 0;
-        let totalBetThisRound = 0;
+      
+      const currentBets = { ...stateRefs.current.bets };
+      let earned = 0;
+      let totalBetThisRound = 0;
 
-        Object.values(currentBets).forEach(val => totalBetThisRound += val);
-        const betOnWinner = currentBets[winnerItem.id] || 0;
+      Object.values(currentBets).forEach(val => totalBetThisRound += val);
+
+      let winnerImgToSave = '';
+      let winnerIdToSave = 0;
+
+      if (gameState.winnerIndex === 10) {
+        // Left Mix Wins (All ×5)
+        winnerImgToSave = '/IMG_20260908_152953.png';
+        winnerIdToSave = 10;
         
-        if (betOnWinner > 0) {
-          const mult = parseInt(winnerItem.multi.replace('×', ''));
-          earned = betOnWinner * mult;
+        // Payout to Mix Better (20x)
+        if (currentBets[10] > 0) earned += currentBets[10] * 20;
+        
+        // Payout to all normal x5 cards
+        if (currentBets[1] > 0) earned += currentBets[1] * 5;
+        if (currentBets[3] > 0) earned += currentBets[3] * 5;
+        if (currentBets[7] > 0) earned += currentBets[7] * 5;
+        if (currentBets[6] > 0) earned += currentBets[6] * 5;
+
+      } else if (gameState.winnerIndex === 11) {
+        // Right Mix Wins (High Cards)
+        winnerImgToSave = '/IMG_20260908_153008.png';
+        winnerIdToSave = 11;
+        
+        // Payout to Mix Better (95x total)
+        if (currentBets[11] > 0) earned += currentBets[11] * 95;
+        
+        // Payout to all normal high cards
+        if (currentBets[5] > 0) earned += currentBets[5] * 10;
+        if (currentBets[4] > 0) earned += currentBets[4] * 15;
+        if (currentBets[2] > 0) earned += currentBets[2] * 25;
+        if (currentBets[8] > 0) earned += currentBets[8] * 45;
+
+      } else {
+        // Normal Single Fruit Win
+        const winnerItem = GRID_ITEMS[gameState.winnerIndex];
+        if (winnerItem && winnerItem.type === 'fruit') {
+          winnerImgToSave = winnerItem.img as string;
+          winnerIdToSave = winnerItem.id;
+
+          const betOnWinner = currentBets[winnerItem.id] || 0;
+          if (betOnWinner > 0) {
+            const mult = parseInt(winnerItem.multi.replace('×', ''));
+            earned = betOnWinner * mult;
+          }
         }
+      }
 
+      if (winnerImgToSave) {
         const nextBalance = stateRefs.current.balance + earned;
         const nextTotalWon = stateRefs.current.totalWon + earned;
 
@@ -339,13 +383,13 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         
         setBets({});
         setProcessedRound(gameState.round);
-        setWinners(w => [...w, winnerItem.img as string].slice(-16));
+        setWinners(w => [...w, winnerImgToSave].slice(-16));
         
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
             round: gameState.round, 
-            winnerImg: winnerItem.img as string, 
-            winnerId: winnerItem.id,
+            winnerImg: winnerImgToSave, 
+            winnerId: winnerIdToSave,
             won: earned > 0,
             bets: currentBets,
             totalWonAmount: earned
@@ -366,6 +410,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       }
     }
   };
+
+  // Helper For Result Popup Display Image
+  let popupWinnerImg = '';
+  if (gameState.winnerIndex === 10) popupWinnerImg = '/IMG_20260908_152953.png';
+  else if (gameState.winnerIndex === 11) popupWinnerImg = '/IMG_20260908_153008.png';
+  else popupWinnerImg = GRID_ITEMS[gameState.winnerIndex]?.img || '';
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
@@ -390,7 +440,14 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="grid grid-cols-3 gap-0 w-full h-full mx-auto max-w-md pointer-events-auto">
             {GRID_ITEMS.map((item, index) => {
               const isBettingHighlight = gameState.phase === 'betting' && gameState.handPointer === index;
-              const isSpinningHighlight = (gameState.phase === 'spinning' || gameState.phase === 'result') && gameState.highlight === index;
+              
+              // Draw mix hone par saare related cards jal uthenge
+              const isSpinningHighlight = (gameState.phase === 'spinning' || gameState.phase === 'result') && (
+                gameState.highlight === index ||
+                (gameState.phase === 'result' && gameState.winnerIndex === 10 && [0, 2, 6, 8].includes(index)) ||
+                (gameState.phase === 'result' && gameState.winnerIndex === 11 && [1, 3, 5, 7].includes(index))
+              );
+              
               const applyGreen = isBettingHighlight || isSpinningHighlight;
 
               return (
@@ -490,9 +547,39 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
-              <img src="/IMG_20260908_152953.png" className="w-25 h-auto object-contain" />
-              <img src="/IMG_20260908_153008.png" className="w-25 h-auto object-contain" />
+            {/* MIX BUTTONS NOW FULLY FUNCTIONAL WITH GLOW EFFECT & BET BADGE */}
+            <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-2 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
+              
+              {/* Left Mix (ID 10) */}
+              <div className="relative cursor-pointer transition-transform active:scale-95" onClick={() => handleBetClick(10)}>
+                <img 
+                  src="/IMG_20260908_152953.png" 
+                  className="w-[100px] h-auto object-contain transition-all duration-300"
+                  style={(gameState.phase === 'result' && gameState.winnerIndex === 10) ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}} 
+                />
+                {(bets[10] || 0) > 0 && (
+                  <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-[80%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
+                    <div className="w-[10px] h-[10px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                    <span className="text-white text-[clamp(6px,2vw,9px)] font-bold leading-none mt-[1px]">{bets[10]}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Mix (ID 11) */}
+              <div className="relative cursor-pointer transition-transform active:scale-95" onClick={() => handleBetClick(11)}>
+                <img 
+                  src="/IMG_20260908_153008.png" 
+                  className="w-[100px] h-auto object-contain transition-all duration-300"
+                  style={(gameState.phase === 'result' && gameState.winnerIndex === 11) ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}} 
+                />
+                {(bets[11] || 0) > 0 && (
+                  <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-[80%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
+                    <div className="w-[10px] h-[10px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
+                    <span className="text-white text-[clamp(6px,2vw,9px)] font-bold leading-none mt-[1px]">{bets[11]}</span>
+                  </div>
+                )}
+              </div>
+
             </div>
 
             <div className="absolute bottom-[15vh] left-1/2 z-30 flex flex-row items-end gap-1 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
@@ -519,19 +606,28 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             <div className="absolute z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
-              {winners.map((imgUrl, i) => (
-                <div key={i} className="animate-fade-in-up">
-                  <img src={imgUrl} className="w-4 h-4 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                </div>
-              ))}
+              {winners.map((imgUrl, i) => {
+                const isMix = imgUrl === '/IMG_20260908_152953.png' || imgUrl === '/IMG_20260908_153008.png';
+                return (
+                  <div key={i} className="animate-fade-in-up">
+                    {isMix ? (
+                      <div className="w-4 h-4 bg-green-500 flex items-center justify-center rounded-[2px] shadow-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                        <span className="text-white text-[5px] font-bold leading-none tracking-wider">MIX</span>
+                      </div>
+                    ) : (
+                      <img src={imgUrl} className="w-4 h-4 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '4vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '9vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(balance)}`}>{balance}</span>
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '7vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '5vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(totalWon)}`}>{totalWon}</span>
             </div>
@@ -543,7 +639,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <div className="absolute bottom-0 left-0 w-full h-[50vh] z-[75] animate-slide-up overflow-hidden rounded-md">
                 <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                 
-                {/* Heading (46vh bottom s space so it stays completely inside 50vh top frame without cutting) */}
                 <div className="absolute left-0 w-full px-4 flex justify-center items-center z-10" style={{ bottom: '46vh' }}>
                   <span className="text-white font-bold text-lg drop-shadow-lg tracking-wide">
                     Round {gameState.round}
@@ -553,14 +648,12 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </span>
                 </div>
 
-                {/* Fruit card Top s 3Vh space */}
                 <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-[180px] h-[180px]" style={{ top: '3vh' }}>
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
-                  <img src={GRID_ITEMS[gameState.winnerIndex].img} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
+                  <img src={popupWinnerImg} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
-                {/* You bet & You winning Bottom s 8Vh space */}
-                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-full" style={{ bottom: '25vh' }}>
+                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-full" style={{ bottom: '21vh' }}>
                   <div className="flex items-center gap-1.5 text-white text-[15px] font-bold drop-shadow-md">
                     <span>Your Bet Amount</span>
                     <div className="w-[18px] h-[18px] flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
@@ -573,7 +666,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </div>
                 </div>
 
-                {/* Top winner Bottom s 1Vh space */}
                 <div className="absolute left-0 w-full z-10 flex flex-col items-center" style={{ bottom: '1vh' }}>
                   <div className="w-[85%] h-[1px] bg-white/20 mb-1" />
                   <span className="text-yellow-100 font-extrabold text-[11px] mb-1 drop-shadow-md uppercase tracking-wider">Top winner Of this Round</span>
@@ -592,7 +684,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         <span className="text-yellow-300 text-[10px] font-extrabold drop-shadow-md truncate">72882</span>
                       </div>
                     </div>
-
+                    
                     <div className="flex flex-col items-center gap-0.5 w-[60px] animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                       <div className="relative w-[40px] h-[40px]">
                         <div className="w-full h-full rounded-full bg-gradient-to-tr from-pink-400 to-red-500 border-[2px] border-gray-300 shadow-[0_0_8px_rgba(209,213,219,0.5)]" />
@@ -654,12 +746,25 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     .map((item, index) => {
                       const betFruitIds = Object.keys(item.bets).map(Number).filter(id => item.bets[id] > 0);
 
+                      // Helper to get image & info for history calculation
+                      const getBetItemInfo = (id: number) => {
+                         if (id === 10) return { id: 10, img: '/IMG_20260908_152953.png', multi: '×20' };
+                         if (id === 11) return { id: 11, img: '/IMG_20260908_153008.png', multi: '×95' };
+                         return GRID_ITEMS.find(f => f.id === id);
+                      };
+
                       return (
                         <div key={index} className="flex flex-col mb-4 pb-4 border-b border-gray-800">
                           <div className="text-sm font-bold text-gray-200">Round {item.round}</div>
                           <div className="flex items-center gap-2 mt-1 mb-3">
                             <span className="text-[11px] text-gray-400 font-medium">Award Results:</span>
-                            <img src={item.winnerImg} className="w-5 h-5 object-contain" alt="Winner Fruit" />
+                            {item.winnerImg === '/IMG_20260908_152953.png' || item.winnerImg === '/IMG_20260908_153008.png' ? (
+                              <div className="w-5 h-5 bg-green-500 flex items-center justify-center rounded-[2px] shadow-sm">
+                                <span className="text-white text-[7px] font-bold leading-none tracking-wider">MIX</span>
+                              </div>
+                            ) : (
+                              <img src={item.winnerImg} className="w-5 h-5 object-contain" alt="Winner Fruit" />
+                            )}
                           </div>
 
                           <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
@@ -670,13 +775,27 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
                           <div className="flex flex-col gap-1.5">
                             {betFruitIds.map(fruitId => {
-                              const fruit = GRID_ITEMS.find(f => f.id === fruitId);
+                              const fruit = getBetItemInfo(fruitId);
                               if (!fruit) return null;
 
                               const betAmt = item.bets[fruitId];
-                              const isWinner = fruit.id === item.winnerId;
-                              const mult = parseInt(fruit.multi.replace('×', ''));
-                              const awardAmt = isWinner ? betAmt * mult : 0;
+                              let awardAmt = 0;
+                              
+                              if (item.winnerId === 10) {
+                                 if (fruitId === 10) awardAmt = betAmt * 20; // 5 x 4
+                                 if ([1,3,7,6].includes(fruitId)) awardAmt = betAmt * 5;
+                              } else if (item.winnerId === 11) {
+                                 if (fruitId === 11) awardAmt = betAmt * 95; // 10+15+25+45
+                                 if (fruitId === 5) awardAmt = betAmt * 10;
+                                 if (fruitId === 4) awardAmt = betAmt * 15;
+                                 if (fruitId === 2) awardAmt = betAmt * 25;
+                                 if (fruitId === 8) awardAmt = betAmt * 45;
+                              } else {
+                                 if (fruitId === item.winnerId) {
+                                    const mult = parseInt(fruit.multi?.replace('×', '') || '0');
+                                    awardAmt = betAmt * mult;
+                                 }
+                              }
 
                               return (
                                 <div key={fruit.id} className="grid grid-cols-3 gap-2 items-center text-center">
@@ -739,3 +858,4 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
+
