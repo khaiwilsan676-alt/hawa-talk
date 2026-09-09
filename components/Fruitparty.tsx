@@ -245,7 +245,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     }
   }, [gameState.highlight, gameState.phase, isMuted]);
 
-  // GLOBAL CLOCK ENGINE (Updated for jump fix and 1.5s delay)
+  // GLOBAL CLOCK ENGINE 
   useEffect(() => {
     if (loading) return;
 
@@ -277,7 +277,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
       let currentCountdown = 0;
       let currentHighlight = null;
       let currentHandPointer = SPIN_PATH[0];
-      let currentShowResultPopup = false; // Add popup state flag
+      let currentShowResultPopup = false;
 
       if (elapsed < 30000) {
         // 30s Betting
@@ -288,18 +288,25 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         // 5s Spinning
         currentPhase = 'spinning';
         currentCountdown = 5 - Math.floor((elapsed - 30000) / 1000);
+        
+        // --- SPINNER SLOW DOWN LOGIC ---
+        // Spinner speed starts fast, then becomes very slow right before stopping
         const spinElapsed = elapsed - 30000;
-        
-        // --- JUMP BUG FIX CALCULATION ---
-        // This ensures step exactly ends perfectly on winnerIdx without jumping
         let targetPathIndex = SPIN_PATH.indexOf(winnerIdx);
-        if (targetPathIndex === -1) targetPathIndex = 0; // Fallback for mix cards
+        if (targetPathIndex === -1) targetPathIndex = 0; 
         
-        const maxSteps = 49; // Total ticks during 5000ms at 100ms per tick
+        const spinDuration = 5000; // Total spin time 5000ms
+        let t = spinElapsed / spinDuration; // 0.0 to 1.0
+        
+        // Cubic ease-out calculation: Smooth and natural slow down effect
+        let easeOut = 1 - Math.pow(1 - t, 3);
+        
+        const maxSteps = 80; // Total 80 rounds/jumps in 5 seconds
+        const step = Math.round(maxSteps * easeOut);
+        
         const startOffset = (targetPathIndex - (maxSteps % SPIN_PATH.length) + SPIN_PATH.length * 10) % SPIN_PATH.length;
-        const step = Math.floor(spinElapsed / 100);
-        
         currentHighlight = SPIN_PATH[(startOffset + step) % SPIN_PATH.length];
+
       } else {
         // 5s Result Phase
         currentPhase = 'result';
@@ -485,8 +492,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                         <img src="/file_000000000f0c820b95490c9d927692d9.png" className="absolute -bottom-[15%] -right-[15%] w-[65%] h-[65%] max-w-[55px] max-h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300" />
                       )}
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-0.5">
-                        {/* CHANGED MANGO SIZE EXACTLY W-[80px] H-[80px] AS REQUESTED */}
-                        <img src={item.img} className={`object-contain pointer-events-none drop-shadow-md mb-2 ${item.id === 3 ? 'w-[70px] h-[70px]' : 'w-[55%] h-[55%]'}`} />
+                        <img src={item.img} className={`object-contain pointer-events-none drop-shadow-md mb-2 ${item.id === 3 ? 'w-[65px] h-[65px]' : 'w-[55%] h-[55%]'}`} />
                       </div>
                       {(bets[item.id] || 0) > 0 && (
                         <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2 w-[85%] h-[16px] max-h-[25%] bg-gradient-to-r from-blue-500/80 to-pink-500/80 flex items-center justify-center gap-[2px] rounded z-20 pointer-events-none shadow-md border border-white/20 overflow-hidden">
@@ -498,7 +504,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     </>
                   ) : (
                     <>
-                      {/* TIMER CARD KA NEW BACKGROUND IMAGE */}
                       <img src="/file_0000000023cc8230baec62632d74e698.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
                         <span className="text-white text-[clamp(6px,2vw,9px)] font-bold tracking-wider drop-shadow-md mb-0.5">
@@ -571,7 +576,6 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             <img src="/1787413631876~2.jpg" alt="Fruit Party Background" className="absolute inset-0 w-full h-full object-fill pointer-events-none" />
 
-            {/* MIX BUTTONS NOW FULLY FUNCTIONAL WITH GLOW EFFECT & BET BADGE */}
             <div className="absolute bottom-[22vh] left-1/2 z-30 flex flex-row items-center justify-center gap-0.5 w-max" style={{ transform: `translateX(-50%) scale(${scale})`, transformOrigin: 'bottom center' }}>
               
               {/* Left Mix (ID 10) */}
@@ -629,24 +633,34 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            <div className="absolute z-40 flex flex-row flex-wrap gap-1 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
-              {winners.map((imgUrl, i) => {
+            {/* ============================================================== */}
+            {/* HISTORY PATTI (Updated: New on left & NEW green tag added) */}
+            {/* ============================================================== */}
+            <div className="absolute z-40 flex flex-row flex-wrap gap-2 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
+              {winners.slice().reverse().map((imgUrl, i) => {
                 const isSmallMix = imgUrl === '/IMG_20260908_152953.png';
                 const isBigMix = imgUrl === '/IMG_20260908_153008.png';
                 return (
-                  <div key={i} className="animate-fade-in-up">
+                  <div key={i} className="relative animate-fade-in-up flex items-center justify-center w-6 h-6 bg-[#4a2810] rounded-full shadow-md border-[1.5px] border-[#3a1d09]">
                     {isSmallMix ? (
-                      <div className="w-4 h-4 bg-green-500 flex flex-col items-center justify-center rounded-[2px] shadow-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                        <span className="text-white text-[4px] font-bold leading-none tracking-wider">Small</span>
-                        <span className="text-white text-[4px] font-bold leading-none tracking-wider">Mix</span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-green-400 text-[5px] font-bold leading-none tracking-wider">SM</span>
+                        <span className="text-green-400 text-[5px] font-bold leading-none tracking-wider">MIX</span>
                       </div>
                     ) : isBigMix ? (
-                      <div className="w-4 h-4 bg-purple-500 flex flex-col items-center justify-center rounded-[2px] shadow-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                        <span className="text-white text-[4px] font-bold leading-none tracking-wider">Big</span>
-                        <span className="text-white text-[4px] font-bold leading-none tracking-wider">Mix</span>
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-purple-400 text-[5px] font-bold leading-none tracking-wider">BIG</span>
+                        <span className="text-purple-400 text-[5px] font-bold leading-none tracking-wider">MIX</span>
                       </div>
                     ) : (
-                      <img src={imgUrl} className="w-4 h-4 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                      <img src={imgUrl} className="w-3 h-3 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                    )}
+
+                    {/* NEW TAG SIRF SABSE PEHLE WALE (SABSE LATEST) PAR */}
+                    {i === 0 && (
+                      <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 bg-green-500 text-white text-[5px] font-black px-1 py-[0.5px] rounded-[2px] leading-tight z-10 shadow-md border-[0.5px] border-green-300">
+                        NEW
+                      </div>
                     )}
                   </div>
                 );
@@ -800,7 +814,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                                 <span className="text-white text-[5px] font-bold leading-none tracking-wider mt-[1px]">Mix</span>
                               </div>
                             ) : (
-                              <img src={item.winnerImg} className="w-5 h-5 object-contain" alt="Winner Fruit" />
+                              <div className="w-6 h-6 bg-[#4a2810] rounded-full flex items-center justify-center shadow-md">
+                                <img src={item.winnerImg} className="w-3 h-3 object-contain" alt="Winner Fruit" />
+                              </div>
                             )}
                           </div>
 
@@ -836,7 +852,11 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
                               return (
                                 <div key={fruit.id} className="grid grid-cols-3 gap-2 items-center text-center">
-                                  <div className="flex justify-center"><img src={fruit.img} className="w-6 h-6 object-contain" /></div>
+                                  <div className="flex justify-center">
+                                    <div className="w-6 h-6 bg-[#4a2810] rounded-full flex items-center justify-center shadow-md">
+                                      <img src={fruit.img} className="w-3 h-3 object-contain" />
+                                    </div>
+                                  </div>
                                   <div className="flex justify-center items-center gap-1">
                                     <div className="w-3.5 h-3.5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
                                     <span className="text-gray-200 text-xs font-semibold">{betAmt}</span>
@@ -895,3 +915,4 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
+
