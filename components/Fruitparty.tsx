@@ -531,7 +531,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(balance)}`}>{balance}</span>
             </div>
 
-            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '9vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '6vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(totalWon)}`}>{totalWon}</span>
             </div>
@@ -544,7 +544,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                 
                 {/* Heading (46vh bottom s space so it stays completely inside 50vh top frame without cutting) */}
-                <div className="absolute left-0 w-full px-4 flex justify-center items-center z-10" style={{ bottom: '47vh' }}>
+                <div className="absolute left-0 w-full px-4 flex justify-center items-center z-10" style={{ bottom: '46vh' }}>
                   <span className="text-white font-bold text-lg drop-shadow-lg tracking-wide">
                     Round {gameState.round}
                   </span>
