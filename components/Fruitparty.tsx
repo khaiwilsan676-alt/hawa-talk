@@ -518,20 +518,20 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            <div className="absolute z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ bottom: '1vh', left: '8vh' }}>
+            <div className="absolute z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
               {winners.map((imgUrl, i) => (
                 <div key={i} className="animate-fade-in-up">
-                  <img src={imgUrl} className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                  <img src={imgUrl} className="w-4 h-4 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
                 </div>
               ))}
             </div>
 
-            <div className="absolute bottom-[7vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '3vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ left: '3vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(balance)}`}>{balance}</span>
             </div>
 
-            <div className="absolute bottom-[7vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '12vh' }}>
+            <div className="absolute bottom-[6vh] z-30 flex items-center gap-0.5 w-[90px]" style={{ right: '10vh' }}>
               <div className="w-5 h-5 flex-shrink-0"><WebGLShaderImage src="/1786855398290.png" /></div>
               <span className={`text-white font-bold drop-shadow-md text-left flex-1 truncate pt-0.5 leading-none ${getDynamicTextSize(totalWon)}`}>{totalWon}</span>
             </div>
