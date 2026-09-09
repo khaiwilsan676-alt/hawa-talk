@@ -412,7 +412,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         
         setBets({});
         setProcessedRound(gameState.round);
-        setWinners(w => [...w, winnerImgToSave].slice(-13));
+        setWinners(w => [...w, winnerImgToSave].slice(-12));
         
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
@@ -487,7 +487,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                 >
                   {item.type === 'fruit' ? (
                     <>
-                      <img src="/file_00000000d0ec820ba666eab8bea30204.png" className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0 transition-all duration-300" style={applyGreen ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}} />
+                      {/* FIX HERE: Removed transition delay during 'spinning' phase so the Green hue applies instantly, solving the blue shade problem! */}
+                      <img src="/file_00000000d0ec820ba666eab8bea30204.png" className={`absolute inset-0 w-full h-full object-fill pointer-events-none z-0 ${gameState.phase === 'spinning' ? 'duration-0' : 'transition-all duration-300'}`} style={applyGreen ? { filter: 'hue-rotate(-150deg) saturate(200%) drop-shadow(0px 0px 8px lime)' } : {}} />
                       {isBettingHighlight && (
                         <img src="/file_000000000f0c820b95490c9d927692d9.png" className="absolute -bottom-[15%] -right-[15%] w-[65%] h-[65%] max-w-[55px] max-h-[55px] z-[999] object-contain pointer-events-none -rotate-[45deg] drop-shadow-xl transition-all duration-300" />
                       )}
