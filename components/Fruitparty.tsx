@@ -11,15 +11,15 @@ interface FruitpartyProps {
 // (Upar wale cards upar aur neeche wale cards 1-1 gap shift kiye hue)
 // -------------------------------------------------------------
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[15.5px]',  imgW: 50, imgH: 50 },  // Lemon (Upar)
-  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: '-translate-y-[15.5px]',                    imgW: 50, imgH: 50 },  // Apple (Upar)
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[15.5px]', imgW: 58, imgH: 58 },  // Mango (Upar)
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[15px]',  imgW: 50, imgH: 50 },  // Lemon (Upar)
+  { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×10', move: '-translate-y-[15px]',                    imgW: 50, imgH: 50 },  // Apple (Upar)
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[15px]', imgW: 58, imgH: 58 },  // Mango (Upar)
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×15', move: 'translate-x-[5px]',                    imgW: 50, imgH: 50 },  // Cherry
   { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                         // CENTER (Timer)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×45', move: '-translate-x-[5px]',                    imgW: 50, imgH: 50 },  // Strawberry
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[15.5px]',  imgW: 50, imgH: 50 },  // Guava (Neeche)
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: 'translate-y-[15.5px]',                     imgW: 50, imgH: 50 },  // Grapes (Neeche)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[15.5px]', imgW: 55, imgH: 55 },  // Orange (Neeche)
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[15px]',  imgW: 50, imgH: 50 },  // Guava (Neeche)
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×25', move: 'translate-y-[15px]',                     imgW: 50, imgH: 50 },  // Grapes (Neeche)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[15px]', imgW: 55, imgH: 55 },  // Orange (Neeche)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
@@ -439,7 +439,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                       onClick={() => {
                         if (item.type === 'fruit') handleBetClick(item.id);
                       }}
-                      className={`relative w-[85px] h-[95px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
+                      className={`relative w-[84px] h-[93px] flex items-center justify-center transition-transform ${item.move || ''} ${item.type === 'fruit' ? 'cursor-pointer' : ''} ${applyGreen ? '!z-[999]' : ''}`}
                     >
                       {item.type === 'fruit' ? (
                         <>
