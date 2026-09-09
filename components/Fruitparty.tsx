@@ -301,7 +301,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         // Cubic ease-out calculation: Smooth and natural slow down effect
         let easeOut = 1 - Math.pow(1 - t, 3);
         
-        const maxSteps = 80; // Total 80 rounds/jumps in 5 seconds
+        const maxSteps = 60; // Total 80 rounds/jumps in 5 seconds
         const step = Math.round(maxSteps * easeOut);
         
         const startOffset = (targetPathIndex - (maxSteps % SPIN_PATH.length) + SPIN_PATH.length * 10) % SPIN_PATH.length;
@@ -412,7 +412,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         
         setBets({});
         setProcessedRound(gameState.round);
-        setWinners(w => [...w, winnerImgToSave].slice(-14));
+        setWinners(w => [...w, winnerImgToSave].slice(-9));
         
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
