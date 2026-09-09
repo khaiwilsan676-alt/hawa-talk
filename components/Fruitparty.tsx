@@ -7,15 +7,15 @@ interface FruitpartyProps {
 }
 
 const GRID_ITEMS = [
-  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[5px]', imgW: 50, imgH: 50 },  // Lemon (0)
-  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×10', move: 'translate-y-[5px]',                   imgW: 55, imgH: 55 },  // Grapes (1)
-  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[5px]', imgW: 100, imgH: 100 }, // Mango (2)
+  { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[5px] translate-y-[6px]', imgW: 50, imgH: 50 },  // Lemon (0)
+  { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×10', move: 'translate-y-[6px]',                   imgW: 55, imgH: 55 },  // Grapes (1)
+  { id: 3, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: '-translate-x-[5px] translate-y-[6px]', imgW: 100, imgH: 100 }, // Mango (2)
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Cherry (3)
-  { id: 9, type: 'timer', move: 'z-20 scale-[1.10]' },                                                                                       // CENTER (4)
+  { id: 9, type: 'timer', move: 'z-20' },                                                                                                    // CENTER (4) (Removed scale so size matches other cards)
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[5px]',                   imgW: 50, imgH: 50 },  // Apple (5)
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Guava (6)
-  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-y-[5px]',                   imgW: 50, imgH: 50 },  // Strawberry (7)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[5px]', imgW: 50, imgH: 50 },  // Orange (8)
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: 'translate-x-[5px] -translate-y-[6px]', imgW: 50, imgH: 50 },  // Guava (6)
+  { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-y-[6px]',                   imgW: 50, imgH: 50 },  // Strawberry (7)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[5px] -translate-y-[6px]', imgW: 50, imgH: 50 },  // Orange (8)
 ];
 
 // Pure Clockwise Path for the 3x3 grid
@@ -383,7 +383,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         
         setBets({});
         setProcessedRound(gameState.round);
-        setWinners(w => [...w, winnerImgToSave].slice(-16));
+        setWinners(w => [...w, winnerImgToSave].slice(-14));
         
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
@@ -475,7 +475,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                     </>
                   ) : (
                     <>
-                      <img src="/file_00000000b28881f49f5506a9fd64e7fd.png" className="absolute inset-0 w-full h-full object-fill z-0" />
+                      {/* TIMER CARD KA NEW BACKGROUND IMAGE */}
+                      <img src="/file_0000000023cc8230baec62632d74e698.png" className="absolute inset-0 w-full h-full object-fill z-0" />
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
                         <span className="text-white text-[clamp(6px,2vw,9px)] font-bold tracking-wider drop-shadow-md mb-0.5">
                           {gameState.phase === 'betting' ? 'BETTING' : (gameState.phase === 'spinning' ? 'SPINNING' : 'RESULT')}
@@ -605,7 +606,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
               </button>
             </div>
 
-            <div className="absolute z-40 flex flex-row flex-wrap gap-0.5 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
+            <div className="absolute z-40 flex flex-row flex-wrap gap-1 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
               {winners.map((imgUrl, i) => {
                 const isMix = imgUrl === '/IMG_20260908_152953.png' || imgUrl === '/IMG_20260908_153008.png';
                 return (
@@ -648,9 +649,9 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
                   </span>
                 </div>
 
-                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-[230px] h-[230px]" style={{ top: '3vh' }}>
+                <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-[210px] h-[210px]" style={{ top: '3vh' }}>
                   <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
-                  <img src={popupWinnerImg} className="w-[50px] h-[50px] object-contain z-10 pointer-events-none drop-shadow-md" />
+                  <img src={popupWinnerImg} className="w-[60px] h-[60px] object-contain z-10 pointer-events-none drop-shadow-md" />
                 </div>
 
                 <div className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-full" style={{ bottom: '17vh' }}>
