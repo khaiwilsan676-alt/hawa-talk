@@ -137,15 +137,15 @@ export default function Level({ onBack }: LevelProps) {
   const emptyCards = [...Array(6)]
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#101930] via-[#172645] to-[#101930] text-white flex flex-col font-sans select-none border-x border-blue-900/30 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none border-x border-purple-950/40 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       
       {/* Background Image Top */}
       <div className="absolute top-0 left-0 w-full h-[30vh] pointer-events-none z-0">
         <div 
-          className="absolute inset-0 bg-top bg-cover bg-no-repeat opacity-60 mix-blend-screen"
+          className="absolute inset-0 bg-top bg-cover bg-no-repeat opacity-80 mix-blend-screen"
           style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#101930]/80 to-[#101930]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
       </div>
 
       {/* Header */}
@@ -172,14 +172,14 @@ export default function Level({ onBack }: LevelProps) {
       {/* Main flow content */}
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative">
         
-        {/* Top Card - Ekdam Left Shifted */}
+        {/* Top Card */}
         <div className="relative -mt-7 z-20 -mx-4">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
             className="w-full h-auto block" 
           />
-          <div className="absolute inset-0 z-10 flex items-center pl-2 gap-2.5">
+          <div className="absolute inset-0 z-10 flex items-center px-4 gap-3">
             <img src="/IMG-20260905-WA0078.jpg" alt="User" className="w-10 h-10 rounded-full object-cover shadow-lg" />
             <span className="text-white font-bold text-[17px] tracking-wide drop-shadow-md">
               KāziR Khān
@@ -187,10 +187,9 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Text aur Right Image */}
-        <div className="flex items-center justify-between pointer-events-none -mt-8 z-30">
-          <div className="flex items-center gap-2"></div>
-          <h2 className="-mt-8 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+        {/* Text aur Right Image (Extreme Left & Right aligned) */}
+        <div className="flex items-center justify-between w-full pointer-events-none -mt-8 z-30">
+          <h2 className="mt-6 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)] -mt-6">
             Update level to 100
           </h2>
           <img 
@@ -204,12 +203,12 @@ export default function Level({ onBack }: LevelProps) {
         <div className="flex flex-col gap-[5vh] mt-2">
           
           {/* --- LEVEL SECTION --- */}
-          <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+          <fieldset className="w-full relative border border-[#FFD700]/70 rounded-xl px-3 pb-5">
+            <legend className="mx-auto px-4">
               <img src="/IMG_20260910_220024.png" alt="Level" className="h-10 object-contain drop-shadow-md" />
-            </div>
+            </legend>
 
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5 mt-2">
               {visibleLevels.map((tier, idx) => (
                 <div
                   key={idx}
@@ -232,7 +231,7 @@ export default function Level({ onBack }: LevelProps) {
             
             <button 
               onClick={() => setShowAllLevels(!showAllLevels)}
-              className="mt-4 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-5 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
             >
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
@@ -240,15 +239,15 @@ export default function Level({ onBack }: LevelProps) {
                 className="h-7 object-contain"
               />
             </button>
-          </div>
+          </fieldset>
 
           {/* --- COINS REWARD SECTION --- */}
-          <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+          <fieldset className="w-full relative border border-[#FFD700]/70 rounded-xl px-3 pb-5">
+            <legend className="mx-auto px-4">
               <img src="/file_00000000cee4821082edb60451e825f4.png" alt="Rewards" className="h-10 object-contain drop-shadow-md" />
-            </div>
+            </legend>
 
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5 mt-2">
               {visibleRewards.map((reward, idx) => (
                 <div
                   key={idx}
@@ -279,7 +278,7 @@ export default function Level({ onBack }: LevelProps) {
 
             <button 
               onClick={() => setShowAllRewards(!showAllRewards)}
-              className="mt-4 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-5 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
             >
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
@@ -287,15 +286,15 @@ export default function Level({ onBack }: LevelProps) {
                 className="h-7 object-contain"
               />
             </button>
-          </div>
+          </fieldset>
 
           {/* --- MEDAL SECTION --- */}
-          <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+          <fieldset className="w-full relative border border-[#FFD700]/70 rounded-xl px-3 pb-5">
+            <legend className="mx-auto px-4">
               <img src="/IMG_20260910_220038.png" alt="Medal" className="h-10 object-contain drop-shadow-md" />
-            </div>
+            </legend>
 
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5 mt-2">
               {emptyCards.map((_, idx) => (
                 <div
                   key={idx}
@@ -303,15 +302,15 @@ export default function Level({ onBack }: LevelProps) {
                 />
               ))}
             </div>
-          </div>
+          </fieldset>
 
           {/* --- VEHICLE SECTION --- */}
-          <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+          <fieldset className="w-full relative border border-[#FFD700]/70 rounded-xl px-3 pb-5">
+            <legend className="mx-auto px-4">
               <img src="/IMG_20260910_220000.png" alt="Vehicle" className="h-10 object-contain drop-shadow-md" />
-            </div>
+            </legend>
 
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5 mt-2">
               {emptyCards.map((_, idx) => (
                 <div
                   key={idx}
@@ -319,15 +318,15 @@ export default function Level({ onBack }: LevelProps) {
                 />
               ))}
             </div>
-          </div>
+          </fieldset>
           
           {/* --- BACKGROUND SECTION --- */}
-          <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+          <fieldset className="w-full relative border border-[#FFD700]/70 rounded-xl px-3 pb-5">
+            <legend className="mx-auto px-4">
               <img src="/file_00000000d2f8822fb27fd8617d452ed6.png" alt="Background" className="h-10 object-contain drop-shadow-md" />
-            </div>
+            </legend>
 
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5 mt-2">
               {emptyCards.map((_, idx) => (
                 <div
                   key={idx}
@@ -335,11 +334,10 @@ export default function Level({ onBack }: LevelProps) {
                 />
               ))}
             </div>
-          </div>
+          </fieldset>
 
         </div>
       </div>
     </div>
   )
 }
-
