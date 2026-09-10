@@ -174,7 +174,7 @@ export default function Level({ onBack }: LevelProps) {
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative gap-4">
         
         {/* Top Card - Top se 5vh space added */}
-        <div className="relative mt-[5vh]">
+        <div className="relative mt-[2vh]">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
@@ -189,7 +189,7 @@ export default function Level({ onBack }: LevelProps) {
         </div>
 
         {/* Text aur Right Image - Top se 10vh space added */}
-        <div className="flex items-center justify-between pointer-events-none mt-[10vh]">
+        <div className="flex items-center justify-between pointer-events-none mt-[5vh]">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center justify-center">
               <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
