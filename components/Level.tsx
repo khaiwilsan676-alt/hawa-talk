@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
-import { ChevronLeft, HelpCircle } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, HelpCircle, ChevronDown, ChevronUp, ArrowUp } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -128,8 +128,13 @@ function ShaderImageBadge({
 }
 
 export default function Level({ onBack }: LevelProps) {
+  const [showAllLevels, setShowAllLevels] = useState(false)
+  const [showAllRewards, setShowAllRewards] = useState(false)
+
+  const visibleLevels = showAllLevels ? medalTiers : medalTiers.slice(0, 6)
+  const visibleRewards = showAllRewards ? rewardLevels : rewardLevels.slice(0, 6)
+
   return (
-    // Yahan maine bahut hi halka sa blue glossy background add kiya hai (from-[#060a12] via-[#091122] to-[#060a12])
     <div className="relative w-full max-w-[440px] mx-auto h-[100dvh] bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none overflow-hidden border-x border-purple-950/40 shadow-2xl">
       
       {/* Background Section (20vh Top Texture) */}
@@ -141,34 +146,35 @@ export default function Level({ onBack }: LevelProps) {
         <div className="absolute top-0 left-0 w-full h-[20vh] bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
       </div>
 
-      {/* Top Header */}
+      {/* Header - Ekdam mast, Bold aur Corners set */}
       <div
-        className="relative z-20 flex items-center justify-between px-4 pb-1"
-        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}
+        className="relative z-50 flex items-center justify-center w-full px-2 pb-3 pt-3 bg-[#060a12]/50 backdrop-blur-md"
+        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 12px))' }}
       >
         <button
           onClick={onBack}
-          className="p-1 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
+          className="absolute left-2 p-2 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer"
         >
-          <ChevronLeft size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+          <ArrowLeft size={26} strokeWidth={2.5} className="text-white drop-shadow-md" />
         </button>
-        <h1 className="text-base font-semibold text-white tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
+        
+        <h1 className="text-xl font-extrabold text-white tracking-wide drop-shadow-lg">
           Level
         </h1>
-        <button className="p-1 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer">
-          <HelpCircle size={22} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+        
+        <button className="absolute right-2 p-2 hover:bg-white/10 active:scale-95 rounded-full transition-all cursor-pointer">
+          <HelpCircle size={24} strokeWidth={2.5} className="text-white drop-shadow-md" />
         </button>
       </div>
 
-      {/* Top Card - 10vh top se (yani Bottom se 90vh ki height par perfectly placed) */}
-      <div className="absolute left-0 right-0 z-10 h-[60px]" style={{ top: '10vh' }}>
+      {/* Top Card - Height constraint removed, vh position restored */}
+      <div className="absolute left-0 right-0 z-10" style={{ top: '10vh' }}>
         <img 
           src="/file_000000007044820ea729df406d1dc320.png" 
           alt="Top Card Edge to Edge" 
-          className="absolute inset-0 w-full h-full object-cover block"
+          className="w-full h-auto block" 
         />
-        {/* User Avatar Circle without border and Name */}
-        <div className="relative z-10 flex items-center h-full px-4 gap-3">
+        <div className="absolute inset-0 z-10 flex items-center px-4 gap-3">
           <img src="/IMG-20260905-WA0078.jpg" alt="User" className="w-10 h-10 rounded-full object-cover shadow-lg" />
           <span className="text-white font-bold text-[17px] tracking-wide drop-shadow-md">
             KāziR Khān
@@ -176,11 +182,17 @@ export default function Level({ onBack }: LevelProps) {
         </div>
       </div>
 
-      {/* Text aur Right Image - 13vh top se (yani Bottom se 87vh ki height par) */}
-      <div className="absolute left-4 right-4 z-20 flex items-center justify-between pointer-events-none" style={{ top: '13vh' }}>
-        <h2 className="text-white font-extrabold text-[22px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)] translate-y-3">
-          Update Your level to 100
-        </h2>
+      {/* Text aur Right Image - 13vh top se (vh restored) */}
+      <div className="absolute left-4 right-4 z-20 flex items-center justify-between pointer-events-none" style={{ top: '15vh' }}>
+        <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center justify-center translate-y-3">
+            <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
+            <div className="w-[14px] border-t-[3px] border-dashed border-white mt-[2px] opacity-90 drop-shadow-md"></div>
+          </div>
+          <h2 className="text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)] translate-y-3">
+            Update level to 100
+          </h2>
+        </div>
         <img 
           src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
           alt="Level up graphic" 
@@ -188,10 +200,10 @@ export default function Level({ onBack }: LevelProps) {
         />
       </div>
 
-      {/* Scrollable Container (Ye cards niche aram se scroll honge aur upar wala fix rahega) */}
+      {/* Scrollable Container for Cards - 28vh top se (vh restored) */}
       <div className="absolute top-[28vh] bottom-0 left-0 right-0 overflow-y-auto px-4 pb-10 z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
-        {/* Level Section - Transparent cards (bg-white/5), no border, md corners */}
+        {/* --- LEVEL SECTION --- */}
         <div className="space-y-3 relative">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
@@ -200,7 +212,7 @@ export default function Level({ onBack }: LevelProps) {
           </div>
 
           <div className="grid grid-cols-3 gap-2.5">
-            {medalTiers.map((tier, idx) => (
+            {visibleLevels.map((tier, idx) => (
               <div
                 key={idx}
                 className="relative overflow-hidden rounded-md bg-white/5 backdrop-blur-md flex flex-col items-center justify-center py-4 px-2 min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/10"
@@ -219,9 +231,17 @@ export default function Level({ onBack }: LevelProps) {
               </div>
             ))}
           </div>
+          
+          <button 
+            onClick={() => setShowAllLevels(!showAllLevels)}
+            className="w-full py-2.5 mt-2 flex items-center justify-center gap-1.5 text-[12px] font-bold text-blue-200/80 bg-white/5 rounded-md hover:bg-white/10 active:scale-[0.98] transition-all"
+          >
+            {showAllLevels ? 'View Less' : 'View More'}
+            {showAllLevels ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
         </div>
 
-        {/* Coins Reward Section - Transparent cards, md corners, aur RED bg removed */}
+        {/* --- COINS REWARD SECTION --- */}
         <div className="space-y-3 pt-4 relative">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
@@ -230,7 +250,7 @@ export default function Level({ onBack }: LevelProps) {
           </div>
 
           <div className="grid grid-cols-3 gap-2.5">
-            {rewardLevels.map((reward, idx) => (
+            {visibleRewards.map((reward, idx) => (
               <div
                 key={idx}
                 className="relative overflow-hidden rounded-md bg-white/5 backdrop-blur-md flex flex-col items-center justify-center py-3 px-2 min-h-[120px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/10"
@@ -248,7 +268,6 @@ export default function Level({ onBack }: LevelProps) {
                 </div>
 
                 <div className="w-full flex flex-col items-center gap-1 pt-1.5 mt-auto">
-                  {/* Pura red box hatakar ab simple text show kar diya */}
                   <div className="flex items-center justify-center">
                     <span className="text-[12px] font-bold text-white leading-none tracking-wide drop-shadow-md">
                       {reward.amount}
@@ -258,6 +277,14 @@ export default function Level({ onBack }: LevelProps) {
               </div>
             ))}
           </div>
+
+          <button 
+            onClick={() => setShowAllRewards(!showAllRewards)}
+            className="w-full py-2.5 mt-2 flex items-center justify-center gap-1.5 text-[12px] font-bold text-blue-200/80 bg-white/5 rounded-md hover:bg-white/10 active:scale-[0.98] transition-all"
+          >
+            {showAllRewards ? 'View Less' : 'View More'}
+            {showAllRewards ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
         </div>
 
       </div>
