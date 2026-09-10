@@ -151,8 +151,8 @@ export default function Level({ onBack }: LevelProps) {
 
       {/* Header - Ekdam transparent aur clean */}
       <div
-        className="sticky top-0 z-50 flex items-center justify-center w-full px-2 pb-3 pt-3 bg-transparent"
-        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 12px))' }}
+        className="sticky top-0 z-50 flex items-center justify-center w-full px-2 pb-2 pt-2 bg-transparent"
+        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 8px))' }}
       >
         <button
           onClick={onBack}
@@ -170,11 +170,11 @@ export default function Level({ onBack }: LevelProps) {
         </button>
       </div>
 
-      {/* Main flow content */}
-      <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative gap-4">
+      {/* Main flow content - HATA DIYA GAP-4 TAAKI SAB UPAR CHIPAK JAYE */}
+      <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative">
         
-        {/* Top Card - Header ke THEEK NICHE */}
-        <div className="relative mt-2">
+        {/* Top Card - FORCED UPAR (Header ke theek niche) using -mt-2 */}
+        <div className="relative -mt-2 z-20">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
@@ -188,8 +188,8 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Text aur Right Image - Top Card ke THEEK NICHE */}
-        <div className="flex items-center justify-between pointer-events-none mt-2">
+        {/* Text aur Right Image - FORCED UPAR using -mt-6 aur -translate-y */}
+        <div className="flex items-center justify-between pointer-events-none -mt-6 z-30">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center justify-center">
               <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
@@ -199,16 +199,16 @@ export default function Level({ onBack }: LevelProps) {
               Update level to 100
             </h2>
           </div>
-          {/* Right Image (140, 140) */}
+          {/* Right Image ko bhi aur upar pull kiya (-translate-y-4) */}
           <img 
             src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
             alt="Level up graphic" 
-            className="w-[140px] h-[140px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] pointer-events-auto"
+            className="w-[140px] h-[140px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] pointer-events-auto -translate-y-4"
           />
         </div>
 
         {/* --- ALL SECTIONS WITH 5VH GAP --- */}
-        <div className="flex flex-col gap-[5vh] mt-4">
+        <div className="flex flex-col gap-[5vh] mt-2">
           
           {/* --- LEVEL SECTION --- */}
           <div className="w-full relative">
