@@ -32,7 +32,6 @@ const medalTiers: MedalTier[] = [
   { range: 'Lv.91-100', imageSrc: '/1787573633612~2.jpg', isWhiteBg: false },
 ]
 
-// Nayi image add kar di gayi hai Coins section ke liye
 const rewardLevels: RewardItem[] = [
   { level: 'Lv.5', amount: '2,00,000', imageSrc: '/file_00000000b2d481fd8cd233482dbeb9ef.png' },
   { level: 'Lv.10', amount: '5,00,000', imageSrc: '/file_00000000b2d481fd8cd233482dbeb9ef.png' },
@@ -130,20 +129,21 @@ function ShaderImageBadge({
 
 export default function Level({ onBack }: LevelProps) {
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-black text-white flex flex-col font-sans select-none overflow-x-hidden border-x border-purple-950/40">
+    // Yahan maine bahut hi halka sa blue glossy background add kiya hai (from-[#060a12] via-[#091122] to-[#060a12])
+    <div className="relative w-full max-w-[440px] mx-auto h-[100dvh] bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none overflow-hidden border-x border-purple-950/40 shadow-2xl">
       
-      {/* Background Section (20vh) */}
-      <div className="absolute inset-0 pointer-events-none z-0 bg-black overflow-hidden">
+      {/* Background Section (20vh Top Texture) */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div 
-          className="absolute top-0 left-0 w-full h-[20vh] bg-top bg-cover bg-no-repeat opacity-90"
+          className="absolute top-0 left-0 w-full h-[20vh] bg-top bg-cover bg-no-repeat opacity-80 mix-blend-screen"
           style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
         />
-        <div className="absolute top-0 left-0 w-full h-[20vh] bg-gradient-to-b from-transparent via-black/60 to-black" />
+        <div className="absolute top-0 left-0 w-full h-[20vh] bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
       </div>
 
-      {/* Top Header - Gap 1 maintained */}
+      {/* Top Header */}
       <div
-        className="relative z-10 flex items-center justify-between px-4"
+        className="relative z-20 flex items-center justify-between px-4 pb-1"
         style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}
       >
         <button
@@ -160,32 +160,39 @@ export default function Level({ onBack }: LevelProps) {
         </button>
       </div>
 
-      {/* Main Content - Strictly flex gap-1 */}
-      <div className="flex-1 px-4 pt-1 pb-10 flex flex-col gap-1 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      {/* Top Card - 10vh top se (yani Bottom se 90vh ki height par perfectly placed) */}
+      <div className="absolute left-0 right-0 z-10 h-[60px]" style={{ top: '10vh' }}>
+        <img 
+          src="/file_000000007044820ea729df406d1dc320.png" 
+          alt="Top Card Edge to Edge" 
+          className="absolute inset-0 w-full h-full object-cover block"
+        />
+        {/* User Avatar Circle without border and Name */}
+        <div className="relative z-10 flex items-center h-full px-4 gap-3">
+          <img src="/IMG-20260905-WA0078.jpg" alt="User" className="w-10 h-10 rounded-full object-cover shadow-lg" />
+          <span className="text-white font-bold text-[17px] tracking-wide drop-shadow-md">
+            KāziR Khān
+          </span>
+        </div>
+      </div>
+
+      {/* Text aur Right Image - 13vh top se (yani Bottom se 87vh ki height par) */}
+      <div className="absolute left-4 right-4 z-20 flex items-center justify-between pointer-events-none" style={{ top: '13vh' }}>
+        <h2 className="text-white font-extrabold text-[22px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)] translate-y-3">
+          Update Your level to 100
+        </h2>
+        <img 
+          src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
+          alt="Level up graphic" 
+          className="w-[100px] h-[100px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] pointer-events-auto"
+        />
+      </div>
+
+      {/* Scrollable Container (Ye cards niche aram se scroll honge aur upar wala fix rahega) */}
+      <div className="absolute top-[28vh] bottom-0 left-0 right-0 overflow-y-auto px-4 pb-10 z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
-        {/* Edge to Edge Top Card Image */}
-        <div className="-mx-4 relative">
-          <img 
-            src="/file_000000007044820ea729df406d1dc320.png" 
-            alt="Top Card Edge to Edge" 
-            className="w-full h-auto object-cover block"
-          />
-        </div>
-
-        {/* Level Update Text and Right Image Section - Strictly gap-1 */}
-        <div className="flex items-center justify-between relative z-10 gap-1">
-          <h2 className="text-white font-extrabold text-[22px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
-            Update Your level to 100
-          </h2>
-          <img 
-            src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
-            alt="Level up graphic" 
-            className="w-[100px] h-[100px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
-          />
-        </div>
-
-        {/* Level Section - Image jaisa premium dark blue box, no tier text */}
-        <div className="space-y-3 relative z-10 pt-1">
+        {/* Level Section - Transparent cards (bg-white/5), no border, md corners */}
+        <div className="space-y-3 relative">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
             <span className="text-xs font-bold tracking-wider text-blue-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Level</span>
@@ -196,7 +203,7 @@ export default function Level({ onBack }: LevelProps) {
             {medalTiers.map((tier, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#0a111c] border border-[#1a2942] flex flex-col items-center justify-center py-4 px-2 min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/50"
+                className="relative overflow-hidden rounded-md bg-white/5 backdrop-blur-md flex flex-col items-center justify-center py-4 px-2 min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/10"
               >
                 <span className="absolute top-2 left-2 text-[11px] font-bold text-white tracking-wide">
                   {tier.range}
@@ -214,8 +221,8 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Coins Reward Section - Premium dark blue box, simple flat red label */}
-        <div className="space-y-3 pt-3 relative z-10">
+        {/* Coins Reward Section - Transparent cards, md corners, aur RED bg removed */}
+        <div className="space-y-3 pt-4 relative">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
             <span className="text-xs font-bold tracking-wider text-blue-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Coins Reward</span>
@@ -226,7 +233,7 @@ export default function Level({ onBack }: LevelProps) {
             {rewardLevels.map((reward, idx) => (
               <div
                 key={idx}
-                className="relative overflow-hidden rounded-xl bg-[#0a111c] border border-[#1a2942] flex flex-col items-center justify-center py-3 px-2 min-h-[120px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/50"
+                className="relative overflow-hidden rounded-md bg-white/5 backdrop-blur-md flex flex-col items-center justify-center py-3 px-2 min-h-[120px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/10"
               >
                 <span className="absolute top-2 left-2 text-[11px] font-bold text-white tracking-wide">
                   {reward.level}
@@ -236,13 +243,14 @@ export default function Level({ onBack }: LevelProps) {
                   <ShaderImageBadge
                     src={reward.imageSrc}
                     isWhiteBg={true}
-                    className="w-11 h-11 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
+                    className="w-14 h-14 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
                   />
                 </div>
 
                 <div className="w-full flex flex-col items-center gap-1 pt-1.5 mt-auto">
-                  <div className="px-2.5 py-1 rounded bg-[#ef4444] flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-white leading-none tracking-wide">
+                  {/* Pura red box hatakar ab simple text show kar diya */}
+                  <div className="flex items-center justify-center">
+                    <span className="text-[12px] font-bold text-white leading-none tracking-wide drop-shadow-md">
                       {reward.amount}
                     </span>
                   </div>
