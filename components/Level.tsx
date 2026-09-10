@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, HelpCircle, ArrowUp } from 'lucide-react'
+import { ArrowLeft, HelpCircle } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -134,7 +134,6 @@ export default function Level({ onBack }: LevelProps) {
   const visibleLevels = showAllLevels ? medalTiers : medalTiers.slice(0, 6)
   const visibleRewards = showAllRewards ? rewardLevels : rewardLevels.slice(0, 6)
 
-  // Empty cards array (6 cards) for Medal, Vehicle, and Background
   const emptyCards = [...Array(6)]
 
   return (
@@ -149,7 +148,7 @@ export default function Level({ onBack }: LevelProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
       </div>
 
-      {/* Header - Ekdam transparent aur clean */}
+      {/* Header */}
       <div
         className="sticky top-0 z-50 flex items-center justify-center w-full px-2 pb-2 pt-2 bg-transparent"
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 8px))' }}
@@ -170,10 +169,10 @@ export default function Level({ onBack }: LevelProps) {
         </button>
       </div>
 
-      {/* Main flow content - HATA DIYA GAP-4 TAAKI SAB UPAR CHIPAK JAYE */}
+      {/* Main flow content */}
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative">
         
-        {/* Top Card - FORCED UPAR (Header ke theek niche) using -mt-2 */}
+        {/* Top Card */}
         <div className="relative -mt-7 z-20 -mx-4">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
@@ -188,15 +187,12 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Text aur Right Image - FORCED UPAR using -mt-6 aur -translate-y */}
+        {/* Text aur Right Image */}
         <div className="flex items-center justify-between pointer-events-none -mt-8 z-30">
-          <div className="flex items-center gap-2">
-          </div>
-            <h2 className=" -mt-6 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
-              Update level to 100
-            </h2>
-          </div>
-          {/* Right Image ko bhi aur upar pull kiya (-translate-y-4) */}
+          <div className="flex items-center gap-2"></div>
+          <h2 className="-mt-6 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+            Update level to 100
+          </h2>
           <img 
             src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
             alt="Level up graphic" 
@@ -325,7 +321,7 @@ export default function Level({ onBack }: LevelProps) {
             </div>
           </div>
           
-          {/* --- BACKGROUND SECTION (NEW) --- */}
+          {/* --- BACKGROUND SECTION --- */}
           <div className="w-full relative">
             <div className="flex justify-center w-full mb-5">
               <img src="/file_00000000d2f8822fb27fd8617d452ed6.png" alt="Background" className="h-10 object-contain drop-shadow-md" />
