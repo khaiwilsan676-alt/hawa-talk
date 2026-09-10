@@ -535,8 +535,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             right: '11vh'
           }}
         >
-          {/* Left Mix (ID 10) */}
-          <div className="relative w-full h-full flex items-center justify-center cursor-pointer pointer-events-auto transition-transform active:scale-95" onClick={() => handleBetClick(10)}>
+          {/* Left Mix (ID 10) - Betting Removed */}
+          <div className="relative w-full h-full flex items-center justify-center pointer-events-auto transition-transform">
             <img 
               src="/IMG_20260910_114625.png" 
               className="absolute inset-0 w-full h-full object-fill transition-all duration-300"
@@ -552,8 +552,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             )}
           </div>
 
-          {/* Right Mix (ID 11) */}
-          <div className="relative w-full h-full flex items-center justify-center cursor-pointer pointer-events-auto transition-transform active:scale-95" onClick={() => handleBetClick(11)}>
+          {/* Right Mix (ID 11) - Betting Removed */}
+          <div className="relative w-full h-full flex items-center justify-center pointer-events-auto transition-transform">
             <img 
               src="/IMG_20260910_114625.png" 
               className="absolute inset-0 w-full h-full object-fill transition-all duration-300"
@@ -902,4 +902,3 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
     </div>
   );
 }
-
