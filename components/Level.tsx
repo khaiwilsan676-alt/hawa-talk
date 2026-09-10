@@ -141,7 +141,7 @@ export default function Level({ onBack }: LevelProps) {
     <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none border-x border-purple-950/40 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       
       {/* Background Image Top */}
-      <div className="absolute top-0 left-0 w-full h-[20vh] pointer-events-none z-0">
+      <div className="absolute top-0 left-0 w-full h-[30vh] pointer-events-none z-0">
         <div 
           className="absolute inset-0 bg-top bg-cover bg-no-repeat opacity-80 mix-blend-screen"
           style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
@@ -174,7 +174,7 @@ export default function Level({ onBack }: LevelProps) {
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative">
         
         {/* Top Card - FORCED UPAR (Header ke theek niche) using -mt-2 */}
-        <div className="relative -mt-2 z-20">
+        <div className="relative -mt-4 z-20">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
@@ -189,13 +189,13 @@ export default function Level({ onBack }: LevelProps) {
         </div>
 
         {/* Text aur Right Image - FORCED UPAR using -mt-6 aur -translate-y */}
-        <div className="flex items-center justify-between pointer-events-none -mt-6 z-30">
+        <div className="flex items-center justify-between pointer-events-none -mt-8 z-30">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center justify-center">
               <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
               <div className="w-[14px] border-t-[3px] border-dashed border-white mt-[2px] opacity-90 drop-shadow-md"></div>
             </div>
-            <h2 className="text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+            <h2 className=" -mt-4 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
               Update level to 100
             </h2>
           </div>
@@ -212,7 +212,7 @@ export default function Level({ onBack }: LevelProps) {
           
           {/* --- LEVEL SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-8">
+            <div className="flex justify-center w-full mb-5">
               <img src="/IMG_20260910_220024.png" alt="Level" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -230,7 +230,7 @@ export default function Level({ onBack }: LevelProps) {
                     <ShaderImageBadge
                       src={tier.imageSrc}
                       isWhiteBg={tier.isWhiteBg}
-                      className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
+                      className="w-14 h-14 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
                     />
                   </div>
                 </div>
@@ -239,19 +239,19 @@ export default function Level({ onBack }: LevelProps) {
             
             <button 
               onClick={() => setShowAllLevels(!showAllLevels)}
-              className="mt-8 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-4 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
             >
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
                 alt="View More" 
-                className="h-6 object-contain"
+                className="h-7 object-contain"
               />
             </button>
           </div>
 
           {/* --- COINS REWARD SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-8">
+            <div className="flex justify-center w-full mb-5">
               <img src="/file_00000000cee4821082edb60451e825f4.png" alt="Rewards" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -298,7 +298,7 @@ export default function Level({ onBack }: LevelProps) {
 
           {/* --- MEDAL SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-8">
+            <div className="flex justify-center w-full mb-5">
               <img src="/IMG_20260910_220038.png" alt="Medal" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -314,7 +314,7 @@ export default function Level({ onBack }: LevelProps) {
 
           {/* --- VEHICLE SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-8">
+            <div className="flex justify-center w-full mb-5">
               <img src="/IMG_20260910_220000.png" alt="Vehicle" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -330,7 +330,7 @@ export default function Level({ onBack }: LevelProps) {
           
           {/* --- BACKGROUND SECTION (NEW) --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-8">
+            <div className="flex justify-center w-full mb-5">
               <img src="/file_00000000d2f8822fb27fd8617d452ed6.png" alt="Background" className="h-10 object-contain drop-shadow-md" />
             </div>
 
