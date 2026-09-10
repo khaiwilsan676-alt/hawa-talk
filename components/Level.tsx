@@ -128,16 +128,18 @@ function ShaderImageBadge({
 }
 
 export default function Level({ onBack }: LevelProps) {
-  const progressPercent = 0
-
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#120822] via-[#090414] to-[#030107] text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-purple-950/40">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-black text-white flex flex-col font-sans select-none overflow-x-hidden shadow-2xl border-x border-purple-950/40">
       
-      {/* Background Dark Purple Shining Glows */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-full h-80 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-600/25 via-indigo-900/10 to-transparent blur-3xl" />
-        <div className="absolute top-[30%] -left-20 w-80 h-80 bg-purple-900/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[25%] -right-20 w-80 h-80 bg-fuchsia-900/10 rounded-full blur-[120px]" />
+      {/* Background Section */}
+      <div className="absolute inset-0 pointer-events-none z-0 bg-black overflow-hidden">
+        {/* Top Background Image (~70vh height) */}
+        <div 
+          className="absolute top-0 left-0 w-full h-[70vh] bg-top bg-cover bg-no-repeat opacity-90"
+          style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
+        />
+        {/* Gradient that smoothly blends the image into the clean black background at the bottom */}
+        <div className="absolute top-0 left-0 w-full h-[70vh] bg-gradient-to-b from-transparent via-black/40 to-black" />
       </div>
 
       {/* Top Header */}
@@ -160,73 +162,29 @@ export default function Level({ onBack }: LevelProps) {
       {/* Main Content */}
       <div className="flex-1 px-4 pt-2 pb-10 space-y-6 overflow-y-auto z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
-        {/* Main Card Using the Provided Background Image */}
-        <div 
-          className="relative overflow-hidden rounded-[24px] bg-cover bg-center p-5 shadow-[0_16px_35px_rgba(10,4,20,0.9)] border border-purple-500/30"
-          style={{ backgroundImage: "url('/file_00000000360c82118a57a81f560c0ec3.png')" }}
-        >
-          <div className="absolute inset-0 bg-[#0c0518]/70 backdrop-blur-[2px]" />
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
-
-          <div className="relative z-10 space-y-6">
-            
-            {/* Top Row: Avatar Frame & Username */}
-            <div className="flex items-center gap-4 py-1">
-              <div className="relative w-[84px] h-[84px] flex items-center justify-center shrink-0">
-                <img 
-                  src="/file_0000000055ac821186486b31f4a0d239.png" 
-                  alt="Avatar Frame" 
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none z-10 drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]"
-                />
-                <div className="w-[56px] h-[56px] rounded-full overflow-hidden bg-black z-0 flex items-center justify-center">
-                  <img 
-                    src="/IMG-20260905-WA0078.jpg" 
-                    alt="User" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col justify-center">
-                <h2 className="text-[26px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#fde68a] via-[#f59e0b] to-[#d97706] tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] font-serif">
-                  KāziR Khān
-                </h2>
-              </div>
-            </div>
-
-            {/* Bottom Progress Bar Section */}
-            <div className="flex items-center gap-3 pt-1">
-              <div className="relative flex-1 h-9 flex items-center px-3">
-                <img 
-                  src="/file_000000006ff48211a6b2db258441b739.png" 
-                  alt="Progress Bar Frame" 
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
-                />
-                <div className="relative z-10 w-full flex items-center justify-between text-xs font-bold text-white px-2">
-                  <span className="text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">0%</span>
-                  <div className="flex-1 mx-3 h-1.5 bg-black/40 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-amber-400 to-yellow-300 rounded-full transition-all duration-500" 
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative w-11 h-11 shrink-0 flex items-center justify-center">
-                <ShaderImageBadge
-                  src="/1787590094184~2.jpg"
-                  isWhiteBg={false}
-                  className="w-full h-full object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
-                />
-              </div>
-            </div>
-
-          </div>
+        {/* Edge to Edge Top Card Image */}
+        <div className="-mx-4 relative">
+          <img 
+            src="/file_000000007044820ea729df406d1dc320.png" 
+            alt="Top Card Edge to Edge" 
+            className="w-full h-auto object-cover"
+          />
         </div>
 
-        {/* Level Section (Redesigned Card Layout with original ranges) */}
-        <div className="space-y-3">
+        {/* Level Update Text and Right Image Section */}
+        <div className="flex items-center justify-between mt-2 mb-4 relative z-10">
+          <h2 className="text-white font-extrabold text-[32px] leading-tight w-[60%] drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+            Update Level to 100.
+          </h2>
+          <img 
+            src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
+            alt="Level up graphic" 
+            className="w-[120px] h-[120px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
+          />
+        </div>
+
+        {/* Level Section (Original ranges and design kept intact) */}
+        <div className="space-y-3 relative z-10">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
             <span className="text-xs font-bold tracking-wider text-purple-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Level</span>
@@ -262,8 +220,8 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Coins Reward Section (Redesigned Card Layout with original rewards) */}
-        <div className="space-y-3 pt-2">
+        {/* Coins Reward Section (Original rewards and design kept intact) */}
+        <div className="space-y-3 pt-2 relative z-10">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
             <span className="text-xs font-bold tracking-wider text-purple-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Coins Reward</span>
@@ -308,4 +266,3 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
-
