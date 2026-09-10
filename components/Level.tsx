@@ -173,8 +173,8 @@ export default function Level({ onBack }: LevelProps) {
       {/* Main flow content */}
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative gap-4">
         
-        {/* Top Card - bottom se 90Vh space taki upar hi rahe */}
-        <div className="relative mt-2 mb-[90vh]">
+        {/* Top Card - Header ke THEEK NICHE */}
+        <div className="relative mt-2">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
@@ -188,8 +188,8 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Text aur Right Image - Bottom se 87vh space */}
-        <div className="flex items-center justify-between pointer-events-none mt-2 mb-[87vh]">
+        {/* Text aur Right Image - Top Card ke THEEK NICHE */}
+        <div className="flex items-center justify-between pointer-events-none mt-2">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center justify-center">
               <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
