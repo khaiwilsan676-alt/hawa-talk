@@ -135,20 +135,20 @@ export default function Level({ onBack }: LevelProps) {
   const visibleRewards = showAllRewards ? rewardLevels : rewardLevels.slice(0, 6)
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto h-[100dvh] bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none overflow-hidden border-x border-purple-950/40 shadow-2xl">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none border-x border-purple-950/40 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       
-      {/* Background Section (20vh Top Texture) */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+      {/* Background Image Top */}
+      <div className="absolute top-0 left-0 w-full h-[400px] pointer-events-none z-0">
         <div 
-          className="absolute top-0 left-0 w-full h-[20vh] bg-top bg-cover bg-no-repeat opacity-80 mix-blend-screen"
+          className="absolute inset-0 bg-top bg-cover bg-no-repeat opacity-80 mix-blend-screen"
           style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
         />
-        <div className="absolute top-0 left-0 w-full h-[20vh] bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
       </div>
 
       {/* Header - Ekdam mast, Bold aur Corners set */}
       <div
-        className="relative z-50 flex items-center justify-center w-full px-2 pb-3 pt-3 bg-[#060a12]/50 backdrop-blur-md"
+        className="sticky top-0 z-50 flex items-center justify-center w-full px-2 pb-3 pt-3 bg-[#060a12]/50 backdrop-blur-md"
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 12px))' }}
       >
         <button
@@ -167,44 +167,44 @@ export default function Level({ onBack }: LevelProps) {
         </button>
       </div>
 
-      {/* Top Card - Height constraint removed, vh position restored */}
-      <div className="absolute left-0 right-0 z-10" style={{ top: '10vh' }}>
-        <img 
-          src="/file_000000007044820ea729df406d1dc320.png" 
-          alt="Top Card Edge to Edge" 
-          className="w-full h-auto block" 
-        />
-        <div className="absolute inset-0 z-10 flex items-center px-4 gap-3">
-          <img src="/IMG-20260905-WA0078.jpg" alt="User" className="w-10 h-10 rounded-full object-cover shadow-lg" />
-          <span className="text-white font-bold text-[17px] tracking-wide drop-shadow-md">
-            KāziR Khān
-          </span>
-        </div>
-      </div>
-
-      {/* Text aur Right Image - 13vh top se (vh restored) */}
-      <div className="absolute left-4 right-4 z-20 flex items-center justify-between pointer-events-none" style={{ top: '15vh' }}>
-        <div className="flex items-center gap-2">
-          <div className="flex flex-col items-center justify-center translate-y-3">
-            <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
-            <div className="w-[14px] border-t-[3px] border-dashed border-white mt-[2px] opacity-90 drop-shadow-md"></div>
-          </div>
-          <h2 className="text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)] translate-y-3">
-            Update level to 100
-          </h2>
-        </div>
-        <img 
-          src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
-          alt="Level up graphic" 
-          className="w-[100px] h-[100px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] pointer-events-auto"
-        />
-      </div>
-
-      {/* Scrollable Container for Cards - 28vh top se (vh restored) */}
-      <div className="absolute top-[28vh] bottom-0 left-0 right-0 overflow-y-auto px-4 pb-10 z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      {/* Main flow content */}
+      <div className="flex-1 px-4 flex flex-col pt-4 pb-12 z-10 relative gap-4">
         
+        {/* Top Card */}
+        <div className="relative -mx-4">
+          <img 
+            src="/file_000000007044820ea729df406d1dc320.png" 
+            alt="Top Card Edge to Edge" 
+            className="w-full h-auto block" 
+          />
+          <div className="absolute inset-0 z-10 flex items-center px-4 gap-3">
+            <img src="/IMG-20260905-WA0078.jpg" alt="User" className="w-10 h-10 rounded-full object-cover shadow-lg" />
+            <span className="text-white font-bold text-[17px] tracking-wide drop-shadow-md">
+              KāziR Khān
+            </span>
+          </div>
+        </div>
+
+        {/* Text aur Right Image */}
+        <div className="flex items-center justify-between pointer-events-none mt-2">
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center justify-center">
+              <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
+              <div className="w-[14px] border-t-[3px] border-dashed border-white mt-[2px] opacity-90 drop-shadow-md"></div>
+            </div>
+            <h2 className="text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+              Update level to 100
+            </h2>
+          </div>
+          <img 
+            src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
+            alt="Level up graphic" 
+            className="w-[100px] h-[100px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] pointer-events-auto"
+          />
+        </div>
+
         {/* --- LEVEL SECTION --- */}
-        <div className="space-y-3 relative">
+        <div className="space-y-3 relative mt-4">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
             <span className="text-xs font-bold tracking-wider text-blue-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Level</span>
@@ -242,7 +242,7 @@ export default function Level({ onBack }: LevelProps) {
         </div>
 
         {/* --- COINS REWARD SECTION --- */}
-        <div className="space-y-3 pt-4 relative">
+        <div className="space-y-3 relative pt-4">
           <div className="flex items-center justify-center gap-2 text-white/90">
             <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
             <span className="text-xs font-bold tracking-wider text-blue-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Coins Reward</span>
