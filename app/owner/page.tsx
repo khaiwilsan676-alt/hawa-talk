@@ -6,7 +6,9 @@ import {
   Search,
   CheckCircle,
   XCircle,
-  Tag
+  Tag,
+  Gamepad2,
+  Timer
 } from 'lucide-react';
 import { getUser, updateUser, updateRoom, getRooms } from '../../src/lib/googleSheets';
 
@@ -72,6 +74,14 @@ export default function OwnerPage() {
   const [tagSuccess, setTagSuccess] = useState('');
   const [tagError, setTagError] = useState('');
 
+  // Live Game Prediction State
+  const [livePrediction, setLivePrediction] = useState({
+    round: 0,
+    winnerImg: '',
+    countdown: 0,
+    phase: 'betting'
+  });
+
   // Fetch all users via getRooms / getUser
   useEffect(() => {
     const loadUsers = async () => {
@@ -116,6 +126,69 @@ export default function OwnerPage() {
     loadUsers();
   }, []);
 
+  // Fruit Party Live Predictor Logic (Syncs with game algorithm)
+  useEffect(() => {
+    const IMAGE_MAP: Record<number, string> = {
+      0: '/IMG_20260908_192143.png',
+      1: '/IMG_20260908_192120.png',
+      2: '/IMG_20260908_191941.png',
+      3: '/IMG_20260908_192013.png',
+      5: '/IMG_20260908_192050.png',
+      6: '/IMG_20260908_191930.png',
+      7: '/IMG_20260908_191906.png',
+      8: '/IMG_20260908_192203.png',
+      10: '/IMG_20260910_114515.png',
+      11: '/IMG_20260910_114613.png'
+    };
+
+    const clock = setInterval(() => {
+      const CYCLE_MS = 40000;
+      const now = Date.now();
+      const roundNumber = (Math.floor(now / CYCLE_MS) % 10000) + 1000;
+      const elapsed = now % CYCLE_MS;
+
+      // Exact identical seed logic from Fruitparty
+      const seed = Math.sin(roundNumber) * 10000;
+      const randomVal = seed - Math.floor(seed);
+      
+      let winnerIdx = 0;
+      if (randomVal < 0.04) {
+        winnerIdx = 10; 
+      } else if (randomVal < 0.06) {
+        winnerIdx = 11; 
+      } else if (randomVal < 0.80) {
+        const lowPayouts = [0, 2, 8, 6]; 
+        winnerIdx = lowPayouts[Math.floor(randomVal * 100) % lowPayouts.length];
+      } else {
+        const highPayouts = [1, 5, 7, 3];
+        winnerIdx = highPayouts[Math.floor(randomVal * 100) % highPayouts.length];
+      }
+
+      let currentPhase = 'Betting';
+      let currentCountdown = 0;
+
+      if (elapsed < 30000) {
+        currentPhase = 'Betting';
+        currentCountdown = 30 - Math.floor(elapsed / 1000);
+      } else if (elapsed < 35000) {
+        currentPhase = 'Spinning';
+        currentCountdown = 5 - Math.floor((elapsed - 30000) / 1000);
+      } else {
+        currentPhase = 'Result';
+        currentCountdown = 5 - Math.floor((elapsed - 35000) / 1000);
+      }
+
+      setLivePrediction({
+        round: roundNumber,
+        winnerImg: IMAGE_MAP[winnerIdx] || '',
+        countdown: currentCountdown,
+        phase: currentPhase
+      });
+    }, 100);
+
+    return () => clearInterval(clock);
+  }, []);
+
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'HOST':
@@ -129,7 +202,6 @@ export default function OwnerPage() {
     }
   };
 
-  // Search user by ID for tag assignment
   const handleTagUserSearch = async () => {
     if (!tagSearchUserId.trim()) {
       setTagError('Please enter a User ID');
@@ -156,7 +228,6 @@ export default function OwnerPage() {
         });
         setSelectedTagUserId(uId);
 
-        // Pre-select existing tags
         const existingTags: string[] = [];
         if (userData.adminTag) existingTags.push('adminTag');
         if (userData.officialTag) existingTags.push('officialTag');
@@ -175,7 +246,6 @@ export default function OwnerPage() {
     }
   };
 
-  // Toggle tag selection
   const handleTagToggle = (tagId: string) => {
     if (selectedTags.includes(tagId)) {
       setSelectedTags(selectedTags.filter((t) => t !== tagId));
@@ -184,13 +254,11 @@ export default function OwnerPage() {
     }
   };
 
-  // Assign selected tags to user
   const handleAssignTags = async () => {
     if (!selectedTagUserId) {
       setTagError('Please search and select a user first');
       return;
     }
-
     if (selectedTags.length === 0) {
       setTagError('Please select at least one tag');
       return;
@@ -220,9 +288,7 @@ export default function OwnerPage() {
       setSelectedTagUserId('');
       setSelectedTags([]);
       
-      setTimeout(() => {
-        setTagSuccess('');
-      }, 3000);
+      setTimeout(() => setTagSuccess(''), 3000);
     } catch (err) {
       console.error('Error assigning tags:', err);
       setTagError('Error assigning tags. Please try again.');
@@ -231,7 +297,6 @@ export default function OwnerPage() {
     }
   };
 
-  // Remove all tags from user
   const handleRemoveAllTags = async () => {
     if (!selectedTagUserId) {
       setTagError('Please search and select a user first');
@@ -258,9 +323,7 @@ export default function OwnerPage() {
       setSelectedTags([]);
       setTagSuccess('✅ All tags removed successfully!');
       
-      setTimeout(() => {
-        setTagSuccess('');
-      }, 3000);
+      setTimeout(() => setTagSuccess(''), 3000);
     } catch (err) {
       console.error('Error removing tags:', err);
       setTagError('Error removing tags. Please try again.');
@@ -293,7 +356,6 @@ export default function OwnerPage() {
             <h2 className="text-lg font-bold text-slate-800">Assign Profile Tags</h2>
           </div>
 
-          {/* Search Bar */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <input
@@ -322,7 +384,6 @@ export default function OwnerPage() {
             </button>
           </div>
 
-          {/* Error / Success Messages */}
           {tagError && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-600 text-xs rounded-2xl flex items-center gap-2">
               <XCircle className="w-4 h-4 flex-shrink-0" />
@@ -336,11 +397,8 @@ export default function OwnerPage() {
             </div>
           )}
 
-          {/* User Selected Info & Tags List */}
           {selectedTagUserData && (
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4 animate-in fade-in-50 duration-200">
-
-              {/* User Details */}
               <div className="flex items-center gap-3 border-b border-slate-200/60 pb-3">
                 <img
                   src={selectedTagUserData.image}
@@ -353,7 +411,6 @@ export default function OwnerPage() {
                 </div>
               </div>
 
-              {/* Tag Options Grid */}
               <div>
                 <p className="text-xs font-bold text-slate-700 mb-2">Select Tags to Assign:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -382,7 +439,6 @@ export default function OwnerPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-2 justify-end pt-2">
                 <button
                   onClick={handleRemoveAllTags}
@@ -406,9 +462,45 @@ export default function OwnerPage() {
                   )}
                 </button>
               </div>
-
             </div>
           )}
+        </div>
+
+        {/* ============================================================== */}
+        {/* NEW: LIVE GAME PREDICTOR (Admin Cheat Sheet) */}
+        {/* ============================================================== */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="w-5 h-5 text-indigo-600" />
+              <h2 className="text-lg font-bold text-slate-800">Live Fruit Prediction <span className='text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full ml-2'>Admin Only</span></h2>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-slate-50 border border-slate-200 p-5 rounded-2xl">
+            {/* Live Status */}
+            <div className="flex flex-col items-center sm:items-start gap-1">
+              <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Current Round</span>
+              <span className="text-2xl font-black text-slate-800">{livePrediction.round}</span>
+              <div className="flex items-center gap-1.5 mt-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                <Timer className="w-4 h-4 text-indigo-500" />
+                <span className="text-xs font-bold text-indigo-600">{livePrediction.phase} - {livePrediction.countdown}s</span>
+              </div>
+            </div>
+
+            {/* Upcoming Winner Image */}
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[10px] text-green-600 font-bold uppercase tracking-widest animate-pulse">Upcoming Winner Is</span>
+              <div className="w-20 h-20 bg-white border-2 border-indigo-200 shadow-lg rounded-xl flex items-center justify-center p-2 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent z-0"></div>
+                {livePrediction.winnerImg ? (
+                  <img src={livePrediction.winnerImg} alt="Predicted Winner" className="w-full h-full object-contain relative z-10 drop-shadow-md" />
+                ) : (
+                  <Loader2 className="w-6 h-6 animate-spin text-slate-300 relative z-10" />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* User Table List */}
@@ -483,3 +575,4 @@ export default function OwnerPage() {
     </div>
   );
 }
+
