@@ -531,8 +531,8 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
           style={{
             top: '68vh',
             bottom: '21vh',
-            left: '11vh',
-            right: '11vh'
+            left: '12vh',
+            right: '12vh'
           }}
         >
           {/* Left Mix (ID 10) */}
