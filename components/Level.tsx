@@ -173,8 +173,8 @@ export default function Level({ onBack }: LevelProps) {
       {/* Main flow content */}
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative gap-4">
         
-        {/* Top Card - Theek Header ke niche (mt-2) */}
-        <div className="relative mt-2">
+        {/* Top Card - bottom se 90Vh space taki upar hi rahe */}
+        <div className="relative mt-2 mb-[90vh]">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
@@ -188,8 +188,8 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Text aur Right Image - Theek Image Card ke niche (mt-2) */}
-        <div className="flex items-center justify-between pointer-events-none mt-2">
+        {/* Text aur Right Image - Bottom se 87vh space */}
+        <div className="flex items-center justify-between pointer-events-none mt-2 mb-[87vh]">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center justify-center">
               <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
@@ -207,12 +207,12 @@ export default function Level({ onBack }: LevelProps) {
           />
         </div>
 
-        {/* --- ALL SECTIONS WITH GAP 5 --- */}
-        <div className="flex flex-col gap-6 mt-4">
+        {/* --- ALL SECTIONS WITH 5VH GAP --- */}
+        <div className="flex flex-col gap-[5vh] mt-4">
           
           {/* --- LEVEL SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+            <div className="flex justify-center w-full mb-8">
               <img src="/IMG_20260910_220024.png" alt="Level" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -220,7 +220,7 @@ export default function Level({ onBack }: LevelProps) {
               {visibleLevels.map((tier, idx) => (
                 <div
                   key={idx}
-                  className="relative overflow-hidden rounded-md bg-blue-950/20 backdrop-blur-sm flex flex-col items-center justify-center py-4 px-2 min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40"
+                  className="relative overflow-hidden rounded-md bg-white/10 backdrop-blur-md flex flex-col items-center justify-center py-4 px-2 min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/20"
                 >
                   <span className="absolute top-2 left-2 text-[11px] font-bold text-white tracking-wide">
                     {tier.range}
@@ -239,7 +239,7 @@ export default function Level({ onBack }: LevelProps) {
             
             <button 
               onClick={() => setShowAllLevels(!showAllLevels)}
-              className="mt-5 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-8 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
             >
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
@@ -251,7 +251,7 @@ export default function Level({ onBack }: LevelProps) {
 
           {/* --- COINS REWARD SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+            <div className="flex justify-center w-full mb-8">
               <img src="/file_00000000cee4821082edb60451e825f4.png" alt="Rewards" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -259,7 +259,7 @@ export default function Level({ onBack }: LevelProps) {
               {visibleRewards.map((reward, idx) => (
                 <div
                   key={idx}
-                  className="relative overflow-hidden rounded-md bg-blue-950/20 backdrop-blur-sm flex flex-col items-center justify-center py-3 px-2 min-h-[120px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40"
+                  className="relative overflow-hidden rounded-md bg-white/10 backdrop-blur-md flex flex-col items-center justify-center py-3 px-2 min-h-[120px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/20"
                 >
                   <span className="absolute top-2 left-2 text-[11px] font-bold text-white tracking-wide">
                     {reward.level}
@@ -286,7 +286,7 @@ export default function Level({ onBack }: LevelProps) {
 
             <button 
               onClick={() => setShowAllRewards(!showAllRewards)}
-              className="mt-5 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-8 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
             >
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
@@ -298,7 +298,7 @@ export default function Level({ onBack }: LevelProps) {
 
           {/* --- MEDAL SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+            <div className="flex justify-center w-full mb-8">
               <img src="/IMG_20260910_220038.png" alt="Medal" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -306,7 +306,7 @@ export default function Level({ onBack }: LevelProps) {
               {emptyCards.map((_, idx) => (
                 <div
                   key={idx}
-                  className="relative rounded-md overflow-hidden bg-blue-950/20 backdrop-blur-sm min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40 flex items-center justify-center"
+                  className="relative overflow-hidden rounded-md bg-white/10 backdrop-blur-md min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/20 flex items-center justify-center"
                 />
               ))}
             </div>
@@ -314,7 +314,7 @@ export default function Level({ onBack }: LevelProps) {
 
           {/* --- VEHICLE SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+            <div className="flex justify-center w-full mb-8">
               <img src="/IMG_20260910_220000.png" alt="Vehicle" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -322,7 +322,7 @@ export default function Level({ onBack }: LevelProps) {
               {emptyCards.map((_, idx) => (
                 <div
                   key={idx}
-                  className="relative rounded-md overflow-hidden bg-blue-950/20 backdrop-blur-sm min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40 flex items-center justify-center"
+                  className="relative overflow-hidden rounded-md bg-white/10 backdrop-blur-md min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/20 flex items-center justify-center"
                 />
               ))}
             </div>
@@ -330,7 +330,7 @@ export default function Level({ onBack }: LevelProps) {
           
           {/* --- BACKGROUND SECTION (NEW) --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-5">
+            <div className="flex justify-center w-full mb-8">
               <img src="/file_00000000d2f8822fb27fd8617d452ed6.png" alt="Background" className="h-10 object-contain drop-shadow-md" />
             </div>
 
@@ -338,7 +338,7 @@ export default function Level({ onBack }: LevelProps) {
               {emptyCards.map((_, idx) => (
                 <div
                   key={idx}
-                  className="relative rounded-md overflow-hidden bg-blue-950/20 backdrop-blur-sm min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40 flex items-center justify-center"
+                  className="relative overflow-hidden rounded-md bg-white/10 backdrop-blur-md min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/20 flex items-center justify-center"
                 />
               ))}
             </div>
