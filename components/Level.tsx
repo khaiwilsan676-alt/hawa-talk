@@ -174,11 +174,11 @@ export default function Level({ onBack }: LevelProps) {
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative">
         
         {/* Top Card - FORCED UPAR (Header ke theek niche) using -mt-2 */}
-        <div className="relative -mt-4 z-20">
+        <div className="relative -mt-7 z-20 -mx-4">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
-            className="w-full h-auto block rounded-lg" 
+            className="w-full h-auto block" 
           />
           <div className="absolute inset-0 z-10 flex items-center px-4 gap-3">
             <img src="/IMG-20260905-WA0078.jpg" alt="User" className="w-10 h-10 rounded-full object-cover shadow-lg" />
@@ -191,11 +191,8 @@ export default function Level({ onBack }: LevelProps) {
         {/* Text aur Right Image - FORCED UPAR using -mt-6 aur -translate-y */}
         <div className="flex items-center justify-between pointer-events-none -mt-8 z-30">
           <div className="flex items-center gap-2">
-            <div className="flex flex-col items-center justify-center">
-              <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
-              <div className="w-[14px] border-t-[3px] border-dashed border-white mt-[2px] opacity-90 drop-shadow-md"></div>
-            </div>
-            <h2 className=" -mt-4 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+          </div>
+            <h2 className=" -mt-6 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
               Update level to 100
             </h2>
           </div>
@@ -291,7 +288,7 @@ export default function Level({ onBack }: LevelProps) {
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
                 alt="View More" 
-                className="h-6 object-contain"
+                className="h-7 object-contain"
               />
             </button>
           </div>
