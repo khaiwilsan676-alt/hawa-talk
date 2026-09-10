@@ -529,10 +529,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         <div
           className="fixed z-[75] flex flex-row items-center justify-between pointer-events-none"
           style={{
-            top: '67vh',
-            bottom: '22vh',
-            left: '10vh',
-            right: '10vh'
+            top: '68vh',
+            bottom: '21vh',
+            left: '11vh',
+            right: '11vh'
           }}
         >
           {/* Left Mix (ID 10) */}
