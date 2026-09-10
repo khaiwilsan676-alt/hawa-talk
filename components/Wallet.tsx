@@ -43,6 +43,33 @@ async function loadBalanceFromDB(): Promise<number> {
   }
 }
 
+// Ye naya function add kiya hai coins add karne ke liye
+async function addCoinsToDB(amountToAdd: number): Promise<void> {
+  try {
+    const db = await initDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get('user_data');
+
+      req.onsuccess = () => {
+        let data = req.result;
+        if (!data) {
+          data = { balance: 82927 + amountToAdd };
+        } else {
+          data.balance = (data.balance || 82927) + amountToAdd;
+        }
+        const putReq = store.put(data, 'user_data');
+        putReq.onsuccess = () => resolve();
+        putReq.onerror = () => reject(putReq.error);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  } catch (e) {
+    console.error("Failed to add coins to DB", e);
+  }
+}
+
 // --- WebGL Shader to strictly remove White Background & Fix UV Inversion ---
 function WhiteColorRemovalShader({
   imageSrc,
@@ -240,6 +267,14 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
     setSelectedPercentage(pct)
   }
 
+  // Handle USD 1 Button Click logic
+  const handleBuyCoins = async (amount: number) => {
+    // UI mein turant update ke liye (Optimistic update)
+    setWalletBalance((prev) => prev + amount)
+    // DB me background mein update karne ke liye
+    await addCoinsToDB(amount)
+  }
+
   return (
     <div
       className="fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col pt-[env(safe-area-inset-top,12px)] pb-[env(safe-area-inset-bottom,12px)] transition-all duration-300"
@@ -364,9 +399,16 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
                   boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
                 }}
               >
-                {/* Top left small bonus tag */}
-                <div className="absolute -top-2 left-2 z-10 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-extrabold rounded shadow-xs flex items-center gap-0.5">
-                  +20,000 <span className="text-[8px]">🪙</span>
+                {/* Top left small bonus tag - Emoji Hatakar Image Laga di gayi */}
+                <div className="absolute -top-2 left-2 z-10 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-extrabold rounded shadow-xs flex items-center gap-1">
+                  +20,000
+                  <div className="w-2.5 h-2.5">
+                    <WhiteColorRemovalShader
+                      imageSrc="/1786855398290.png"
+                      className="w-full h-full object-contain"
+                      threshold={0.88}
+                    />
+                  </div>
                 </div>
 
                 {/* Center Coin Image */}
@@ -388,8 +430,11 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
                   1,000,000
                 </span>
 
-                {/* USD Button */}
-                <button className="w-full py-2 bg-amber-300 hover:bg-amber-400 font-bold text-amber-950 text-xs rounded-lg shadow-xs active:scale-95 transition-transform">
+                {/* USD Button - OnClick pe function call kiya gaya */}
+                <button 
+                  onClick={() => handleBuyCoins(1000000)}
+                  className="w-full py-2 bg-amber-300 hover:bg-amber-400 font-bold text-amber-950 text-xs rounded-lg shadow-xs active:scale-95 transition-transform"
+                >
                   USD 1
                 </button>
               </div>
@@ -525,3 +570,4 @@ export default function Wallet({ onBack, initialTab = 'wallet' }: WalletProps) {
     </div>
   )
 }
+
