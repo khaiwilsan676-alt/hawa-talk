@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, HelpCircle, ChevronDown, ChevronUp, ArrowUp } from 'lucide-react'
+import { ArrowLeft, HelpCircle, ArrowUp } from 'lucide-react'
 
 interface LevelProps {
   onBack?: () => void
@@ -134,6 +134,9 @@ export default function Level({ onBack }: LevelProps) {
   const visibleLevels = showAllLevels ? medalTiers : medalTiers.slice(0, 6)
   const visibleRewards = showAllRewards ? rewardLevels : rewardLevels.slice(0, 6)
 
+  // Empty cards array (6 cards)
+  const emptyCards = [...Array(6)]
+
   return (
     <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none border-x border-purple-950/40 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       
@@ -146,9 +149,9 @@ export default function Level({ onBack }: LevelProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
       </div>
 
-      {/* Header - Ekdam mast, Bold aur Corners set */}
+      {/* Header - Card background removed, just transparent and clean */}
       <div
-        className="sticky top-0 z-50 flex items-center justify-center w-full px-2 pb-3 pt-3 bg-[#060a12]/50 backdrop-blur-md"
+        className="sticky top-0 z-50 flex items-center justify-center w-full px-2 pb-3 pt-3 bg-transparent"
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 12px))' }}
       >
         <button
@@ -168,14 +171,14 @@ export default function Level({ onBack }: LevelProps) {
       </div>
 
       {/* Main flow content */}
-      <div className="flex-1 px-4 flex flex-col pt-4 pb-12 z-10 relative gap-4">
+      <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative gap-4">
         
-        {/* Top Card */}
-        <div className="relative -mx-4">
+        {/* Top Card - Top se 5vh space added */}
+        <div className="relative mt-[5vh]">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
-            alt="Top Card Edge to Edge" 
-            className="w-full h-auto block" 
+            alt="Top Card" 
+            className="w-full h-auto block rounded-lg" 
           />
           <div className="absolute inset-0 z-10 flex items-center px-4 gap-3">
             <img src="/IMG-20260905-WA0078.jpg" alt="User" className="w-10 h-10 rounded-full object-cover shadow-lg" />
@@ -185,8 +188,8 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Text aur Right Image */}
-        <div className="flex items-center justify-between pointer-events-none mt-2">
+        {/* Text aur Right Image - Top se 10vh space added */}
+        <div className="flex items-center justify-between pointer-events-none mt-[10vh]">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center justify-center">
               <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
@@ -199,96 +202,147 @@ export default function Level({ onBack }: LevelProps) {
           <img 
             src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
             alt="Level up graphic" 
-            className="w-[100px] h-[100px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] pointer-events-auto"
+            className="w-[140px] h-[140px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] pointer-events-auto"
           />
         </div>
 
-        {/* --- LEVEL SECTION --- */}
-        <div className="space-y-3 relative mt-4">
-          <div className="flex items-center justify-center gap-2 text-white/90">
-            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
-            <span className="text-xs font-bold tracking-wider text-blue-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Level</span>
-            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-blue-400/50 to-transparent" />
-          </div>
-
-          <div className="grid grid-cols-3 gap-2.5">
-            {visibleLevels.map((tier, idx) => (
-              <div
-                key={idx}
-                className="relative overflow-hidden rounded-md bg-white/5 backdrop-blur-md flex flex-col items-center justify-center py-4 px-2 min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/10"
-              >
-                <span className="absolute top-2 left-2 text-[11px] font-bold text-white tracking-wide">
-                  {tier.range}
-                </span>
-
-                <div className="w-full flex items-center justify-center mt-3">
-                  <ShaderImageBadge
-                    src={tier.imageSrc}
-                    isWhiteBg={tier.isWhiteBg}
-                    className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* --- ALL SECTIONS WITH GAP 5 --- */}
+        <div className="flex flex-col gap-5 mt-4">
           
-          <button 
-            onClick={() => setShowAllLevels(!showAllLevels)}
-            className="w-full py-2.5 mt-2 flex items-center justify-center gap-1.5 text-[12px] font-bold text-blue-200/80 bg-white/5 rounded-md hover:bg-white/10 active:scale-[0.98] transition-all"
-          >
-            {showAllLevels ? 'View Less' : 'View More'}
-            {showAllLevels ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        </div>
+          {/* --- LEVEL SECTION --- */}
+          <div className="w-full relative">
+            <div className="flex justify-center w-full mb-3">
+              <img src="/IMG_20260910_220024.png" alt="Level" className="h-7 object-contain drop-shadow-md" />
+            </div>
 
-        {/* --- COINS REWARD SECTION --- */}
-        <div className="space-y-3 relative pt-4">
-          <div className="flex items-center justify-center gap-2 text-white/90">
-            <span className="w-12 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
-            <span className="text-xs font-bold tracking-wider text-blue-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Coins Reward</span>
-            <span className="w-12 h-[1px] bg-gradient-to-l from-transparent via-blue-400/50 to-transparent" />
-          </div>
+            <div className="grid grid-cols-3 gap-2.5">
+              {visibleLevels.map((tier, idx) => (
+                <div
+                  key={idx}
+                  className="relative overflow-hidden rounded-md bg-blue-950/20 backdrop-blur-sm flex flex-col items-center justify-center py-4 px-2 min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40"
+                >
+                  <span className="absolute top-2 left-2 text-[11px] font-bold text-white tracking-wide">
+                    {tier.range}
+                  </span>
 
-          <div className="grid grid-cols-3 gap-2.5">
-            {visibleRewards.map((reward, idx) => (
-              <div
-                key={idx}
-                className="relative overflow-hidden rounded-md bg-white/5 backdrop-blur-md flex flex-col items-center justify-center py-3 px-2 min-h-[120px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-white/10"
-              >
-                <span className="absolute top-2 left-2 text-[11px] font-bold text-white tracking-wide">
-                  {reward.level}
-                </span>
-
-                <div className="w-full flex items-center justify-center mt-2 flex-1">
-                  <ShaderImageBadge
-                    src={reward.imageSrc}
-                    isWhiteBg={true}
-                    className="w-14 h-14 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
-                  />
-                </div>
-
-                <div className="w-full flex flex-col items-center gap-1 pt-1.5 mt-auto">
-                  <div className="flex items-center justify-center">
-                    <span className="text-[12px] font-bold text-white leading-none tracking-wide drop-shadow-md">
-                      {reward.amount}
-                    </span>
+                  <div className="w-full flex items-center justify-center mt-3">
+                    <ShaderImageBadge
+                      src={tier.imageSrc}
+                      isWhiteBg={tier.isWhiteBg}
+                      className="w-14 h-7 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
+                    />
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            
+            <button 
+              onClick={() => setShowAllLevels(!showAllLevels)}
+              className="mt-3 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+            >
+              <img 
+                src="/file_000000005dac820685e667586bcc16f4.png" 
+                alt="View More" 
+                className={`h-6 object-contain transition-transform duration-300 ${showAllLevels ? 'rotate-180' : ''}`}
+              />
+            </button>
           </div>
 
-          <button 
-            onClick={() => setShowAllRewards(!showAllRewards)}
-            className="w-full py-2.5 mt-2 flex items-center justify-center gap-1.5 text-[12px] font-bold text-blue-200/80 bg-white/5 rounded-md hover:bg-white/10 active:scale-[0.98] transition-all"
-          >
-            {showAllRewards ? 'View Less' : 'View More'}
-            {showAllRewards ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        </div>
+          {/* --- COINS REWARD SECTION --- */}
+          <div className="w-full relative">
+            <div className="flex justify-center w-full mb-3">
+              <img src="/file_00000000cee4821082edb60451e825f4.png" alt="Rewards" className="h-7 object-contain drop-shadow-md" />
+            </div>
 
+            <div className="grid grid-cols-3 gap-2.5">
+              {visibleRewards.map((reward, idx) => (
+                <div
+                  key={idx}
+                  className="relative overflow-hidden rounded-md bg-blue-950/20 backdrop-blur-sm flex flex-col items-center justify-center py-3 px-2 min-h-[120px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40"
+                >
+                  <span className="absolute top-2 left-2 text-[11px] font-bold text-white tracking-wide">
+                    {reward.level}
+                  </span>
+
+                  <div className="w-full flex items-center justify-center mt-2 flex-1">
+                    <ShaderImageBadge
+                      src={reward.imageSrc}
+                      isWhiteBg={true}
+                      className="w-14 h-14 object-contain group-hover:scale-110 drop-shadow-[0_6px_12px_rgba(0,0,0,0.7)] transition-transform duration-200"
+                    />
+                  </div>
+
+                  <div className="w-full flex flex-col items-center gap-1 pt-1.5 mt-auto">
+                    <div className="flex items-center justify-center">
+                      <span className="text-[12px] font-bold text-white leading-none tracking-wide drop-shadow-md">
+                        {reward.amount}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setShowAllRewards(!showAllRewards)}
+              className="mt-3 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+            >
+              <img 
+                src="/file_000000005dac820685e667586bcc16f4.png" 
+                alt="View More" 
+                className={`h-6 object-contain transition-transform duration-300 ${showAllRewards ? 'rotate-180' : ''}`}
+              />
+            </button>
+          </div>
+
+          {/* --- MEDAL SECTION (NEW) --- */}
+          <div className="w-full relative">
+            <div className="flex justify-center w-full mb-3">
+              <img src="/IMG_20260910_220038.png" alt="Medal" className="h-7 object-contain drop-shadow-md" />
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5">
+              {emptyCards.map((_, idx) => (
+                <div
+                  key={idx}
+                  className="relative rounded-md overflow-hidden bg-blue-950/20 backdrop-blur-sm min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40 flex items-center justify-center"
+                >
+                  {/* Background specific to empty cards */}
+                  <img 
+                    src="/file_00000000d2f8822fb27fd8617d452ed6.png" 
+                    alt="bg" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-overlay"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* --- VEHICLE SECTION (NEW) --- */}
+          <div className="w-full relative">
+            <div className="flex justify-center w-full mb-3">
+              <img src="/IMG_20260910_220000.png" alt="Vehicle" className="h-7 object-contain drop-shadow-md" />
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5">
+              {emptyCards.map((_, idx) => (
+                <div
+                  key={idx}
+                  className="relative rounded-md overflow-hidden bg-blue-950/20 backdrop-blur-sm min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40 flex items-center justify-center"
+                >
+                   {/* Background specific to empty cards */}
+                   <img 
+                    src="/file_00000000d2f8822fb27fd8617d452ed6.png" 
+                    alt="bg" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-overlay"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   )
 }
-
