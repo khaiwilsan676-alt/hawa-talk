@@ -137,15 +137,15 @@ export default function Level({ onBack }: LevelProps) {
   const emptyCards = [...Array(6)]
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none border-x border-purple-950/40 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#101930] via-[#172645] to-[#101930] text-white flex flex-col font-sans select-none border-x border-blue-900/30 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       
       {/* Background Image Top */}
       <div className="absolute top-0 left-0 w-full h-[30vh] pointer-events-none z-0">
         <div 
-          className="absolute inset-0 bg-top bg-cover bg-no-repeat opacity-80 mix-blend-screen"
+          className="absolute inset-0 bg-top bg-cover bg-no-repeat opacity-60 mix-blend-screen"
           style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#101930]/80 to-[#101930]" />
       </div>
 
       {/* Header */}
@@ -172,14 +172,14 @@ export default function Level({ onBack }: LevelProps) {
       {/* Main flow content */}
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative">
         
-        {/* Top Card */}
+        {/* Top Card - Ekdam Left Shifted */}
         <div className="relative -mt-7 z-20 -mx-4">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
             className="w-full h-auto block" 
           />
-          <div className="absolute inset-0 z-10 flex items-center px-4 gap-3">
+          <div className="absolute inset-0 z-10 flex items-center pl-2 gap-2.5">
             <img src="/IMG-20260905-WA0078.jpg" alt="User" className="w-10 h-10 rounded-full object-cover shadow-lg" />
             <span className="text-white font-bold text-[17px] tracking-wide drop-shadow-md">
               KāziR Khān
@@ -190,7 +190,7 @@ export default function Level({ onBack }: LevelProps) {
         {/* Text aur Right Image */}
         <div className="flex items-center justify-between pointer-events-none -mt-8 z-30">
           <div className="flex items-center gap-2"></div>
-          <h2 className="-mt-6 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+          <h2 className="-mt-8 text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
             Update level to 100
           </h2>
           <img 
@@ -279,7 +279,7 @@ export default function Level({ onBack }: LevelProps) {
 
             <button 
               onClick={() => setShowAllRewards(!showAllRewards)}
-              className="mt-8 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-4 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
             >
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
