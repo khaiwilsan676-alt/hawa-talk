@@ -134,7 +134,7 @@ export default function Level({ onBack }: LevelProps) {
   const visibleLevels = showAllLevels ? medalTiers : medalTiers.slice(0, 6)
   const visibleRewards = showAllRewards ? rewardLevels : rewardLevels.slice(0, 6)
 
-  // Empty cards array (6 cards)
+  // Empty cards array (6 cards) for Medal, Vehicle, and Background
   const emptyCards = [...Array(6)]
 
   return (
@@ -149,7 +149,7 @@ export default function Level({ onBack }: LevelProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
       </div>
 
-      {/* Header - Card background removed, just transparent and clean */}
+      {/* Header - Ekdam transparent aur clean */}
       <div
         className="sticky top-0 z-50 flex items-center justify-center w-full px-2 pb-3 pt-3 bg-transparent"
         style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 12px))' }}
@@ -173,8 +173,8 @@ export default function Level({ onBack }: LevelProps) {
       {/* Main flow content */}
       <div className="flex-1 px-4 flex flex-col pb-12 z-10 relative gap-4">
         
-        {/* Top Card - Top se 5vh space added */}
-        <div className="relative mt-[2vh]">
+        {/* Top Card - Theek Header ke niche (mt-2) */}
+        <div className="relative mt-2">
           <img 
             src="/file_000000007044820ea729df406d1dc320.png" 
             alt="Top Card" 
@@ -188,8 +188,8 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Text aur Right Image - Top se 10vh space added */}
-        <div className="flex items-center justify-between pointer-events-none mt-[5vh]">
+        {/* Text aur Right Image - Theek Image Card ke niche (mt-2) */}
+        <div className="flex items-center justify-between pointer-events-none mt-2">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center justify-center">
               <ArrowUp size={22} strokeWidth={4} className="text-white drop-shadow-md" />
@@ -199,6 +199,7 @@ export default function Level({ onBack }: LevelProps) {
               Update level to 100
             </h2>
           </div>
+          {/* Right Image (140, 140) */}
           <img 
             src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
             alt="Level up graphic" 
@@ -207,12 +208,12 @@ export default function Level({ onBack }: LevelProps) {
         </div>
 
         {/* --- ALL SECTIONS WITH GAP 5 --- */}
-        <div className="flex flex-col gap-5 mt-4">
+        <div className="flex flex-col gap-6 mt-4">
           
           {/* --- LEVEL SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-3">
-              <img src="/IMG_20260910_220024.png" alt="Level" className="h-7 object-contain drop-shadow-md" />
+            <div className="flex justify-center w-full mb-5">
+              <img src="/IMG_20260910_220024.png" alt="Level" className="h-10 object-contain drop-shadow-md" />
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
@@ -238,20 +239,20 @@ export default function Level({ onBack }: LevelProps) {
             
             <button 
               onClick={() => setShowAllLevels(!showAllLevels)}
-              className="mt-3 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-5 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
             >
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
                 alt="View More" 
-                className={`h-6 object-contain transition-transform duration-300 ${showAllLevels ? 'rotate-180' : ''}`}
+                className="h-6 object-contain"
               />
             </button>
           </div>
 
           {/* --- COINS REWARD SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-3">
-              <img src="/file_00000000cee4821082edb60451e825f4.png" alt="Rewards" className="h-7 object-contain drop-shadow-md" />
+            <div className="flex justify-center w-full mb-5">
+              <img src="/file_00000000cee4821082edb60451e825f4.png" alt="Rewards" className="h-10 object-contain drop-shadow-md" />
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
@@ -285,20 +286,20 @@ export default function Level({ onBack }: LevelProps) {
 
             <button 
               onClick={() => setShowAllRewards(!showAllRewards)}
-              className="mt-3 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-5 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
             >
               <img 
                 src="/file_000000005dac820685e667586bcc16f4.png" 
                 alt="View More" 
-                className={`h-6 object-contain transition-transform duration-300 ${showAllRewards ? 'rotate-180' : ''}`}
+                className="h-6 object-contain"
               />
             </button>
           </div>
 
-          {/* --- MEDAL SECTION (NEW) --- */}
+          {/* --- MEDAL SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-3">
-              <img src="/IMG_20260910_220038.png" alt="Medal" className="h-7 object-contain drop-shadow-md" />
+            <div className="flex justify-center w-full mb-5">
+              <img src="/IMG_20260910_220038.png" alt="Medal" className="h-10 object-contain drop-shadow-md" />
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
@@ -306,22 +307,15 @@ export default function Level({ onBack }: LevelProps) {
                 <div
                   key={idx}
                   className="relative rounded-md overflow-hidden bg-blue-950/20 backdrop-blur-sm min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40 flex items-center justify-center"
-                >
-                  {/* Background specific to empty cards */}
-                  <img 
-                    src="/file_00000000d2f8822fb27fd8617d452ed6.png" 
-                    alt="bg" 
-                    className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-overlay"
-                  />
-                </div>
+                />
               ))}
             </div>
           </div>
 
-          {/* --- VEHICLE SECTION (NEW) --- */}
+          {/* --- VEHICLE SECTION --- */}
           <div className="w-full relative">
-            <div className="flex justify-center w-full mb-3">
-              <img src="/IMG_20260910_220000.png" alt="Vehicle" className="h-7 object-contain drop-shadow-md" />
+            <div className="flex justify-center w-full mb-5">
+              <img src="/IMG_20260910_220000.png" alt="Vehicle" className="h-10 object-contain drop-shadow-md" />
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
@@ -329,14 +323,23 @@ export default function Level({ onBack }: LevelProps) {
                 <div
                   key={idx}
                   className="relative rounded-md overflow-hidden bg-blue-950/20 backdrop-blur-sm min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40 flex items-center justify-center"
-                >
-                   {/* Background specific to empty cards */}
-                   <img 
-                    src="/file_00000000d2f8822fb27fd8617d452ed6.png" 
-                    alt="bg" 
-                    className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-overlay"
-                  />
-                </div>
+                />
+              ))}
+            </div>
+          </div>
+          
+          {/* --- BACKGROUND SECTION (NEW) --- */}
+          <div className="w-full relative">
+            <div className="flex justify-center w-full mb-5">
+              <img src="/file_00000000d2f8822fb27fd8617d452ed6.png" alt="Background" className="h-10 object-contain drop-shadow-md" />
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5">
+              {emptyCards.map((_, idx) => (
+                <div
+                  key={idx}
+                  className="relative rounded-md overflow-hidden bg-blue-950/20 backdrop-blur-sm min-h-[110px] group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:bg-blue-900/40 flex items-center justify-center"
+                />
               ))}
             </div>
           </div>
@@ -346,3 +349,4 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
+
