@@ -10,7 +10,8 @@ import {
   Timer,
   MoreVertical,
   X,
-  Menu
+  Menu,
+  ChevronDown // Added this icon for the arrow
 } from 'lucide-react';
 import { getUser, updateUser, updateRoom, getRooms } from '../../src/lib/googleSheets';
 
@@ -50,9 +51,10 @@ const SidebarCategory = ({ icon, title, items, activeItem, setActiveItem, setIsS
       >
         <span className="text-[16px] drop-shadow-md">{icon}</span>
         <span>{title}</span>
-        <span className={`ml-auto text-[10px] opacity-70 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
-          🔽
-        </span>
+        {/* Emoji arrow removed, using Lucide ChevronDown instead */}
+        <ChevronDown 
+          className={`w-4 h-4 ml-auto opacity-70 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+        />
       </div>
       
       {/* Dropdown Items */}
@@ -63,7 +65,7 @@ const SidebarCategory = ({ icon, title, items, activeItem, setActiveItem, setIsS
               key={item.id}
               onClick={() => {
                 setActiveItem(item.id);
-                if (window.innerWidth < 768) setIsSidebarOpen(false); // Mobile pe click karte hi close
+                if (window.innerWidth < 768) setIsSidebarOpen(false);
               }}
               className={`flex items-center gap-3 px-6 py-2.5 pl-[52px] text-[13px] font-bold transition-colors w-full text-left
                 ${activeItem === item.id ? 'text-white bg-[#8a92ff]/20 border-l-[3px] border-[#8a92ff]' : 'text-gray-300 hover:text-white hover:bg-white/5 border-l-[3px] border-transparent'}
@@ -224,7 +226,7 @@ export default function OwnerPage() {
       )}
 
       {/* ============================================================== */}
-      {/* SIDEBAR (White Text & Emojis & Accordion Dropdowns) */}
+      {/* SIDEBAR */}
       {/* ============================================================== */}
       <aside className={`fixed md:static inset-y-0 left-0 z-50 w-[260px] bg-[#1a1c29] flex flex-col flex-shrink-0 h-full overflow-y-auto border-r border-[#2a2d3e] transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         
@@ -284,13 +286,23 @@ export default function OwnerPage() {
       {/* ============================================================== */}
       {/* MAIN CONTENT AREA */}
       {/* ============================================================== */}
-      <main className="flex-1 flex flex-col h-full bg-[#f8f9fa] overflow-hidden">
+      <main 
+        className="flex-1 flex flex-col h-full bg-[#f8f9fa] overflow-hidden"
+        // onClick yaha lagaya hai, jab bhi right side tap hoga sidebar close ho jayega
+        onClick={() => { if (isSidebarOpen) setIsSidebarOpen(false); }}
+      >
         
         {/* ============================================================== */}
         {/* MOBILE HEADER (3 Lines Hamburger Menu) */}
         {/* ============================================================== */}
         <header className="md:hidden bg-white p-4 border-b border-slate-200 flex items-center gap-4 sticky top-0 z-30 shadow-sm">
-          <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg active:scale-95 transition-transform">
+          <button 
+            onClick={(e) => { 
+              e.stopPropagation(); // Event bubble na kare
+              setIsSidebarOpen(true); 
+            }} 
+            className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg active:scale-95 transition-transform"
+          >
             <Menu className="w-6 h-6" />
           </button>
           <span className="font-bold text-slate-800 text-lg tracking-wide">Owner Panel</span>
