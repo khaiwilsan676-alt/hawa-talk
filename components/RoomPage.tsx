@@ -207,7 +207,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [roomPassword, setRoomPassword] = useState<string>("");
   const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
-  const [micMode, setMicMode] = useState<number>(10);
+  const [micMode, setMicMode] = useState<number>(15);
   const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
   const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg");
 
@@ -833,20 +833,20 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       );
     }
-    if (micMode === 15) {
+    if (micMode === 10) {
       return (
-        <div className="flex flex-col gap-2.5 w-full px-0">
+        <div className="flex flex-col gap-3 w-full px-0">
           <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([1, 2, 3, 4, 5])}</div>
           <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([6, 7, 8, 9, 10])}</div>
-          <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([11, 12, 13, 14, 15])}</div>
         </div>
       );
     }
-    // Default 10 mic mode (2 rows, 5 seats per row)
+    // Default 15 mic mode (3 rows, 5 seats per row)
     return (
-      <div className="flex flex-col gap-3 w-full px-0">
+      <div className="flex flex-col gap-2.5 w-full px-0">
         <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([1, 2, 3, 4, 5])}</div>
         <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([6, 7, 8, 9, 10])}</div>
+        <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([11, 12, 13, 14, 15])}</div>
       </div>
     );
   };
@@ -1126,7 +1126,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-5 pt-10 sm:pt-8 w-full">
+          <div className="flex-shrink-0 flex flex-col gap-5 pt-8 sm:pt-6 w-full">
             {renderSeats()}
           </div>
 
@@ -1357,7 +1357,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <div 
         className={`absolute z-20 flex flex-col items-center pointer-events-auto ${showChatInput ? 'hidden' : ''}`}
         style={{
-          top: 'calc(100lvh - 365px)',
+          top: 'calc(100lvh - 310px)',
           right: '10px',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -1602,7 +1602,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </div>
             <div className="flex flex-col items-center gap-2">
               <button onClick={handleExit} className="rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer" style={{ width: 'var(--exit-btn-size)', height: 'var(--exit-btn-size)' }}>
-                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--exit-icon-size)', height: 'var(--exit-icon-size)' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--exit-icon-size)', height: 'var(--exit-icon-size)' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
               </button>
               <span className="text-white/70 font-medium" style={{ fontSize: 'var(--exit-text-size)' }}>Exit</span>
             </div>
@@ -1903,7 +1903,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         @media (max-width: 400px) {
           :root {
-            --seat-size: 68px;
+            --seat-size: 56px;
             --header-btn-size: 38px;
             --header-icon-size: 22px;
             --header-room-img-size: 38px;
@@ -2063,72 +2063,78 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
               />
             </div>
           ) : isOccupied && user ? (
-            <>
-              <div className="relative w-full h-full rounded-full overflow-visible flex items-center justify-center">
+            /* Seat Base with Inner Fitted User Avatar & Frame */
+            <div className="relative w-full h-full flex items-center justify-center overflow-visible">
+              <img
+                src="/file_00000000d23082118655299af1610f9c.png"
+                alt="Seat Base"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+                draggable={false}
+              />
+              <div className="relative w-[72%] h-[72%] rounded-full overflow-hidden flex items-center justify-center z-10">
                 <img
                   src={user.image || "/default-avatar.png"}
                   alt={user.name}
-                  className="w-full h-full rounded-full object-cover select-none pointer-events-auto cursor-pointer"
+                  className="w-full h-full object-cover select-none pointer-events-auto cursor-pointer"
                   draggable={false}
                   onError={(e) => { (e.target as HTMLImageElement).src = "/default-avatar.png" }}
                   onClick={onAvatarClick}
-                  style={{ zIndex: 1 }}
                 />
+              </div>
 
-                {gif && (
-                  <div 
-                    className="absolute pointer-events-none overflow-visible flex items-center justify-center"
-                    style={{
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '125%',
-                      height: '125%',
-                      zIndex: 30,
-                    }}
-                  >
-                    <img
-                      key={`${gif.src}-${gif.timestamp}`}
-                      src={`${encodeURI(gif.src)}?t=${gif.timestamp}`}
-                      alt="Reaction"
-                      className="w-full h-full object-contain select-none pointer-events-none"
-                      style={{
-                        maxWidth: 'none',
-                        maxHeight: 'none',
-                      }}
-                    />
-                  </div>
-                )}
-
+              {gif && (
                 <div 
-                  className="absolute pointer-events-none"
+                  className="absolute pointer-events-none overflow-visible flex items-center justify-center"
                   style={{
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: '160%',
-                    height: '160%',
-                    zIndex: 20,
-                    overflow: 'visible',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    width: '125%',
+                    height: '125%',
+                    zIndex: 30,
                   }}
                 >
-                  <WhiteColorRemovalShader
-                    imageSrc="/1786867564769.png"
-                    threshold={0.85}
-                    className="w-full h-full"
+                  <img
+                    key={`${gif.src}-${gif.timestamp}`}
+                    src={`${encodeURI(gif.src)}?t=${gif.timestamp}`}
+                    alt="Reaction"
+                    className="w-full h-full object-contain select-none pointer-events-none"
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
                       maxWidth: 'none',
                       maxHeight: 'none',
-                      overflow: 'visible',
                     }}
                   />
                 </div>
+              )}
+
+              <div 
+                className="absolute pointer-events-none"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '140%',
+                  height: '140%',
+                  zIndex: 20,
+                  overflow: 'visible',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <WhiteColorRemovalShader
+                  imageSrc="/1786867564769.png"
+                  threshold={0.85}
+                  className="w-full h-full"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    maxWidth: 'none',
+                    maxHeight: 'none',
+                    overflow: 'visible',
+                  }}
+                />
               </div>
 
               {isMuted && (
@@ -2136,7 +2142,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
-            </>
+            </div>
           ) : (
             /* Custom Empty Seat Image */
             <div className="w-full h-full flex items-center justify-center relative pointer-events-none">
@@ -2268,3 +2274,4 @@ function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", st
 
   return <canvas ref={canvasRef} className={className} style={style} />;
 }
+
