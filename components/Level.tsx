@@ -282,19 +282,18 @@ export default function Level({ onBack }: LevelProps) {
   }
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto h-screen bg-[#050914] text-white flex flex-col font-sans select-none overflow-hidden">
-      
-      {/* 1. TOP BACKGROUND IMAGE (Bright & Vivid with smooth bottom blend) */}
-      <div className="absolute top-0 left-0 w-full h-[340px] pointer-events-none z-0 overflow-hidden">
+    <div className="relative w-full max-w-[440px] mx-auto h-screen bg-[#04060a] text-white flex flex-col font-sans select-none overflow-hidden">
+      {/* 1. TOP BACKGROUND IMAGE */}
+      <div className="absolute top-0 left-0 w-full h-[330px] pointer-events-none z-0 overflow-hidden">
         <div
           className="absolute inset-0 bg-top bg-cover bg-no-repeat"
           style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
         />
-        <div className="absolute -top-10 -left-10 w-[300px] h-[300px] bg-[#1d4ed8]/30 blur-[90px] rounded-full" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050914]/30 to-[#050914]" />
+        <div className="absolute -top-10 -left-10 w-[280px] h-[280px] bg-[#1d4ed8]/30 blur-[90px] rounded-full" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#04060a]/40 to-[#04060a]" />
       </div>
 
-      {/* 2. FIXED TOP CONTAINER */}
+      {/* 2. FIXED / PINNED TOP CONTAINER */}
       <div className="relative z-30 flex flex-col shrink-0 px-4">
         {/* Top App Bar */}
         <div
@@ -317,7 +316,7 @@ export default function Level({ onBack }: LevelProps) {
           </button>
         </div>
 
-        {/* Top Image Card (Frame with Avatar, Name, Lv.1-10 Tag, Progress Bar & Remaining Text) */}
+        {/* Top Image Card Frame */}
         <div className="relative -mt-3 -mx-4">
           <img
             src="/file_000000007044820ea729df406d1dc320.png"
@@ -337,23 +336,17 @@ export default function Level({ onBack }: LevelProps) {
 
             {/* Profile Info Details */}
             <div className="flex-1 flex flex-col justify-center min-w-0 pr-2">
-              {/* Name & Level Badge Pill */}
               <div className="flex items-center gap-2">
                 <span className="text-white font-serif font-black text-[17px] tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
                   KāziR Khān
                 </span>
 
-                {/* Level 1-10 Badge Pill */}
-                <div className="inline-flex items-center bg-[#5fc2bb]/35 border border-[#8ce7e1]/60 rounded-full pl-1 pr-2.5 py-0.5 shadow-sm">
-                  <ShaderImageBadge
-                    src="/1785137410522.png"
-                    isWhiteBg={true}
-                    className="w-4 h-4 object-contain mr-1"
-                  />
-                  <span className="text-white text-[11px] font-extrabold leading-none drop-shadow">
-                    4
-                  </span>
-                </div>
+                {/* Bina Card/Pill ke direct Badge Image */}
+                <ShaderImageBadge
+                  src="/1785137410522.png"
+                  isWhiteBg={true}
+                  className="w-6 h-6 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                />
               </div>
 
               {/* Progress Bar with Thumb Indicator */}
@@ -376,57 +369,57 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Dynamic Sticky Header: Corner Image + Left Arrow Text + Right Graphic */}
-        <div className="relative flex items-center justify-between w-full -mt-6 pb-2 min-h-[95px]">
-          {/* Top-Left Corner Stick Badge */}
-          <div className="absolute -top-3.5 left-0 pointer-events-none z-20">
+        {/* Dynamic Sticky Header: Screen Edge Chipki Image + Left Text + Right Graphic */}
+        <div className="relative flex items-center justify-between w-full -mt-7 pb-1 min-h-[90px]">
+          {/* Left Screen Corner se Chipki Hui Image */}
+          <div className="absolute -top-3.5 -left-4 pointer-events-none z-20">
             <img
               src="/file_000000006688821197edc482e295d3fd.png"
               alt="Corner Tag"
-              className="h-6 object-contain drop-shadow-md"
+              className="h-7 object-contain drop-shadow-md"
             />
           </div>
 
-          {/* Left Text with Arrow */}
-          <div className="flex items-center gap-2.5 mt-3 z-10">
+          {/* Left Side: Thoda Ouper Shifted + Chhota Font */}
+          <div className="flex items-center gap-2 -mt-2 z-10">
             <div className="flex flex-col items-center justify-center">
               <svg
-                className="w-6 h-6 text-white drop-shadow-[0_3px_8px_rgba(0,0,0,0.9)]"
+                className="w-4 h-4 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
-                <path d="M12 2L3 11h5v9h8v-9h5L12 2z" />
+                <path d="M12 3L4 11h5v9h6v-9h5L12 3z" />
               </svg>
               <div className="flex flex-col gap-0.5 mt-0.5">
-                <div className="w-4 h-[2px] bg-white rounded-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                <div className="w-2.5 h-[2px] bg-white rounded-full mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                <div className="w-3.5 h-[1.5px] bg-white rounded-full" />
+                <div className="w-2 h-[1.5px] bg-white rounded-full mx-auto" />
               </div>
             </div>
 
-            <h2 className="text-white font-extrabold text-[17px] whitespace-nowrap tracking-wide drop-shadow-[0_3px_8px_rgba(0,0,0,0.9)]">
+            <h2 className="text-white font-bold text-[14px] whitespace-nowrap tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
               Update level to {currentTier.range}
             </h2>
           </div>
 
           {/* Right Floating Graphic */}
-          <div className="shrink-0 -mr-2 -mt-2 z-10 transition-all duration-300">
+          <div className="shrink-0 -mr-2 -mt-4 z-10 transition-all duration-300">
             <img
               key={currentTier.rightGraphic}
               src={currentTier.rightGraphic}
               alt="Tier Graphic"
-              className="w-[110px] h-[110px] object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95 duration-200"
+              className="w-[100px] h-[100px] object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95 duration-200"
             />
           </div>
         </div>
       </div>
 
-      {/* 3. SCROLLABLE SET CARDS SECTION */}
+      {/* 3. SCROLLABLE SET SECTION */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 px-4 overflow-y-auto z-20 pb-20 pt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="flex-1 px-4 overflow-y-auto z-20 pb-24 pt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-9">
           {tiersList.map((tier, tIdx) => (
             <div
               key={tier.id}
@@ -435,51 +428,68 @@ export default function Level({ onBack }: LevelProps) {
               }}
               className="w-full flex flex-col pt-1"
             >
-              {/* Set Title */}
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-300/80">
-                  Tier {tIdx + 1}
-                </span>
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-blue-500/30 to-transparent" />
+              {/* Section Header */}
+              <div className="flex items-center justify-between w-full min-h-[60px] mb-2 px-1">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 text-white drop-shadow-md shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 4l-8 8h5v8h6v-8h5z" />
+                  </svg>
+                  <h3 className="text-white font-bold text-[14px] tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                    Upgrade to level {tier.range}
+                  </h3>
+                </div>
+
+                <div className="shrink-0 -mr-1">
+                  <img
+                    src={tier.rightGraphic}
+                    alt={tier.range}
+                    className="w-[60px] h-[60px] object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]"
+                  />
+                </div>
               </div>
 
-              {/* Blue-ish Glassy Cards (rounded-md, yellow dot removed) */}
-              <div className="flex flex-col gap-2 w-full">
+              {/* Cards */}
+              <div className="flex flex-col gap-2.5 w-full">
                 {tier.features.map((item, fIdx) => (
                   <div
                     key={fIdx}
-                    className="w-full bg-[#0d1728]/85 border border-[#1e2f4d]/60 rounded-md px-3.5 py-3 flex items-center justify-between backdrop-blur-md transition-all duration-200 hover:bg-[#122038] hover:border-blue-500/40 shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+                    className="w-full relative overflow-hidden rounded-md border border-white/5 bg-gradient-to-r from-[#06080d] via-[#080d17] to-[#132c54]/45 px-3.5 py-3 flex items-center justify-between backdrop-blur-md transition-all duration-200 hover:to-[#173a70]/60 shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
                   >
-                    <div className="flex flex-col justify-center">
-                      <span className="text-[14px] font-semibold text-white tracking-wide">
+                    <div className="flex flex-col justify-center z-10">
+                      <span className="text-[13.5px] font-semibold text-white tracking-wide">
                         {item.title}
                       </span>
                       {item.subtitle && (
-                        <span className="text-[11px] text-blue-200/60 mt-0.5 font-normal">
+                        <span className="text-[11px] text-gray-400 mt-0.5 font-normal">
                           {item.subtitle}
                         </span>
                       )}
                     </div>
 
-                    {/* Right side item badge/rewards */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Right side items */}
+                    <div className="flex items-center gap-2 shrink-0 z-10">
                       {item.isReward ? (
-                        <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-md border border-blue-400/20">
+                        /* Bina kisi background card/border ke direct Coin Image + Text */
+                        <div className="flex items-center gap-1.5">
                           <ShaderImageBadge
                             src="/file_00000000b2d481fd8cd233482dbeb9ef.png"
                             isWhiteBg={true}
-                            className="w-4 h-4 object-contain"
+                            className="w-6 h-6 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]"
                           />
-                          <span className="text-[12px] font-bold text-amber-300">
+                          <span className="text-[13px] font-extrabold text-[#fcd34d] tracking-wide drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                             {tier.coinsAmount}
                           </span>
                         </div>
                       ) : item.badgeText ? (
-                        <div className="px-2.5 py-0.5 rounded-md bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold text-[11px] shadow-sm flex items-center">
+                        <div className="px-2.5 py-0.5 rounded-md bg-gradient-to-r from-[#177488] to-[#1ea3b3] text-white font-bold text-[11px] shadow-sm flex items-center">
                           {item.badgeText}
                         </div>
                       ) : item.title === 'Room Send image' ? (
-                        <div className="w-8 h-8 rounded-md bg-[#192b47] border border-blue-400/30 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-md bg-[#131f33] border border-blue-400/30 flex items-center justify-center">
                           <svg
                             className="w-4 h-4 text-blue-300"
                             viewBox="0 0 24 24"
@@ -496,7 +506,7 @@ export default function Level({ onBack }: LevelProps) {
                         <ShaderImageBadge
                           src={tier.medalBadgeSrc}
                           isWhiteBg={tier.isWhiteBg}
-                          className="w-10 h-7 object-contain"
+                          className="w-9 h-6 object-contain"
                         />
                       )}
                     </div>
