@@ -348,10 +348,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     });
   }, [micMode]);
 
-  const presenceCollection = `roomPresence/${roomId}/users`;
-  const messagesCollection = `roomMessages/${roomId}/messages`;
-  const seatsCollection = `roomSeats/${roomId}/seats`;
-
   useEffect(() => {
     setMessages([]);
     joinMessageSentRef.current = false;
@@ -817,50 +813,50 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false;
   const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false;
 
-  // ========== SEAT RENDERING (5, 10, 15) ==========
-  const renderSeats = () => {
-    const renderSeatItems = (seatNumbers: number[]) => {
-      return seatNumbers.map(num => {
-        const seat = seats.find(s => s.number === num);
-        return (
-          <SeatItem
-            key={num}
-            seatNumber={num}
-            seatData={seat}
-            onClick={handleSeatClick(num)}
-            onAvatarClick={handleSeatAvatarClick(seat!)}
-            accountId={userAccountId}
-            roomOwnerId={roomOwnerId}
-          />
-        );
-      });
-    };
+ // ========== SEAT RENDERING (5, 10, 15) ==========
+const renderSeats = () => {
+  const renderSeatItems = (seatNumbers: number[]) => {
+    return seatNumbers.map(num => {
+      const seat = seats.find(s => s.number === num);
+      return (
+        <SeatItem
+          key={num}
+          seatNumber={num}
+          seatData={seat}
+          onClick={handleSeatClick(num)}
+          onAvatarClick={handleSeatAvatarClick(seat!)}
+          accountId={userAccountId}
+          roomOwnerId={roomOwnerId}
+        />
+      );
+    });
+  };
 
-    if (micMode === 5) {
-      return (
-        <div className="flex flex-col gap-3 w-full">
-          <div className="flex justify-center">{renderSeatItems([1])}</div>
-          <div className="flex justify-between items-center w-full">{renderSeatItems([2,3,4,5])}</div>
-        </div>
-      );
-    }
-    if (micMode === 10) {
-      return (
-        <div className="flex flex-col gap-3 w-full">
-          <div className="flex justify-between items-center w-full">{renderSeatItems([1,2,3,4,5])}</div>
-          <div className="flex justify-between items-center w-full">{renderSeatItems([6,7,8,9,10])}</div>
-        </div>
-      );
-    }
-    // Default 15 mic mode (3 rows × 5 seats)
+  if (micMode === 5) {
     return (
       <div className="flex flex-col gap-3 w-full">
-        <div className="flex justify-between items-center w-full">{renderSeatItems([1,2,3,4,5])}</div>
-        <div className="flex justify-between items-center w-full">{renderSeatItems([6,7,8,9,10])}</div>
-        <div className="flex justify-between items-center w-full">{renderSeatItems([11,12,13,14,15])}</div>
+        <div className="flex justify-center">{renderSeatItems([1])}</div>
+        <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([2,3,4,5])}</div>
       </div>
     );
-  };
+  }
+  if (micMode === 10) {
+    return (
+      <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
+        <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([1,2,3,4,5])}</div>
+        <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([6,7,8,9,10])}</div>
+      </div>
+    );
+  }
+  // Default 15 mic mode (3 rows × 5 seats)
+  return (
+    <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
+      <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([1,2,3,4,5])}</div>
+      <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([6,7,8,9,10])}</div>
+      <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([11,12,13,14,15])}</div>
+    </div>
+  );
+};
 
   const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
     if (playlist && playlist.length > 0) {
@@ -2022,7 +2018,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// ========== SEAT ITEM WITH IMAGE ICONS ==========
+// ========== SEAT ITEM - ONLY IMAGES (NO CODE SEAT) ==========
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -2113,17 +2109,17 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             <div className="absolute rounded-full pointer-events-none" style={{ width: 'calc(var(--seat-size) * 1.066)', height: 'calc(var(--seat-size) * 1.066)', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
           </>
         )}
-        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto overflow-visible ${activeSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
-          {isLocked ? (
-            <div className="flex items-center justify-center w-full h-full p-1.5">
-              <img 
-                src="/file_00000000d2f08211baedcbfa57f4c3e6.png" 
-                alt="Locked" 
-                className="w-full h-full object-contain pointer-events-none select-none"
-                draggable={false}
-              />
-            </div>
+        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 transition-all duration-300 hover:scale-105 pointer-events-auto overflow-visible ${activeSpeaking ? 'shadow-[0_0_15px_rgba(59,130,246,0.8)]' : ''}`}>
+          {/* LOCKED - Lock image */}
+          {isLocked && !isOccupied ? (
+            <img 
+              src="/file_00000000d2f08211baedcbfa57f4c3e6.png" 
+              alt="Locked" 
+              className="w-full h-full object-contain pointer-events-none select-none"
+              draggable={false}
+            />
           ) : isOccupied && user ? (
+            /* OCCUPIED - User avatar */
             <>
               <div className="relative w-full h-full rounded-full overflow-visible flex items-center justify-center">
                 <img
@@ -2199,14 +2195,13 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
               )}
             </>
           ) : (
-            <div className="flex items-center justify-center w-full h-full p-1">
-              <img 
-                src="/file_00000000d23082118655299af1610f9c.png" 
-                alt="Empty Seat" 
-                className="w-full h-full object-contain pointer-events-none select-none"
-                draggable={false}
-              />
-            </div>
+            /* EMPTY - Empty seat image */
+            <img 
+              src="/file_00000000d23082118655299af1610f9c.png" 
+              alt="Empty Seat" 
+              className="w-full h-full object-contain pointer-events-none select-none"
+              draggable={false}
+            />
           )}
         </div>
       </div>
@@ -2316,4 +2311,4 @@ function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", st
   }, [imageSrc, threshold]);
 
   return <canvas ref={canvasRef} className={className} style={style} />;
-          }
+      }
