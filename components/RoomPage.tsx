@@ -1126,7 +1126,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-5 pt-8 sm:pt-6 w-full">
+          <div className="flex-shrink-0 flex flex-col gap-5 pt-10 sm:pt-8 w-full">
             {renderSeats()}
           </div>
 
@@ -1870,7 +1870,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <style jsx global>{`
         :root {
-          --seat-size: 58px;
+          --seat-size: 68px;
           --header-btn-size: 42px;
           --header-btn-padding: 4px 8px;
           --header-icon-size: 26px;
@@ -1903,7 +1903,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         @media (max-width: 400px) {
           :root {
-            --seat-size: 52px;
+            --seat-size: 68px;
             --header-btn-size: 38px;
             --header-icon-size: 22px;
             --header-room-img-size: 38px;
