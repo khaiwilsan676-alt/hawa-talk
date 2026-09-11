@@ -1870,7 +1870,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <style jsx global>{`
         :root {
-          --seat-size: 80px;
+          --seat-size: 77px;
           --header-btn-size: 42px;
           --header-btn-padding: 4px 8px;
           --header-icon-size: 26px;
