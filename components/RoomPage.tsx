@@ -176,12 +176,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [musicDuration, setMusicDuration] = useState(0);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Minimized Widget Drag & Drop Positions
-  const [minimizedPos, setMinimizedPos] = useState<{ x: number; y: number }>({ x: 16, y: 120 });
-  const isDraggingRef = useRef(false);
-  const dragStartPos = useRef<{ startX: number; startY: number; initialX: number; initialY: number }>({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
-  const hasMovedRef = useRef(false);
-
   const [publicMsgOff, setPublicMsgOff] = useState(false);
   const [showPublicMsgModal, setShowPublicMsgModal] = useState(false);
 
@@ -213,7 +207,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [roomPassword, setRoomPassword] = useState<string>("");
   const [roomImage, setRoomImage] = useState<string>(roomOwner.image || "/1784533036732~2.jpg");
-  const [micMode, setMicMode] = useState<number>(15);
+  const [micMode, setMicMode] = useState<number>(10);
   const [roomInfoTab, setRoomInfoTab] = useState<'profile' | 'members'>('profile');
   const [backgroundImage, setBackgroundImage] = useState<string>("/1784533036732~2.jpg");
 
@@ -225,7 +219,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   const [showChatInput, setShowChatInput] = useState(false);
   const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
-  const [roomFollowers, setRoomFollowers] = useState<RoomUser[]>([]);
 
   const getInitialSeats = (mode: number): Seat[] => {
     const seats: Seat[] = [];
@@ -319,7 +312,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             setRoomAnnouncement(data.message || data.announcement || "");
             setRoomImage(data['Room dp'] || data.image || roomOwner.image);
             if (data['Mic Mode'] || data.micMode) {
-              setMicMode(data['Mic Mode'] || data.micMode);
+              setMicMode(Number(data['Mic Mode'] || data.micMode));
             }
             if (data.theme && THEME_BACKGROUNDS[data.theme]) {
               setBackgroundImage(THEME_BACKGROUNDS[data.theme]);
@@ -813,7 +806,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false;
   const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false;
 
-  // ========== SEAT RENDERING (5, 10, 15) ==========
+  // EDGE-TO-EDGE 5, 10, 15 SEATS LAYOUT
   const renderSeats = () => {
     const renderSeatItems = (seatNumbers: number[]) => {
       return seatNumbers.map(num => {
@@ -834,26 +827,26 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
     if (micMode === 5) {
       return (
-        <div className="flex flex-col gap-3 w-full">
+        <div className="flex flex-col gap-3 w-full px-0">
           <div className="flex justify-center">{renderSeatItems([1])}</div>
-          <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([2,3,4,5])}</div>
+          <div className="flex justify-around items-center w-full px-0">{renderSeatItems([2, 3, 4, 5])}</div>
         </div>
       );
     }
-    if (micMode === 10) {
+    if (micMode === 15) {
       return (
-        <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
-          <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([1,2,3,4,5])}</div>
-          <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([6,7,8,9,10])}</div>
+        <div className="flex flex-col gap-2.5 w-full px-0">
+          <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([1, 2, 3, 4, 5])}</div>
+          <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([6, 7, 8, 9, 10])}</div>
+          <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([11, 12, 13, 14, 15])}</div>
         </div>
       );
     }
-    // Default 15 mic mode (3 rows × 5 seats)
+    // Default 10 mic mode (2 rows, 5 seats per row)
     return (
-      <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
-        <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([1,2,3,4,5])}</div>
-        <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([6,7,8,9,10])}</div>
-        <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([11,12,13,14,15])}</div>
+      <div className="flex flex-col gap-3 w-full px-0">
+        <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([1, 2, 3, 4, 5])}</div>
+        <div className="grid grid-cols-5 justify-items-center w-full px-0">{renderSeatItems([6, 7, 8, 9, 10])}</div>
       </div>
     );
   };
@@ -992,63 +985,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // --- BOUNDARY-PROTECTED DRAG & DROP FOR MINIMIZED MUSIC CONTROLLER ---
-  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
-    isDraggingRef.current = true;
-    hasMovedRef.current = false;
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-
-    dragStartPos.current = {
-      startX: clientX,
-      startY: clientY,
-      initialX: minimizedPos.x,
-      initialY: minimizedPos.y,
-    };
-  };
-
-  const handleTouchMove = useCallback((e: TouchEvent | MouseEvent) => {
-    if (!isDraggingRef.current) return;
-    const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
-    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
-
-    const deltaX = clientX - dragStartPos.current.startX;
-    const deltaY = clientY - dragStartPos.current.startY;
-
-    if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
-      hasMovedRef.current = true;
-    }
-
-    const widgetWidth = 52;
-    const widgetHeight = 52;
-    const maxX = window.innerWidth - widgetWidth - 8;
-    const maxY = window.innerHeight - widgetHeight - 65;
-
-    const newX = Math.min(Math.max(8, dragStartPos.current.initialX + deltaX), maxX);
-    const newY = Math.min(Math.max(60, dragStartPos.current.initialY + deltaY), maxY);
-
-    setMinimizedPos({ x: newX, y: newY });
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    isDraggingRef.current = false;
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('mousemove', handleTouchMove);
-    window.addEventListener('mouseup', handleTouchEnd);
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchmove', handleTouchMove);
-    window.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      window.removeEventListener('mousemove', handleTouchMove);
-      window.removeEventListener('mouseup', handleTouchEnd);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [handleTouchMove, handleTouchEnd]);
-
   if (showSettingPage) {
     return (
       <RoomSettingPage
@@ -1077,12 +1013,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" aria-label="Upload image" />
 
-      <div className="relative z-10 flex flex-col h-full px-0 sm:px-1" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }} onClick={(e) => e.stopPropagation()}>
+      <div className="relative z-10 flex flex-col h-full px-1 sm:px-2" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }} onClick={(e) => e.stopPropagation()}>
 
         {/* Glassmorphism Top Header */}
-        <div className="flex justify-between items-center text-white flex-shrink-0 px-3 sm:px-4">
+        <div className="flex justify-between items-center text-white flex-shrink-0 px-2">
           <div className="flex items-center gap-2 sm:gap-3 bg-black/30 rounded-r-full pr-4 py-0.5 pl-1 border border-none shadow-sm border-l-0 -ml-3 sm:-ml-4">
-
             <button
               onClick={() => { setRoomInfoTab('profile'); setShowRoomInfo(true); }}
               className="rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
@@ -1153,8 +1088,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
 
         {/* TROPHY CARD UI */}
-        <div className="h-0 w-full relative z-20 px-3 sm:px-4">
-          <div className="absolute top-2 left-0 -ml-3 sm:-ml-4">
+        <div className="h-0 w-full relative z-20">
+          <div className="absolute top-2 left-0 -ml-1 sm:-ml-2">
             <button className="bg-gradient-to-r from-[#242b35]/90 via-[#242b35]/60 to-transparent flex items-center pr-3 pl-3 py-1 cursor-pointer border-none">
               <div className="w-4 h-4 flex items-center justify-center shrink-0 relative overflow-visible mr-1.5">
                 <GreenColorRemovalShader
@@ -1171,8 +1106,18 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   }}
                 />
               </div>
-              <span className="font-bold text-[13px] leading-none tracking-tight" style={{ color: '#eef3a3' }}>0</span>
-              <svg viewBox="0 0 24 24" className="fill-none stroke-[3] ml-1 opacity-90" stroke="#eef3a3" style={{ width: '10px', height: '10px' }}>
+              <span 
+                className="font-bold text-[13px] leading-none tracking-tight" 
+                style={{ color: '#eef3a3' }}
+              >
+                0
+              </span>
+              <svg 
+                viewBox="0 0 24 24" 
+                className="fill-none stroke-[3] ml-1 opacity-90" 
+                stroke="#eef3a3" 
+                style={{ width: '10px', height: '10px' }}
+              >
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>
@@ -1181,12 +1126,11 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-3 pt-8 sm:pt-6 px-1 sm:px-2">
+          <div className="flex-shrink-0 flex flex-col gap-5 pt-8 sm:pt-6 w-full">
             {renderSeats()}
           </div>
 
-          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none px-3 sm:px-4">
-            
+          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
             {/* Announcement Box */}
             <div className="mx-1 mb-3 flex justify-start">
               <div 
@@ -1196,13 +1140,25 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   borderRadius: '8px',
                 }}
               >
-                <p className="leading-snug font-medium" style={{ fontSize: 'var(--announcement-text-size)', color: '#e2c67d' }}>
+                <p 
+                  className="leading-snug font-medium"
+                  style={{ 
+                    fontSize: 'var(--announcement-text-size)',
+                    color: '#e2c67d',
+                  }}
+                >
                   Official announcement: Welcome to Hurry Any Content Realted to porn,Froud,Fake Official will Ban!
                 </p>
                 
                 {roomAnnouncement && (
                   <div className="mt-2 pt-2 border-t border-white/10">
-                    <p className="leading-snug font-medium" style={{ fontSize: 'var(--announcement-text-size)', color: '#e2c67d' }}>
+                    <p 
+                      className="leading-snug font-medium"
+                      style={{ 
+                        fontSize: 'var(--announcement-text-size)',
+                        color: '#e2c67d',
+                      }}
+                    >
                       <span className="font-bold mr-1">ANNOUNCEMENT: </span>
                       {roomAnnouncement}
                     </p>
@@ -1270,9 +1226,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
 
         {/* Footer Controls */}
-        <div className={`flex-shrink-0 pt-2 px-3 sm:px-4 ${showChatInput ? 'hidden' : ''}`}>
+        <div className={`flex-shrink-0 pt-2 px-2 ${showChatInput ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between gap-0.5">
-            
             <button
               onClick={openChatInput}
               aria-label="Say Hi Chat"
@@ -1362,7 +1317,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         {showChatInput && (
           <div 
             ref={inputContainerRef} 
-            className="fixed bottom-0 left-0 right-0 z-[10000] flex items-center w-full px-3 sm:px-4"
+            className="fixed bottom-0 left-0 right-0 z-[10000] flex items-center w-full"
             style={{
               paddingBottom: 'env(safe-area-inset-bottom)'
             }}
@@ -1402,13 +1357,30 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       <div 
         className={`absolute z-20 flex flex-col items-center pointer-events-auto ${showChatInput ? 'hidden' : ''}`}
         style={{
-          top: 'calc(100lvh - 310px)',
+          top: 'calc(100lvh - 365px)',
           right: '10px',
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 0. MUSIC MINIMIZE ICON (ONLY SPINNING BLUE CIRCLE DIRECTLY ABOVE BANNER) */}
+        {musicControllerState === 'minimized' && currentTrack && (
+          <div
+            onClick={() => setMusicControllerState('full')}
+            className="mb-2 cursor-pointer relative flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+            title={currentTrack.name}
+          >
+            <div className={`w-9 h-9 rounded-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.7)] border-2 border-white flex items-center justify-center ${isMusicPlaying ? 'music-minimize-icon' : ''}`}>
+              <svg viewBox="0 0 24 24" className="fill-white" style={{ width: '18px', height: '18px' }}>
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* 1. AUTO-SCROLL BANNER */}
         <RoomSideBanner />
 
+        {/* 2. BICH WALI IMAGE (Room Task Click) */}
         <div 
           onClick={() => setShowRoomTask(true)}
           className="relative cursor-pointer transition-transform hover:scale-105 mt-2 flex items-center justify-center"
@@ -1430,6 +1402,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           />
         </div>
 
+        {/* 3. NICHE WALI (GAME) IMAGE */}
         <div 
           className="relative cursor-pointer transition-transform hover:scale-105 mt-1"
           style={{
@@ -1629,7 +1602,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             </div>
             <div className="flex flex-col items-center gap-2">
               <button onClick={handleExit} className="rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all duration-200 shadow-lg shadow-blue-500/30 cursor-pointer" style={{ width: 'var(--exit-btn-size)', height: 'var(--exit-btn-size)' }}>
-                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--exit-icon-size)', height: 'var(--exit-icon-size)' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[2.5] stroke-linecap-round stroke-linejoin-round" style={{ width: 'var(--exit-icon-size)', height: 'var(--exit-icon-size)' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
               </button>
               <span className="text-white/70 font-medium" style={{ fontSize: 'var(--exit-text-size)' }}>Exit</span>
             </div>
@@ -1780,33 +1753,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {/* MINIMIZED MUSIC CONTROLLER */}
-      {musicControllerState === 'minimized' && currentTrack && (
-        <div
-          className="fixed z-[45] cursor-grab active:cursor-grabbing flex items-center justify-center select-none touch-none"
-          style={{ 
-            left: `${minimizedPos.x}px`, 
-            top: `${minimizedPos.y}px`,
-            width: '52px',
-            height: '52px',
-          }}
-          onMouseDown={handleTouchStart}
-          onTouchStart={handleTouchStart}
-          onClick={() => {
-            if (!hasMovedRef.current) {
-              setMusicControllerState('full');
-            }
-          }}
-        >
-          <div className={`w-full h-full rounded-full bg-blue-600 flex items-center justify-center shadow-2xl transition-transform active:scale-95 ${isMusicPlaying ? 'music-minimize-icon' : ''}`}>
-            <svg viewBox="0 0 24 24" className="fill-white" style={{ width: '24px', height: '24px' }}>
-              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-            </svg>
-          </div>
-        </div>
-      )}
-
-      {/* FULL MUSIC CONTROLLER */}
+      {/* FULL MUSIC CONTROLLER (LEFT: CROSS | RIGHT: MINIMIZE) */}
       {musicControllerState === 'full' && currentTrack && !showFourGride && (
         <div 
           className="fixed left-1/2 transform -translate-x-1/2 z-[45] w-full max-w-sm px-3"
@@ -1822,6 +1769,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}
           >
+            {/* CLOSE BUTTON (LEFT SIDE) */}
             <button
               onClick={handleCloseMusicController}
               className="absolute top-1.5 left-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
@@ -1833,6 +1781,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
               </svg>
             </button>
 
+            {/* MINIMIZE BUTTON (RIGHT SIDE) */}
             <button
               onClick={() => setMusicControllerState('minimized')}
               className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer z-10"
@@ -1921,8 +1870,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
       <style jsx global>{`
         :root {
-          --seat-size: 72px;
-          --seat-side-offset: -90px;
+          --seat-size: 58px;
           --header-btn-size: 42px;
           --header-btn-padding: 4px 8px;
           --header-icon-size: 26px;
@@ -1934,13 +1882,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
           --header-count-size: 11px;
           --footer-btn-size: 52px;
           --footer-icon-size: 30px;
-          --footer-sayhi-text: 13px;
-          --footer-sayhi-padding: 8px 16px;
           --footer-input-text: 13px;
-          --announcement-padding: 4px 8px;
-          --announcement-radius: 6px;
           --announcement-text-size: 13px;
-          --announcement-label-size: 9px;
           --msg-avatar-size: 26px;
           --msg-name-size: 13px;
           --msg-text-size: 13px;
@@ -1960,7 +1903,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         @media (max-width: 400px) {
           :root {
-            --seat-size: 64px;
+            --seat-size: 52px;
             --header-btn-size: 38px;
             --header-icon-size: 22px;
             --header-room-img-size: 38px;
@@ -2018,7 +1961,6 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   );
 }
 
-// ========== SEAT ITEM - IMAGE BASED (LIKE CODE SEAT BUT WITH IMAGES) ==========
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -2051,7 +1993,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
   const activeSpeaking = isSpeaking || isUserSpeaking;
 
   return (
-    <div className="relative flex flex-col items-center gap-1 cursor-pointer" onClick={onClick}>
+    <div className="relative flex flex-col items-center gap-1 cursor-pointer select-none" onClick={onClick}>
       {seatNumber === 1 && (
         <div 
           className="absolute pointer-events-none hidden sm:flex bg-black/40 backdrop-blur-md border border-white/20 px-2 py-1 rounded-full shadow-lg"
@@ -2109,19 +2051,18 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             <div className="absolute rounded-full pointer-events-none" style={{ width: 'calc(var(--seat-size) * 1.066)', height: 'calc(var(--seat-size) * 1.066)', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
           </>
         )}
-        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto overflow-visible ${activeSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
-          {/* LOCKED - Lock image */}
-          {isLocked && !isOccupied ? (
-            <div className="flex items-center justify-center w-full h-full p-1.5">
-              <img 
-                src="/file_00000000d2f08211baedcbfa57f4c3e6.png" 
-                alt="Locked" 
-                className="w-full h-full object-contain pointer-events-none select-none"
+        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 transition-all duration-300 hover:scale-105 pointer-events-auto overflow-visible ${activeSpeaking ? 'shadow-[0_0_15px_rgba(59,130,246,0.8)]' : ''}`}>
+          {isLocked ? (
+            /* Custom Locked Seat Image */
+            <div className="w-full h-full flex items-center justify-center overflow-visible">
+              <img
+                src="/file_00000000d2f08211baedcbfa57f4c3e6.png"
+                alt="Locked Seat"
+                className="w-full h-full object-contain pointer-events-none"
                 draggable={false}
               />
             </div>
           ) : isOccupied && user ? (
-            /* OCCUPIED - User avatar + mute badge + crown + gif */
             <>
               <div className="relative w-full h-full rounded-full overflow-visible flex items-center justify-center">
                 <img
@@ -2191,32 +2132,38 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
               </div>
 
               {isMuted && (
-                <div className="absolute -right-2 -bottom-2 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
+                <div className="absolute -right-1 -bottom-1 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
                 </div>
               )}
             </>
           ) : (
-            /* EMPTY - Empty seat image */
-            <div className="flex items-center justify-center w-full h-full p-1">
-              <img 
-                src="/file_00000000d23082118655299af1610f9c.png" 
-                alt="Empty Seat" 
-                className="w-full h-full object-contain pointer-events-none select-none"
+            /* Custom Empty Seat Image */
+            <div className="w-full h-full flex items-center justify-center relative pointer-events-none">
+              <img
+                src="/file_00000000d23082118655299af1610f9c.png"
+                alt="Empty Seat"
+                className="w-full h-full object-contain pointer-events-none"
                 draggable={false}
               />
+              {isMuted && (
+                <div className="absolute -right-1 -bottom-1 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" style={{ width: 'calc(var(--seat-size) * 0.33)', height: 'calc(var(--seat-size) * 0.33)' }}>
+                  <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.2)', height: 'calc(var(--seat-size) * 0.2)' }}><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /></svg>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
-      {/* Seat label: number for empty, username for occupied */}
-      <span className="font-medium text-white/90 pointer-events-none flex items-center gap-1 text-xs">
+      
+      {/* SEAT NUMBER OR USER NAME - "No" WORD REMOVED */}
+      <span className="font-medium text-white/90 pointer-events-none flex items-center gap-1 leading-tight text-center max-w-[var(--seat-size)] truncate" style={{ fontSize: 'calc(var(--seat-size) * 0.22)' }}>
         {isRoomOwnerSeat && (
-          <span className="rounded-full bg-blue-500 flex items-center justify-center inline-flex" style={{ width: 'calc(var(--seat-size) * 0.22)', height: 'calc(var(--seat-size) * 0.22)' }}>
+          <span className="rounded-full bg-blue-500 flex items-center justify-center shrink-0 inline-flex" style={{ width: 'calc(var(--seat-size) * 0.22)', height: 'calc(var(--seat-size) * 0.22)' }}>
             <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'calc(var(--seat-size) * 0.14)', height: 'calc(var(--seat-size) * 0.14)' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
           </span>
         )}
-        {isOccupied && user ? user.name : seatNumber}
+        {isLocked ? `${seatNumber}` : (isOccupied && user ? user.name : `${seatNumber}`)}
       </span>
     </div>
   );
@@ -2244,7 +2191,7 @@ function RoomSideBanner() {
   return (
     <div className="flex flex-col items-center select-none">
       <div 
-        className="relative overflow-hidden shadow-lg "
+        className="relative overflow-hidden shadow-lg"
         style={{
           width: '60px',
           height: '84px',
@@ -2284,7 +2231,7 @@ function RoomSideBanner() {
 }
 
 // ----------------------------------------------------------------------
-// GREEN COLOR REMOVAL SHADER (CHROMA KEY CANVAS)
+// GREEN COLOR REMOVAL SHADER
 // ----------------------------------------------------------------------
 function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", style = {} }: any) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -2320,4 +2267,4 @@ function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", st
   }, [imageSrc, threshold]);
 
   return <canvas ref={canvasRef} className={className} style={style} />;
-                               }
+}
