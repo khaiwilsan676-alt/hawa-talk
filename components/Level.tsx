@@ -189,9 +189,27 @@ export default function Level({ onBack }: LevelProps) {
 
         {/* Text aur Right Image (Extreme Left & Right aligned) */}
         <div className="flex items-center justify-between w-full pointer-events-none -mt-8 z-30">
-          <h2 className="text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)] -mt-6">
-            Update level to 100
-          </h2>
+          <div className="flex items-center gap-2.5 -mt-6">
+            {/* Mota Solid Up Direction Icon aur theek niche 2 rows wali dash */}
+            <div className="flex flex-col items-center justify-center">
+              <svg 
+                className="w-7 h-7 text-blue-400 drop-shadow-[0_2px_8px_rgba(59,130,246,0.6)]" 
+                viewBox="0 0 24 24" 
+                fill="currentColor"
+              >
+                <path d="M12 2L3 11h5v9h8v-9h5L12 2z" />
+              </svg>
+              <div className="flex flex-col gap-0.5 mt-1">
+                <div className="w-5 h-[2.5px] bg-blue-400 rounded-full shadow-[0_1px_4px_rgba(59,130,246,0.5)]" />
+                <div className="w-3.5 h-[2.5px] bg-blue-400/80 rounded-full mx-auto" />
+              </div>
+            </div>
+            
+            <h2 className="text-white font-extrabold text-[18px] whitespace-nowrap leading-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+              Update level to 100
+            </h2>
+          </div>
+
           <img 
             src="/file_00000000b06081fabde2d7eac02ce8c2.png" 
             alt="Level up graphic" 
@@ -231,13 +249,9 @@ export default function Level({ onBack }: LevelProps) {
             
             <button 
               onClick={() => setShowAllLevels(!showAllLevels)}
-              className="mt-4 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-4 w-full flex justify-center items-center py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold text-sm tracking-wide shadow-md active:scale-95 transition-all cursor-pointer backdrop-blur-md"
             >
-              <img 
-                src="/file_000000005dac820685e667586bcc16f4.png" 
-                alt="View More" 
-                className="h-7 object-contain"
-              />
+              {showAllLevels ? 'View Less' : 'View More'}
             </button>
           </div>
 
@@ -278,13 +292,9 @@ export default function Level({ onBack }: LevelProps) {
 
             <button 
               onClick={() => setShowAllRewards(!showAllRewards)}
-              className="mt-4 w-full flex justify-center hover:opacity-80 active:scale-95 transition-all"
+              className="mt-4 w-full flex justify-center items-center py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold text-sm tracking-wide shadow-md active:scale-95 transition-all cursor-pointer backdrop-blur-md"
             >
-              <img 
-                src="/file_000000005dac820685e667586bcc16f4.png" 
-                alt="View More" 
-                className="h-7 object-contain"
-              />
+              {showAllRewards ? 'View Less' : 'View More'}
             </button>
           </div>
 
@@ -341,4 +351,3 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
-
