@@ -1126,7 +1126,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-shrink-0 flex flex-col gap-5 pt-8 sm:pt-6 w-full">
+          <div className="flex-shrink-0 flex flex-col gap-5 pt-12 sm:pt-10 w-full">
             {renderSeats()}
           </div>
 
