@@ -836,24 +836,24 @@ const renderSeats = () => {
     return (
       <div className="flex flex-col gap-3 w-full">
         <div className="flex justify-center">{renderSeatItems([1])}</div>
-        <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([2,3,4,5])}</div>
+        <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([2,3,4,5])}</div>
       </div>
     );
   }
   if (micMode === 10) {
     return (
       <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
-        <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([1,2,3,4,5])}</div>
-        <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([6,7,8,9,10])}</div>
+        <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([1,2,3,4,5])}</div>
+        <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([6,7,8,9,10])}</div>
       </div>
     );
   }
   // Default 15 mic mode (3 rows × 5 seats)
   return (
     <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
-      <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([1,2,3,4,5])}</div>
-      <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([6,7,8,9,10])}</div>
-      <div className="flex justify-between items-center w-full px-6 sm:px-8">{renderSeatItems([11,12,13,14,15])}</div>
+      <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([1,2,3,4,5])}</div>
+      <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([6,7,8,9,10])}</div>
+      <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([11,12,13,14,15])}</div>
     </div>
   );
 };
@@ -1960,7 +1960,7 @@ const renderSeats = () => {
 
         @media (max-width: 400px) {
           :root {
-            --seat-size: 56px;
+            --seat-size: 62px;
             --header-btn-size: 38px;
             --header-icon-size: 22px;
             --header-room-img-size: 38px;
