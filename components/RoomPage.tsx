@@ -1903,7 +1903,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
         @media (max-width: 400px) {
           :root {
-            --seat-size: 65px;
+            --seat-size: 75px;
             --header-btn-size: 38px;
             --header-icon-size: 22px;
             --header-room-img-size: 38px;
