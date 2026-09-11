@@ -137,15 +137,15 @@ export default function Level({ onBack }: LevelProps) {
   const emptyCards = [...Array(6)]
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#060a12] via-[#091122] to-[#060a12] text-white flex flex-col font-sans select-none border-x border-purple-950/40 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="relative w-full max-w-[440px] mx-auto min-h-screen bg-gradient-to-b from-[#0e1f38] via-[#122748] to-[#0b172a] text-white flex flex-col font-sans select-none border-x border-blue-900/30 shadow-2xl overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       
       {/* Background Image Top */}
       <div className="absolute top-0 left-0 w-full h-[40vh] pointer-events-none z-0">
         <div 
-          className="absolute inset-0 bg-top bg-cover bg-no-repeat opacity-80 mix-blend-screen"
+          className="absolute inset-0 bg-top bg-cover bg-no-repeat opacity-60 mix-blend-screen"
           style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#060a12]/80 to-[#060a12]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#122748]/80 to-[#122748]" />
       </div>
 
       {/* Header */}
@@ -187,21 +187,20 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Text aur Right Image (Extreme Left & Right aligned) */}
+        {/* Text aur Right Image */}
         <div className="flex items-center justify-between w-full pointer-events-none -mt-8 z-30">
           <div className="flex items-center gap-2.5 -mt-6">
-            {/* Mota Solid Up Direction Icon aur theek niche 2 rows wali dash */}
             <div className="flex flex-col items-center justify-center">
               <svg 
-                className="w-7 h-7 text-blue-400 drop-shadow-[0_2px_8px_rgba(59,130,246,0.6)]" 
+                className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.6)]" 
                 viewBox="0 0 24 24" 
                 fill="currentColor"
               >
                 <path d="M12 2L3 11h5v9h8v-9h5L12 2z" />
               </svg>
               <div className="flex flex-col gap-0.5 mt-1">
-                <div className="w-5 h-[2.5px] bg-blue-400 rounded-full shadow-[0_1px_4px_rgba(59,130,246,0.5)]" />
-                <div className="w-3.5 h-[2.5px] bg-blue-400/80 rounded-full mx-auto" />
+                <div className="w-5 h-[2.5px] bg-white rounded-full shadow-[0_1px_4px_rgba(255,255,255,0.5)]" />
+                <div className="w-3.5 h-[2.5px] bg-white/80 rounded-full mx-auto" />
               </div>
             </div>
             
@@ -247,12 +246,14 @@ export default function Level({ onBack }: LevelProps) {
               ))}
             </div>
             
-            <button 
-              onClick={() => setShowAllLevels(!showAllLevels)}
-              className="mt-4 w-full flex justify-center items-center py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold text-sm tracking-wide shadow-md active:scale-95 transition-all cursor-pointer backdrop-blur-md"
-            >
-              {showAllLevels ? 'View Less' : 'View More'}
-            </button>
+            <div className="mt-3 flex justify-center w-full">
+              <button 
+                onClick={() => setShowAllLevels(!showAllLevels)}
+                className="text-blue-300 hover:text-white font-bold text-sm tracking-wide active:scale-95 transition-all cursor-pointer underline underline-offset-4"
+              >
+                {showAllLevels ? 'View Less' : 'View More'}
+              </button>
+            </div>
           </div>
 
           {/* --- COINS REWARD SECTION --- */}
@@ -290,12 +291,14 @@ export default function Level({ onBack }: LevelProps) {
               ))}
             </div>
 
-            <button 
-              onClick={() => setShowAllRewards(!showAllRewards)}
-              className="mt-4 w-full flex justify-center items-center py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold text-sm tracking-wide shadow-md active:scale-95 transition-all cursor-pointer backdrop-blur-md"
-            >
-              {showAllRewards ? 'View Less' : 'View More'}
-            </button>
+            <div className="mt-3 flex justify-center w-full">
+              <button 
+                onClick={() => setShowAllRewards(!showAllRewards)}
+                className="text-blue-300 hover:text-white font-bold text-sm tracking-wide active:scale-95 transition-all cursor-pointer underline underline-offset-4"
+              >
+                {showAllRewards ? 'View Less' : 'View More'}
+              </button>
+            </div>
           </div>
 
           {/* --- MEDAL SECTION --- */}
