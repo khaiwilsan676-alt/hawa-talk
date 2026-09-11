@@ -317,7 +317,7 @@ export default function Level({ onBack }: LevelProps) {
         </div>
 
         {/* Top Image Card Frame (Shifted further up) */}
-        <div className="relative -mt-7 -mx-4">
+        <div className="relative -mt-5 -mx-4">
           <img
             src="/file_000000007044820ea729df406d1dc320.png"
             alt="Top Card Frame"
