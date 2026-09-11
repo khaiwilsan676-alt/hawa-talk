@@ -283,7 +283,7 @@ export default function Level({ onBack }: LevelProps) {
 
   return (
     <div className="relative w-full max-w-[440px] mx-auto h-screen bg-[#04060a] text-white flex flex-col font-sans select-none overflow-hidden">
-      {/* 1. TOP BACKGROUND IMAGE */}
+      {/* 1. TOP BACKGROUND IMAGE (280px Height) */}
       <div className="absolute top-0 left-0 w-full h-[280px] pointer-events-none z-0 overflow-hidden">
         <div
           className="absolute inset-0 bg-top bg-cover bg-no-repeat"
@@ -316,8 +316,8 @@ export default function Level({ onBack }: LevelProps) {
           </button>
         </div>
 
-        {/* Top Image Card Frame */}
-        <div className="relative -mt-5 -mx-4">
+        {/* Top Image Card Frame (Shifted further up) */}
+        <div className="relative -mt-7 -mx-4">
           <img
             src="/file_000000007044820ea729df406d1dc320.png"
             alt="Top Card Frame"
@@ -369,8 +369,8 @@ export default function Level({ onBack }: LevelProps) {
           </div>
         </div>
 
-        {/* Dynamic Sticky Header */}
-        <div className="relative flex items-center justify-between w-full -mt-9 pb-1 min-h-[85px]">
+        {/* Dynamic Sticky Header: Screen Edge Chipki Image + Left Text + Right Graphic */}
+        <div className="relative flex items-center justify-between w-full -mt-10 pb-1 min-h-[85px]">
           {/* Left Screen Corner se Chipki Hui Image */}
           <div className="absolute -top-3.5 -left-4 pointer-events-none z-20">
             <img
@@ -380,7 +380,7 @@ export default function Level({ onBack }: LevelProps) {
             />
           </div>
 
-          {/* Left Side: Text */}
+          {/* Left Side: Text and Arrow */}
           <div className="flex items-center gap-2 -mt-4 z-10">
             <div className="flex flex-col items-center justify-center">
               <svg
@@ -452,19 +452,19 @@ export default function Level({ onBack }: LevelProps) {
                 </div>
               </div>
 
-              {/* Cards: Lighter & Richer Blue Gradient on the right with subtle blue border glow */}
+              {/* Cards (BORDERS COMPLETELY REMOVED) */}
               <div className="flex flex-col gap-2.5 w-full">
                 {tier.features.map((item, fIdx) => (
                   <div
                     key={fIdx}
-                    className="w-full relative overflow-hidden rounded-md border border-[#2563eb]/25 bg-gradient-to-r from-[#06080e] via-[#091224] to-[#1e40af]/65 px-3.5 py-3 flex items-center justify-between backdrop-blur-md transition-all duration-200 hover:to-[#2563eb]/75 hover:border-[#3b82f6]/45 shadow-[0_4px_16px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)]"
+                    className="w-full relative overflow-hidden rounded-md bg-gradient-to-r from-[#06080d] via-[#080d17] to-[#132c54]/45 px-3.5 py-3 flex items-center justify-between backdrop-blur-md transition-all duration-200 hover:to-[#173a70]/60 shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
                   >
                     <div className="flex flex-col justify-center z-10">
                       <span className="text-[13.5px] font-semibold text-white tracking-wide">
                         {item.title}
                       </span>
                       {item.subtitle && (
-                        <span className="text-[11px] text-blue-200/60 mt-0.5 font-normal">
+                        <span className="text-[11px] text-gray-400 mt-0.5 font-normal">
                           {item.subtitle}
                         </span>
                       )}
@@ -488,9 +488,9 @@ export default function Level({ onBack }: LevelProps) {
                           {item.badgeText}
                         </div>
                       ) : item.title === 'Room Send image' ? (
-                        <div className="w-8 h-8 rounded-md bg-[#193259] border border-blue-400/40 flex items-center justify-center shadow-inner">
+                        <div className="w-8 h-8 rounded-md bg-[#131f33] flex items-center justify-center">
                           <svg
-                            className="w-4 h-4 text-blue-200"
+                            className="w-4 h-4 text-blue-300"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
@@ -519,3 +519,4 @@ export default function Level({ onBack }: LevelProps) {
     </div>
   )
 }
+
