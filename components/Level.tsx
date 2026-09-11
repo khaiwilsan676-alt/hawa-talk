@@ -284,7 +284,7 @@ export default function Level({ onBack }: LevelProps) {
   return (
     <div className="relative w-full max-w-[440px] mx-auto h-screen bg-[#04060a] text-white flex flex-col font-sans select-none overflow-hidden">
       {/* 1. TOP BACKGROUND IMAGE */}
-      <div className="absolute top-0 left-0 w-full h-[330px] pointer-events-none z-0 overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-[280px] pointer-events-none z-0 overflow-hidden">
         <div
           className="absolute inset-0 bg-top bg-cover bg-no-repeat"
           style={{ backgroundImage: "url('/file_00000000e02481f4bb2153e2714aca47.png')" }}
