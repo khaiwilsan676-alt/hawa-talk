@@ -813,50 +813,50 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const isSelectedSeatMySeat = selectedSeatData ? isCurrentUsersSeat(selectedSeatData) : false;
   const isSelectedSeatTakenByOther = selectedSeatData ? (selectedSeatData.isOccupied && !isSelectedSeatMySeat) : false;
 
- // ========== SEAT RENDERING (5, 10, 15) ==========
-const renderSeats = () => {
-  const renderSeatItems = (seatNumbers: number[]) => {
-    return seatNumbers.map(num => {
-      const seat = seats.find(s => s.number === num);
-      return (
-        <SeatItem
-          key={num}
-          seatNumber={num}
-          seatData={seat}
-          onClick={handleSeatClick(num)}
-          onAvatarClick={handleSeatAvatarClick(seat!)}
-          accountId={userAccountId}
-          roomOwnerId={roomOwnerId}
-        />
-      );
-    });
-  };
+  // ========== SEAT RENDERING (5, 10, 15) ==========
+  const renderSeats = () => {
+    const renderSeatItems = (seatNumbers: number[]) => {
+      return seatNumbers.map(num => {
+        const seat = seats.find(s => s.number === num);
+        return (
+          <SeatItem
+            key={num}
+            seatNumber={num}
+            seatData={seat}
+            onClick={handleSeatClick(num)}
+            onAvatarClick={handleSeatAvatarClick(seat!)}
+            accountId={userAccountId}
+            roomOwnerId={roomOwnerId}
+          />
+        );
+      });
+    };
 
-  if (micMode === 5) {
-    return (
-      <div className="flex flex-col gap-3 w-full">
-        <div className="flex justify-center">{renderSeatItems([1])}</div>
-        <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([2,3,4,5])}</div>
-      </div>
-    );
-  }
-  if (micMode === 10) {
+    if (micMode === 5) {
+      return (
+        <div className="flex flex-col gap-3 w-full">
+          <div className="flex justify-center">{renderSeatItems([1])}</div>
+          <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([2,3,4,5])}</div>
+        </div>
+      );
+    }
+    if (micMode === 10) {
+      return (
+        <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
+          <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([1,2,3,4,5])}</div>
+          <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([6,7,8,9,10])}</div>
+        </div>
+      );
+    }
+    // Default 15 mic mode (3 rows × 5 seats)
     return (
       <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
-        <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([1,2,3,4,5])}</div>
-        <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([6,7,8,9,10])}</div>
+        <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([1,2,3,4,5])}</div>
+        <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([6,7,8,9,10])}</div>
+        <div className="flex justify-between items-center w-full px-2 sm:px-3">{renderSeatItems([11,12,13,14,15])}</div>
       </div>
     );
-  }
-  // Default 15 mic mode (3 rows × 5 seats)
-  return (
-    <div className="flex flex-col gap-3 w-full pt-4 sm:pt-6">
-      <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([1,2,3,4,5])}</div>
-      <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([6,7,8,9,10])}</div>
-      <div className="flex justify-between items-center w-full px-3 sm:px-4">{renderSeatItems([11,12,13,14,15])}</div>
-    </div>
-  );
-};
+  };
 
   const handlePlayMusic = (track: MusicTrack, playlist?: MusicTrack[]) => {
     if (playlist && playlist.length > 0) {
@@ -1780,7 +1780,7 @@ const renderSeats = () => {
         </div>
       )}
 
-      {/* MINIMIZED MUSIC CONTROLLER - CIRCLE WITH ROTATING ICON ONLY */}
+      {/* MINIMIZED MUSIC CONTROLLER */}
       {musicControllerState === 'minimized' && currentTrack && (
         <div
           className="fixed z-[45] cursor-grab active:cursor-grabbing flex items-center justify-center select-none touch-none"
@@ -1921,7 +1921,7 @@ const renderSeats = () => {
 
       <style jsx global>{`
         :root {
-          --seat-size: 64px;
+          --seat-size: 72px;
           --seat-side-offset: -90px;
           --header-btn-size: 42px;
           --header-btn-padding: 4px 8px;
@@ -1960,7 +1960,7 @@ const renderSeats = () => {
 
         @media (max-width: 400px) {
           :root {
-            --seat-size: 62px;
+            --seat-size: 64px;
             --header-btn-size: 38px;
             --header-icon-size: 22px;
             --header-room-img-size: 38px;
@@ -2018,7 +2018,7 @@ const renderSeats = () => {
   );
 }
 
-// ========== SEAT ITEM - ONLY IMAGES (NO CODE SEAT) ==========
+// ========== SEAT ITEM - IMAGE BASED (LIKE CODE SEAT BUT WITH IMAGES) ==========
 function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roomOwnerId }: {
   seatNumber: number;
   seatData?: Seat;
@@ -2109,17 +2109,19 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             <div className="absolute rounded-full pointer-events-none" style={{ width: 'calc(var(--seat-size) * 1.066)', height: 'calc(var(--seat-size) * 1.066)', left: '50%', top: '50%', zIndex: 0, backgroundColor: 'rgba(59, 130, 246, 0.35)', filter: 'blur(6px)', animation: 'voicePulse 1.2s ease-in-out infinite' }} />
           </>
         )}
-        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 transition-all duration-300 hover:scale-105 pointer-events-auto overflow-visible ${activeSpeaking ? 'shadow-[0_0_15px_rgba(59,130,246,0.8)]' : ''}`}>
+        <div className={`w-[var(--seat-size)] h-[var(--seat-size)] rounded-full flex items-center justify-center shrink-0 relative z-10 bg-[rgba(125,143,168,0.32)] backdrop-blur-[12px] border transition-all duration-300 hover:scale-105 pointer-events-auto overflow-visible ${activeSpeaking ? 'border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : 'border-[rgba(210,220,235,0.55)] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.18),inset_0_0_22px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.28)]'}`}>
           {/* LOCKED - Lock image */}
           {isLocked && !isOccupied ? (
-            <img 
-              src="/file_00000000d2f08211baedcbfa57f4c3e6.png" 
-              alt="Locked" 
-              className="w-full h-full object-contain pointer-events-none select-none"
-              draggable={false}
-            />
+            <div className="flex items-center justify-center w-full h-full p-1.5">
+              <img 
+                src="/file_00000000d2f08211baedcbfa57f4c3e6.png" 
+                alt="Locked" 
+                className="w-full h-full object-contain pointer-events-none select-none"
+                draggable={false}
+              />
+            </div>
           ) : isOccupied && user ? (
-            /* OCCUPIED - User avatar */
+            /* OCCUPIED - User avatar + mute badge + crown + gif */
             <>
               <div className="relative w-full h-full rounded-full overflow-visible flex items-center justify-center">
                 <img
@@ -2196,25 +2198,32 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
             </>
           ) : (
             /* EMPTY - Empty seat image */
-            <img 
-              src="/file_00000000d23082118655299af1610f9c.png" 
-              alt="Empty Seat" 
-              className="w-full h-full object-contain pointer-events-none select-none"
-              draggable={false}
-            />
+            <div className="flex items-center justify-center w-full h-full p-1">
+              <img 
+                src="/file_00000000d23082118655299af1610f9c.png" 
+                alt="Empty Seat" 
+                className="w-full h-full object-contain pointer-events-none select-none"
+                draggable={false}
+              />
+            </div>
           )}
         </div>
       </div>
-      {/* Seat Number only */}
-      <span className="font-medium text-white/90 pointer-events-none text-xs">
-        {seatNumber}
+      {/* Seat label: number for empty, username for occupied */}
+      <span className="font-medium text-white/90 pointer-events-none flex items-center gap-1 text-xs">
+        {isRoomOwnerSeat && (
+          <span className="rounded-full bg-blue-500 flex items-center justify-center inline-flex" style={{ width: 'calc(var(--seat-size) * 0.22)', height: 'calc(var(--seat-size) * 0.22)' }}>
+            <svg viewBox="0 0 24 24" className="fill-white" style={{ width: 'calc(var(--seat-size) * 0.14)', height: 'calc(var(--seat-size) * 0.14)' }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+          </span>
+        )}
+        {isOccupied && user ? user.name : seatNumber}
       </span>
     </div>
   );
 }
 
 // ----------------------------------------------------------------------
-// AUTO-SCROLL ROOM SIDE BANNER (8px Curve Square + 2px Gap Indicator Dots)
+// AUTO-SCROLL ROOM SIDE BANNER
 // ----------------------------------------------------------------------
 function RoomSideBanner() {
   const bannerImages = [
@@ -2311,4 +2320,4 @@ function GreenColorRemovalShader({ imageSrc, threshold = 0.5, className = "", st
   }, [imageSrc, threshold]);
 
   return <canvas ref={canvasRef} className={className} style={style} />;
-      }
+                               }
