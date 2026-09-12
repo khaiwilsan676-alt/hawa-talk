@@ -2093,7 +2093,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <img 
                   src={card.bgImage} 
                   alt={card.label} 
-                  className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
                   draggable="false"
                 />
 
