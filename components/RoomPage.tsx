@@ -1780,7 +1780,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   }} 
                   className="transition-transform hover:scale-105"
                 >
-                  <img src="/1787338085121.png" alt="Wild party" className="w-12 h-12 object-contain" />
+                  <img src="/file_000000009d808211b8ffb7c2183b4ef5.png" alt="Wild party" className="w-14 h-14 object-contain" />
                 </button>
                 <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Wild party</span>
               </div>
@@ -1793,7 +1793,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   }} 
                   className="transition-transform hover:scale-105"
                 >
-                  <img src="/fruit-party-logo.jpg" alt="Fruit party" className="w-12 h-12 object-contain rounded-[15px]" />
+                  <img src="/fruit-party-logo.jpg" alt="Fruit party" className="w-12 h-12 object-contain rounded-md" />
                 </button>
                 <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Fruit party</span>
               </div>
@@ -1824,7 +1824,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   {showWildParty === 'minimized' && (
     <button
       onClick={() => setShowWildParty(true)}
-      className="w-10 h-10 rounded-md overflow-hidden shadow-lg border-none bg-transparent transition-transform active:scale-95 cursor-pointer p-0"
+      className="w-15 h-15 rounded-md overflow-hidden shadow-lg border-none bg-transparent transition-transform active:scale-95 cursor-pointer p-0"
     >
       <img 
         src="/file_000000009d808211b8ffb7c2183b4ef5.png" 
