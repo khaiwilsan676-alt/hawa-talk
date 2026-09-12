@@ -504,10 +504,10 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         <div 
           className="fixed z-[75] flex flex-col items-center pointer-events-none" 
           style={{
-            top: '36vh',
-            bottom: '28vh',
-            left: '8vh',
-            right: '8vh'
+            top: '40vh',
+            bottom: '27vh',
+            left: '9vh',
+            right: '9vh'
           }}
         >
           <div className="grid grid-cols-3 gap-0 w-full h-full mx-auto max-w-md pointer-events-auto">
@@ -576,8 +576,8 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         <div
           className="fixed z-[75] flex flex-row items-center justify-center gap-1 pointer-events-none"
           style={{
-            top: '69vh',
-            bottom: '19vh',
+            top: '70vh',
+            bottom: '21vh',
             left: '11vh',
             right: '11vh'
           }}
@@ -625,7 +625,7 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
       >
         {!loading && (
           <>
-            <div className="absolute bottom-[63vh] left-7 z-30 flex items-center gap-0.5">
+            <div className="absolute bottom-[62vh] left-7 z-30 flex items-center gap-0.5">
               <button onClick={() => setIsMuted(!isMuted)} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   {!isMuted ? (
@@ -640,13 +640,13 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
               </button>
             </div>
 
-            <div className="absolute bottom-[63vh] left-1/2 -translate-x-1/2 z-30">
+            <div className="absolute bottom-[62vh] left-1/2 -translate-x-1/2 z-30">
               <span className="text-white font-bold text-base drop-shadow-md tracking-wide">
                 Round {gameState.round}
               </span>
             </div>
 
-            <div className="absolute bottom-[63vh] right-7 z-30 flex items-center gap-0.5">
+            <div className="absolute bottom-[62vh] right-7 z-30 flex items-center gap-0.5">
               <button
                 onClick={handleMinimizeClick}
                 className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
