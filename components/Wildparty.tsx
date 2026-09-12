@@ -33,7 +33,7 @@ interface RoundHistoryRecord {
 
 type WinMode = 'single' | 'mix_big' | 'mix_small';
 
-// Track initialization across minimizations
+// Track initialization: Minimize par true rahega, Cross (Close) par reset hoke false ho jayega
 let hasInitialLoaded = false;
 
 // 1. WebGL Shader: White Background remover
@@ -189,7 +189,7 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
 }
 
 export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
-  // If already loaded once, skip loading entirely on minimize resume
+  // Initial check: Agar minimize karke open kiya toh loading false, cross karke kiya toh loading true
   const [loading, setLoading] = useState(!hasInitialLoaded);
   const [progress, setProgress] = useState(hasInitialLoaded ? 100 : 0);
 
@@ -329,12 +329,15 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     loadDataFromDB();
   }, []);
 
-  // Loading Progress - Runs ONLY on first application launch
+  // Loading Progress logic
   useEffect(() => {
     if (hasInitialLoaded) {
       setLoading(false);
       return;
     }
+
+    setLoading(true);
+    setProgress(0);
 
     const timer = setInterval(() => {
       setProgress((prev) => {
@@ -349,6 +352,20 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }, 30);
     return () => clearInterval(timer);
   }, []);
+
+  // Close Button Click: Reset flag so next open shows loading page
+  const handleClose = () => {
+    hasInitialLoaded = false;
+    onClose();
+  };
+
+  // Minimize Click: Keep hasInitialLoaded = true so next open skips loading page
+  const handleMinimize = () => {
+    hasInitialLoaded = true;
+    if (onMinimize) {
+      onMinimize();
+    }
+  };
 
   // Seeded Outcome Generator
   const determineRoundOutcome = (roundNo: number): { mode: WinMode; winnerIndex: number } => {
@@ -376,7 +393,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     winnerIndex: 1,
   });
 
-  // Cycle Engine
+  // Cycle Engine (48s: 30s Bet, 15s Spin, 3s Result)
   useEffect(() => {
     if (loading) return;
 
@@ -418,7 +435,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Spinning Engine
+  // Smooth Natural Stopping Spinner (No Instant Jump)
   useEffect(() => {
     if (gamePhase !== 'spinning') {
       if (gamePhase === 'betting') {
@@ -427,18 +444,41 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
       return;
     }
 
-    let spinIndex = activeHighlightIndex ?? 0;
-    const spinInterval = setInterval(() => {
-      if (countdown <= 1) {
-        setActiveHighlightIndex(targetOutcomeRef.current.winnerIndex);
-      } else {
-        spinIndex = (spinIndex + 1) % animals.length;
-        setActiveHighlightIndex(spinIndex);
-      }
-    }, 90);
+    let isCancelled = false;
+    const targetIdx = targetOutcomeRef.current.winnerIndex;
 
-    return () => clearInterval(spinInterval);
-  }, [gamePhase, countdown]);
+    const currentPos = activeHighlightIndex ?? 0;
+    const extraFullSpins = 12 * 8;
+    const diff = (targetIdx - (currentPos % 8) + 8) % 8;
+    const totalSteps = extraFullSpins + diff;
+    let completedSteps = 0;
+
+    const runSpinStep = () => {
+      if (isCancelled || gamePhase !== 'spinning') return;
+
+      completedSteps++;
+      setActiveHighlightIndex((currentPos + completedSteps) % 8);
+
+      if (completedSteps >= totalSteps) {
+        setActiveHighlightIndex(targetIdx);
+        return;
+      }
+
+      const remaining = totalSteps - completedSteps;
+      let delay = 90;
+      if (remaining <= 16) {
+        delay = 90 + (16 - remaining) * 22;
+      }
+
+      setTimeout(runSpinStep, delay);
+    };
+
+    runSpinStep();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [gamePhase]);
 
   // Winner Recording & Payout
   const processedRoundsRef = useRef<{ [key: number]: boolean }>({});
@@ -512,7 +552,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }
   }, [gamePhase, winnerAnimal, currentRoundNo]);
 
-  // 5s Countdown
+  // 5-Second Winner Sheet Auto-Close Countdown
   useEffect(() => {
     if (!showWinnerSheet) return;
 
@@ -573,7 +613,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center select-none overflow-hidden touch-none">
-      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/20" onClick={handleClose} />
 
       <div
         className="relative bg-transparent w-full max-w-md rounded-none shadow-2xl overflow-hidden"
@@ -700,8 +740,9 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                 </div>
               </button>
 
+              {/* Minimize Action */}
               <button
-                onClick={onMinimize}
+                onClick={handleMinimize}
                 aria-label="Minimize Game"
                 className="w-6 h-6 rounded-md flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
@@ -710,8 +751,9 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                 </svg>
               </button>
 
+              {/* Close (Cross) Action */}
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 aria-label="Close"
                 className="w-6 h-6 rounded-md flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
@@ -722,7 +764,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
               </button>
             </div>
 
-            {/* Top Transparent Patti: Recent Winners with Detailed Mini Mix Circles */}
+            {/* Top Transparent Patti */}
             <div className="absolute top-11 left-2 right-2 z-30 flex items-center gap-1.5 px-2.5 py-1 bg-black/25 rounded-full border border-white/20 shadow-sm overflow-x-auto no-scrollbar pointer-events-none min-h-[28px]">
               {roundHistory.length === 0 ? (
                 <span className="text-[10px] text-white/50 italic px-1 select-none">History</span>
@@ -731,7 +773,6 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                   const isMixBig = record.winnerAlt.includes('Mix Big');
                   const isMixSmall = record.winnerAlt.includes('Mix Small');
 
-                  // Exact Left Circle for Mix Big
                   if (isMixBig) {
                     return (
                       <div
@@ -759,7 +800,6 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                     );
                   }
 
-                  // Exact Right Circle for Mix Small
                   if (isMixSmall) {
                     return (
                       <div
@@ -979,42 +1019,37 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
           </div>
         )}
 
-        {/* 40vh Winner Bottom Sheet */}
+        {/* 40vh Winner Bottom Sheet: Clean, Card-Free & Plain Text */}
         {showWinnerSheet && (
-          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl border-t border-white/20 rounded-md shadow-[0_-10px_30px_rgba(0,0,0,0.95)] z-50 flex flex-col justify-between overflow-hidden animate-in slide-in-from-bottom duration-200">
-            <div className="relative flex items-center justify-between px-4 py-2 border-b border-white/10">
-              <span className="text-yellow-400 font-black text-sm tracking-wider uppercase">
-                Round #{currentRoundNo} Result
+          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl rounded-md shadow-[0_-10px_30px_rgba(0,0,0,0.95)] z-50 flex flex-col justify-between overflow-hidden animate-in slide-in-from-bottom duration-200">
+            {/* Top Right: Only Clean 5s Text Countdown */}
+            <div className="w-full flex justify-end px-4 pt-3">
+              <span className="text-red-400 font-black text-sm tracking-tight drop-shadow-sm">
+                {winnerCountdown}s
               </span>
-
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-600/30 border border-red-500/50 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
-                <span className="text-red-400 font-black text-xs tracking-tight">
-                  {winnerCountdown}s
-                </span>
-              </div>
             </div>
 
-            <div className="flex-1 flex items-center px-4 py-2 gap-4">
+            {/* Middle Section: Left Winner Animal + Right Side Plain Text Amounts */}
+            <div className="flex-1 flex items-center px-6 py-2 gap-5">
               <div className="flex-shrink-0 flex items-center justify-center">
                 {winMode === 'single' && winnerAnimal && (
-                  <div className="w-20 h-20 rounded-xl bg-yellow-500/10 border-2 border-yellow-400/50 p-1 flex items-center justify-center shadow-[0_0_20px_rgba(250,204,21,0.5)]">
-                    <GreenScreenImage src={winnerAnimal.src} className="w-full h-full object-contain" />
+                  <div className="w-20 h-20 flex items-center justify-center">
+                    <GreenScreenImage src={winnerAnimal.src} className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]" />
                   </div>
                 )}
                 {winMode === 'mix_big' && (
-                  <div className="grid grid-cols-2 gap-1 bg-yellow-500/10 border-2 border-yellow-400/50 p-1 rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.5)] w-20 h-20">
+                  <div className="grid grid-cols-2 gap-1.5 w-20 h-20">
                     {animals.slice(4, 8).map((a) => (
-                      <div key={a.alt} className="w-8 h-8">
+                      <div key={a.alt} className="w-9 h-9">
                         <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
                       </div>
                     ))}
                   </div>
                 )}
                 {winMode === 'mix_small' && (
-                  <div className="grid grid-cols-2 gap-1 bg-yellow-500/10 border-2 border-yellow-400/50 p-1 rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.5)] w-20 h-20">
+                  <div className="grid grid-cols-2 gap-1.5 w-20 h-20">
                     {animals.slice(0, 4).map((a) => (
-                      <div key={a.alt} className="w-8 h-8">
+                      <div key={a.alt} className="w-9 h-9">
                         <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
                       </div>
                     ))}
@@ -1022,50 +1057,44 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                 )}
               </div>
 
-              <div className="flex-1 flex flex-col justify-center gap-2">
-                <div>
-                  <span className="text-white font-black text-sm block leading-tight">
-                    {winMode === 'mix_big'
-                      ? 'Mix Big (10x-45x)'
-                      : winMode === 'mix_small'
-                      ? 'Mix Small (5x All)'
-                      : `${winnerAnimal?.alt} (${winnerAnimal?.multiplier}x)`}
+              {/* Plain Text Amounts */}
+              <div className="flex-1 flex flex-col justify-center gap-1.5">
+                <span className="text-white font-black text-lg leading-tight tracking-wide">
+                  {winMode === 'mix_big'
+                    ? 'Mix Big (10x-45x)'
+                    : winMode === 'mix_small'
+                    ? 'Mix Small (5x All)'
+                    : `${winnerAnimal?.alt} (${winnerAnimal?.multiplier}x)`}
+                </span>
+
+                <div className="flex items-center gap-2 mt-1">
+                  <LoadingShaderImage
+                    src="/1786855398290.png"
+                    className="w-5 h-5 object-contain"
+                  />
+                  <span className="text-yellow-400 font-black text-sm tracking-wide">
+                    Won: {roundWinningAmount.toLocaleString()}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between px-3 py-1.5 rounded-md bg-yellow-500/15 border border-yellow-400/40">
-                  <div className="flex items-center gap-1.5">
-                    <LoadingShaderImage
-                      src="/1786855398290.png"
-                      className="w-5 h-5 object-contain drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]"
-                    />
-                    <span className="text-[11px] text-yellow-300 font-bold">Winning:</span>
-                  </div>
-                  <span className="text-yellow-400 font-black text-xs">
-                    {roundWinningAmount.toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between px-3 py-1.5 rounded-md bg-white/5 border border-white/10">
-                  <div className="flex items-center gap-1.5">
-                    <LoadingShaderImage
-                      src="/1786855398290.png"
-                      className="w-5 h-5 object-contain"
-                    />
-                    <span className="text-[11px] text-white/70 font-semibold">Bet:</span>
-                  </div>
-                  <span className="text-white font-black text-xs">
-                    {roundBetAmount.toLocaleString()}
+                <div className="flex items-center gap-2">
+                  <LoadingShaderImage
+                    src="/1786855398290.png"
+                    className="w-5 h-5 object-contain opacity-80"
+                  />
+                  <span className="text-white/80 font-bold text-xs tracking-wide">
+                    Bet: {roundBetAmount.toLocaleString()}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="w-full flex items-center justify-center p-2 border-t border-white/5 bg-black/40">
+            {/* Bottom Section: Bigger Decorative Image */}
+            <div className="w-full flex items-center justify-center pb-2">
               <img
                 src="/file_00000000a0a88211ad9bccad910db92e.png"
                 alt="Bottom Decor"
-                className="h-6 w-auto object-contain opacity-90"
+                className="h-14 w-auto object-contain"
               />
             </div>
           </div>
