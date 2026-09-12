@@ -2025,8 +2025,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
   );
 
        
-
-
 // ============ RENDER POPULAR TAB ============
   const renderPopularTab = () => {
     return (
@@ -2035,7 +2033,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           ref={categoryCardsRef}
           className="px-3" 
           style={{ 
-            transform: `translateY(${categoryOffset - 4}px)`, // Card pure block ko thoda upar utha diya
+            transform: `translateY(${categoryOffset - 4}px)`,
             marginBottom: `${categoryOffset}px`,
             position: 'relative', 
             zIndex: 10,
@@ -2043,7 +2041,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           }}
         >
           <div 
-            className="flex flex-row justify-between items-center gap-1.5 select-none" 
+            className="flex flex-row justify-between items-center gap-1 select-none" 
             style={{ 
               fontFamily: 'Nunito, Inter, sans-serif', 
               marginBottom: '0px' 
@@ -2072,11 +2070,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   overflow: 'hidden'    
                 }}
               >
-                {/* 1. TOP GOLDEN HEADING (z-50 + relative taaki image ke aage dikhe) */}
+                {/* 1. TOP GOLDEN HEADING (z-50 + Heading thodi neeche) */}
                 <div 
                   className="relative w-full text-center font-black uppercase tracking-wider select-none z-50 pointer-events-none"
                   style={{
-                    paddingTop: '4px',
+                    paddingTop: '10px',
                     fontSize: '12px',
                     lineHeight: '1.2',
                     background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF5A5 18%, #F7D046 45%, #D49410 75%, #8A5600 100%)',
@@ -2089,16 +2087,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   {card.label}
                 </div>
 
-                {/* 2. CARD IMAGE (z-0 taaki heading ke peeche rahe) */}
+                {/* 2. CARD IMAGE (object-contain + thodi si badi scale-[1.08]) */}
                 <img 
                   src={card.bgImage} 
                   alt={card.label} 
-                  className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-contain scale-[1.08] z-0 pointer-events-none"
                   draggable="false"
                 />
 
-                {/* 3. FRAME & ANIMATION (Thoda upar shifted) */}
-                <div className="absolute left-0 right-0 bottom-1 w-full z-40 pointer-events-none block -translate-y-1">
+                {/* 3. FRAME & ANIMATION (Thoda aur upar) */}
+                <div className="absolute left-0 right-0 bottom-2 w-full z-40 pointer-events-none block -translate-y-1.5">
                   <style dangerouslySetInnerHTML={{ __html: `
                     @keyframes shrinkAndFade {
                       0%, 80% { transform: scale(1); opacity: 1; }
@@ -2151,7 +2149,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
         {/* Global Rooms Grid */}
         {allRooms.length > 0 ? (
-          <div className="px-3" style={{ marginTop: isAndroid ? '3px' : '11px' }}>
+          <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
             <div className="grid grid-cols-2 gap-1.5">
               {allRooms.map((room) => (
                 <div
@@ -2201,6 +2199,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
       </>
     );
   };
+
+
 
 
           
