@@ -620,7 +620,7 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
 
       <div
         className="relative bg-[#330c36] w-full max-w-md shadow-2xl overflow-hidden animate-slide-up flex flex-col rounded-none"
-        style={{ height: '66vh' }}
+        style={{ height: '68vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {!loading && (
