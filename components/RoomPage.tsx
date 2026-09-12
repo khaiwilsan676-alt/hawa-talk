@@ -237,6 +237,49 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   const [showSeatSheet, setShowSeatSheet] = useState(false);
 
+  // Listen to hardware back press
+  useEffect(() => {
+    const handleHardwareBack = (e: Event) => {
+      e.preventDefault(); // Prevent default minimize app action
+
+      // Close other sheets/modals if open, otherwise open exit menu
+      if (showSettingPage) {
+        setShowSettingPage(false);
+      } else if (showSeatSheet) {
+        setShowSeatSheet(false);
+        setSelectedSeat(null);
+      } else if (showEmojiPicker) {
+        setShowEmojiPicker(false);
+      } else if (showGiftPicker) {
+        setShowGiftPicker(false);
+      } else if (showFourGride) {
+        setShowFourGride(false);
+      } else if (showActiveUsers) {
+        setShowActiveUsers(false);
+      } else if (showRoomInfo) {
+        setShowRoomInfo(false);
+      } else if (showGameSheet) {
+        setShowGameSheet(false);
+      } else if (showRoomTask) {
+        setShowRoomTask(false);
+      } else if (showUserProfile) {
+        setShowUserProfile(false);
+      } else if (showMessageSheet) {
+        setShowMessageSheet(false);
+      } else {
+        // If nothing else is open, show the exit menu
+        setShowExitMenu(true);
+      }
+    };
+
+    window.addEventListener('hardwareBackPress', handleHardwareBack);
+
+    return () => {
+      window.removeEventListener('hardwareBackPress', handleHardwareBack);
+    };
+  }, [showSettingPage, showSeatSheet, showEmojiPicker, showGiftPicker, showFourGride, showActiveUsers, showRoomInfo, showGameSheet, showRoomTask, showUserProfile, showMessageSheet]);
+
+
   const hasSeat = seats.some(s => s.isOccupied && s.user?.accountId === userAccountId);
   const currentUserSeat = seats.find(s => s.isOccupied && s.user?.accountId === userAccountId);
 
