@@ -576,8 +576,8 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         <div
           className="fixed z-[75] flex flex-row items-center justify-center gap-1 pointer-events-none"
           style={{
-            top: '68vh',
-            bottom: '18vh',
+            top: '69vh',
+            bottom: '21vh',
             left: '11vh',
             right: '11vh'
           }}
