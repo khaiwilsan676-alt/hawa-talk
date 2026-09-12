@@ -2032,6 +2032,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           ref={categoryCardsRef}
           className="w-full px-3" 
           style={{ 
+            marginTop: '-2', 
             transform: `translateY(${categoryOffset}px)`,
             marginBottom: `${categoryOffset}px`,
             position: 'relative', 
@@ -2070,7 +2071,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 <img 
                   src={card.bgImage} 
                   alt={card.label} 
-                  className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
                   draggable="false"
                 />
 
@@ -2091,7 +2092,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     className="relative w-[85%] mx-auto flex items-center justify-center z-10"
                     style={{ 
                       animation: 'shrinkAndFade 5s ease-in-out infinite', 
-                      marginBottom: '2px',
+                      marginBottom: '6px',
                       transformOrigin: 'center' 
                     }}
                   >
