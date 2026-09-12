@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 interface FruitpartyProps {
   onClose: () => void;
+  onMinimize?: () => void;
 }
 
 const GRID_ITEMS = [
@@ -120,7 +121,7 @@ type HistoryItem = {
   totalWonAmount: number;
 };
 
-export default function Fruitparty({ onClose }: FruitpartyProps) {
+export default function Fruitparty({ onClose, onMinimize }: FruitpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [isLoadedFromDB, setIsLoadedFromDB] = useState(false);
@@ -403,7 +404,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
 
           const betOnWinner = currentBets[winnerItem.id] || 0;
           if (betOnWinner > 0) {
-            const mult = parseInt(winnerItem.multi.replace('×', ''));
+            const mult = parseInt((winnerItem.multi || '×0').replace('×', ''));
             earned = betOnWinner * mult;
           }
         }
@@ -600,7 +601,10 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
             </div>
 
             <div className="absolute bottom-[66vh] right-7 z-30 flex items-center gap-0.5">
-              <button className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5 pointer-events-none">
+              <button
+                onClick={onMinimize}
+                className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
+              >
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
               <button onClick={() => setShowHistory(true)} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
@@ -616,7 +620,7 @@ export default function Fruitparty({ onClose }: FruitpartyProps) {
         {loading ? (
           <div className="w-full h-full bg-gradient-to-b from-[#4A154B] via-[#330c36] to-[#1e0520] flex flex-col items-center justify-center px-6">
             <div className="w-32 h-32 flex items-center justify-center mb-6">
-              <WebGLShaderImage src="/IMG_20260824_232321.png" />
+              <img src="/fruit-party-logo.jpg" alt="Fruit Party Loading" className="w-full h-full object-contain rounded-[20px]" />
             </div>
             <div className="w-48 bg-black/40 rounded-full h-3 p-0.5 border border-yellow-300/40 shadow-inner">
               <div className="bg-gradient-to-r from-yellow-400 to-amber-300 h-full rounded-full transition-all duration-150 ease-out shadow-[0_0_8px_rgba(250,204,21,0.7)]" style={{ width: `${progress}%` }} />

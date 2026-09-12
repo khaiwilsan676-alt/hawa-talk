@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 interface WildpartyProps {
   onClose: () => void;
+  onMinimize?: () => void;
 }
 
 interface AnimalItem {
@@ -182,7 +183,7 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
   return <canvas ref={canvasRef} className={`${className || ''} block bg-transparent`} />;
 }
 
-export default function Wildparty({ onClose }: WildpartyProps) {
+export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
@@ -595,6 +596,18 @@ export default function Wildparty({ onClose }: WildpartyProps) {
               </button>
 
               {/* ? Button: Opens 40vh Rules Sheet */}
+              {onMinimize && (
+                <button
+                  onClick={onMinimize}
+                  aria-label="Minimize"
+                  className="w-6 h-6 rounded-md flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 12L20 12M12 4L4 12L12 4ZM4 12L12 20L4 12Z" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(-45deg)', transformOrigin: 'center' }}/>
+                  </svg>
+                </button>
+              )}
+
               <button
                 onClick={() => setShowRulesSheet(true)}
                 aria-label="Help Rules"
