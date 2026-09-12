@@ -504,10 +504,10 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         <div 
           className="fixed z-[75] flex flex-col items-center pointer-events-none" 
           style={{
-            top: '40vh',
-            bottom: '27vh',
-            left: '9vh',
-            right: '9vh'
+            top: '37vh',
+            bottom: '29vh',
+            left: '8vh',
+            right: '8vh'
           }}
         >
           <div className="grid grid-cols-3 gap-0 w-full h-full mx-auto max-w-md pointer-events-auto">
@@ -576,8 +576,8 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         <div
           className="fixed z-[75] flex flex-row items-center justify-center gap-1 pointer-events-none"
           style={{
-            top: '70vh',
-            bottom: '21vh',
+            top: '71vh',
+            bottom: '20vh',
             left: '11vh',
             right: '11vh'
           }}
