@@ -1810,26 +1810,47 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         <Fruitparty onClose={() => setShowFruitParty(false)} onMinimize={() => setShowFruitParty('minimized')} />
       )}
 
-      {/* Minimized Game Icons */}
-      <div className="absolute top-[80px] right-2 z-[40] flex flex-col gap-1.5">
-        {showWildParty === 'minimized' && (
-          <button
-            onClick={() => setShowWildParty(true)}
-            className="w-10 h-10 rounded-xl overflow-hidden shadow-md border border-white/20 transition-transform active:scale-95"
-          >
-            <img src="/1787338085121.png" alt="Wild Party" className="w-full h-full object-cover" />
-          </button>
-        )}
+    {/* Minimized Game Icons - Positioned right above the side banner */}
+<div 
+  className={`absolute z-30 flex flex-col items-center gap-2 pointer-events-auto ${showChatInput ? 'hidden' : ''}`}
+  style={{
+    bottom: 'calc(100lvh - (100lvh - 310px) + 6px)', // Banner ke theek upar rahega
+    right: '10px',
+    width: '60px', // Banner ki width se align
+  }}
+  onClick={(e) => e.stopPropagation()}
+>
+  {/* Wild Party Minimized Icon (White border removed) */}
+  {showWildParty === 'minimized' && (
+    <button
+      onClick={() => setShowWildParty(true)}
+      className="w-10 h-10 rounded-md overflow-hidden shadow-lg border-none bg-transparent transition-transform active:scale-95 cursor-pointer p-0"
+    >
+      <img 
+        src="/1787338085121.png" 
+        alt="Wild Party" 
+        className="w-full h-full object-contain" 
+        draggable={false}
+      />
+    </button>
+  )}
 
-        {showFruitParty === 'minimized' && (
-          <button
-            onClick={() => setShowFruitParty(true)}
-            className="w-10 h-10 rounded-[15px] overflow-hidden shadow-md border border-white/20 transition-transform active:scale-95"
-          >
-            <img src="/fruit-party-logo.jpg" alt="Fruit Party" className="w-full h-full object-cover" />
-          </button>
-        )}
-      </div>
+  {/* Fruit Party Minimized Icon (object-contain + rounded-md) */}
+  {showFruitParty === 'minimized' && (
+    <button
+      onClick={() => setShowFruitParty(true)}
+      className="w-10 h-10 rounded-md overflow-hidden shadow-lg border-none bg-transparent transition-transform active:scale-95 cursor-pointer p-0"
+    >
+      <img 
+        src="/fruit-party-logo.jpg" 
+        alt="Fruit Party" 
+        className="w-full h-full object-contain rounded-md" 
+        draggable={false}
+      />
+    </button>
+  )}
+</div>
+
 
       {showRoomTask && (
         <div className="fixed inset-0 z-[11000] bg-black">
