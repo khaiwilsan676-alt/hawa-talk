@@ -158,8 +158,8 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
 
   // Game Sheet States
   const [showGameSheet, setShowGameSheet] = useState(false);
-  const [showWildParty, setShowWildParty] = useState(false);
-  const [showFruitParty, setShowFruitParty] = useState(false);
+  const [showWildParty, setShowWildParty] = useState<boolean | 'minimized'>(false);
+  const [showFruitParty, setShowFruitParty] = useState<boolean | 'minimized'>(false);
   const [showRoomTask, setShowRoomTask] = useState(false);
 
   const { localParticipant } = useLocalParticipant();
@@ -1793,7 +1793,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                   }} 
                   className="transition-transform hover:scale-105"
                 >
-                  <img src="/IMG_20260824_232321.png" alt="Fruit party" className="w-12 h-12 object-contain" />
+                  <img src="/fruit-party-logo.jpg" alt="Fruit party" className="w-12 h-12 object-contain rounded-[15px]" />
                 </button>
                 <span className="text-[10px] text-gray-700 mt-1 whitespace-nowrap">Fruit party</span>
               </div>
@@ -1802,13 +1802,34 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
         </div>
       )}
 
-      {showWildParty && (
-        <Wildparty onClose={() => setShowWildParty(false)} />
+      {showWildParty === true && (
+        <Wildparty onClose={() => setShowWildParty(false)} onMinimize={() => setShowWildParty('minimized')} />
       )}
 
-      {showFruitParty && (
-        <Fruitparty onClose={() => setShowFruitParty(false)} />
+      {showFruitParty === true && (
+        <Fruitparty onClose={() => setShowFruitParty(false)} onMinimize={() => setShowFruitParty('minimized')} />
       )}
+
+      {/* Minimized Game Icons */}
+      <div className="absolute top-[80px] right-2 z-[40] flex flex-col gap-1.5">
+        {showWildParty === 'minimized' && (
+          <button
+            onClick={() => setShowWildParty(true)}
+            className="w-10 h-10 rounded-xl overflow-hidden shadow-md border border-white/20 transition-transform active:scale-95"
+          >
+            <img src="/1787338085121.png" alt="Wild Party" className="w-full h-full object-cover" />
+          </button>
+        )}
+
+        {showFruitParty === 'minimized' && (
+          <button
+            onClick={() => setShowFruitParty(true)}
+            className="w-10 h-10 rounded-[15px] overflow-hidden shadow-md border border-white/20 transition-transform active:scale-95"
+          >
+            <img src="/fruit-party-logo.jpg" alt="Fruit Party" className="w-full h-full object-cover" />
+          </button>
+        )}
+      </div>
 
       {showRoomTask && (
         <div className="fixed inset-0 z-[11000] bg-black">
