@@ -323,8 +323,15 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }
   };
 
+  // SOUND REF INITIALIZATION
+  const spinAudioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     loadDataFromDB();
+    
+    // Spin Sound Load Karke Rakhna
+    spinAudioRef.current = new Audio('/public/VID_20260912_113156_151_bsl.mp4');
+    spinAudioRef.current.loop = true;
   }, []);
 
   useEffect(() => {
@@ -362,7 +369,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }
   };
 
-  // Pure Deterministic Global Outcome Function (Same across all phones)
+  // Pure Deterministic Global Outcome Function
   const determineRoundOutcome = (roundNo: number): { mode: WinMode; winnerIndex: number } => {
     const seed = Math.sin(roundNo * 127.1 + 311.7) * 43758.5453123;
     const pseudoRand = seed - Math.floor(seed);
@@ -400,7 +407,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     winnerIndex: 1,
   });
 
-  // Global Synchronized Clock Engine (48s cycle: 30s Betting, 15s Spinning, 3s Result)
+  // Global Synchronized Clock Engine
   useEffect(() => {
     if (loading) return;
 
@@ -442,13 +449,26 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Global Time-Synced Smooth Spinner (Ab jump nahi karega, smooth deceleration logic lagaya hai)
+  // Global Time-Synced Smooth Spinner + Audio Adjustment
   useEffect(() => {
     if (gamePhase !== 'spinning') {
       if (gamePhase === 'betting') {
         setActiveHighlightIndex(null);
       }
+      
+      // SPIN KHATAM: Sound Pause & Reset
+      if (spinAudioRef.current) {
+        spinAudioRef.current.pause();
+        spinAudioRef.current.currentTime = 0;
+      }
       return;
+    }
+
+    // SPIN START: Play sound at full speed
+    if (spinAudioRef.current) {
+      spinAudioRef.current.playbackRate = 1.3;
+      spinAudioRef.current.volume = 1.0;
+      spinAudioRef.current.play().catch(e => console.log('Audio autoplay blocked by browser:', e));
     }
 
     const resetBoundary = get5AMResetBoundary();
@@ -465,14 +485,29 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
 
       if (spinTimeMs >= 15000) {
         setActiveHighlightIndex(targetIdx);
+        // Ensure sound stops completely right on finish
+        if (spinAudioRef.current) {
+          spinAudioRef.current.pause();
+        }
       } else {
-        // Smooth easing cubic math taaki bina jump ke correct winner par wheel slowly ruke
-        const progress = spinTimeMs / 15000;
+        // Smooth easing cubic math taaki wheel smoothly ruke
+        const progress = spinTimeMs / 15000; // 0.0 to 1.0
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        const finalStepsCount = 160 + targetIdx; // 20 full rounds lagayega end me winner aayega
+        const finalStepsCount = 160 + targetIdx; 
         const currentStep = Math.floor(easeOut * finalStepsCount);
         
         setActiveHighlightIndex(currentStep % 8);
+
+        // SOUND LOGIC: Jaise easeOut badhega, sound ka playback speed aur volume kam karenge
+        if (spinAudioRef.current) {
+          // Speed 1.3 se start ho kar 0.3 tak slow aayegi
+          const newSpeed = 1.3 - (easeOut * 1.0); 
+          spinAudioRef.current.playbackRate = Math.max(0.1, newSpeed);
+          
+          // Last mein volume bhi thodi kam ho jaye realistic feel ke liye
+          const newVolume = 1.0 - (easeOut * 0.6); 
+          spinAudioRef.current.volume = Math.max(0, newVolume);
+        }
       }
     }, 30);
 
@@ -607,6 +642,20 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
 
   const isBigGroupActive = gamePhase === 'result' && winMode === 'mix_big';
   const isSmallGroupActive = gamePhase === 'result' && winMode === 'mix_small';
+
+  // Helper function to generate stable fake users for the podium
+  const getFakeUsers = (roundNo: number) => {
+    const seed1 = (roundNo * 11) % 50 + 1;
+    const seed2 = (roundNo * 17) % 50 + 1;
+    const seed3 = (roundNo * 23) % 50 + 1;
+    return [
+        { name: "Rahul", avatar: `https://i.pravatar.cc/150?img=${seed1}`, win: 500000 + (seed1 * 1000) },
+        { name: "Aman", avatar: `https://i.pravatar.cc/150?img=${seed2}`, win: 200000 + (seed2 * 1000) },
+        { name: "Neha", avatar: `https://i.pravatar.cc/150?img=${seed3}`, win: 100000 + (seed3 * 1000) }
+    ];
+  };
+
+  const fakePodiumUsers = getFakeUsers(currentRoundNo);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center select-none overflow-hidden touch-none">
@@ -839,7 +888,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
           </>
         )}
 
-        {/* Center Content: New Logo on Loading Screen */}
+        {/* Center Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
           {loading ? (
             <div className="flex flex-col items-center justify-center">
@@ -1014,32 +1063,31 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
           </div>
         )}
 
-        {/* 40vh Winner Bottom Sheet */}
+        {/* 48vh Winner Bottom Sheet with User Specific Details */}
         {showWinnerSheet && (
-          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl rounded-md shadow-[0_-10px_30px_rgba(0,0,0,0.95)] z-50 flex flex-col justify-between overflow-hidden animate-in slide-in-from-bottom duration-200 p-2">
+          <div className="absolute inset-x-0 bottom-0 h-[48vh] bg-[#0c0c0e]/95 backdrop-blur-xl rounded-t-xl shadow-[0_-10px_30px_rgba(0,0,0,0.95)] z-50 flex flex-col p-3 overflow-hidden animate-in slide-in-from-bottom duration-200">
+            
             <div className="w-full flex items-start justify-between">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <div className="flex-shrink-0 flex items-center justify-center">
-                  
-                  {/* YAHA WINNER ANIMAL KA SIZE BADA KIYA HAI (`w-20 h-20` and drop shadow scale) */}
                   {winMode === 'single' && winnerAnimal && (
-                    <div className="w-20 h-20 flex items-center justify-center scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="w-16 h-16 flex items-center justify-center scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       <GreenScreenImage src={winnerAnimal.src} className="w-full h-full object-contain" />
                     </div>
                   )}
                   {winMode === 'mix_big' && (
-                    <div className="grid grid-cols-2 gap-2 w-20 h-20 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="grid grid-cols-2 gap-1.5 w-16 h-16 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       {animals.slice(4, 8).map((a) => (
-                        <div key={a.alt} className="w-9 h-9">
+                        <div key={a.alt} className="w-7 h-7">
                           <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
                         </div>
                       ))}
                     </div>
                   )}
                   {winMode === 'mix_small' && (
-                    <div className="grid grid-cols-2 gap-2 w-20 h-20 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="grid grid-cols-2 gap-1.5 w-16 h-16 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       {animals.slice(0, 4).map((a) => (
-                        <div key={a.alt} className="w-9 h-9">
+                        <div key={a.alt} className="w-7 h-7">
                           <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
                         </div>
                       ))}
@@ -1047,25 +1095,30 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                   )}
                 </div>
 
-                <div className="flex flex-col justify-center gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <LoadingShaderImage
-                      src="/1786855398290.png"
-                      className="w-4 h-4 object-contain"
-                    />
-                    <span className="text-yellow-400 font-black text-sm tracking-wide leading-none">
-                      {roundWinningAmount.toLocaleString()}
+                {/* Amounts Details (Text + Icon + Value) */}
+                <div className="flex flex-col justify-center gap-1.5">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-white/70 uppercase font-bold leading-none mb-0.5">
+                      Winning Amount
                     </span>
+                    <div className="flex items-center gap-1.5">
+                      <LoadingShaderImage src="/1786855398290.png" className="w-4 h-4 object-contain" />
+                      <span className="text-yellow-400 font-black text-sm tracking-wide leading-none">
+                        {roundWinningAmount.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <LoadingShaderImage
-                      src="/1786855398290.png"
-                      className="w-4 h-4 object-contain opacity-80"
-                    />
-                    <span className="text-white font-bold text-xs tracking-wide leading-none">
-                      {roundBetAmount.toLocaleString()}
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-white/70 uppercase font-bold leading-none mb-0.5">
+                      Bet Amount
                     </span>
+                    <div className="flex items-center gap-1.5">
+                      <LoadingShaderImage src="/1786855398290.png" className="w-4 h-4 object-contain opacity-80" />
+                      <span className="text-white font-bold text-xs tracking-wide leading-none">
+                        {roundBetAmount.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1077,13 +1130,54 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
               </div>
             </div>
 
-            <div className="w-full flex-1 flex items-center justify-center overflow-hidden pt-1">
-              <img
-                src="/file_00000000a0a88211ad9bccad910db92e.png"
-                alt="Bottom Decor"
-                className="w-full h-full object-contain"
-              />
+            {/* Top 3 Fake Podium */}
+            <div className="w-full flex-1 flex flex-col items-center justify-end mt-2 pb-2">
+              <img src="/IMG_20260913_000423.png" alt="Heading" className="h-5 object-contain mb-4 drop-shadow-md" />
+              
+              <div className="flex items-end justify-center gap-4 w-full px-2">
+                
+                {/* Top 2 (Left) */}
+                <div className="flex flex-col items-center pb-2">
+                  <div className="relative w-12 h-12 flex items-center justify-center mb-1.5">
+                    <img src={fakePodiumUsers[1].avatar} className="w-9 h-9 rounded-full object-cover" />
+                    <img src="/IMG_20260912_235156.png" className="absolute inset-0 w-full h-full object-contain z-10" />
+                  </div>
+                  <span className="text-white font-bold text-[10px] drop-shadow-md">{fakePodiumUsers[1].name}</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <LoadingShaderImage src="/1786855398290.png" className="w-3 h-3 object-contain" />
+                    <span className="text-yellow-400 font-bold text-[9px]">{fakePodiumUsers[1].win.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Top 1 (Center) */}
+                <div className="flex flex-col items-center pb-8">
+                  <div className="relative w-16 h-16 flex items-center justify-center mb-1.5">
+                    <img src={fakePodiumUsers[0].avatar} className="w-12 h-12 rounded-full object-cover" />
+                    <img src="/IMG_20260912_235215.png" className="absolute inset-0 w-full h-full object-contain z-10 scale-110" />
+                  </div>
+                  <span className="text-white font-bold text-[11px] drop-shadow-md">{fakePodiumUsers[0].name}</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <LoadingShaderImage src="/1786855398290.png" className="w-3.5 h-3.5 object-contain" />
+                    <span className="text-yellow-400 font-black text-[10px]">{fakePodiumUsers[0].win.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Top 3 (Right) */}
+                <div className="flex flex-col items-center pb-1">
+                  <div className="relative w-12 h-12 flex items-center justify-center mb-1.5">
+                    <img src={fakePodiumUsers[2].avatar} className="w-9 h-9 rounded-full object-cover" />
+                    <img src="/IMG_20260912_235230.png" className="absolute inset-0 w-full h-full object-contain z-10" />
+                  </div>
+                  <span className="text-white font-bold text-[10px] drop-shadow-md">{fakePodiumUsers[2].name}</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <LoadingShaderImage src="/1786855398290.png" className="w-3 h-3 object-contain" />
+                    <span className="text-yellow-400 font-bold text-[9px]">{fakePodiumUsers[2].win.toLocaleString()}</span>
+                  </div>
+                </div>
+
+              </div>
             </div>
+
           </div>
         )}
 
@@ -1216,4 +1310,3 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     </div>
   );
 }
-
