@@ -2211,7 +2211,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
   </div>
 )}
             </div>
-          ) : (
+                  ) : (
             /* Empty Seat */
             <div className="w-full h-full flex items-center justify-center relative pointer-events-none">
               <img
@@ -2220,23 +2220,24 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
                 className="w-full h-full object-contain pointer-events-none"
                 draggable={false}
               />
-           {isMuted && (
-  <div 
-    className="absolute right-0 bottom-0 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" 
-    style={{ width: 'calc(var(--seat-size) * 0.24)', height: 'calc(var(--seat-size) * 0.24)' }}
-  >
-    <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.15)', height: 'calc(var(--seat-size) * 0.15)' }}>
-      <line x1="1" y1="1" x2="23" y2="23" />
-      <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-      <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-    </svg>
-  </div>
-)}
-
+              {isMuted && (
+                <div 
+                  className="absolute right-0 bottom-0 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" 
+                  style={{ width: 'calc(var(--seat-size) * 0.24)', height: 'calc(var(--seat-size) * 0.24)' }}
+                >
+                  <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.15)', height: 'calc(var(--seat-size) * 0.15)' }}>
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                    <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+      </div>
       
-      
-      {/* SEAT NUMBER / USER NAME - Thoda sa Upar (-mt-1) aur Chota Size */}
+      {/* SEAT NUMBER / USER NAME */}
       <span 
         className="font-medium text-white/90 pointer-events-none flex items-center justify-center gap-1 leading-tight text-center max-w-[var(--seat-size)] truncate mt-0.5" 
         style={{ fontSize: 'calc(var(--seat-size) * 0.16)' }}
@@ -2251,6 +2252,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
     </div>
   );
 }
+
 
 // ----------------------------------------------------------------------
 // AUTO-SCROLL ROOM SIDE BANNER
