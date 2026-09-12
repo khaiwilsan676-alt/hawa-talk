@@ -615,34 +615,19 @@ type SearchTab = 'user' | 'room'
 
 const CATEGORY_CARDS = [
   {
-    label: 'Honour',
-    icon: '',
-    frame: '/1787994771034~2.jpg',
-    outerFrom: '#FFED99',
-    outerTo: '#FFE27A',
-    textColor: '#7A4E1B',
-    innerBg: '#FFF6CC',
-    innerBorder: 'rgba(122,78,27,0.08)',
+    label: '',
+    tab: 'honour' as const,
+    bgImage: '/file_00000000128481f4a8b5279e2372c1c8.png',
   },
   {
-    label: 'Charm',
-    icon: '',
-    frame: '/1787994751636~2.jpg',
-    outerFrom: '#A2D8FF',
-    outerTo: '#8ECBFF',
-    textColor: '#184E6E',
-    innerBg: '#C8E8FF',
-    innerBorder: 'rgba(24,78,110,0.08)',
+    label: '',
+    tab: 'charm' as const,
+    bgImage: '/file_00000000c1088209a767a292d62ec478.png',
   },
   {
-    label: 'Room',
-    icon: '',
-    frame: '/1787994761762~2.jpg',
-    outerFrom: '#D1B1FF',
-    outerTo: '#C39BFF',
-    textColor: '#4E2A7A',
-    innerBg: '#DFC8FF',
-    innerBorder: 'rgba(78,42,122,0.08)',
+    label: '',
+    tab: 'room' as const,
+    bgImage: '/file_00000000fe7c8211aeeeefce1a0d7349.png',
   },
 ];
 
@@ -1821,10 +1806,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // ============ RENDER MINE TAB ============
   const renderMineTab = () => (
-    <div className="px-4 mt-6">
+    <div className="px-2 mt-4">
       <div
         onClick={handleCardClick}
-        className="rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
+        className="rounded-md p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
@@ -2039,13 +2024,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
     </div>
   );
 
-  // ============ RENDER POPULAR TAB ============
+   // ============ RENDER POPULAR TAB ============
   const renderPopularTab = () => {
     return (
       <>
         <div 
           ref={categoryCardsRef}
-          className="px-4" 
+          className="w-full px-2" 
           style={{ 
             transform: `translateY(${categoryOffset}px)`,
             marginBottom: `${categoryOffset}px`,
@@ -2054,145 +2039,112 @@ export default function HomePage({ onLogout }: HomePageProps) {
             willChange: 'transform'
           }}
         >
-                   <div className="flex flex-row justify-between items-center gap-1.5 select-none" style={{ 
+          <div className="flex flex-row justify-between items-center gap-1.5 select-none w-full" style={{ 
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-                                         {CATEGORY_CARDS.map((card, i) => (
-                <div
-                  key={card.label}
-                  onClick={() => {
-                    const targetTab = card.label.toLowerCase() as 'honour' | 'charm' | 'room'
-                    setLeaderboardTab(targetTab)
-                    setCurrentPage('leaderboard')
-                  }}
-                  className="group flex-1 cursor-pointer"
-                  style={{
-                    height: '90px',
-                    minHeight: '90px',
-                    maxHeight: '90px',
-                    minWidth: 0,
-                    borderRadius: '16px',
-                    border: '1.5px solid rgba(0,0,0,0.06)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                    background: `radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 18%, rgba(255,255,255,0) 52%), linear-gradient(135deg, ${card.outerFrom} 0%, ${card.outerTo} 100%)`,
-                    opacity: mounted ? 1 : 0,
-                    transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
-                    transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
-                    animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
-                    animationDelay: `${i * 100}ms`,
-                    position: 'relative', 
-                    overflow: 'hidden'    
-                  }}
-                >
-                  {/* 1. TITLE */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '8px',
-                      left: 0,
-                      right: 0,
-                      textAlign: 'center',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      lineHeight: '1',
-                      whiteSpace: 'nowrap', 
-                      color: card.textColor,
-                      textShadow: '0 1px 0 rgba(255,255,255,0.7)',
-                      zIndex: 30
+            {CATEGORY_CARDS.map((card, i) => (
+              <div
+                key={card.label}
+                onClick={() => {
+                  setLeaderboardTab(card.tab)
+                  setCurrentPage('leaderboard')
+                }}
+                className="group flex-1 cursor-pointer"
+                style={{
+                  height: '90px',
+                  minHeight: '90px',
+                  maxHeight: '90px',
+                  minWidth: 0,
+                  borderRadius: '16px',
+                  opacity: mounted ? 1 : 0,
+                  transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
+                  transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
+                  animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
+                  animationDelay: `${i * 100}ms`,
+                  position: 'relative', 
+                  overflow: 'hidden'    
+                }}
+              >
+                {/* 1. AAPKI NAYI CARD IMAGE (Puraane CSS gradient background ki jagah) */}
+                <img 
+                  src={card.bgImage} 
+                  alt={card.label} 
+                  className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+                  draggable="false"
+                />
+
+                {/* 2. BADE CARD KI BOUNDARY WALA CONTAINER (WOHI ORIGINAL ANIMATION & FRAME) */}
+                <div className="absolute left-0 right-0 bottom-0 w-full z-40 pointer-events-none block">
+                  
+                  {/* SHRINK ANIMATION */}
+                  <style dangerouslySetInnerHTML={{ __html: `
+                    @keyframes shrinkAndFade {
+                      0%, 80% { transform: scale(1); opacity: 1; }
+                      95% { transform: scale(0.5); opacity: 0; }
+                      100% { transform: scale(0); opacity: 0; }
+                    }
+                  `}} />
+                  
+                  {/* ANIMATED FRAME */}
+                  <div 
+                    className="relative w-[85%] mx-auto flex items-center justify-center z-10"
+                    style={{ 
+                      animation: 'shrinkAndFade 5s ease-in-out infinite', 
+                      marginBottom: '-40px',
+                      transformOrigin: 'center' 
                     }}
                   >
-                    {card.label}
-                  </div>
-                  
-                  {/* 2. CHOTA CARD BACKGROUND */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '28px',
-                      bottom: '6px',
-                      left: '6px',
-                      right: '6px',
-                      borderRadius: '10px',
-                      backgroundColor: card.innerBg,
-                      border: `1.5px solid ${card.innerBorder}`,
-                      boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)',
-                      zIndex: 1
-                    }}
-                  />
-
-                  {/* 3 & 4. BADE CARD KI BOUNDARY WALA CONTAINER */}
-                  <div className="absolute left-0 right-0 bottom-0 w-full z-40 pointer-events-none block">
                     
-                    {/* SHRINK ANIMATION (4s Fixed rahega, fir chota hoke gayab hoga) */}
-                    <style dangerouslySetInnerHTML={{ __html: `
-                      @keyframes shrinkAndFade {
-                        0%, 80% { transform: scale(1); opacity: 1; }
-                        95% { transform: scale(0.5); opacity: 0; }
-                        100% { transform: scale(0); opacity: 0; }
-                      }
-                    `}} />
-                    
-                    {/* ANIMATED FRAME (Upar-niche scroll band, sirf shrink hoga) */}
-                    <div 
-                      className="relative w-[85%] mx-auto flex items-center justify-center z-10"
-                      style={{ 
-                        animation: 'shrinkAndFade 5s ease-in-out infinite', 
-                        marginBottom: '-40px',
-                        transformOrigin: 'center' 
-                      }}
-                    >
-                      
-                      {/* FRAME IMAGE */}
-                      <img 
-                        src="/file_00000000048882118276c7215012963f.png" 
-                        alt="Frame" 
-                        className="w-full h-auto block z-30"
-                        draggable="false"
-                      />
-                      
-                      {/* LOGOS */}
-                      <div className="absolute inset-0 flex flex-row items-center justify-center z-20">
-                        <img 
-                          src="/logo.png" 
-                          alt="Left" 
-                          className="rounded-full object-cover shadow-sm relative shrink-0" 
-                          style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginRight: '3%' }}
-                        />
-                        <img 
-                          src="/logo.png" 
-                          alt="Middle" 
-                          className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
-                          style={{ width: '32%', height: 'auto', aspectRatio: '1/1', marginBottom: '3%' }} 
-                        />
-                        <img 
-                          src="/logo.png" 
-                          alt="Right" 
-                          className="rounded-full object-cover shadow-sm relative shrink-0" 
-                          style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginLeft: '3%' }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* STATIC BOTTOM EDGE IMAGE */}
+                    {/* FRAME IMAGE */}
                     <img 
-                      src="/file_00000000c61c82119e0bd419691cb264.png" 
-                      alt="Bottom Edge" 
-                      className="w-full h-auto block relative z-40"
-                      style={{ objectFit: 'fill', marginBottom: '-6px', padding: 0 }}
+                      src="/file_00000000048882118276c7215012963f.png" 
+                      alt="Frame" 
+                      className="w-full h-auto block z-30"
                       draggable="false"
                     />
                     
+                    {/* LOGOS */}
+                    <div className="absolute inset-0 flex flex-row items-center justify-center z-20">
+                      <img 
+                        src="/logo.png" 
+                        alt="Left" 
+                        className="rounded-full object-cover shadow-sm relative shrink-0" 
+                        style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginRight: '3%' }}
+                      />
+                      <img 
+                        src="/logo.png" 
+                        alt="Middle" 
+                        className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
+                        style={{ width: '32%', height: 'auto', aspectRatio: '1/1', marginBottom: '3%' }} 
+                      />
+                      <img 
+                        src="/logo.png" 
+                        alt="Right" 
+                        className="rounded-full object-cover shadow-sm relative shrink-0" 
+                        style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginLeft: '3%' }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
 
-         </div>
+                  {/* STATIC BOTTOM EDGE IMAGE */}
+                  <img 
+                    src="/file_00000000c61c82119e0bd419691cb264.png" 
+                    alt="Bottom Edge" 
+                    className="w-full h-auto block relative z-40"
+                    style={{ objectFit: 'fill', marginBottom: '-6px', padding: 0 }}
+                    draggable="false"
+                  />
+                  
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        
+        {/* Global Rooms Grid */}
         {allRooms.length > 0 ? (
-          <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
+          <div className="px-2 w-full" style={{ marginTop: isAndroid ? '6px' : '12px' }}>
             <div className="grid grid-cols-2 gap-1.5">
               {allRooms.map((room) => (
                 <div
@@ -2207,17 +2159,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   })}
                   className="cursor-pointer group"
                 >
-                  <div className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                  <div 
+                    className="relative bg-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
                     style={{ height: '170px' }}
                   >
                     <img
                       src={room.image}
                       alt={room.name}
                       className="w-full h-full object-cover"
-                      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                       draggable="false"
                     />
-                    
                     {room.isLocked && (
                       <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-full p-1.5 border border-white/50">
                         <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
@@ -2241,8 +2192,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
           </div>
         ) : null}
       </>
-      );
+    );
   };
+
           
 
   // ============ MAIN RETURN ============
@@ -2648,7 +2600,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           >
             <div
               ref={bannerContainerRef}
-              className="w-full px-4 safe-top pt-2"
+              className="w-full px-2 safe-top pt-2"
               style={{
                 height: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
                 minHeight: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
