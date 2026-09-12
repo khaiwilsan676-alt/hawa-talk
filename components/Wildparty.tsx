@@ -190,7 +190,7 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
 export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
   const [loading, setLoading] = useState(!hasInitialLoaded);
   const [progress, setProgress] = useState(hasInitialLoaded ? 100 : 0);
-  const [isMuted, setIsMuted] = useState(false); // <--- MUTE STATE ADDED
+  const [isMuted, setIsMuted] = useState(false);
 
   // Global Engine States
   const [currentRoundNo, setCurrentRoundNo] = useState<number>(1);
@@ -324,24 +324,26 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }
   };
 
-  // SOUND REF INITIALIZATION
-  const spinAudioRef = useRef<HTMLAudioElement | null>(null);
+  // SOUND INITIALIZATION (Dynamic Web Audio API)
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     loadDataFromDB();
     
-    // URL FIX: Removed /public prefix. React automatically maps / to public folder.
-    spinAudioRef.current = new Audio('/VID_20260912_113156_151_bsl.mp4');
-    spinAudioRef.current.loop = true;
-    spinAudioRef.current.muted = isMuted; // Sync initial mute state
+    const initAudio = () => {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+    };
+    
+    window.addEventListener('click', initAudio, { once: true });
+    window.addEventListener('touchstart', initAudio, { once: true });
+    
+    return () => {
+      window.removeEventListener('click', initAudio);
+      window.removeEventListener('touchstart', initAudio);
+    };
   }, []);
-
-  // Update audio mute state when speaker icon is toggled
-  useEffect(() => {
-    if (spinAudioRef.current) {
-      spinAudioRef.current.muted = isMuted;
-    }
-  }, [isMuted]);
 
   useEffect(() => {
     if (hasInitialLoaded) {
@@ -378,30 +380,17 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }
   };
 
-  // Pure Deterministic Global Outcome Function
   const determineRoundOutcome = (roundNo: number): { mode: WinMode; winnerIndex: number } => {
     const seed = Math.sin(roundNo * 127.1 + 311.7) * 43758.5453123;
     const pseudoRand = seed - Math.floor(seed);
     const roll = pseudoRand * 100;
 
-    if (roll < 0.8) {
-      return { mode: 'mix_big', winnerIndex: 6 };
-    }
-    if (roll < 2.3) {
-      return { mode: 'mix_small', winnerIndex: 1 };
-    }
-    if (roll < 3.3) {
-      return { mode: 'single', winnerIndex: 7 };
-    }
-    if (roll < 4.8) {
-      return { mode: 'single', winnerIndex: 6 };
-    }
-    if (roll < 6.5) {
-      return { mode: 'single', winnerIndex: 5 };
-    }
-    if (roll < 9.0) {
-      return { mode: 'single', winnerIndex: 4 };
-    }
+    if (roll < 0.8) { return { mode: 'mix_big', winnerIndex: 6 }; }
+    if (roll < 2.3) { return { mode: 'mix_small', winnerIndex: 1 }; }
+    if (roll < 3.3) { return { mode: 'single', winnerIndex: 7 }; }
+    if (roll < 4.8) { return { mode: 'single', winnerIndex: 6 }; }
+    if (roll < 6.5) { return { mode: 'single', winnerIndex: 5 }; }
+    if (roll < 9.0) { return { mode: 'single', winnerIndex: 4 }; }
 
     const lowPool = [0, 1, 2, 3];
     const subIdx = Math.floor(((roll - 9.0) / 91.0) * lowPool.length) % lowPool.length;
@@ -416,7 +405,6 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     winnerIndex: 1,
   });
 
-  // Global Synchronized Clock Engine
   useEffect(() => {
     if (loading) return;
 
@@ -458,32 +446,20 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Global Time-Synced Smooth Spinner + Audio Adjustment
+  // Global Time-Synced Smooth Spinner + Custom Generated Sound
   useEffect(() => {
     if (gamePhase !== 'spinning') {
       if (gamePhase === 'betting') {
         setActiveHighlightIndex(null);
       }
-      
-      // SPIN KHATAM: Sound Pause & Reset
-      if (spinAudioRef.current) {
-        spinAudioRef.current.pause();
-        spinAudioRef.current.currentTime = 0;
-      }
       return;
-    }
-
-    // SPIN START: Play sound at full speed
-    if (spinAudioRef.current) {
-      spinAudioRef.current.playbackRate = 1.3;
-      spinAudioRef.current.volume = 1.0;
-      // Added catch block just in case browser autoplay policy blocks the audio before user interacts
-      spinAudioRef.current.play().catch(e => console.warn('Audio autoplay blocked. User needs to interact first:', e));
     }
 
     const resetBoundary = get5AMResetBoundary();
     const roundDuration = 48;
     const targetIdx = targetOutcomeRef.current.winnerIndex;
+    
+    let lastPlayedStep = -1; // track when we jump to a new animal to play a tick
 
     const animFrame = setInterval(() => {
       const now = Date.now();
@@ -495,32 +471,48 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
 
       if (spinTimeMs >= 15000) {
         setActiveHighlightIndex(targetIdx);
-        // Ensure sound stops completely right on finish
-        if (spinAudioRef.current) {
-          spinAudioRef.current.pause();
-        }
       } else {
-        // Smooth easing cubic math taaki wheel smoothly ruke
         const progress = spinTimeMs / 15000; // 0.0 to 1.0
         const easeOut = 1 - Math.pow(1 - progress, 3);
         const finalStepsCount = 160 + targetIdx; 
         const currentStep = Math.floor(easeOut * finalStepsCount);
         
-        setActiveHighlightIndex(currentStep % 8);
-
-        // SOUND LOGIC: Jaise easeOut badhega, sound ka playback speed aur volume kam karenge
-        if (spinAudioRef.current) {
-          const newSpeed = 1.3 - (easeOut * 1.0); 
-          spinAudioRef.current.playbackRate = Math.max(0.1, newSpeed);
+        // Sound Engine logic: Play tick ONLY when wheel shifts to a new segment
+        if (currentStep !== lastPlayedStep) {
+          lastPlayedStep = currentStep;
           
-          const newVolume = 1.0 - (easeOut * 0.6); 
-          spinAudioRef.current.volume = Math.max(0, newVolume);
+          if (!isMuted && audioCtxRef.current) {
+            const ctx = audioCtxRef.current;
+            if (ctx.state === 'suspended') ctx.resume();
+            
+            // Create a short satisfying "tick" sound
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            // Pitch goes down slightly as wheel slows down
+            const freq = 700 - (easeOut * 300); 
+            // Volume drops very slightly
+            const vol = 1.0 - (easeOut * 0.4);
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            
+            gain.gain.setValueAtTime(vol * 0.1, ctx.currentTime); 
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.05); // super short tick
+          }
         }
+        
+        setActiveHighlightIndex(currentStep % 8);
       }
     }, 30);
 
     return () => clearInterval(animFrame);
-  }, [gamePhase]);
+  }, [gamePhase, isMuted]);
 
   const processedRoundsRef = useRef<{ [key: number]: boolean }>({});
 
@@ -651,7 +643,6 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
   const isBigGroupActive = gamePhase === 'result' && winMode === 'mix_big';
   const isSmallGroupActive = gamePhase === 'result' && winMode === 'mix_small';
 
-  // Helper function to generate stable fake users for the podium
   const getFakeUsers = (roundNo: number) => {
     const seed1 = (roundNo * 11) % 50 + 1;
     const seed2 = (roundNo * 17) % 50 + 1;
@@ -755,19 +746,16 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
           <>
             <div className="absolute top-2 left-2 z-30 flex items-center gap-1">
               
-              {/* MUTE / UNMUTE BUTTON (FIXED) */}
               <button
                 onClick={() => setIsMuted(!isMuted)}
                 aria-label="Sound Toggle"
                 className="w-6 h-6 rounded-md flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
                 {isMuted ? (
-                  // MUTED ICON (Cross/Slash)
                   <svg viewBox="0 0 24 24" className="w-4 h-4 text-white/50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" fill="currentColor">
                     <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
                   </svg>
                 ) : (
-                  // UNMUTED ICON (Normal Speaker)
                   <svg viewBox="0 0 24 24" className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" fill="currentColor">
                     <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
                   </svg>
@@ -1088,28 +1076,28 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
             
             {/* Top Container: Animal & Rows */}
             <div className="w-full flex items-start justify-between px-3 pt-4">
-              <div className="flex items-center gap-3 mt-3">
+              <div className="flex items-center gap-4 mt-5">
                 
-                {/* Animal Frame */}
+                {/* Animal Frame BADA KIYA - w-24 h-24 */}
                 <div className="flex-shrink-0 flex items-center justify-center">
                   {winMode === 'single' && winnerAnimal && (
-                    <div className="w-16 h-16 flex items-center justify-center scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="w-24 h-24 flex items-center justify-center scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       <GreenScreenImage src={winnerAnimal.src} className="w-full h-full object-contain" />
                     </div>
                   )}
                   {winMode === 'mix_big' && (
-                    <div className="grid grid-cols-2 gap-1.5 w-16 h-16 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="grid grid-cols-2 gap-2 w-24 h-24 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       {animals.slice(4, 8).map((a) => (
-                        <div key={a.alt} className="w-7 h-7">
+                        <div key={a.alt} className="w-10 h-10">
                           <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
                         </div>
                       ))}
                     </div>
                   )}
                   {winMode === 'mix_small' && (
-                    <div className="grid grid-cols-2 gap-1.5 w-16 h-16 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="grid grid-cols-2 gap-2 w-24 h-24 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       {animals.slice(0, 4).map((a) => (
-                        <div key={a.alt} className="w-7 h-7">
+                        <div key={a.alt} className="w-10 h-10">
                           <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
                         </div>
                       ))}
@@ -1117,23 +1105,23 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                   )}
                 </div>
 
-                {/* Amounts in proper Grid Rows */}
-                <div className="grid grid-cols-[auto_auto] gap-x-2 gap-y-1.5 items-center">
+                {/* Amounts Details in Grid Rows BADA KIYA TEXT & ICONS */}
+                <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-2 items-center ml-2">
                   
                   {/* Row 1: Winning Amount */}
-                  <span className="text-[10px] text-white/70 uppercase font-bold text-left">Winning Amount</span>
+                  <span className="text-xs text-white/70 uppercase font-bold text-left">Winning Amount</span>
                   <div className="flex items-center gap-1">
-                    <LoadingShaderImage src="/1786855398290.png" className="w-4 h-4 object-contain" />
-                    <span className="text-yellow-400 font-black text-sm tracking-wide leading-none">
+                    <LoadingShaderImage src="/1786855398290.png" className="w-5 h-5 object-contain" />
+                    <span className="text-yellow-400 font-black text-lg tracking-wide leading-none">
                       {roundWinningAmount.toLocaleString()}
                     </span>
                   </div>
 
                   {/* Row 2: Bet Amount */}
-                  <span className="text-[10px] text-white/70 uppercase font-bold text-left">Bet Amount</span>
+                  <span className="text-xs text-white/70 uppercase font-bold text-left">Bet Amount</span>
                   <div className="flex items-center gap-1">
-                    <LoadingShaderImage src="/1786855398290.png" className="w-4 h-4 object-contain opacity-80" />
-                    <span className="text-white font-bold text-xs tracking-wide leading-none">
+                    <LoadingShaderImage src="/1786855398290.png" className="w-5 h-5 object-contain opacity-80" />
+                    <span className="text-white font-bold text-sm tracking-wide leading-none">
                       {roundBetAmount.toLocaleString()}
                     </span>
                   </div>
@@ -1151,8 +1139,8 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
             {/* Bottom Podium & Heading Section */}
             <div className="w-full flex-1 flex flex-col items-center justify-end">
               
-              {/* Edge to Edge Heading Image */}
-              <img src="/IMG_20260913_000423.png" alt="Heading" className="w-full h-auto object-cover mb-1 drop-shadow-md" />
+              {/* Heading Image Thodi Kam Wide Ki Hai (w-[85%]) */}
+              <img src="/IMG_20260913_000423.png" alt="Heading" className="w-[85%] mx-auto h-auto object-cover mb-1 drop-shadow-md" />
               
               {/* Top 3 Fake Podium */}
               <div className="flex items-end justify-center gap-3 w-full px-1">
@@ -1172,7 +1160,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
 
                 {/* Top 1 (Center) */}
                 <div className="flex flex-col items-center pb-6">
-                  <div className="relative w-18 h-18 flex items-center justify-center mb-1">
+                  <div className="relative w-24 h-24 flex items-center justify-center mb-1">
                     <img src={fakePodiumUsers[0].avatar} className="w-16 h-16 rounded-full object-cover" />
                     <img src="/IMG_20260912_235215.png" className="absolute inset-0 w-full h-full object-contain z-10 scale-110" />
                   </div>
