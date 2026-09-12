@@ -1806,7 +1806,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
   // ============ RENDER MINE TAB ============
   const renderMineTab = () => (
-    <div className="px-2 mt-4">
+    <div className="px-3 mt-4">
       <div
         onClick={handleCardClick}
         className="rounded-md p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all mb-6"
@@ -2127,15 +2127,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
 
-                  {/* STATIC BOTTOM EDGE IMAGE */}
-                  <img 
-                    src="/file_00000000c61c82119e0bd419691cb264.png" 
-                    alt="Bottom Edge" 
-                    className="w-full h-auto block relative z-40"
-                    style={{ objectFit: 'fill', marginBottom: '-6px', padding: 0 }}
-                    draggable="false"
-                  />
-                  
+                                    
                 </div>
               </div>
             ))}
@@ -2600,7 +2592,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           >
             <div
               ref={bannerContainerRef}
-              className="w-full px-2 safe-top pt-2"
+              className="w-full px-3 safe-top pt-2"
               style={{
                 height: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
                 minHeight: activeTab === 'mine' ? 'auto' : 'calc(34vh + max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px)))',
