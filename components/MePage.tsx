@@ -779,7 +779,7 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
   const lockedAvatarLetter = lockedNameDisplay ? lockedNameDisplay.charAt(0).toUpperCase() : '';
 
   return (
-    <div className="w-full min-h-screen bg-white pb-[8vh]">
+    <div className="w-full min-h-screen bg-white pb-24 overflow-y-auto">
       <div
         className="px-4 pb-4 relative safe-top"
         style={{
@@ -940,67 +940,64 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
         </div>
       </div>
 
-      <div className="px-4 mt-0.5">
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-          {menuItems.map((item, index) => (
-            <div key={item.id}>
-              <div 
-                className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => {
-                  if (item.id === '1') setShowInviteFriends(true);
-                  else if (item.id === '2') setShowFamily(true);
-                  else if (item.id === '3') setShowLevel(true);
-                  else if (item.id === '4') setShowMedal(true);
-                  else if (item.id === '5') {
-                    setStoreInitialView('store');
-                    setShowStore(true);
-                  }
-                  else if (item.id === '6') {
-                    setStoreInitialView('bag');
-                    setShowStore(true);
-                  }
-                  else if (item.id === '11') {
-                    setShowSellerCenter(true);
-                  }
-                }}
-              >
-            <div className={`flex items-center justify-center shrink-0 ${item.id === '11' ? 'w-10 h-10 -ml-1' : 'w-8 h-8'}`}>
-  <img
-    src={item.src}
-    alt={typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] ? t[item.labelKey as keyof typeof translations['en']] : String(item.labelKey)}
-    className={`w-full h-full object-cover ${item.id === '11' ? 'rounded-md' : ''}`}
-  />
-</div>
-
-
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">
-                    {typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] 
-                      ? t[item.labelKey as keyof typeof translations['en']] 
-                      : String(item.labelKey)}
-                  </p>
-                </div>
-                {item.action && (
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
-                )}
-                {item.badge && (
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
-                    {item.badge}
-                  </span>
-                )}
-                <ChevronRight size={20} className="text-gray-400" />
+      {/* Top Menu Cards */}
+      <div className="px-4 mt-2">
+        <div className="bg-white rounded-md overflow-hidden shadow-sm">
+          {menuItems.map((item) => (
+            <div 
+              key={item.id}
+              className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => {
+                if (item.id === '1') setShowInviteFriends(true);
+                else if (item.id === '2') setShowFamily(true);
+                else if (item.id === '3') setShowLevel(true);
+                else if (item.id === '4') setShowMedal(true);
+                else if (item.id === '5') {
+                  setStoreInitialView('store');
+                  setShowStore(true);
+                }
+                else if (item.id === '6') {
+                  setStoreInitialView('bag');
+                  setShowStore(true);
+                }
+                else if (item.id === '11') {
+                  setShowSellerCenter(true);
+                }
+              }}
+            >
+              <div className={`flex items-center justify-center shrink-0 ${item.id === '11' ? 'w-10 h-10 -ml-1' : 'w-8 h-8'}`}>
+                <img
+                  src={item.src}
+                  alt={typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] ? t[item.labelKey as keyof typeof translations['en']] : String(item.labelKey)}
+                  className={`w-full h-full object-cover ${item.id === '11' ? 'rounded-md' : ''}`}
+                />
               </div>
-              {index < menuItems.length - 1 && (
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
+
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">
+                  {typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] 
+                    ? t[item.labelKey as keyof typeof translations['en']] 
+                    : String(item.labelKey)}
+                </p>
+              </div>
+              {item.action && (
+                <span className="text-sm font-medium text-gray-500">{item.action}</span>
               )}
+              {item.badge && (
+                <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
+                  {item.badge}
+                </span>
+              )}
+              <ChevronRight size={20} className="text-gray-400" />
             </div>
           ))}
         </div>
       </div>
 
-      <div className="px-4 mt-4 mb-6">
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-          {bottomMenuItems.map((item, index) => (
+      {/* Bottom Menu Cards */}
+      <div className="px-4 mt-4 mb-8">
+        <div className="bg-white rounded-md overflow-hidden shadow-sm">
+          {bottomMenuItems.map((item) => (
             <div
               key={item.id}
               onClick={() => {
@@ -1009,32 +1006,28 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
                 if (item.id === '9') switchView('customer_service')
                 if (item.id === '10') setShowFeedbackPage(true)
               }}
+              className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">
-                  {item.icon}
-                </div>
-
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">
-                    {typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] 
-                      ? t[item.labelKey as keyof typeof translations['en']] 
-                      : String(item.labelKey)}
-                  </p>
-                </div>
-                {item.action && (
-                  <span className="text-sm font-medium text-gray-500">{item.action}</span>
-                )}
-                {item.badge && (
-                  <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
-                    {item.badge}
-                  </span>
-                )}
-                <ChevronRight size={20} className="text-gray-400" />
+              <div className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-700">
+                {item.icon}
               </div>
-              {index < bottomMenuItems.length - 1 && (
-                <div className="h-[0.5px] bg-gray-200 mx-4"></div>
+
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900">
+                  {typeof item.labelKey === 'string' && t[item.labelKey as keyof typeof translations['en']] 
+                    ? t[item.labelKey as keyof typeof translations['en']] 
+                    : String(item.labelKey)}
+                </p>
+              </div>
+              {item.action && (
+                <span className="text-sm font-medium text-gray-500">{item.action}</span>
               )}
+              {item.badge && (
+                <span className="bg-blue-300 text-xs font-bold px-2 py-1 rounded-full text-gray-900">
+                  {item.badge}
+                </span>
+              )}
+              <ChevronRight size={20} className="text-gray-400" />
             </div>
           ))}
         </div>
@@ -1042,4 +1035,5 @@ export default function MePage({ onLogout, onPublicProfileChange }: MePageProps)
 
     </div>
   )
-          }
+}
+
