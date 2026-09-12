@@ -11,13 +11,13 @@ interface FruitpartyProps {
 const GRID_ITEMS = [
   { id: 1, type: 'fruit', img: '/IMG_20260908_192143.png', multi: '×5',  move: 'translate-x-[4px] translate-y-[9px]', imgW: 50, imgH: 50 },  // Lemon (0)
   { id: 5, type: 'fruit', img: '/IMG_20260908_192120.png', multi: '×10', move: 'translate-y-[9px]',                   imgW: 55, imgH: 55 },  // Grapes (1)
-  { id: 3, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[4px] translate-y-[9px]', imgW: 50, imgH: 50 },   // Santra (replaced Aam) (2)
+  { id: 3, type: 'fruit', img: '/IMG_20260908_192203.png', multi: '×5',  move: '-translate-x-[4px] translate-y-[9px]', imgW: 50, imgH: 50 },   // Santra (2)
   { id: 8, type: 'fruit', img: '/IMG_20260908_192013.png', multi: '×45', move: 'translate-x-[4px]',                   imgW: 50, imgH: 50 },  // Cherry (3)
   { id: 9, type: 'timer', move: 'z-20' },                                                                                                    // CENTER (4) 
   { id: 2, type: 'fruit', img: '/IMG_20260908_192050.png', multi: '×25', move: '-translate-x-[4px]',                   imgW: 50, imgH: 50 },  // Apple (5)
-  { id: 7, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: 'translate-x-[4px] -translate-y-[9px]', imgW: 140, imgH: 140 }, // Aam (replaced Guava/Naspati) (6)
+  { id: 7, type: 'fruit', img: '/IMG_20260908_191941.png', multi: '×5',  move: 'translate-x-[4px] -translate-y-[9px]', imgW: 140, imgH: 140 }, // Aam (6)
   { id: 4, type: 'fruit', img: '/IMG_20260908_191906.png', multi: '×15', move: '-translate-y-[9px]',                   imgW: 50, imgH: 50 },  // Strawberry (7)
-  { id: 6, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: '-translate-x-[4px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Naspati/Guava (replaced Santra) (8)
+  { id: 6, type: 'fruit', img: '/IMG_20260908_191930.png', multi: '×5',  move: '-translate-x-[4px] -translate-y-[9px]', imgW: 50, imgH: 50 },  // Naspati (8)
 ];
 
 const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3]; 
@@ -25,8 +25,8 @@ const SPIN_PATH = [0, 1, 2, 5, 8, 7, 6, 3];
 const DB_NAME = 'FruitPartyDB';
 const STORE_NAME = 'GameState';
 
-// Ek baar load hone ke baad session me dobara restart/loading na ho
-let hasInitiallyLoadedGlobal = false;
+// Minimize ke liye memory flags
+let isAppMinimizedSession = false;
 let sessionBetsGlobal: Record<number, number> = {};
 
 async function initDB(): Promise<IDBDatabase> {
@@ -127,8 +127,9 @@ type HistoryItem = {
 };
 
 export default function Fruitparty({ onClose, onMinimize, isMinimized = false }: FruitpartyProps) {
-  const [loading, setLoading] = useState(!hasInitiallyLoadedGlobal);
-  const [progress, setProgress] = useState(hasInitiallyLoadedGlobal ? 100 : 0);
+  // Agar minimize se wapas aaye toh loading nahi aayegi, cross se aaye toh aayegi
+  const [loading, setLoading] = useState(!isAppMinimizedSession);
+  const [progress, setProgress] = useState(isAppMinimizedSession ? 100 : 0);
   const [isLoadedFromDB, setIsLoadedFromDB] = useState(false);
   
   const [gameState, setGameState] = useState({
@@ -146,7 +147,7 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
   
   const [balance, setBalance] = useState(82927);
   const [totalWon, setTotalWon] = useState(0);
-  const [bets, setBets] = useState<Record<number, number>>(sessionBetsGlobal);
+  const [bets, setBets] = useState<Record<number, number>>(isAppMinimizedSession ? sessionBetsGlobal : {});
   
   const [lastRoundStats, setLastRoundStats] = useState({ bet: 0, won: 0 });
   const [processedRound, setProcessedRound] = useState(-1);
@@ -161,6 +162,22 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const [scale, setScale] = useState(1);
+
+  // Cross button click handler - Fresh Reset
+  const handleFullClose = () => {
+    isAppMinimizedSession = false;
+    sessionBetsGlobal = {};
+    onClose();
+  };
+
+  // Minimize button click handler
+  const handleMinimizeClick = () => {
+    isAppMinimizedSession = true;
+    sessionBetsGlobal = bets;
+    if (onMinimize) {
+      onMinimize();
+    }
+  };
   
   // 5:30 AM Auto Clear History Logic
   useEffect(() => {
@@ -227,12 +244,14 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
 
   useEffect(() => {
     stateRefs.current = { balance, totalWon, bets };
-    sessionBetsGlobal = bets;
+    if (isAppMinimizedSession) {
+      sessionBetsGlobal = bets;
+    }
   }, [balance, totalWon, bets]);
 
-  // Loading animation sirf first open par chalegi, minimize ke baad direct game continue hogi
+  // Loading Screen Logic
   useEffect(() => {
-    if (hasInitiallyLoadedGlobal) {
+    if (isAppMinimizedSession) {
       setLoading(false);
       return;
     }
@@ -241,7 +260,6 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         if (prev >= 100) {
           clearInterval(interval);
           setTimeout(() => {
-            hasInitiallyLoadedGlobal = true;
             setLoading(false);
           }, 200);
           return 100;
@@ -290,7 +308,7 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
     }
   }, [gameState.highlight, gameState.phase, isMuted, isMinimized]);
 
-  // Precise Global Clock sync - Minimize ke baad jab wapas aayenge toh exact state restore hogi
+  // Game Real-Time Engine Loop
   useEffect(() => {
     const clock = setInterval(() => {
       const CYCLE_MS = 40000; 
@@ -475,13 +493,12 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
   else if (gameState.winnerIndex === 11) popupWinnerImg = '/IMG_20260910_114613.png';
   else popupWinnerImg = GRID_ITEMS[gameState.winnerIndex]?.img || '';
 
-  // Agar minimize hua ho toh display none rahega taaki background me sync chalta rahe
   return (
     <div className={`fixed inset-0 z-[70] items-end justify-center ${isMinimized ? 'hidden' : 'flex'}`}>
       <img src="/file_00000000ced481fa9117afc4fa91791e.png" className="hidden" alt="preload1" />
       <img src="/file_00000000eb0081f4885ade7d7db3bef8.png" className="hidden" alt="preload2" />
 
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50" onClick={handleFullClose} />
 
       {!loading && (
         <div 
@@ -631,7 +648,7 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
 
             <div className="absolute bottom-[66vh] right-7 z-30 flex items-center gap-0.5">
               <button
-                onClick={onMinimize}
+                onClick={handleMinimizeClick}
                 className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5"
               >
                 <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] fill-none stroke-[#4a2810] stroke-[4]" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -639,7 +656,7 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
               <button onClick={() => setShowHistory(true)} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810]"><path fillRule="evenodd" clipRule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12.5 7V12.25L17 14.92L16.25 16.15L11 13V7H12.5Z" /></svg>
               </button>
-              <button onClick={onClose} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
+              <button onClick={handleFullClose} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               </button>
             </div>
