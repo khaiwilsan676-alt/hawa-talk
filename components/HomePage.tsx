@@ -2024,15 +2024,18 @@ export default function HomePage({ onLogout }: HomePageProps) {
     </div>
   );
 
-          // ============ RENDER POPULAR TAB ============
+       
+
+
+// ============ RENDER POPULAR TAB ============
   const renderPopularTab = () => {
     return (
       <>
         <div 
           ref={categoryCardsRef}
-          className="px-4" 
+          className="px-3" 
           style={{ 
-            transform: `translateY(${categoryOffset}px)`,
+            transform: `translateY(${categoryOffset - 4}px)`, // Card pure block ko thoda upar utha diya
             marginBottom: `${categoryOffset}px`,
             position: 'relative', 
             zIndex: 10,
@@ -2055,9 +2058,9 @@ export default function HomePage({ onLogout }: HomePageProps) {
                 }}
                 className="group flex-1 cursor-pointer"
                 style={{
-                  height: '90px',
-                  minHeight: '90px',
-                  maxHeight: '90px',
+                  height: '92px',
+                  minHeight: '92px',
+                  maxHeight: '92px',
                   minWidth: 0,
                   borderRadius: '16px',
                   opacity: mounted ? 1 : 0,
@@ -2069,12 +2072,13 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   overflow: 'hidden'    
                 }}
               >
-                {/* 1. TOP GOLDEN HEADING */}
+                {/* 1. TOP GOLDEN HEADING (z-50 + relative taaki image ke aage dikhe) */}
                 <div 
-                  className="w-full text-center font-black uppercase tracking-wider z-30 select-none"
+                  className="relative w-full text-center font-black uppercase tracking-wider select-none z-50 pointer-events-none"
                   style={{
-                    paddingTop: '6px',
-                    fontSize: '12.5px',
+                    paddingTop: '4px',
+                    fontSize: '12px',
+                    lineHeight: '1.2',
                     background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF5A5 18%, #F7D046 45%, #D49410 75%, #8A5600 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
@@ -2085,16 +2089,16 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   {card.label}
                 </div>
 
-                {/* 2. CARD IMAGE */}
+                {/* 2. CARD IMAGE (z-0 taaki heading ke peeche rahe) */}
                 <img 
                   src={card.bgImage} 
                   alt={card.label} 
-                  className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
                   draggable="false"
                 />
 
-                {/* 3. FRAME & ANIMATION */}
-                <div className="absolute left-0 right-0 bottom-0 w-full z-40 pointer-events-none block">
+                {/* 3. FRAME & ANIMATION (Thoda upar shifted) */}
+                <div className="absolute left-0 right-0 bottom-1 w-full z-40 pointer-events-none block -translate-y-1">
                   <style dangerouslySetInnerHTML={{ __html: `
                     @keyframes shrinkAndFade {
                       0%, 80% { transform: scale(1); opacity: 1; }
@@ -2107,7 +2111,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     className="relative w-[85%] mx-auto flex items-center justify-center z-10"
                     style={{ 
                       animation: 'shrinkAndFade 5s ease-in-out infinite', 
-                      marginBottom: '2px',
+                      marginBottom: '0px',
                       transformOrigin: 'center' 
                     }}
                   >
@@ -2147,7 +2151,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
         {/* Global Rooms Grid */}
         {allRooms.length > 0 ? (
-          <div className="px-4" style={{ marginTop: isAndroid ? '4px' : '12px' }}>
+          <div className="px-3" style={{ marginTop: isAndroid ? '3px' }}>
             <div className="grid grid-cols-2 gap-1.5">
               {allRooms.map((room) => (
                 <div
@@ -2197,8 +2201,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
       </>
     );
   };
-
-
 
 
           
