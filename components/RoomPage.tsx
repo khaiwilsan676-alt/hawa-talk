@@ -1778,7 +1778,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
                     setShowGameSheet(false);
                     setShowWildParty(true);
                   }} 
-                  className="transition-transform hover:scale-105"
+                  className="transition-transform hover:scale-105 -mt-1"
                 >
                   <img src="/file_000000009d808211b8ffb7c2183b4ef5.png" alt="Wild party" className="w-14 h-14 object-contain" />
                 </button>
