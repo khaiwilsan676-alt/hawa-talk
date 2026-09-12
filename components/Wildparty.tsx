@@ -240,6 +240,33 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     { id: 7, src: '/IMG_20260822_011028.png', alt: 'Lion', angle: 225, distance: 130, x: 5, y: -5, size: 65, multiplier: 45 },
   ];
 
+  // ============================
+  // WEB AUDIO API (Mast Spin Sound Engine)
+  // ============================
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const oscRef = useRef<OscillatorNode | null>(null);
+  const filterRef = useRef<BiquadFilterNode | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+
+  const initAudioCtx = () => {
+    if (!audioCtxRef.current) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtxRef.current = new AudioContextClass();
+      }
+    }
+    if (audioCtxRef.current?.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+  };
+
+  useEffect(() => {
+    if (gainRef.current && audioCtxRef.current) {
+      gainRef.current.gain.setTargetAtTime(isMuted ? 0 : 0.15, audioCtxRef.current.currentTime, 0.1);
+    }
+  }, [isMuted]);
+  // ============================
+
   const initIndexedDB = (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('WildPartyGameDB', 3);
@@ -324,25 +351,8 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }
   };
 
-  // SOUND INITIALIZATION (Dynamic Web Audio API)
-  const audioCtxRef = useRef<AudioContext | null>(null);
-
   useEffect(() => {
     loadDataFromDB();
-    
-    const initAudio = () => {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-    };
-    
-    window.addEventListener('click', initAudio, { once: true });
-    window.addEventListener('touchstart', initAudio, { once: true });
-    
-    return () => {
-      window.removeEventListener('click', initAudio);
-      window.removeEventListener('touchstart', initAudio);
-    };
   }, []);
 
   useEffect(() => {
@@ -385,12 +395,24 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     const pseudoRand = seed - Math.floor(seed);
     const roll = pseudoRand * 100;
 
-    if (roll < 0.8) { return { mode: 'mix_big', winnerIndex: 6 }; }
-    if (roll < 2.3) { return { mode: 'mix_small', winnerIndex: 1 }; }
-    if (roll < 3.3) { return { mode: 'single', winnerIndex: 7 }; }
-    if (roll < 4.8) { return { mode: 'single', winnerIndex: 6 }; }
-    if (roll < 6.5) { return { mode: 'single', winnerIndex: 5 }; }
-    if (roll < 9.0) { return { mode: 'single', winnerIndex: 4 }; }
+    if (roll < 0.8) {
+      return { mode: 'mix_big', winnerIndex: 6 };
+    }
+    if (roll < 2.3) {
+      return { mode: 'mix_small', winnerIndex: 1 };
+    }
+    if (roll < 3.3) {
+      return { mode: 'single', winnerIndex: 7 };
+    }
+    if (roll < 4.8) {
+      return { mode: 'single', winnerIndex: 6 };
+    }
+    if (roll < 6.5) {
+      return { mode: 'single', winnerIndex: 5 };
+    }
+    if (roll < 9.0) {
+      return { mode: 'single', winnerIndex: 4 };
+    }
 
     const lowPool = [0, 1, 2, 3];
     const subIdx = Math.floor(((roll - 9.0) / 91.0) * lowPool.length) % lowPool.length;
@@ -446,73 +468,101 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Global Time-Synced Smooth Spinner + Custom Generated Sound
   useEffect(() => {
     if (gamePhase !== 'spinning') {
       if (gamePhase === 'betting') {
         setActiveHighlightIndex(null);
       }
+      
+      if (oscRef.current && audioCtxRef.current) {
+        const ctx = audioCtxRef.current;
+        if (gainRef.current) {
+          gainRef.current.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+        }
+        const osc = oscRef.current;
+        setTimeout(() => {
+          try { osc.stop(); } catch (e) {}
+        }, 100);
+        oscRef.current = null;
+      }
       return;
+    }
+
+    initAudioCtx();
+
+    if (!oscRef.current && audioCtxRef.current && !isMuted) {
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, ctx.currentTime);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(2500, ctx.currentTime);
+      filter.Q.value = 5;
+
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      oscRef.current = osc;
+      filterRef.current = filter;
+      gainRef.current = gain;
     }
 
     const resetBoundary = get5AMResetBoundary();
     const roundDuration = 48;
     const targetIdx = targetOutcomeRef.current.winnerIndex;
-    
-    let lastPlayedStep = -1; // track when we jump to a new animal to play a tick
 
     const animFrame = setInterval(() => {
       const now = Date.now();
       const elapsedMs = now - resetBoundary;
       const cycleMs = elapsedMs % (roundDuration * 1000);
-      const spinTimeMs = cycleMs - 30000; // 0 to 15000ms
+      const spinTimeMs = cycleMs - 30000; 
 
       if (spinTimeMs < 0) return;
 
       if (spinTimeMs >= 15000) {
         setActiveHighlightIndex(targetIdx);
+        if (oscRef.current && audioCtxRef.current) {
+          const ctx = audioCtxRef.current;
+          gainRef.current?.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+          const osc = oscRef.current;
+          setTimeout(() => {
+             try { osc.stop(); } catch(e){}
+          }, 100);
+          oscRef.current = null;
+        }
       } else {
-        const progress = spinTimeMs / 15000; // 0.0 to 1.0
+        const progress = spinTimeMs / 15000; 
         const easeOut = 1 - Math.pow(1 - progress, 3);
         const finalStepsCount = 160 + targetIdx; 
         const currentStep = Math.floor(easeOut * finalStepsCount);
         
-        // Sound Engine logic: Play tick ONLY when wheel shifts to a new segment
-        if (currentStep !== lastPlayedStep) {
-          lastPlayedStep = currentStep;
-          
-          if (!isMuted && audioCtxRef.current) {
-            const ctx = audioCtxRef.current;
-            if (ctx.state === 'suspended') ctx.resume();
-            
-            // Create a short satisfying "tick" sound
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            
-            // Pitch goes down slightly as wheel slows down
-            const freq = 700 - (easeOut * 300); 
-            // Volume drops very slightly
-            const vol = 1.0 - (easeOut * 0.4);
+        setActiveHighlightIndex(currentStep % 8);
 
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, ctx.currentTime);
-            
-            gain.gain.setValueAtTime(vol * 0.1, ctx.currentTime); 
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-            
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.05); // super short tick
+        if (oscRef.current && filterRef.current && gainRef.current && audioCtxRef.current) {
+          const ctx = audioCtxRef.current;
+          const newFreq = 150 - (100 * easeOut); 
+          const newFilterFreq = 2500 - (2000 * easeOut); 
+          const newVol = 0.15 - (0.15 * easeOut); 
+          
+          if(!isMuted) {
+             oscRef.current.frequency.setTargetAtTime(newFreq, ctx.currentTime, 0.1);
+             filterRef.current.frequency.setTargetAtTime(newFilterFreq, ctx.currentTime, 0.1);
+             gainRef.current.gain.setTargetAtTime(newVol, ctx.currentTime, 0.1);
           }
         }
-        
-        setActiveHighlightIndex(currentStep % 8);
       }
     }, 30);
 
     return () => clearInterval(animFrame);
-  }, [gamePhase, isMuted]);
+  }, [gamePhase]);
 
   const processedRoundsRef = useRef<{ [key: number]: boolean }>({});
 
@@ -567,16 +617,18 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
 
       setRoundWinningAmount(totalWinnings);
 
-      if (totalWinnings > 0) {
-        setBalance((prevBal) => {
-          const newBal = prevBal + totalWinnings;
-          saveBalanceToDB(newBal);
-          return newBal;
-        });
-      }
+      setTimeout(() => {
+        if (totalWinnings > 0) {
+          setBalance((prevBal) => {
+            const newBal = prevBal + totalWinnings;
+            saveBalanceToDB(newBal);
+            return newBal;
+          });
+        }
+        setWinnerCountdown(5);
+        setShowWinnerSheet(true);
+      }, 1500);
 
-      setWinnerCountdown(5);
-      setShowWinnerSheet(true);
     } else if (gamePhase === 'betting') {
       if (Object.keys(bets).length > 0) {
         setLastBets(bets);
@@ -597,12 +649,13 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
         }
         return prev - 1;
       });
-    }, 1000);
+    }, 1500); 
 
     return () => clearInterval(timer);
   }, [showWinnerSheet]);
 
   const handleAnimalBet = (animalAlt: string) => {
+    initAudioCtx(); 
     if (gamePhase !== 'betting') return;
     if (balance < selectedChip.value) return;
 
@@ -617,6 +670,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
   };
 
   const handleRepeatBet = () => {
+    initAudioCtx(); 
     if (gamePhase !== 'betting') return;
     const totalRepeatCost = Object.values(lastBets).reduce((acc, curr) => acc + curr, 0);
     if (totalRepeatCost === 0 || balance < totalRepeatCost) return;
@@ -745,9 +799,11 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
         {!loading && (
           <>
             <div className="absolute top-2 left-2 z-30 flex items-center gap-1">
-              
               <button
-                onClick={() => setIsMuted(!isMuted)}
+                onClick={() => {
+                  initAudioCtx(); 
+                  setIsMuted(!isMuted);
+                }}
                 aria-label="Sound Toggle"
                 className="w-6 h-6 rounded-md flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.25),inset_0_1px_1px_rgba(255,255,255,0.6)] active:scale-95 transition-all duration-150"
               >
@@ -1074,19 +1130,17 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
         {showWinnerSheet && (
           <div className="absolute inset-x-0 bottom-0 h-[48vh] bg-[#0c0c0e]/95 backdrop-blur-xl rounded-t-xl shadow-[0_-10px_30px_rgba(0,0,0,0.95)] z-50 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
             
-            {/* Top Container: Animal & Rows */}
             <div className="w-full flex items-start justify-between px-3 pt-4">
-              <div className="flex items-center gap-4 mt-5">
+              <div className="flex items-center gap-5 mt-3"> 
                 
-                {/* Animal Frame BADA KIYA - w-24 h-24 */}
                 <div className="flex-shrink-0 flex items-center justify-center">
                   {winMode === 'single' && winnerAnimal && (
-                    <div className="w-24 h-24 flex items-center justify-center scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="w-24 h-24 flex items-center justify-center scale-110 drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]">
                       <GreenScreenImage src={winnerAnimal.src} className="w-full h-full object-contain" />
                     </div>
                   )}
                   {winMode === 'mix_big' && (
-                    <div className="grid grid-cols-2 gap-2 w-24 h-24 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="grid grid-cols-2 gap-1.5 w-24 h-24 p-0.5 drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]">
                       {animals.slice(4, 8).map((a) => (
                         <div key={a.alt} className="w-10 h-10">
                           <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
@@ -1095,7 +1149,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                     </div>
                   )}
                   {winMode === 'mix_small' && (
-                    <div className="grid grid-cols-2 gap-2 w-24 h-24 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                    <div className="grid grid-cols-2 gap-1.5 w-24 h-24 p-0.5 drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]">
                       {animals.slice(0, 4).map((a) => (
                         <div key={a.alt} className="w-10 h-10">
                           <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
@@ -1105,28 +1159,23 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                   )}
                 </div>
 
-                {/* Amounts Details in Grid Rows BADA KIYA TEXT & ICONS */}
-                <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-2 items-center ml-2">
-                  
-                  {/* Row 1: Winning Amount */}
-                  <span className="text-xs text-white/70 uppercase font-bold text-left">Winning Amount</span>
+                <div className="grid grid-cols-[auto_auto] gap-x-2 gap-y-1.5 items-center">
+                  <span className="text-[10px] text-white/70 uppercase font-bold text-left">Winning Amount</span>
                   <div className="flex items-center gap-1">
-                    <LoadingShaderImage src="/1786855398290.png" className="w-5 h-5 object-contain" />
-                    <span className="text-yellow-400 font-black text-lg tracking-wide leading-none">
+                    <LoadingShaderImage src="/1786855398290.png" className="w-4 h-4 object-contain" />
+                    <span className="text-yellow-400 font-black text-sm tracking-wide leading-none">
                       {roundWinningAmount.toLocaleString()}
                     </span>
                   </div>
 
-                  {/* Row 2: Bet Amount */}
-                  <span className="text-xs text-white/70 uppercase font-bold text-left">Bet Amount</span>
+                  <span className="text-[10px] text-white/70 uppercase font-bold text-left">Bet Amount</span>
                   <div className="flex items-center gap-1">
-                    <LoadingShaderImage src="/1786855398290.png" className="w-5 h-5 object-contain opacity-80" />
-                    <span className="text-white font-bold text-sm tracking-wide leading-none">
+                    <LoadingShaderImage src="/1786855398290.png" className="w-4 h-4 object-contain opacity-80" />
+                    <span className="text-white font-bold text-xs tracking-wide leading-none">
                       {roundBetAmount.toLocaleString()}
                     </span>
                   </div>
                 </div>
-
               </div>
 
               <div className="pr-1 pt-2">
@@ -1136,17 +1185,15 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
               </div>
             </div>
 
-            {/* Bottom Podium & Heading Section */}
-            <div className="w-full flex-1 flex flex-col items-center justify-end">
+            <div className="w-full flex-1 flex flex-col items-center justify-end pb-6">
               
-              {/* Heading Image Thodi Kam Wide Ki Hai (w-[85%]) */}
-              <img src="/IMG_20260913_000423.png" alt="Heading" className="w-[85%] mx-auto h-auto object-cover mb-1 drop-shadow-md" />
+              <img src="/IMG_20260913_000423.png" alt="Heading" className="w-full h-auto object-cover mb-1 drop-shadow-md" />
               
-              {/* Top 3 Fake Podium */}
+              {/* FIXED PODIUM: Sab ek row mein hain, sirf Center wala halka sa upar hai */}
               <div className="flex items-end justify-center gap-3 w-full px-1">
                 
-                {/* Top 2 (Left) */}
-                <div className="flex flex-col items-center pb-1">
+                {/* Top 2 (Left) - Same row as Top 3 */}
+                <div className="flex flex-col items-center pb-0">
                   <div className="relative w-16 h-16 flex items-center justify-center mb-1">
                     <img src={fakePodiumUsers[1].avatar} className="w-11 h-11 rounded-full object-cover" />
                     <img src="/IMG_20260912_235156.png" className="absolute inset-0 w-full h-full object-contain z-10 scale-110" />
@@ -1158,8 +1205,8 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                   </div>
                 </div>
 
-                {/* Top 1 (Center) */}
-                <div className="flex flex-col items-center pb-6">
+                {/* Top 1 (Center) - Sirf yeh thoda sa upar (pb-3) */}
+                <div className="flex flex-col items-center pb-3">
                   <div className="relative w-24 h-24 flex items-center justify-center mb-1">
                     <img src={fakePodiumUsers[0].avatar} className="w-16 h-16 rounded-full object-cover" />
                     <img src="/IMG_20260912_235215.png" className="absolute inset-0 w-full h-full object-contain z-10 scale-110" />
@@ -1171,7 +1218,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                   </div>
                 </div>
 
-                {/* Top 3 (Right) */}
+                {/* Top 3 (Right) - Same row as Top 2 */}
                 <div className="flex flex-col items-center pb-0">
                   <div className="relative w-16 h-16 flex items-center justify-center mb-1">
                     <img src={fakePodiumUsers[2].avatar} className="w-11 h-11 rounded-full object-cover" />
