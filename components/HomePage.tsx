@@ -2094,7 +2094,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     src={card.bgImage} 
                     alt={card.label} 
                     className={`absolute inset-0 w-full h-full object-contain z-0 pointer-events-none ${
-                      isHonour ? 'scale-[1.08]' : 'scale-100'
+                      isHonour ? 'scale-[1.08]' : 'scale-102'
                     }`}
                     draggable="false"
                   />
