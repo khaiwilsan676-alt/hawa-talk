@@ -2037,9 +2037,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
           ref={categoryCardsRef}
           className="w-full px-0" 
           style={{ 
-            marginTop: '-16px', 
             transform: `translateY(${categoryOffset}px)`,
-            marginBottom: `${categoryOffset}px`,
+            marginBottom: '-28px', 
             position: 'relative', 
             zIndex: 10,
             willChange: 'transform'
@@ -2049,34 +2048,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
-            {CATEGORY_CARDS.map((card, i) => (
-              <div
-                key={card.label}
-                onClick={() => {
-                  setLeaderboardTab(card.tab)
-                  setCurrentPage('leaderboard')
-                }}
-                className="group flex-1 cursor-pointer flex flex-col items-center justify-between"
-                style={{
-                  height: CARD_HEIGHT,
-                  minHeight: CARD_HEIGHT,
-                  maxHeight: CARD_HEIGHT,
-                  minWidth: 0,
-                  borderRadius: '16px',
-                  opacity: mounted ? 1 : 0,
-                  transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
-                  transition: 'transform 420ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 280ms ease, opacity 420ms ease',
-                  animation: mounted ? 'cardIn 560ms cubic-bezier(0.22,1,0.36,1) both' : 'none',
-                  animationDelay: `${i * 100}ms`,
-                  position: 'relative', 
-                  overflow: 'hidden'    
-                }}
-              >
-                {/* 1. ULTRA METALLIC SHINING GOLD HEADING */}
+          {/* 1. ULTRA METALLIC SHINING GOLD HEADING */}
 <div 
   className="w-full text-center font-black uppercase tracking-wider z-30 select-none"
   style={{
-    marginTop: '8px',
+    marginTop: '6px',
     fontSize: '13px',
     letterSpacing: '0.6px',
     /* 5-stop metallic gold gradient: Pure highlight se dark antique gold */
@@ -2089,81 +2065,107 @@ export default function HomePage({ onLogout }: HomePageProps) {
   }}
 >
   {card.label}
-</div>
+</div>{CATEGORY_CARDS.map((card, i) => {
+  // Honour ke liye alag size, Charm aur Room ke liye normal size
+  const isHonour = card.label === 'Honour';
+  const cardHeight = isHonour ? '110px' : '90px';       // 👈 Honour ki card height
+  const imageWidth = isHonour ? '105%' : '100%';        // 👈 Honour ki image width
+  const imageHeight = isHonour ? '105%' : '100%';       // 👈 Honour ki image height
 
+  return (
+    <div
+      key={card.label}
+      onClick={() => {
+        setLeaderboardTab(card.tab)
+        setCurrentPage('leaderboard')
+      }}
+      className="group flex-1 cursor-pointer flex flex-col items-center justify-between"
+      style={{
+        height: cardHeight,
+        minHeight: cardHeight,
+        maxHeight: cardHeight,
+        minWidth: 0,
+        borderRadius: '16px',
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'translateY(0) scale(1)' : 'translateY(14px) scale(0.96)',
+        transition: 'all 200ms ease',
+        position: 'relative', 
+        overflow: 'hidden'    
+      }}
+    >
+      {/* 1. TOP GOLDEN HEADING */}
+      <div 
+        className="w-full text-center font-black uppercase tracking-wider z-30 select-none"
+        style={{
+          marginTop: isHonour ? '8px' : '6px',
+          fontSize: isHonour ? '14px' : '12.5px',
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF5A5 18%, #F7D046 45%, #D49410 75%, #8A5600 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          WebkitTextStroke: '0.4px rgba(100, 60, 0, 0.7)',
+          filter: 'drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.9)) drop-shadow(0px 0px 5px rgba(255, 215, 0, 0.6))',
+        }}
+      >
+        {card.label}
+      </div>
 
-                {/* 2. CARD IMAGE (Object-contain ke saath, H aur W aap upar se set kar sakte hain) */}
-                <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
-                  <img 
-                    src={card.bgImage} 
-                    alt={card.label} 
-                    style={{
-                      width: IMAGE_WIDTH,
-                      height: IMAGE_HEIGHT,
-                      objectFit: 'contain'
-                    }}
-                    draggable="false"
-                  />
-                </div>
+      {/* 2. CARD IMAGE */}
+      <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
+        <img 
+          src={card.bgImage} 
+          alt={card.label} 
+          style={{
+            width: imageWidth,
+            height: imageHeight,
+            objectFit: 'contain'
+          }}
+          draggable="false"
+        />
+      </div>
 
-                {/* 3. BADE CARD KI BOUNDARY WALA CONTAINER (FRAME & ANIMATION) */}
-                <div className="absolute left-0 right-0 bottom-0 w-full z-40 pointer-events-none block">
-                  
-                  {/* SHRINK ANIMATION */}
-                  <style dangerouslySetInnerHTML={{ __html: `
-                    @keyframes shrinkAndFade {
-                      0%, 80% { transform: scale(1); opacity: 1; }
-                      95% { transform: scale(0.5); opacity: 0; }
-                      100% { transform: scale(0); opacity: 0; }
-                    }
-                  `}} />
-                  
-                  {/* ANIMATED FRAME */}
-                  <div 
-                    className="relative w-[85%] mx-auto flex items-center justify-center z-10"
-                    style={{ 
-                      animation: 'shrinkAndFade 5s ease-in-out infinite', 
-                      marginBottom: '10px',
-                      transformOrigin: 'center' 
-                    }}
-                  >
-                    
-                    {/* FRAME IMAGE */}
-                    <img 
-                      src="/file_00000000048882118276c7215012963f.png" 
-                      alt="Frame" 
-                      className="w-full h-auto block z-30"
-                      draggable="false"
-                    />
-                    
-                    {/* LOGOS */}
-                    <div className="absolute inset-0 flex flex-row items-center justify-center z-20">
-                      <img 
-                        src="/logo.png" 
-                        alt="Left" 
-                        className="rounded-full object-cover shadow-sm relative shrink-0" 
-                        style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginRight: '3%' }}
-                      />
-                      <img 
-                        src="/logo.png" 
-                        alt="Middle" 
-                        className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
-                        style={{ width: '32%', height: 'auto', aspectRatio: '1/1', marginBottom: '3%' }} 
-                      />
-                      <img 
-                        src="/logo.png" 
-                        alt="Right" 
-                        className="rounded-full object-cover shadow-sm relative shrink-0" 
-                        style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginLeft: '3%' }}
-                      />
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            ))}
+      {/* 3. BADE CARD KI BOUNDARY WALA CONTAINER (FRAME & ANIMATION) */}
+      <div className="absolute left-0 right-0 bottom-0 w-full z-40 pointer-events-none block">
+        <div 
+          className="relative w-[85%] mx-auto flex items-center justify-center z-10"
+          style={{ 
+            animation: 'shrinkAndFade 5s ease-in-out infinite', 
+            marginBottom: '15px',
+            transformOrigin: 'center' 
+          }}
+        >
+          <img 
+            src="/file_00000000048882118276c7215012963f.png" 
+            alt="Frame" 
+            className="w-full h-auto block z-30"
+            draggable="false"
+          />
+          
+          <div className="absolute inset-0 flex flex-row items-center justify-center z-20">
+            <img 
+              src="/logo.png" 
+              alt="Left" 
+              className="rounded-full object-cover shadow-sm relative shrink-0" 
+              style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginRight: '3%' }}
+            />
+            <img 
+              src="/logo.png" 
+              alt="Middle" 
+              className="rounded-full object-cover shadow-md border-[1.5px] border-white/80 relative shrink-0 z-10" 
+              style={{ width: '32%', height: 'auto', aspectRatio: '1/1', marginBottom: '3%' }} 
+            />
+            <img 
+              src="/logo.png" 
+              alt="Right" 
+              className="rounded-full object-cover shadow-sm relative shrink-0" 
+              style={{ width: '24%', height: 'auto', aspectRatio: '1/1', marginTop: '4%', marginLeft: '3%' }}
+            />
           </div>
         </div>
+      </div>
+    </div>
+  );
+})}
+
 
         {/* Global Rooms Grid */}
         {allRooms.length > 0 ? (
