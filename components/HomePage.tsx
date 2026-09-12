@@ -615,19 +615,19 @@ type SearchTab = 'user' | 'room'
 
 const CATEGORY_CARDS = [
   {
-    label: '',
+    label: 'Honour',
     tab: 'honour' as const,
-    bgImage: '/file_00000000128481f4a8b5279e2372c1c8.png',
+    bgImage: '/IMG_20260912_144404.png',
   },
   {
-    label: '',
+    label: 'Charm',
     tab: 'charm' as const,
-    bgImage: '/file_00000000c1088209a767a292d62ec478.png',
+    bgImage: '/IMG_20260912_144324.png',
   },
   {
-    label: '',
+    label: 'Room',
     tab: 'room' as const,
-    bgImage: '/file_00000000fe7c8211aeeeefce1a0d7349.png',
+    bgImage: '/IMG_20260912_144347.png',
   },
 ];
 
@@ -2032,7 +2032,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           ref={categoryCardsRef}
           className="w-full px-3" 
           style={{ 
-            marginTop: '-2', 
+            marginTop: '-5', 
             transform: `translateY(${categoryOffset}px)`,
             marginBottom: `${categoryOffset}px`,
             position: 'relative', 
