@@ -2076,8 +2076,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <div 
                     className="relative w-full text-center font-black uppercase tracking-wider select-none z-50 pointer-events-none"
                     style={{
-                      paddingTop: '16px',
-                      fontSize: '12px',
+                      paddingTop: '10px',
+                      fontSize: '11px',
                       lineHeight: '1.2',
                       background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF5A5 18%, #F7D046 45%, #D49410 75%, #8A5600 100%)',
                       WebkitBackgroundClip: 'text',
@@ -2100,7 +2100,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   />
 
                   {/* 3. FRAME & ANIMATION */}
-                  <div className="absolute left-0 right-0 bottom-2 w-full z-40 pointer-events-none block -translate-y-1.5">
+                  <div className="absolute left-0 right-0 bottom-4 w-full z-40 pointer-events-none block -translate-y-1.5">
                     <style dangerouslySetInnerHTML={{ __html: `
                       @keyframes shrinkAndFade {
                         0%, 80% { transform: scale(1); opacity: 1; }
