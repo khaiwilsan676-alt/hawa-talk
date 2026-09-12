@@ -442,7 +442,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Global Time-Synced Smooth Spinner (Spins full 14s, locks exactly at 1s remaining)
+  // Global Time-Synced Smooth Spinner (Ab jump nahi karega, smooth deceleration logic lagaya hai)
   useEffect(() => {
     if (gamePhase !== 'spinning') {
       if (gamePhase === 'betting') {
@@ -463,23 +463,16 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
 
       if (spinTimeMs < 0) return;
 
-      // Between 0ms and 14000ms: continuous fast spin
-      if (spinTimeMs < 14000) {
-        const step = Math.floor(spinTimeMs / 85) % 8;
-        setActiveHighlightIndex(step);
-      } 
-      // In the final 1 second (14000ms to 15000ms): decelerates smoothly directly into targetIdx
-      else if (spinTimeMs < 15000) {
-        const progressInLastSec = (spinTimeMs - 14000) / 1000; // 0.0 to 1.0
-        if (progressInLastSec < 0.4) {
-          setActiveHighlightIndex((targetIdx + 6) % 8);
-        } else if (progressInLastSec < 0.75) {
-          setActiveHighlightIndex((targetIdx + 7) % 8);
-        } else {
-          setActiveHighlightIndex(targetIdx);
-        }
-      } else {
+      if (spinTimeMs >= 15000) {
         setActiveHighlightIndex(targetIdx);
+      } else {
+        // Smooth easing cubic math taaki bina jump ke correct winner par wheel slowly ruke
+        const progress = spinTimeMs / 15000;
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const finalStepsCount = 160 + targetIdx; // 20 full rounds lagayega end me winner aayega
+        const currentStep = Math.floor(easeOut * finalStepsCount);
+        
+        setActiveHighlightIndex(currentStep % 8);
       }
     }, 30);
 
@@ -1027,24 +1020,26 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
             <div className="w-full flex items-start justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="flex-shrink-0 flex items-center justify-center">
+                  
+                  {/* YAHA WINNER ANIMAL KA SIZE BADA KIYA HAI (`w-20 h-20` and drop shadow scale) */}
                   {winMode === 'single' && winnerAnimal && (
-                    <div className="w-14 h-14 flex items-center justify-center">
+                    <div className="w-20 h-20 flex items-center justify-center scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       <GreenScreenImage src={winnerAnimal.src} className="w-full h-full object-contain" />
                     </div>
                   )}
                   {winMode === 'mix_big' && (
-                    <div className="grid grid-cols-2 gap-1 w-14 h-14">
+                    <div className="grid grid-cols-2 gap-2 w-20 h-20 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       {animals.slice(4, 8).map((a) => (
-                        <div key={a.alt} className="w-6 h-6">
+                        <div key={a.alt} className="w-9 h-9">
                           <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
                         </div>
                       ))}
                     </div>
                   )}
                   {winMode === 'mix_small' && (
-                    <div className="grid grid-cols-2 gap-1 w-14 h-14">
+                    <div className="grid grid-cols-2 gap-2 w-20 h-20 p-0.5 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
                       {animals.slice(0, 4).map((a) => (
-                        <div key={a.alt} className="w-6 h-6">
+                        <div key={a.alt} className="w-9 h-9">
                           <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
                         </div>
                       ))}
