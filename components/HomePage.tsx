@@ -2151,7 +2151,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
 
         {/* Global Rooms Grid */}
         {allRooms.length > 0 ? (
-          <div className="px-3" style={{ marginTop: isAndroid ? '3px' }}>
+          <div className="px-3" style={{ marginTop: isAndroid ? '3px' : '11px' }}>
             <div className="grid grid-cols-2 gap-1.5">
               {allRooms.map((room) => (
                 <div
