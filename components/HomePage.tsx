@@ -2024,15 +2024,20 @@ export default function HomePage({ onLogout }: HomePageProps) {
     </div>
   );
 
-   // ============ RENDER POPULAR TAB ============
+      // ============ RENDER POPULAR TAB ============
   const renderPopularTab = () => {
+    // ⚙️ YAHAN SE CARD KA SIZE KHUD ADJUST KAREIN
+    const CARD_HEIGHT = '100px';   // Apne hisaab se height set karein (e.g. 90px, 105px, 120px)
+    const IMAGE_WIDTH = '100%';    // Image ki width (e.g. '100%', '90%', '80px')
+    const IMAGE_HEIGHT = '100%';   // Image ki height (e.g. '100%', '85%', '70px')
+
     return (
       <>
         <div 
           ref={categoryCardsRef}
-          className="w-full px-3" 
+          className="w-full px-0" 
           style={{ 
-            marginTop: '-5', 
+            marginTop: '-12px', 
             transform: `translateY(${categoryOffset}px)`,
             marginBottom: `${categoryOffset}px`,
             position: 'relative', 
@@ -2040,7 +2045,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             willChange: 'transform'
           }}
         >
-          <div className="flex flex-row justify-between items-center gap-1.5 select-none w-full" style={{ 
+          <div className="flex flex-row justify-between items-center gap-1.5 select-none w-full px-1" style={{ 
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
@@ -2051,11 +2056,11 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   setLeaderboardTab(card.tab)
                   setCurrentPage('leaderboard')
                 }}
-                className="group flex-1 cursor-pointer"
+                className="group flex-1 cursor-pointer flex flex-col items-center justify-between"
                 style={{
-                  height: '90px',
-                  minHeight: '90px',
-                  maxHeight: '90px',
+                  height: CARD_HEIGHT,
+                  minHeight: CARD_HEIGHT,
+                  maxHeight: CARD_HEIGHT,
                   minWidth: 0,
                   borderRadius: '16px',
                   opacity: mounted ? 1 : 0,
@@ -2067,15 +2072,37 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   overflow: 'hidden'    
                 }}
               >
-                {/* 1. AAPKI NAYI CARD IMAGE (Puraane CSS gradient background ki jagah) */}
-                <img 
-                  src={card.bgImage} 
-                  alt={card.label} 
-                  className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none"
-                  draggable="false"
-                />
+                {/* 1. TOP GOLDEN HEADING */}
+                <div 
+                  className="w-full text-center font-extrabold uppercase tracking-wide z-30"
+                  style={{
+                    paddingTop: '4px',
+                    fontSize: '13px',
+                    background: 'linear-gradient(180deg, #FFE894 0%, #E2A838 50%, #9E6B15 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                    filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))'
+                  }}
+                >
+                  {card.label}
+                </div>
 
-                {/* 2. BADE CARD KI BOUNDARY WALA CONTAINER (WOHI ORIGINAL ANIMATION & FRAME) */}
+                {/* 2. CARD IMAGE (Object-contain ke saath, H aur W aap upar se set kar sakte hain) */}
+                <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
+                  <img 
+                    src={card.bgImage} 
+                    alt={card.label} 
+                    style={{
+                      width: IMAGE_WIDTH,
+                      height: IMAGE_HEIGHT,
+                      objectFit: 'contain'
+                    }}
+                    draggable="false"
+                  />
+                </div>
+
+                {/* 3. BADE CARD KI BOUNDARY WALA CONTAINER (FRAME & ANIMATION) */}
                 <div className="absolute left-0 right-0 bottom-0 w-full z-40 pointer-events-none block">
                   
                   {/* SHRINK ANIMATION */}
@@ -2128,7 +2155,6 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     </div>
                   </div>
 
-                                    
                 </div>
               </div>
             ))}
@@ -2187,6 +2213,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       </>
     );
   };
+
 
           
 
