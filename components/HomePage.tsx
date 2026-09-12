@@ -706,6 +706,8 @@ export default function HomePage({ onLogout }: HomePageProps) {
   }, [])
 
   const t = getTranslation(appLang)
+
+
   const [activeMineTab, setActiveMineTab] = useState<MineTab>('following')
   const [currentPage, setCurrentPage] = useState<Page>('home')
   const [leaderboardTab, setLeaderboardTab] = useState<'honour' | 'charm' | 'room'>('honour')
@@ -1253,6 +1255,46 @@ export default function HomePage({ onLogout }: HomePageProps) {
       window.removeEventListener('popstate', handlePopState)
     }
   }, [isInviteFriendsOpen])
+
+  // Listen to hardware back press
+  useEffect(() => {
+    const handleHardwareBack = (e: Event) => {
+      // Allow default behavior (minimize) if we are on the 'home' page
+      if (currentPage === 'home') {
+        if (isSearchOpen) {
+           e.preventDefault();
+           setIsSearchOpen(false);
+           return;
+        }
+        if (isInviteFriendsOpen) {
+           e.preventDefault();
+           setIsInviteFriendsOpen(false);
+           return;
+        }
+        return; // Don't prevent default, app will minimize
+      }
+
+      // If we are not on the 'home' page (e.g. 'me', 'message', 'public_profile', 'leaderboard', 'room' etc)
+      // we shouldn't minimize the app. BUT 'room' page handles its own back button logic to show exit menu.
+      if (currentPage !== 'room') {
+         e.preventDefault(); // Prevent minimize app
+
+         if (currentPage === 'public_profile') {
+           handleBackFromPublicProfile();
+         } else if (currentPage === 'leaderboard') {
+           setCurrentPage('home');
+         } else {
+           setCurrentPage('home');
+         }
+      }
+    };
+
+    window.addEventListener('hardwareBackPress', handleHardwareBack);
+
+    return () => {
+      window.removeEventListener('hardwareBackPress', handleHardwareBack);
+    };
+  }, [currentPage, isSearchOpen, isInviteFriendsOpen]);
 
   // ============ SIGN IN DAY ============
   useEffect(() => {
