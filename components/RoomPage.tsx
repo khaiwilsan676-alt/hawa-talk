@@ -1181,7 +1181,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
             {renderSeats()}
           </div>
 
-          <div ref={messagesContainerRef} className="mx-1 mt-2 flex-1 overflow-y-auto scrollbar-none">
+          <div ref={messagesContainerRef} className="mx-1 mt-4 flex-1 overflow-y-auto scrollbar-none">
             {/* Announcement Box */}
             <div className="mx-1 mb-3 flex justify-start">
               <div 
@@ -2222,7 +2222,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
               />
               {isMuted && (
                 <div 
-                  className="absolute right-0.5 bottom-1.5 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" 
+                  className="absolute right-1 bottom-1.5 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" 
                   style={{ width: 'calc(var(--seat-size) * 0.24)', height: 'calc(var(--seat-size) * 0.24)' }}
                 >
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.15)', height: 'calc(var(--seat-size) * 0.15)' }}>
