@@ -2076,10 +2076,10 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   <div 
                     className="relative w-full text-center font-black uppercase tracking-wider select-none z-50 pointer-events-none"
                     style={{
-                      paddingTop: '10px',
+                      paddingTop: '8px',
                       fontSize: '11px',
                       lineHeight: '1.2',
-                      background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF5A5 18%, #F7D046 45%, #D49410 75%, #8A5600 100%)',
+                      background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF8B5 35%, #FFD700 70%, #F5B000 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       WebkitTextStroke: '0.4px rgba(100, 60, 0, 0.7)',
