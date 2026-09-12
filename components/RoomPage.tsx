@@ -2171,8 +2171,8 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
               <div 
                 className="absolute pointer-events-none"
                 style={{
-                  top: '50%',
-                  left: '50%',
+                  top: '52%',
+                  left: '51%',
                   transform: 'translate(-50%, -50%)',
                   width: '100%',
                   height: '100%',
@@ -2200,7 +2200,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
 
               {isMuted && (
   <div 
-    className="absolute right-0 bottom-0 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" 
+    className="absolute right-0.5 bottom-1.5 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" 
     style={{ width: 'calc(var(--seat-size) * 0.24)', height: 'calc(var(--seat-size) * 0.24)' }}
   >
     <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.15)', height: 'calc(var(--seat-size) * 0.15)' }}>
@@ -2222,7 +2222,7 @@ function SeatItem({ seatNumber, seatData, onClick, onAvatarClick, accountId, roo
               />
               {isMuted && (
                 <div 
-                  className="absolute right-0 bottom-0 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" 
+                  className="absolute right-0.5 bottom-1.5 rounded-full bg-red-500 flex items-center justify-center shadow-md z-30" 
                   style={{ width: 'calc(var(--seat-size) * 0.24)', height: 'calc(var(--seat-size) * 0.24)' }}
                 >
                   <svg viewBox="0 0 24 24" className="fill-none stroke-white stroke-[3] stroke-linecap-round stroke-linejoin-round" style={{ width: 'calc(var(--seat-size) * 0.15)', height: 'calc(var(--seat-size) * 0.15)' }}>
