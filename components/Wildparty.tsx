@@ -33,7 +33,6 @@ interface RoundHistoryRecord {
 
 type WinMode = 'single' | 'mix_big' | 'mix_small';
 
-// Track initialization: Minimize par true rahega, Cross (Close) par reset hoke false ho jayega
 let hasInitialLoaded = false;
 
 // 1. WebGL Shader: White Background remover
@@ -189,7 +188,6 @@ function GreenScreenImage({ src, className }: { src: string; className?: string 
 }
 
 export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
-  // Initial check: Agar minimize karke open kiya toh loading false, cross karke kiya toh loading true
   const [loading, setLoading] = useState(!hasInitialLoaded);
   const [progress, setProgress] = useState(hasInitialLoaded ? 100 : 0);
 
@@ -329,7 +327,6 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     loadDataFromDB();
   }, []);
 
-  // Loading Progress logic
   useEffect(() => {
     if (hasInitialLoaded) {
       setLoading(false);
@@ -353,13 +350,11 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     return () => clearInterval(timer);
   }, []);
 
-  // Close Button Click: Reset flag so next open shows loading page
   const handleClose = () => {
     hasInitialLoaded = false;
     onClose();
   };
 
-  // Minimize Click: Keep hasInitialLoaded = true so next open skips loading page
   const handleMinimize = () => {
     hasInitialLoaded = true;
     if (onMinimize) {
@@ -367,24 +362,36 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }
   };
 
-  // Seeded Outcome Generator
+  // Pure Deterministic Global Outcome Function (Same across all phones)
   const determineRoundOutcome = (roundNo: number): { mode: WinMode; winnerIndex: number } => {
-    const seed = Math.sin(roundNo * 9999 + 123) * 10000;
+    const seed = Math.sin(roundNo * 127.1 + 311.7) * 43758.5453123;
     const pseudoRand = seed - Math.floor(seed);
     const roll = pseudoRand * 100;
 
-    if (roll < 2) {
+    if (roll < 0.8) {
       return { mode: 'mix_big', winnerIndex: 6 };
     }
-    if (roll < 6) {
+    if (roll < 2.3) {
       return { mode: 'mix_small', winnerIndex: 1 };
     }
+    if (roll < 3.3) {
+      return { mode: 'single', winnerIndex: 7 };
+    }
+    if (roll < 4.8) {
+      return { mode: 'single', winnerIndex: 6 };
+    }
+    if (roll < 6.5) {
+      return { mode: 'single', winnerIndex: 5 };
+    }
+    if (roll < 9.0) {
+      return { mode: 'single', winnerIndex: 4 };
+    }
 
-    const pool = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5, 6, 7];
-    const pickIdx = Math.floor(pseudoRand * pool.length);
+    const lowPool = [0, 1, 2, 3];
+    const subIdx = Math.floor(((roll - 9.0) / 91.0) * lowPool.length) % lowPool.length;
     return {
       mode: 'single',
-      winnerIndex: pool[pickIdx],
+      winnerIndex: lowPool[Math.max(0, subIdx)],
     };
   };
 
@@ -393,7 +400,7 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     winnerIndex: 1,
   });
 
-  // Cycle Engine (48s: 30s Bet, 15s Spin, 3s Result)
+  // Global Synchronized Clock Engine (48s cycle: 30s Betting, 15s Spinning, 3s Result)
   useEffect(() => {
     if (loading) return;
 
@@ -431,11 +438,11 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     };
 
     syncTick();
-    const interval = setInterval(syncTick, 1000);
+    const interval = setInterval(syncTick, 250);
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Smooth Natural Stopping Spinner (No Instant Jump)
+  // Global Time-Synced Smooth Spinner (Spins full 14s, locks exactly at 1s remaining)
   useEffect(() => {
     if (gamePhase !== 'spinning') {
       if (gamePhase === 'betting') {
@@ -444,43 +451,41 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
       return;
     }
 
-    let isCancelled = false;
+    const resetBoundary = get5AMResetBoundary();
+    const roundDuration = 48;
     const targetIdx = targetOutcomeRef.current.winnerIndex;
 
-    const currentPos = activeHighlightIndex ?? 0;
-    const extraFullSpins = 12 * 8;
-    const diff = (targetIdx - (currentPos % 8) + 8) % 8;
-    const totalSteps = extraFullSpins + diff;
-    let completedSteps = 0;
+    const animFrame = setInterval(() => {
+      const now = Date.now();
+      const elapsedMs = now - resetBoundary;
+      const cycleMs = elapsedMs % (roundDuration * 1000);
+      const spinTimeMs = cycleMs - 30000; // 0 to 15000ms
 
-    const runSpinStep = () => {
-      if (isCancelled || gamePhase !== 'spinning') return;
+      if (spinTimeMs < 0) return;
 
-      completedSteps++;
-      setActiveHighlightIndex((currentPos + completedSteps) % 8);
-
-      if (completedSteps >= totalSteps) {
+      // Between 0ms and 14000ms: continuous fast spin
+      if (spinTimeMs < 14000) {
+        const step = Math.floor(spinTimeMs / 85) % 8;
+        setActiveHighlightIndex(step);
+      } 
+      // In the final 1 second (14000ms to 15000ms): decelerates smoothly directly into targetIdx
+      else if (spinTimeMs < 15000) {
+        const progressInLastSec = (spinTimeMs - 14000) / 1000; // 0.0 to 1.0
+        if (progressInLastSec < 0.4) {
+          setActiveHighlightIndex((targetIdx + 6) % 8);
+        } else if (progressInLastSec < 0.75) {
+          setActiveHighlightIndex((targetIdx + 7) % 8);
+        } else {
+          setActiveHighlightIndex(targetIdx);
+        }
+      } else {
         setActiveHighlightIndex(targetIdx);
-        return;
       }
+    }, 30);
 
-      const remaining = totalSteps - completedSteps;
-      let delay = 90;
-      if (remaining <= 16) {
-        delay = 90 + (16 - remaining) * 22;
-      }
-
-      setTimeout(runSpinStep, delay);
-    };
-
-    runSpinStep();
-
-    return () => {
-      isCancelled = true;
-    };
+    return () => clearInterval(animFrame);
   }, [gamePhase]);
 
-  // Winner Recording & Payout
   const processedRoundsRef = useRef<{ [key: number]: boolean }>({});
 
   useEffect(() => {
@@ -552,7 +557,6 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
     }
   }, [gamePhase, winnerAnimal, currentRoundNo]);
 
-  // 5-Second Winner Sheet Auto-Close Countdown
   useEffect(() => {
     if (!showWinnerSheet) return;
 
@@ -740,7 +744,6 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                 </div>
               </button>
 
-              {/* Minimize Action */}
               <button
                 onClick={handleMinimize}
                 aria-label="Minimize Game"
@@ -751,7 +754,6 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
                 </svg>
               </button>
 
-              {/* Close (Cross) Action */}
               <button
                 onClick={handleClose}
                 aria-label="Close"
@@ -844,13 +846,13 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
           </>
         )}
 
-        {/* Center Content */}
+        {/* Center Content: New Logo on Loading Screen */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
           {loading ? (
             <div className="flex flex-col items-center justify-center">
               <LoadingShaderImage
-                src="/1787338085121.png"
-                className="w-24 h-24 object-contain mb-6"
+                src="/file_000000009d808211b8ffb7c2183b4ef5.png"
+                className="w-24 h-24 object-contain mb-6 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
               />
               <div className="w-64 bg-white/30 rounded-full h-2 overflow-hidden">
                 <div
@@ -1019,82 +1021,72 @@ export default function Wildparty({ onClose, onMinimize }: WildpartyProps) {
           </div>
         )}
 
-        {/* 40vh Winner Bottom Sheet: Clean, Card-Free & Plain Text */}
+        {/* 40vh Winner Bottom Sheet */}
         {showWinnerSheet && (
-          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl rounded-md shadow-[0_-10px_30px_rgba(0,0,0,0.95)] z-50 flex flex-col justify-between overflow-hidden animate-in slide-in-from-bottom duration-200">
-            {/* Top Right: Only Clean 5s Text Countdown */}
-            <div className="w-full flex justify-end px-4 pt-3">
-              <span className="text-red-400 font-black text-sm tracking-tight drop-shadow-sm">
-                {winnerCountdown}s
-              </span>
-            </div>
+          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-[#0c0c0e]/95 backdrop-blur-xl rounded-md shadow-[0_-10px_30px_rgba(0,0,0,0.95)] z-50 flex flex-col justify-between overflow-hidden animate-in slide-in-from-bottom duration-200 p-2">
+            <div className="w-full flex items-start justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex-shrink-0 flex items-center justify-center">
+                  {winMode === 'single' && winnerAnimal && (
+                    <div className="w-14 h-14 flex items-center justify-center">
+                      <GreenScreenImage src={winnerAnimal.src} className="w-full h-full object-contain" />
+                    </div>
+                  )}
+                  {winMode === 'mix_big' && (
+                    <div className="grid grid-cols-2 gap-1 w-14 h-14">
+                      {animals.slice(4, 8).map((a) => (
+                        <div key={a.alt} className="w-6 h-6">
+                          <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {winMode === 'mix_small' && (
+                    <div className="grid grid-cols-2 gap-1 w-14 h-14">
+                      {animals.slice(0, 4).map((a) => (
+                        <div key={a.alt} className="w-6 h-6">
+                          <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-            {/* Middle Section: Left Winner Animal + Right Side Plain Text Amounts */}
-            <div className="flex-1 flex items-center px-6 py-2 gap-5">
-              <div className="flex-shrink-0 flex items-center justify-center">
-                {winMode === 'single' && winnerAnimal && (
-                  <div className="w-20 h-20 flex items-center justify-center">
-                    <GreenScreenImage src={winnerAnimal.src} className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]" />
+                <div className="flex flex-col justify-center gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <LoadingShaderImage
+                      src="/1786855398290.png"
+                      className="w-4 h-4 object-contain"
+                    />
+                    <span className="text-yellow-400 font-black text-sm tracking-wide leading-none">
+                      {roundWinningAmount.toLocaleString()}
+                    </span>
                   </div>
-                )}
-                {winMode === 'mix_big' && (
-                  <div className="grid grid-cols-2 gap-1.5 w-20 h-20">
-                    {animals.slice(4, 8).map((a) => (
-                      <div key={a.alt} className="w-9 h-9">
-                        <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
-                      </div>
-                    ))}
+
+                  <div className="flex items-center gap-1.5">
+                    <LoadingShaderImage
+                      src="/1786855398290.png"
+                      className="w-4 h-4 object-contain opacity-80"
+                    />
+                    <span className="text-white font-bold text-xs tracking-wide leading-none">
+                      {roundBetAmount.toLocaleString()}
+                    </span>
                   </div>
-                )}
-                {winMode === 'mix_small' && (
-                  <div className="grid grid-cols-2 gap-1.5 w-20 h-20">
-                    {animals.slice(0, 4).map((a) => (
-                      <div key={a.alt} className="w-9 h-9">
-                        <GreenScreenImage src={a.src} className="w-full h-full object-contain" />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                </div>
               </div>
 
-              {/* Plain Text Amounts */}
-              <div className="flex-1 flex flex-col justify-center gap-1.5">
-                <span className="text-white font-black text-lg leading-tight tracking-wide">
-                  {winMode === 'mix_big'
-                    ? 'Mix Big (10x-45x)'
-                    : winMode === 'mix_small'
-                    ? 'Mix Small (5x All)'
-                    : `${winnerAnimal?.alt} (${winnerAnimal?.multiplier}x)`}
+              <div className="pr-1 pt-0.5">
+                <span className="text-white font-black text-xs tracking-tight">
+                  {winnerCountdown}s
                 </span>
-
-                <div className="flex items-center gap-2 mt-1">
-                  <LoadingShaderImage
-                    src="/1786855398290.png"
-                    className="w-5 h-5 object-contain"
-                  />
-                  <span className="text-yellow-400 font-black text-sm tracking-wide">
-                    Won: {roundWinningAmount.toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <LoadingShaderImage
-                    src="/1786855398290.png"
-                    className="w-5 h-5 object-contain opacity-80"
-                  />
-                  <span className="text-white/80 font-bold text-xs tracking-wide">
-                    Bet: {roundBetAmount.toLocaleString()}
-                  </span>
-                </div>
               </div>
             </div>
 
-            {/* Bottom Section: Bigger Decorative Image */}
-            <div className="w-full flex items-center justify-center pb-2">
+            <div className="w-full flex-1 flex items-center justify-center overflow-hidden pt-1">
               <img
                 src="/file_00000000a0a88211ad9bccad910db92e.png"
                 alt="Bottom Decor"
-                className="h-14 w-auto object-contain"
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
