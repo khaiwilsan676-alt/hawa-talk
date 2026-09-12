@@ -2037,7 +2037,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
           ref={categoryCardsRef}
           className="w-full px-0" 
           style={{ 
-            marginTop: '-12px', 
+            marginTop: '-16px', 
             transform: `translateY(${categoryOffset}px)`,
             marginBottom: `${categoryOffset}px`,
             position: 'relative', 
@@ -2045,7 +2045,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
             willChange: 'transform'
           }}
         >
-          <div className="flex flex-row justify-between items-center gap-1.5 select-none w-full px-1" style={{ 
+          <div className="flex flex-row justify-between items-center gap-0.5 select-none w-full px-3" style={{ 
             fontFamily: 'Nunito, Inter, sans-serif', 
             marginBottom: '0px' 
           }}>
@@ -2072,21 +2072,25 @@ export default function HomePage({ onLogout }: HomePageProps) {
                   overflow: 'hidden'    
                 }}
               >
-                {/* 1. TOP GOLDEN HEADING */}
-                <div 
-                  className="w-full text-center font-extrabold uppercase tracking-wide z-30"
-                  style={{
-                    paddingTop: '4px',
-                    fontSize: '13px',
-                    background: 'linear-gradient(180deg, #FFE894 0%, #E2A838 50%, #9E6B15 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                    filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))'
-                  }}
-                >
-                  {card.label}
-                </div>
+                {/* 1. ULTRA METALLIC SHINING GOLD HEADING */}
+<div 
+  className="w-full text-center font-black uppercase tracking-wider z-30 select-none"
+  style={{
+    marginTop: '8px',
+    fontSize: '13px',
+    letterSpacing: '0.6px',
+    /* 5-stop metallic gold gradient: Pure highlight se dark antique gold */
+    background: 'linear-gradient(180deg, #FFFFFF 0%, #FFF5A5 18%, #F7D046 45%, #D49410 75%, #8A5600 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    /* Sharp text-stroke border + golden glow + deep drop shadow */
+    WebkitTextStroke: '0.4px rgba(100, 60, 0, 0.7)',
+    filter: 'drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.9)) drop-shadow(0px 0px 5px rgba(255, 215, 0, 0.6))',
+  }}
+>
+  {card.label}
+</div>
+
 
                 {/* 2. CARD IMAGE (Object-contain ke saath, H aur W aap upar se set kar sakte hain) */}
                 <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
@@ -2119,7 +2123,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     className="relative w-[85%] mx-auto flex items-center justify-center z-10"
                     style={{ 
                       animation: 'shrinkAndFade 5s ease-in-out infinite', 
-                      marginBottom: '6px',
+                      marginBottom: '10px',
                       transformOrigin: 'center' 
                     }}
                   >
