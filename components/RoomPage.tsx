@@ -1827,7 +1827,7 @@ function RoomContent({ roomOwner, currentUser, onClose, onBack, onKeepRoom, onFo
       className="w-10 h-10 rounded-md overflow-hidden shadow-lg border-none bg-transparent transition-transform active:scale-95 cursor-pointer p-0"
     >
       <img 
-        src="/1787338085121.png" 
+        src="/file_000000009d808211b8ffb7c2183b4ef5.png" 
         alt="Wild Party" 
         className="w-full h-full object-contain" 
         draggable={false}
