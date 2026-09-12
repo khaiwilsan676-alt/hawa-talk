@@ -2030,7 +2030,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
       <>
         <div 
           ref={categoryCardsRef}
-          className="w-full px-2" 
+          className="w-full px-3" 
           style={{ 
             transform: `translateY(${categoryOffset}px)`,
             marginBottom: `${categoryOffset}px`,
@@ -2091,7 +2091,7 @@ export default function HomePage({ onLogout }: HomePageProps) {
                     className="relative w-[85%] mx-auto flex items-center justify-center z-10"
                     style={{ 
                       animation: 'shrinkAndFade 5s ease-in-out infinite', 
-                      marginBottom: '-40px',
+                      marginBottom: '2px',
                       transformOrigin: 'center' 
                     }}
                   >
