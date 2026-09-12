@@ -158,6 +158,8 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
   const [activeBtn, setActiveBtn] = useState<number | null>(null);
   
   const [isMuted, setIsMuted] = useState(false);
+  const [isVibrationOn, setIsVibrationOn] = useState(true); // Vibration State Added Here
+  
   const bgAudioRef = useRef<HTMLAudioElement | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -308,6 +310,15 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
     }
   }, [gameState.highlight, gameState.phase, isMuted, isMinimized]);
 
+  // VIBRATION LOGIC ADDED HERE 
+  useEffect(() => {
+    if (isMinimized || !isVibrationOn) return;
+    if (gameState.phase === 'spinning' && navigator.vibrate) {
+      // Vibrate on each spin tick
+      navigator.vibrate(30);
+    }
+  }, [gameState.highlight, gameState.phase, isVibrationOn, isMinimized]);
+
   // Game Real-Time Engine Loop
   useEffect(() => {
     const clock = setInterval(() => {
@@ -456,7 +467,8 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         setBets({});
         sessionBetsGlobal = {};
         setProcessedRound(gameState.round);
-        setWinners(w => [...w, winnerImgToSave].slice(-12));
+        // HISTORY LIMIT INCREASED TO 18
+        setWinners(w => [...w, winnerImgToSave].slice(-18));
         
         if (totalBetThisRound > 0) {
           setRoundHistory(prev => [{ 
@@ -626,6 +638,21 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         {!loading && (
           <>
             <div className="absolute bottom-[64vh] left-7 z-30 flex items-center gap-0.5">
+              {/* VIBRATION TOGGLE BUTTON ADDED IN TOP LEFT */}
+              <button onClick={() => setIsVibrationOn(!isVibrationOn)} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-1">
+                {isVibrationOn ? (
+                  <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#4a2810] stroke-[2]" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="7" y="4" width="10" height="16" rx="2" ry="2"></rect>
+                    <path d="M3 8v8M21 8v8"></path>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#4a2810] stroke-[2]" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="7" y="4" width="10" height="16" rx="2" ry="2"></rect>
+                    <line x1="2" y1="2" x2="22" y2="22"></line>
+                  </svg>
+                )}
+              </button>
+              
               <button onClick={() => setIsMuted(!isMuted)} className="w-6 h-6 rounded-full border-[2px] border-[#4a2810] bg-transparent flex items-center justify-center hover:bg-black/10 active:scale-95 transition-all p-0.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-[#4a2810] stroke-[#4a2810] stroke-[1.5]">
                   {!isMuted ? (
@@ -701,12 +728,12 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
             </div>
 
             {/* ============================================================== */}
-            {/* HISTORY PATTI */}
+            {/* HISTORY PATTI - HORIZONTAL SCROLL ENABLED & 2vh Right Space */}
             {/* ============================================================== */}
-            <div className="absolute z-40 flex flex-row flex-wrap gap-2 max-w-[90vw]" style={{ bottom: '2vh', left: '7vh' }}>
+            <div className="absolute z-40 flex flex-row gap-2 overflow-x-auto no-scrollbar items-center" style={{ bottom: '2vh', left: '7vh', right: '2vh' }}>
               {winners.slice().reverse().map((imgUrl, i) => {
                 return (
-                  <div key={i} className="relative animate-fade-in-up flex items-center justify-center w-4 h-4 bg-[#4a2810] rounded-full shadow-md border-[1.5px] border-[#3a1d09]">
+                  <div key={i} className="relative animate-fade-in-up flex items-center justify-center w-4 h-4 bg-[#4a2810] rounded-full shadow-md border-[1.5px] border-[#3a1d09] flex-shrink-0">
                     <img src={imgUrl} className="w-3 h-3 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" alt="winner" />
 
                     {i === 0 && (
@@ -730,7 +757,7 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
             </div>
 
             {/* ============================================================== */}
-            {/* WINNER RESULT POPUP PAGE (40vh, Winning Amount upar, Bet Amount niche) */}
+            {/* WINNER RESULT POPUP PAGE */}
             {/* ============================================================== */}
             {gameState.phase === 'result' && gameState.showResultPopup && (
               <div className="absolute bottom-0 left-0 w-full h-[40vh] z-[75] animate-slide-up overflow-hidden rounded-md">
@@ -953,6 +980,10 @@ export default function Fruitparty({ onClose, onMinimize, isMinimized = false }:
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
         .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
         .animate-single-blink { animation: singleBlink 0.5s ease-in-out 1; }
+        
+        /* HIDDEN SCROLLBAR FOR HISTORY PATTI */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
   );
